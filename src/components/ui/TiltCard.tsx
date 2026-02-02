@@ -13,7 +13,7 @@ export const TiltCard: React.FC<TiltCardProps> = ({
     spotlightColor = "rgba(168, 85, 247, 0.15)"
 }) => {
     const ref = useRef<HTMLDivElement>(null);
-    const [opacity, setOpacity] = useState(0);
+    const opacity = useSpring(0); // Using spring for smooth opacity transition
 
     const x = useMotionValue(0);
     const y = useMotionValue(0);
@@ -47,13 +47,13 @@ export const TiltCard: React.FC<TiltCardProps> = ({
 
         mouseXPos.set(mouseX);
         mouseYPos.set(mouseY);
-        setOpacity(1);
+        opacity.set(1);
     };
 
     const handleMouseLeave = () => {
         x.set(0);
         y.set(0);
-        setOpacity(0);
+        opacity.set(0);
     };
 
     return (
@@ -79,6 +79,8 @@ export const TiltCard: React.FC<TiltCardProps> = ({
                     ),
                 }}
             />
+
+
 
             <div style={{ transform: "translateZ(50px)" }} className="h-full relative z-10">
                 {children}

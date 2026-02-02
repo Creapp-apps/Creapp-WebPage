@@ -64,10 +64,20 @@ export const PhoneMockup: React.FC<PhoneMockupProps> = ({ appUrl }) => {
                 scale: 1.02,
                 transition: { duration: 0.3, ease: "easeOut" }
             }}
-            className="relative w-[300px] h-[650px] bg-slate-900 rounded-[3.5rem] border-[8px] border-slate-800 shadow-2xl overflow-hidden z-10"
+            className="relative w-[300px] h-[630px] bg-black rounded-[3rem] shadow-2xl overflow-hidden z-10 border-[6px] border-[#333] ring-1 ring-[#000]"
+            style={{
+                boxShadow: "0 0 0 2px #1a1a1a, 0 0 0 5px #2a2a2a, 0 20px 50px -10px rgba(0,0,0,0.5)"
+            }}
         >
+            {/* Glossy Reflection Overlay */}
+            <div className="absolute inset-0 z-50 pointer-events-none bg-gradient-to-tr from-white/5 via-transparent to-transparent rounded-[2.8rem]"></div>
+
             {/* Notch */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-7 bg-slate-900 rounded-b-[1.2rem] z-20 pointer-events-none border-b border-x border-slate-800/50"></div>
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[100px] h-[30px] bg-black rounded-b-[16px] z-50 pointer-events-none flex justify-center items-start pt-1.5">
+                <div className="w-16 h-4 bg-[#111] rounded-full flex items-center justify-end px-2 gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-[#1a1a1a]"></div>
+                </div>
+            </div>
 
             {/* Screen Container */}
             <div className="w-full h-full bg-slate-950 overflow-hidden flex flex-col font-sans relative">

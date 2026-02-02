@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { ContactModal } from '../components/ui/ContactModal';
+import { ContactForm } from '../components/ui/ContactForm';
 import { Input } from '../components/ui/Input';
 import { fadeIn, staggerContainer, slideUp } from '../lib/animations';
 import Hero3D from '../components/ui/Hero3D';
@@ -22,6 +23,9 @@ import { TiltCard } from '../components/ui/TiltCard';
 import { PhoneMockup } from '../components/ui/PhoneMockup';
 import { CodeBackground } from '../components/ui/CodeBackground';
 import { ScrollytellingProcess } from '../components/ui/ScrollytellingProcess';
+import { CodeTypewriter } from '../components/ui/CodeTypewriter';
+import { SplashScreen } from '../components/ui/SplashScreen';
+import Counter from '../components/ui/Counter';
 
 import logo from '../assets/creapp-logo.png';
 
@@ -38,6 +42,7 @@ const LandingPage: React.FC = () => {
     const { scrollYProgress } = useScroll({ container: containerRef });
     const [scrolled, setScrolled] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [showSplash, setShowSplash] = useState(true);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -56,6 +61,11 @@ const LandingPage: React.FC = () => {
     return (
         // Main Container: Fixed height, scrollable, snapping
         <div ref={containerRef} className="h-screen bg-background-dark text-slate-100 font-body overflow-y-scroll overflow-x-hidden scroll-smooth selection:bg-primary/30 scrollbar-hide">
+            <AnimatePresence>
+                {showSplash && (
+                    <SplashScreen onComplete={() => setShowSplash(false)} />
+                )}
+            </AnimatePresence>
 
             {/* Dynamic Background with 3D & Texture */}
             <div className="fixed inset-0 z-[-1] overflow-hidden pointer-events-none bg-[#050505]">
@@ -73,6 +83,9 @@ const LandingPage: React.FC = () => {
                 <div className="absolute bottom-[-20%] right-[-10%] w-[50vw] h-[50vw] bg-secondary/15 rounded-full blur-[100px] mix-blend-screen animate-pulse duration-[15s]"></div>
                 <div className="absolute top-[30%] left-[40%] w-[40vw] h-[40vw] bg-blue-600/10 rounded-full blur-[120px] mix-blend-screen animate-pulse duration-[12s]"></div>
             </div>
+
+            {/* Top Gradient Overlay for Navigation Readability */}
+            <div className="fixed top-0 left-0 right-0 h-40 bg-gradient-to-b from-black/90 via-black/40 to-transparent z-40 pointer-events-none" />
 
             {/* Navigation */}
             <motion.nav
@@ -98,18 +111,34 @@ const LandingPage: React.FC = () => {
                         <span className="font-display font-bold text-4xl tracking-tighter -ml-1">creapp</span>
                     </div>
 
-                    <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-300">
-                        {['Services', 'Methodology', 'About'].map((item) => (
-                            <a key={item} href={`#${item.toLowerCase()}`} onClick={(e) => {
-                                e.preventDefault();
-                                document.getElementById(item.toLowerCase())?.scrollIntoView({ behavior: 'smooth' });
-                            }} className="hover:text-primary transition-colors relative group">
-                                {item}
-                                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full"></span>
+                    <div className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-300">
+                        {[
+                            { label: 'Servicios', id: 'services' },
+                            { label: 'Metodología', id: 'methodology' },
+                            { label: 'Nosotros', id: 'about' }
+                        ].map(({ label, id }) => (
+                            <a
+                                key={id}
+                                href={`#${id}`}
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+                                }}
+                                className="relative px-4 py-2 rounded-full hover:text-white transition-colors duration-500 group overflow-hidden"
+                            >
+                                <span className="relative z-10">{label}</span>
+                                {/* Tech Hover Effect: Glass Pill + Glow */}
+                                <span className="absolute inset-0 bg-white/5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-out backdrop-blur-sm border border-white/10" />
+                                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1/2 h-[2px] bg-primary blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-out" />
                             </a>
                         ))}
-                        <Button onClick={() => setIsModalOpen(true)} variant="primary" size="sm" className="rounded-full px-6">
-                            Contact Us
+                        <Button
+                            onClick={() => setIsModalOpen(true)}
+                            variant="primary"
+                            size="sm"
+                            className="rounded-full px-6 shadow-[0_0_15px_rgba(168,85,247,0.4)] hover:shadow-[0_0_25px_rgba(168,85,247,0.6)] transition-shadow border border-white/20"
+                        >
+                            Hablemos
                         </Button>
                     </div>
                 </div>
@@ -352,12 +381,16 @@ const LandingPage: React.FC = () => {
                             </p>
                             <div className="grid grid-cols-2 gap-6">
                                 <div>
-                                    <h4 className="text-3xl font-bold text-white mb-1">99.99%</h4>
-                                    <p className="text-xs text-slate-500 uppercase tracking-wider">Uptime SLA</p>
+                                    <h4 className="text-3xl font-bold text-white mb-1 flex items-center">
+                                        <Counter value={100} prefix="+" />
+                                    </h4>
+                                    <p className="text-xs text-slate-500 uppercase tracking-wider">clientes satisfechos</p>
                                 </div>
                                 <div>
-                                    <h4 className="text-3xl font-bold text-white mb-1">&lt;50ms</h4>
-                                    <p className="text-xs text-slate-500 uppercase tracking-wider">Latency</p>
+                                    <h4 className="text-3xl font-bold text-white mb-1 flex items-center">
+                                        <Counter value={12} prefix="+" />
+                                    </h4>
+                                    <p className="text-xs text-slate-500 uppercase tracking-wider">CreAPP presente en paises</p>
                                 </div>
                             </div>
                         </motion.div>
@@ -378,24 +411,9 @@ const LandingPage: React.FC = () => {
                                 <div className="w-3 h-3 rounded-full bg-green-500"></div>
                                 <div className="ml-auto text-xs text-slate-500 font-mono">AppCore.ts</div>
                             </div>
-                            <div className="font-mono text-sm space-y-2 text-slate-400">
-                                <div className="flex gap-4">
-                                    <span className="text-primary">import</span>
-                                    <span className="text-white">App</span>
-                                    <span className="text-primary">from</span>
-                                    <span className="text-green-400">'@creapp/core'</span>;
-                                </div>
-                                <div className="pl-4 border-l-2 border-white/5 text-slate-500 py-2">
-                                    <p>// Initialize scalable infrastructure</p>
-                                </div>
-                                <div>
-                                    <span className="text-secondary">const</span> <span className="text-white">startSystem</span> = <span className="text-primary">async</span> () ={'>'} {'{'}
-                                </div>
-                                <div className="pl-4">
-                                    <span className="text-primary">await</span> App.deploy(<span className="text-blue-400">AWS_CLUSTER</span>);
-                                </div>
-                                <div>{'}'}</div>
-                            </div>
+
+                            {/* Animated Typewriter Code Block */}
+                            <CodeTypewriter />
                         </motion.div>
                     </div>
                 </div>
@@ -418,30 +436,18 @@ const LandingPage: React.FC = () => {
                         </motion.div>
                     </div>
 
-                    <form className="max-w-md mx-auto space-y-6 relative z-10">
-                        <div className="grid grid-cols-2 gap-4">
-                            <Input placeholder="First Name" className="bg-white/5 border-white/10 focus:bg-white/10" />
-                            <Input placeholder="Last Name" className="bg-white/5 border-white/10 focus:bg-white/10" />
-                        </div>
-                        <Input type="email" placeholder="work@company.com" className="bg-white/5 border-white/10 focus:bg-white/10" />
-                        <textarea
-                            className="w-full h-32 bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-white placeholder:text-slate-600 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all resize-none"
-                            placeholder="Tell us a bit about your project..."
-                        ></textarea>
-
-                        <Button size="lg" className="w-full rounded-xl text-lg h-14 group">
-                            Send Request
-                            <Send className="ml-2 w-5 h-5 group-hover:-translate-y-1 group-hover:translate-x-1 transition-transform" />
-                        </Button>
-                    </form>
+                    {/* Unified Contact Form with Rocket Animation */}
+                    <div className="max-w-lg mx-auto relative z-10 bg-transparent">
+                        <ContactForm />
+                    </div>
 
                     <div className="mt-12 pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
                         <div className="flex items-center gap-6 text-slate-400">
                             <a href="#" className="hover:text-white transition-colors flex items-center gap-2">
-                                <Mail size={16} /> hello@creapp.com
+                                <Mail size={16} /> creapp.ar@gmail.com
                             </a>
                             <a href="#" className="hover:text-white transition-colors flex items-center gap-2">
-                                <Globe size={16} /> New York, NY
+                                <Globe size={16} /> Buenos Aires, Argentina
                             </a>
                         </div>
                         <div className="flex gap-4">
@@ -456,12 +462,12 @@ const LandingPage: React.FC = () => {
 
                 {/* Footer (Inside Contact for cleaner snap) */}
                 <footer className="py-8 text-center text-slate-600 text-sm absolute bottom-0 left-0 right-0">
-                    <p>© 2024 CREAPP Software Solutions. All rights reserved.</p>
+                    <p>© 2026 CreAPP Soluciones y Desarrollos tecnológicos. Todos los derechos reservados.</p>
                 </footer>
-            </section>
+            </section >
 
             <ContactModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
-        </div>
+        </div >
     );
 };
 

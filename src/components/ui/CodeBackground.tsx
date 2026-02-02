@@ -3,10 +3,10 @@ import { motion } from 'framer-motion';
 import { Code2, Database, Cpu, Terminal, Braces, Binary, Globe, Command, Hash, Zap, Layout, Shield } from 'lucide-react';
 
 const icons = [
-    // Top
-    { Icon: Code2, color: 'text-blue-500', size: 60, initialX: 0, initialY: -340, delay: 0 },
-    // Top Right
-    { Icon: Database, color: 'text-purple-500', size: 50, initialX: 190, initialY: -220, delay: 1.5 },
+    // Top (Moved down significantly)
+    { Icon: Code2, color: 'text-blue-500', size: 60, initialX: 0, initialY: -180, delay: 0 },
+    // Top Right (Moved down and right)
+    { Icon: Database, color: 'text-purple-500', size: 50, initialX: 220, initialY: -100, delay: 1.5 },
     // Right
     { Icon: Cpu, color: 'text-green-500', size: 44, initialX: 240, initialY: 0, delay: 0.5 },
     // Bottom Right
@@ -17,14 +17,14 @@ const icons = [
     { Icon: Binary, color: 'text-cyan-500', size: 48, initialX: -200, initialY: 260, delay: 2.5 },
     // Left
     { Icon: Globe, color: 'text-indigo-500', size: 50, initialX: -240, initialY: 0, delay: 0.8 },
-    // Top Left
-    { Icon: Command, color: 'text-rose-500', size: 42, initialX: -190, initialY: -220, delay: 1.8 },
+    // Top Left (Moved down)
+    { Icon: Command, color: 'text-rose-500', size: 42, initialX: -190, initialY: -140, delay: 1.8 },
 
     // Closer Inner Circle
     { Icon: Hash, color: 'text-teal-500', size: 36, initialX: 140, initialY: -120, delay: 3 },
     { Icon: Zap, color: 'text-amber-500', size: 40, initialX: -140, initialY: 120, delay: 1.2 },
     { Icon: Layout, color: 'text-violet-500', size: 44, initialX: 140, initialY: 120, delay: 2.2 },
-    { Icon: Shield, color: 'text-emerald-500', size: 42, initialX: -140, initialY: -120, delay: 0.3 }
+    { Icon: Shield, color: 'text-emerald-500', size: 42, initialX: -140, initialY: -80, delay: 0.3 }
 ];
 
 const codeSnippets = [
@@ -39,7 +39,14 @@ const codeSnippets = [
 
 export const CodeBackground: React.FC = () => {
     return (
-        <div className="absolute inset-0 pointer-events-none z-0 flex items-center justify-center overflow-visible">
+        <div
+            className="absolute inset-0 pointer-events-none z-0 flex items-center justify-center overflow-visible"
+            style={{
+                // Mask fades out the top 20% of the container to transparent
+                maskImage: 'linear-gradient(to bottom, transparent 0%, black 20%, black 100%)',
+                WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 20%, black 100%)'
+            }}
+        >
             {/* Animated Icons */}
             {icons.map((item, index) => (
                 <motion.div
