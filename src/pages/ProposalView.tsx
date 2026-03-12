@@ -899,7 +899,7 @@ const ProposalView: React.FC = () => {
                           src="/firmaseba.png"
                           alt="Firma Sebastián Maza"
                           className="h-full w-auto object-contain"
-                          style={{ filter: `brightness(0) saturate(100%) sepia(100%) hue-rotate(310deg) saturate(500%) brightness(90%)` }}
+                          style={{ filter: 'brightness(0) saturate(100%) invert(35%) sepia(81%) saturate(4145%) hue-rotate(336deg) brightness(96%) contrast(96%)' }}
                         />
                       </div>
                     </div>
