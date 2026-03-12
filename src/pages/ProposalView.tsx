@@ -193,7 +193,7 @@ const ProposalView: React.FC = () => {
         initial="hidden"
         animate="visible"
         variants={fadeUp}
-        className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center mb-16 gap-8 md:gap-10 relative z-10"
+        className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center mb-8 md:mb-16 gap-8 md:gap-10 relative z-10"
       >
         <div className="flex flex-col md:flex-row items-center gap-4 md:gap-5 text-center md:text-left">
           <CreAPPLogo />
@@ -222,7 +222,7 @@ const ProposalView: React.FC = () => {
         </div>
       </motion.header>
 
-      <main className="max-w-6xl mx-auto space-y-14 pb-24 relative z-10">
+      <main className="max-w-6xl mx-auto space-y-8 md:space-y-14 pb-24 relative z-10">
         {/* Resumen Ejecutivo */}
         <motion.section
           initial="hidden"
