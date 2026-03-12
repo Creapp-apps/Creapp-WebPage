@@ -374,7 +374,7 @@ const ProposalView: React.FC = () => {
             variants={fadeUp}
             className="lg:col-span-2 space-y-8"
           >
-            <div className="flex bg-white/5 rounded-2xl border border-white/5 w-full md:w-fit shadow-inner overflow-hidden p-1.5 md:p-2">
+            <div className="flex bg-white/5 rounded-2xl border border-white/5 w-full md:w-fit shadow-inner overflow-hidden p-1 p-1.5 md:p-2 mb-2">
               <button
                 onClick={() => setActiveTab('alcance')}
                 className={`flex-1 md:flex-none px-4 md:px-10 py-3 md:py-3.5 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest md:tracking-[0.2em] transition-all duration-500 whitespace-nowrap ${activeTab === 'alcance' ? 'text-white shadow-2xl -translate-y-0.5' : 'text-slate-500 hover:text-slate-300'}`}
@@ -402,13 +402,13 @@ const ProposalView: React.FC = () => {
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 20 }}
                     transition={{ duration: 0.3 }}
-                    className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10"
+                    className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 relative z-10"
                   >
                     {proposal.inclusions.map((item, i) => (
                       <motion.div
                         whileHover={{ scale: 1.03 }}
                         key={i}
-                        className="relative overflow-hidden flex flex-col justify-center p-7 rounded-3xl bg-white/[0.015] hover:bg-white/[0.05] transition-all border border-transparent group cursor-default shadow-sm"
+                        className="relative overflow-hidden flex flex-col justify-center p-5 md:p-7 rounded-3xl bg-white/[0.015] hover:bg-white/[0.05] transition-all border border-transparent group cursor-default shadow-sm"
                         style={{ ['--hover-border' as string]: `${brandPrimary}33` }}
                       >
                         <div className="flex gap-6 relative z-10 group-hover:opacity-0 transition-opacity duration-500 items-center">
@@ -440,7 +440,7 @@ const ProposalView: React.FC = () => {
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 20 }}
                     transition={{ duration: 0.3 }}
-                    className="space-y-5 relative z-10"
+                    className="space-y-4 md:space-y-5 relative z-10"
                   >
                     {proposal.exclusions.map((item, i) => (
                       <motion.div
@@ -675,28 +675,29 @@ const ProposalView: React.FC = () => {
           variants={fadeUp}
           className="grid grid-cols-1 md:grid-cols-2 gap-10"
         >
-          <div className="p-12 rounded-[3rem] border border-white/5 shadow-2xl relative group overflow-hidden" style={{ backgroundColor: 'var(--color-proposal-panel)' }}>
+          <div className="p-8 md:p-12 rounded-[2.5rem] md:rounded-[3rem] border border-white/5 shadow-2xl relative group overflow-hidden" style={{ backgroundColor: 'var(--color-proposal-panel)' }}>
             <div className="absolute bottom-0 left-0 w-full h-[3px] bg-emerald-500/20 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-1000"></div>
-            <div className="flex items-center gap-5 mb-8">
-              <div className="p-3 rounded-2xl bg-emerald-500/10 shadow-inner"><ShieldCheck className="text-emerald-500" size={22} /></div>
-              <h4 className="font-black text-white uppercase tracking-[0.3em] text-[11px] underline decoration-emerald-500/40 underline-offset-[12px] decoration-2">Garantía de Código</h4>
+            <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-5 mb-6 md:mb-8">
+              <div className="p-3 rounded-2xl bg-emerald-500/10 shadow-inner w-fit"><ShieldCheck className="text-emerald-500" size={22} /></div>
+              <h4 className="font-black text-white uppercase tracking-[0.2em] md:tracking-[0.3em] text-[10px] md:text-[11px] underline decoration-emerald-500/40 underline-offset-[12px] decoration-2">Garantía de Código</h4>
             </div>
-            <p className="text-lg text-slate-500 leading-relaxed font-light">
+            <p className="text-base md:text-lg text-slate-500 leading-relaxed font-light">
               Respaldamos nuestro desarrollo con <span className="text-emerald-400 font-bold">30 días de soporte integral</span> sin costo.
               Garantizamos la estabilidad operativa tras el despliegue final.
             </p>
           </div>
-          <div className="p-12 rounded-[3rem] bg-[#0d0d0d] border border-white/5 shadow-2xl relative group overflow-hidden">
+          <div className="p-8 md:p-12 rounded-[2.5rem] md:rounded-[3rem] bg-[#0d0d0d] border border-white/5 shadow-2xl relative group overflow-hidden">
             <div className="absolute bottom-0 left-0 w-full h-[3px] bg-blue-500/20 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-1000"></div>
-            <div className="flex items-center gap-5 mb-8">
-              <div className="p-3 rounded-2xl bg-blue-500/10 shadow-inner"><FileText className="text-blue-500" size={22} /></div>
-              <h4 className="font-black text-white uppercase tracking-[0.3em] text-[11px] underline decoration-blue-500/40 underline-offset-[12px] decoration-2">Rondas de Optimización</h4>
+            <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-5 mb-6 md:mb-8">
+              <div className="p-3 rounded-2xl bg-blue-500/10 shadow-inner w-fit"><FileText className="text-blue-500" size={22} /></div>
+              <h4 className="font-black text-white uppercase tracking-[0.2em] md:tracking-[0.3em] text-[10px] md:text-[11px] underline decoration-blue-500/40 underline-offset-[12px] decoration-2">Rondas de Optimización</h4>
             </div>
-            <p className="text-lg text-slate-500 leading-relaxed font-light">
+            <p className="text-base md:text-lg text-slate-500 leading-relaxed font-light">
               Cada etapa cuenta con <span className="text-blue-400 font-bold">tres ciclos de revisiones técnicas</span>.
               Aseguramos que el producto final supere las expectativas del cliente.
             </p>
           </div>
+
         </motion.section>
 
         {/* Firmas */}
