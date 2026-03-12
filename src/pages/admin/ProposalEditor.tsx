@@ -173,7 +173,8 @@ const ProposalEditor: React.FC = () => {
       navigate('/admin');
     } catch (err) {
       console.error('Error saving:', err);
-      alert('Error al guardar. Verificá que el slug sea único.');
+      const message = err instanceof Error ? err.message : (err as any)?.message || 'Error desconocido';
+      alert(`Error al guardar: ${message}`);
     }
     setSaving(false);
   };

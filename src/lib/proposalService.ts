@@ -102,12 +102,16 @@ export async function upsertChildItems<T extends Record<string, unknown>>(
 
   // Insert new items
   if (items.length > 0) {
-    const itemsWithProposalId = items.map((item, index) => ({
-      ...item,
-      proposal_id: proposalId,
-      sort_order: index,
-      id: undefined, // Let DB generate new IDs
-    }));
+    const itemsWithProposalId = items.map((item, index) => {
+      // Destructure to remove `id` entirely — setting it to undefined
+      // would still send null to PostgREST, violating NOT NULL constraint
+      const { id: _removed, ...rest } = item as Record<string, unknown>;
+      return {
+        ...rest,
+        proposal_id: proposalId,
+        sort_order: index,
+      };
+    });
 
     const { error } = await supabase.from(table).insert(itemsWithProposalId);
     if (error) throw error;
