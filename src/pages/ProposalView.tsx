@@ -892,6 +892,17 @@ const ProposalView: React.FC = () => {
                   </div>
                   <div className="space-y-4">
                     <p className="font-bold text-white uppercase tracking-widest text-xs mb-6">Por EL DESARROLLADOR (CreAPP):</p>
+                    <div className="space-y-2">
+                      <p className="text-xs text-slate-500 uppercase tracking-widest mb-1">Firma</p>
+                      <div className="bg-white/5 border border-white/10 border-dashed rounded-xl p-4 flex items-center justify-center h-32">
+                        <img
+                          src="/firmaseba.png"
+                          alt="Firma Sebastián Maza"
+                          className="h-full w-auto object-contain"
+                          style={{ filter: `brightness(0) saturate(100%) sepia(100%) hue-rotate(310deg) saturate(500%) brightness(90%)` }}
+                        />
+                      </div>
+                    </div>
                     <div className="space-y-2 pt-2 md:pt-4">
                       <p className="text-xs text-slate-500 uppercase tracking-widest mb-1">Aclaración</p>
                       <p className="text-xl font-display font-black uppercase tracking-tight" style={{ color: brandPrimary }}>Sebastián Maza</p>
