@@ -226,8 +226,7 @@ const ProposalView: React.FC = () => {
         {/* Resumen Ejecutivo */}
         <motion.section
           initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: '-100px' }}
+          animate="visible"
           variants={fadeUp}
           className="relative overflow-hidden rounded-[2.5rem] md:rounded-[3rem] border border-white/5 p-6 md:p-12 lg:p-20 shadow-2xl group"
           style={{ backgroundColor: 'var(--color-proposal-panel)' }}
