@@ -111,7 +111,7 @@ const AdminPanel: React.FC = () => {
         <div className="max-w-7xl mx-auto px-6 py-3 flex items-center gap-3">
           <CheckCircle2 className="text-emerald-400 shrink-0" size={18} />
           <p className="text-emerald-300 text-sm font-bold tracking-wide">
-            ✅ Migración correcta — Repositorio transferido exitosamente entre cuentas de GitHub.
+            ✅ Todo funcionando perfecto! Migración y Vercel!
           </p>
         </div>
       </motion.div>

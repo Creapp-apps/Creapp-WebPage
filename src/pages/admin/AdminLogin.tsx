@@ -43,7 +43,7 @@ const AdminLogin: React.FC = () => {
         >
           <CheckCircle2 className="text-emerald-400 shrink-0" size={20} />
           <p className="text-emerald-300 text-sm font-bold">
-            ✅ Migración correcta — Repo transferido exitosamente entre cuentas de GitHub.
+            ✅ Todo funcionando perfecto! Migración y Vercel!
           </p>
         </motion.div>
 
