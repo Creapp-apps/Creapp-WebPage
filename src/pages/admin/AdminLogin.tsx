@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Rocket, ArrowRight, AlertCircle } from 'lucide-react';
+import { Rocket, ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 
 const AdminLogin: React.FC = () => {
@@ -34,6 +34,19 @@ const AdminLogin: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md"
       >
+        {/* Migration Banner */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.4 }}
+          className="flex items-center gap-3 px-5 py-3 mb-8 rounded-2xl bg-emerald-500/15 border border-emerald-500/30"
+        >
+          <CheckCircle2 className="text-emerald-400 shrink-0" size={20} />
+          <p className="text-emerald-300 text-sm font-bold">
+            ✅ Migración correcta — Repo transferido exitosamente entre cuentas de GitHub.
+          </p>
+        </motion.div>
+
         {/* Logo */}
         <div className="flex items-center justify-center gap-3 mb-12">
           <div className="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center shadow-lg">

@@ -11,6 +11,7 @@ import {
   FileText,
   ExternalLink,
   Database,
+  CheckCircle2,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { getAllProposals, deleteProposal, seedAstillerosVision } from '@/lib/proposalService';
@@ -99,6 +100,21 @@ const AdminPanel: React.FC = () => {
           </button>
         </div>
       </header>
+
+      {/* Migration Banner */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="bg-emerald-500/10 border-b border-emerald-500/20"
+      >
+        <div className="max-w-7xl mx-auto px-6 py-3 flex items-center gap-3">
+          <CheckCircle2 className="text-emerald-400 shrink-0" size={18} />
+          <p className="text-emerald-300 text-sm font-bold tracking-wide">
+            ✅ Migración correcta — Repositorio transferido exitosamente entre cuentas de GitHub.
+          </p>
+        </div>
+      </motion.div>
 
       <main className="max-w-7xl mx-auto px-6 py-10">
         {/* Actions */}
