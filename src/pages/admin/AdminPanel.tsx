@@ -91,13 +91,22 @@ const AdminPanel: React.FC = () => {
               <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Panel de Administración</p>
             </div>
           </div>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-2 text-slate-500 hover:text-white text-xs uppercase tracking-widest font-bold transition-colors"
-          >
-            <LogOut size={16} />
-            Cerrar Sesión
-          </button>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => navigate('/admin/control-center')}
+              className="flex items-center gap-2 text-slate-400 hover:text-white text-xs uppercase tracking-widest font-bold transition-colors border border-white/10 hover:border-white/20 px-4 py-2 rounded-lg"
+            >
+              <Database size={14} />
+              Centro de Control
+            </button>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 text-slate-500 hover:text-white text-xs uppercase tracking-widest font-bold transition-colors"
+            >
+              <LogOut size={16} />
+              Cerrar Sesión
+            </button>
+          </div>
         </div>
       </header>
 

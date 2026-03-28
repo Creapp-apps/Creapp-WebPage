@@ -5,6 +5,7 @@ import ProposalView from './pages/ProposalView';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminPanel from './pages/admin/AdminPanel';
 import ProposalEditor from './pages/admin/ProposalEditor';
+import ControlCenter from './pages/admin/ControlCenter';
 import AuthGuard from './components/auth/AuthGuard';
 
 const App: React.FC = () => {
@@ -20,6 +21,7 @@ const App: React.FC = () => {
         <Route path="/admin" element={<AuthGuard><AdminPanel /></AuthGuard>} />
         <Route path="/admin/propuesta/:id" element={<AuthGuard><ProposalEditor /></AuthGuard>} />
         <Route path="/admin/propuesta/nueva" element={<AuthGuard><ProposalEditor /></AuthGuard>} />
+        <Route path="/admin/control-center" element={<AuthGuard><ControlCenter /></AuthGuard>} />
       </Routes>
     </BrowserRouter>
   );
