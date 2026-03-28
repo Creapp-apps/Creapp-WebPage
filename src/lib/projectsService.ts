@@ -1,5 +1,11 @@
 import { supabase } from './supabaseClient';
 
+export interface Credential {
+    label: string;   // e.g. "Admin", "Supabase", "Vercel"
+    email: string;
+    password: string;
+}
+
 export interface Project {
     id: string;
     name: string;
@@ -9,8 +15,7 @@ export interface Project {
     production_url?: string;
     github_url?: string;
     admin_url?: string;
-    admin_email?: string;
-    admin_password?: string;
+    credentials?: Credential[];
     stack?: string[];
     vercel_url?: string;
     notes?: string;

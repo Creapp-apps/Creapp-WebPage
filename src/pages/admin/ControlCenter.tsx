@@ -89,6 +89,11 @@ const ControlCenter: React.FC = () => {
         setModalOpen(true);
     };
 
+    const ensureUrl = (url: string) =>
+        url.startsWith('http://') || url.startsWith('https://')
+            ? url
+            : `https://${url}`;
+
     const copyToClipboard = (text: string, key: string) => {
         navigator.clipboard.writeText(text);
         setCopied(key);
@@ -224,7 +229,7 @@ const ControlCenter: React.FC = () => {
                                             </span>
                                             {project.production_url && (
                                                 <a
-                                                    href={project.production_url}
+                                                    href={ensureUrl(project.production_url)}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     onClick={(e) => e.stopPropagation()}
@@ -236,7 +241,7 @@ const ControlCenter: React.FC = () => {
                                             )}
                                             {project.github_url && (
                                                 <a
-                                                    href={project.github_url}
+                                                    href={ensureUrl(project.github_url)}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     onClick={(e) => e.stopPropagation()}
@@ -284,7 +289,7 @@ const ControlCenter: React.FC = () => {
                                                         val ? (
                                                             <a
                                                                 key={label}
-                                                                href={val}
+                                                                href={ensureUrl(val)}
                                                                 target="_blank"
                                                                 rel="noopener noreferrer"
                                                                 className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all group"
@@ -302,38 +307,45 @@ const ControlCenter: React.FC = () => {
 
                                                 {/* Credentials + Notes */}
                                                 <div className="space-y-4">
-                                                    {(project.admin_email || project.admin_password) && (
+                                                    {(project.credentials ?? []).length > 0 && (
                                                         <div>
                                                             <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-3">🔐 Credenciales Admin</p>
-                                                            <div className="p-4 rounded-xl bg-white/5 border border-white/5 space-y-3">
-                                                                {project.admin_email && (
-                                                                    <div className="flex items-center justify-between gap-2">
-                                                                        <div>
-                                                                            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Email</p>
-                                                                            <p className="text-slate-300 text-sm font-mono">{project.admin_email}</p>
-                                                                        </div>
-                                                                        <CopyBtn text={project.admin_email} id={`email-${project.id}`} />
+                                                            <div className="space-y-2">
+                                                                {(project.credentials ?? []).map((cred, idx) => (
+                                                                    <div key={idx} className="p-4 rounded-xl bg-white/5 border border-white/5 space-y-2">
+                                                                        {cred.label && (
+                                                                            <p className="text-[10px] text-primary uppercase tracking-widest font-black">{cred.label}</p>
+                                                                        )}
+                                                                        {cred.email && (
+                                                                            <div className="flex items-center justify-between gap-2">
+                                                                                <div>
+                                                                                    <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Email / Usuario</p>
+                                                                                    <p className="text-slate-300 text-sm font-mono">{cred.email}</p>
+                                                                                </div>
+                                                                                <CopyBtn text={cred.email} id={`cred-email-${project.id}-${idx}`} />
+                                                                            </div>
+                                                                        )}
+                                                                        {cred.password && (
+                                                                            <div className="flex items-center justify-between gap-2">
+                                                                                <div>
+                                                                                    <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Contraseña</p>
+                                                                                    <p className="text-slate-300 text-sm font-mono">
+                                                                                        {showPass[`${project.id}-${idx}`] ? cred.password : '••••••••'}
+                                                                                    </p>
+                                                                                </div>
+                                                                                <div className="flex gap-1">
+                                                                                    <button
+                                                                                        onClick={() => setShowPass((prev) => ({ ...prev, [`${project.id}-${idx}`]: !prev[`${project.id}-${idx}`] }))}
+                                                                                        className="p-1 rounded text-slate-600 hover:text-slate-300 transition-colors"
+                                                                                    >
+                                                                                        {showPass[`${project.id}-${idx}`] ? <EyeOff size={12} /> : <Eye size={12} />}
+                                                                                    </button>
+                                                                                    <CopyBtn text={cred.password} id={`cred-pass-${project.id}-${idx}`} />
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
                                                                     </div>
-                                                                )}
-                                                                {project.admin_password && (
-                                                                    <div className="flex items-center justify-between gap-2">
-                                                                        <div>
-                                                                            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Contraseña</p>
-                                                                            <p className="text-slate-300 text-sm font-mono">
-                                                                                {showPass[project.id] ? project.admin_password : '••••••••'}
-                                                                            </p>
-                                                                        </div>
-                                                                        <div className="flex gap-1">
-                                                                            <button
-                                                                                onClick={() => setShowPass((prev) => ({ ...prev, [project.id]: !prev[project.id] }))}
-                                                                                className="p-1 rounded text-slate-600 hover:text-slate-300 transition-colors"
-                                                                            >
-                                                                                {showPass[project.id] ? <EyeOff size={12} /> : <Eye size={12} />}
-                                                                            </button>
-                                                                            <CopyBtn text={project.admin_password} id={`pass-${project.id}`} />
-                                                                        </div>
-                                                                    </div>
-                                                                )}
+                                                                ))}
                                                             </div>
                                                         </div>
                                                     )}

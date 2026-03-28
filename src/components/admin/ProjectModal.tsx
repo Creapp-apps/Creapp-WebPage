@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus, Minus } from 'lucide-react';
-import type { Project, ProjectInput } from '@/lib/projectsService';
+import type { Project, ProjectInput, Credential } from '@/lib/projectsService';
 
 const STATUS_OPTIONS = [
     { value: 'active', label: 'Activo', color: 'emerald' },
@@ -18,6 +18,29 @@ interface Props {
     onSave: (data: ProjectInput) => Promise<void>;
 }
 
+// --- Field outside component to prevent remount-on-render focus loss ---
+interface FieldProps {
+    label: string;
+    type?: string;
+    placeholder?: string;
+    value: string;
+    onChange: (v: string) => void;
+}
+const Field: React.FC<FieldProps> = ({ label, type = 'text', placeholder, value, onChange }) => (
+    <div className="space-y-1.5">
+        <label className="text-[10px] text-slate-500 uppercase tracking-widest font-bold block">{label}</label>
+        <input
+            type={type}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder}
+            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-slate-600 focus:outline-none focus:border-primary/50 transition-colors text-sm"
+        />
+    </div>
+);
+
+const emptyCredential = (): Credential => ({ label: '', email: '', password: '' });
+
 const empty: ProjectInput = {
     name: '',
     client: '',
@@ -26,8 +49,7 @@ const empty: ProjectInput = {
     production_url: '',
     github_url: '',
     admin_url: '',
-    admin_email: '',
-    admin_password: '',
+    credentials: [emptyCredential()],
     stack: [],
     vercel_url: '',
     notes: '',
@@ -38,15 +60,38 @@ const ProjectModal: React.FC<Props> = ({ project, onClose, onSave }) => {
     const [form, setForm] = useState<ProjectInput>(empty);
     const [stackInput, setStackInput] = useState('');
     const [saving, setSaving] = useState(false);
+    const [showPasswords, setShowPasswords] = useState<Record<number, boolean>>({});
 
     useEffect(() => {
         if (project) {
             const { id, created_at, updated_at, ...rest } = project;
-            setForm(rest);
+            setForm({
+                ...rest,
+                credentials: rest.credentials && rest.credentials.length > 0
+                    ? rest.credentials
+                    : [emptyCredential()],
+            });
         } else {
             setForm(empty);
         }
+        setShowPasswords({});
     }, [project]);
+
+    // Credential helpers
+    const addCredential = () =>
+        setForm((prev) => ({ ...prev, credentials: [...(prev.credentials ?? []), emptyCredential()] }));
+
+    const removeCredential = (idx: number) =>
+        setForm((prev) => ({ ...prev, credentials: (prev.credentials ?? []).filter((_, i) => i !== idx) }));
+
+    const updateCredential = (idx: number, field: keyof Credential, value: string) =>
+        setForm((prev) => ({
+            ...prev,
+            credentials: (prev.credentials ?? []).map((c, i) => i === idx ? { ...c, [field]: value } : c),
+        }));
+
+    const togglePassword = (idx: number) =>
+        setShowPasswords((prev) => ({ ...prev, [idx]: !prev[idx] }));
 
     const set = (key: keyof ProjectInput, val: unknown) =>
         setForm((prev) => ({ ...prev, [key]: val }));
@@ -73,28 +118,6 @@ const ProjectModal: React.FC<Props> = ({ project, onClose, onSave }) => {
         }
     };
 
-    const Field = ({
-        label,
-        name,
-        type = 'text',
-        placeholder,
-    }: {
-        label: string;
-        name: keyof ProjectInput;
-        type?: string;
-        placeholder?: string;
-    }) => (
-        <div className="space-y-1.5">
-            <label className="text-[10px] text-slate-500 uppercase tracking-widest font-bold block">{label}</label>
-            <input
-                type={type}
-                value={(form[name] as string) ?? ''}
-                onChange={(e) => set(name, e.target.value)}
-                placeholder={placeholder}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-slate-600 focus:outline-none focus:border-primary/50 transition-colors text-sm"
-            />
-        </div>
-    );
 
     return (
         <AnimatePresence>
@@ -103,7 +126,6 @@ const ProjectModal: React.FC<Props> = ({ project, onClose, onSave }) => {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-                onClick={onClose}
             >
                 <motion.div
                     initial={{ scale: 0.95, opacity: 0, y: 20 }}
@@ -125,10 +147,10 @@ const ProjectModal: React.FC<Props> = ({ project, onClose, onSave }) => {
                     <form onSubmit={handleSubmit} className="p-6 space-y-6">
                         {/* Basics */}
                         <div className="grid grid-cols-2 gap-4">
-                            <Field label="Nombre del proyecto *" name="name" placeholder="TrazAPP" />
-                            <Field label="Cliente *" name="client" placeholder="Nombre del cliente" />
+                            <Field label="Nombre del proyecto *" value={form.name} onChange={(v) => set('name', v)} placeholder="TrazAPP" />
+                            <Field label="Cliente *" value={form.client} onChange={(v) => set('client', v)} placeholder="Nombre del cliente" />
                         </div>
-                        <Field label="Descripción" name="description" placeholder="Breve descripción del proyecto" />
+                        <Field label="Descripción" value={form.description ?? ''} onChange={(v) => set('description', v)} placeholder="Breve descripción del proyecto" />
 
                         {/* Status + Color */}
                         <div className="grid grid-cols-2 gap-4">
@@ -170,19 +192,90 @@ const ProjectModal: React.FC<Props> = ({ project, onClose, onSave }) => {
                         <div className="space-y-3">
                             <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Links del Proyecto</p>
                             <div className="grid grid-cols-2 gap-4">
-                                <Field label="URL Producción" name="production_url" placeholder="https://app.com" />
-                                <Field label="URL GitHub" name="github_url" placeholder="https://github.com/..." />
-                                <Field label="URL Vercel" name="vercel_url" placeholder="https://vercel.com/..." />
-                                <Field label="URL Panel Admin" name="admin_url" placeholder="https://app.com/admin" />
+                                <Field label="URL Producción" value={form.production_url ?? ''} onChange={(v) => set('production_url', v)} placeholder="https://app.com" />
+                                <Field label="URL GitHub" value={form.github_url ?? ''} onChange={(v) => set('github_url', v)} placeholder="https://github.com/..." />
+                                <Field label="URL Vercel" value={form.vercel_url ?? ''} onChange={(v) => set('vercel_url', v)} placeholder="https://vercel.com/..." />
+                                <Field label="URL Panel Admin" value={form.admin_url ?? ''} onChange={(v) => set('admin_url', v)} placeholder="https://app.com/admin" />
                             </div>
                         </div>
 
                         {/* Credentials */}
                         <div className="space-y-3">
-                            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">🔐 Credenciales Admin</p>
-                            <div className="grid grid-cols-2 gap-4">
-                                <Field label="Email Admin" name="admin_email" type="email" placeholder="admin@app.com" />
-                                <Field label="Contraseña Admin" name="admin_password" placeholder="••••••••" />
+                            <div className="flex items-center justify-between">
+                                <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">🔐 Credenciales Admin</p>
+                                <button
+                                    type="button"
+                                    onClick={addCredential}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 text-slate-300 hover:bg-primary/20 hover:text-primary transition-all text-xs font-bold"
+                                >
+                                    <Plus size={13} />
+                                    Añadir
+                                </button>
+                            </div>
+
+                            <div className="space-y-3">
+                                {(form.credentials ?? []).map((cred, idx) => (
+                                    <div
+                                        key={idx}
+                                        className="relative p-4 rounded-xl bg-white/5 border border-white/10 space-y-3"
+                                    >
+                                        {/* Remove button — only if more than 1 */}
+                                        {(form.credentials ?? []).length > 1 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => removeCredential(idx)}
+                                                className="absolute top-3 right-3 p-1 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-400/10 transition-all"
+                                            >
+                                                <Minus size={13} />
+                                            </button>
+                                        )}
+
+                                        {/* Label */}
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] text-slate-500 uppercase tracking-widest font-bold block">Etiqueta</label>
+                                            <input
+                                                type="text"
+                                                value={cred.label}
+                                                onChange={(e) => updateCredential(idx, 'label', e.target.value)}
+                                                placeholder="Admin, Supabase, Vercel..."
+                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-slate-600 focus:outline-none focus:border-primary/50 transition-colors text-sm"
+                                            />
+                                        </div>
+
+                                        {/* Email + Password */}
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="space-y-1.5">
+                                                <label className="text-[10px] text-slate-500 uppercase tracking-widest font-bold block">Email / Usuario</label>
+                                                <input
+                                                    type="email"
+                                                    value={cred.email}
+                                                    onChange={(e) => updateCredential(idx, 'email', e.target.value)}
+                                                    placeholder="admin@app.com"
+                                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-slate-600 focus:outline-none focus:border-primary/50 transition-colors text-sm"
+                                                />
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <label className="text-[10px] text-slate-500 uppercase tracking-widest font-bold block">Contraseña</label>
+                                                <div className="relative">
+                                                    <input
+                                                        type={showPasswords[idx] ? 'text' : 'password'}
+                                                        value={cred.password}
+                                                        onChange={(e) => updateCredential(idx, 'password', e.target.value)}
+                                                        placeholder="••••••••"
+                                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 pr-10 text-white placeholder-slate-600 focus:outline-none focus:border-primary/50 transition-colors text-sm"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => togglePassword(idx)}
+                                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors text-xs"
+                                                    >
+                                                        {showPasswords[idx] ? '🙈' : '👁️'}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
 
