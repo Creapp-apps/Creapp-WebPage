@@ -3,11 +3,13 @@
 @theme {
     --color-primary: #A855F7;
     --color-secondary: #EC4899;
+    --color-cyan-electric: #FF2D78;
+    --color-purple-digital: #9B30FF;
     --color-background-dark: #050505;
     --color-surface-dark: #111111;
 
     --font-display: "Outfit", sans-serif;
-    --font-body: "Inter", sans-serif;
+    --font-body: "Space Grotesk", sans-serif;
 
     --radius-xl: 20px;
     --radius-2xl: 32px;
@@ -60,11 +62,46 @@
             background-position: 0% 50%;
         }
     }
+
+    @keyframes marquee {
+        0% {
+            transform: translateX(0);
+        }
+
+        100% {
+            transform: translateX(-50%);
+        }
+    }
+}
+
+/* Lenis smooth scroll — prevent white flash on scroll start */
+html {
+    background-color: #050505;
+}
+
+html.lenis,
+html.lenis body {
+    height: auto;
+    background-color: #050505;
+}
+
+.lenis.lenis-smooth {
+    scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+    overscroll-behavior: contain;
 }
 
 @layer base {
     body {
         @apply bg-background-dark text-slate-100 font-body antialiased;
+        cursor: none;
+    }
+
+    /* Restore cursor for admin pages */
+    body.admin-cursor {
+        cursor: auto;
     }
 }
 
@@ -73,8 +110,24 @@
         @apply bg-white/5 backdrop-blur-xl border border-white/10;
     }
 
+    .glass-card {
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(20px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow:
+            0 8px 32px rgba(0, 0, 0, 0.4),
+            inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+
     .text-gradient {
         @apply bg-clip-text text-transparent bg-gradient-to-br from-primary to-secondary;
+    }
+
+    .text-gradient-cyan {
+        background: linear-gradient(135deg, #FF2D78, #9B30FF);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
     }
 
     .no-scrollbar::-webkit-scrollbar {
@@ -82,6 +135,15 @@
     }
 
     .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+    }
+
+    .scrollbar-hide {
         -ms-overflow-style: none;
         scrollbar-width: none;
     }

@@ -12,6 +12,7 @@ export interface Project {
     client: string;
     description?: string;
     status: 'active' | 'development' | 'paused' | 'delivered';
+    category?: 'app' | 'site';
     production_url?: string;
     github_url?: string;
     admin_url?: string;

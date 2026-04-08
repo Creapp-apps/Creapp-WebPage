@@ -10,6 +10,11 @@ const STATUS_OPTIONS = [
     { value: 'delivered', label: 'Entregado', color: 'slate' },
 ] as const;
 
+const CATEGORY_OPTIONS = [
+    { value: 'app', label: 'App (SaaS)' },
+    { value: 'site', label: 'Sitio Web' },
+] as const;
+
 const PALETTE = ['#a855f7', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#ec4899', '#8b5cf6'];
 
 interface Props {
@@ -46,6 +51,7 @@ const empty: ProjectInput = {
     client: '',
     description: '',
     status: 'active',
+    category: 'app',
     production_url: '',
     github_url: '',
     admin_url: '',
@@ -61,6 +67,15 @@ const ProjectModal: React.FC<Props> = ({ project, onClose, onSave }) => {
     const [stackInput, setStackInput] = useState('');
     const [saving, setSaving] = useState(false);
     const [showPasswords, setShowPasswords] = useState<Record<number, boolean>>({});
+
+    // Prevent body scrolling when the modal is open
+    useEffect(() => {
+        const originalOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = originalOverflow;
+        };
+    }, []);
 
     useEffect(() => {
         if (project) {
@@ -126,31 +141,50 @@ const ProjectModal: React.FC<Props> = ({ project, onClose, onSave }) => {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                onWheel={(e) => e.stopPropagation()}
+                onClick={onClose}
             >
                 <motion.div
                     initial={{ scale: 0.95, opacity: 0, y: 20 }}
                     animate={{ scale: 1, opacity: 1, y: 0 }}
                     exit={{ scale: 0.95, opacity: 0 }}
-                    className="w-full max-w-2xl glass rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto"
+                    className="w-full max-w-2xl glass rounded-2xl shadow-2xl max-h-[90vh] overflow-hidden flex flex-col"
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Header */}
-                    <div className="flex items-center justify-between p-6 border-b border-white/5 sticky top-0 bg-surface-dark/90 backdrop-blur-xl rounded-t-2xl">
+                    <div className="flex items-center justify-between p-6 border-b border-white/5 bg-black/40 shrink-0 z-10">
                         <h2 className="text-lg font-display font-black text-white">
                             {project ? 'Editar Proyecto' : 'Nuevo Proyecto'}
                         </h2>
-                        <button onClick={onClose} className="p-2 rounded-lg text-slate-500 hover:text-white hover:bg-white/10 transition-all">
+                        <button type="button" onClick={onClose} className="p-2 rounded-lg text-slate-500 hover:text-white hover:bg-white/10 transition-all">
                             <X size={18} />
                         </button>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="p-6 space-y-6">
+                    <form onSubmit={handleSubmit} className="p-6 space-y-6 flex-1 overflow-y-auto" style={{ overscrollBehavior: 'contain' }}>
                         {/* Basics */}
                         <div className="grid grid-cols-2 gap-4">
                             <Field label="Nombre del proyecto *" value={form.name} onChange={(v) => set('name', v)} placeholder="TrazAPP" />
                             <Field label="Cliente *" value={form.client} onChange={(v) => set('client', v)} placeholder="Nombre del cliente" />
                         </div>
-                        <Field label="Descripción" value={form.description ?? ''} onChange={(v) => set('description', v)} placeholder="Breve descripción del proyecto" />
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <Field label="Descripción" value={form.description ?? ''} onChange={(v) => set('description', v)} placeholder="Breve descripción del proyecto" />
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] text-slate-500 uppercase tracking-widest font-bold block">Categoría</label>
+                                <select
+                                    value={form.category || 'app'}
+                                    onChange={(e) => set('category', e.target.value as 'app' | 'site')}
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-primary/50 transition-colors text-sm"
+                                >
+                                    {CATEGORY_OPTIONS.map((s) => (
+                                        <option key={s.value} value={s.value} className="bg-gray-900">
+                                            {s.label}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
 
                         {/* Status + Color */}
                         <div className="grid grid-cols-2 gap-4">
