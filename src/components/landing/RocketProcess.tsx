@@ -62,11 +62,23 @@ const RocketProcess: React.FC = () => {
                 anticipatePin: 1,
                 onUpdate: (self) => {
                     const p = self.progress; // 0 → 1
+                    const isMobile = window.innerWidth < 768;
 
                     // ─── Fade out scroll indicator ───
                     const indicator = sectionRef.current?.querySelector('.scroll-indicator') as HTMLElement | null;
                     if (indicator) {
                         indicator.style.opacity = `${Math.max(0, 1 - p * 20)}`;
+                    }
+
+                    // ─── Fade out header text on mobile so cards don't overlap it ───
+                    const header = sectionRef.current?.querySelector('.section-header') as HTMLElement | null;
+                    if (header && isMobile) {
+                        const headerFade = Math.max(0, 1 - p * 6); // fades out quickly in first ~17% of scroll
+                        header.style.opacity = `${headerFade}`;
+                        header.style.transform = `translateY(${-p * 40}px)`;
+                    } else if (header) {
+                        header.style.opacity = '1';
+                        header.style.transform = 'translateY(0)';
                     }
 
                     // ─── Rocket ascent ───
@@ -85,17 +97,20 @@ const RocketProcess: React.FC = () => {
                     }
 
                     // ─── Cards reveal at progress thresholds ───
-                    // Card 0: 10-25%, Card 1: 25-45%, Card 2: 45-65%, Card 3: 65-85%
                     const thresholds = [0.1, 0.3, 0.5, 0.7];
 
                     stepsRef.current.forEach((step, i) => {
                         if (!step) return;
                         const start = thresholds[i];
-                        const fadeIn = 0.12; // how much progress for full reveal
+                        const fadeIn = 0.12;
                         const localP = Math.max(0, Math.min(1, (p - start) / fadeIn));
 
+                        // On mobile: each card translates up proportionally to its index.
+                        // Card 0 stays put; later cards rise gently into view.
+                        const yTranslate = isMobile ? -(p * (4 + i * 10)) : 0;
+
                         step.style.opacity = `${localP}`;
-                        step.style.transform = `scale(${0.9 + localP * 0.1})`;
+                        step.style.transform = `translateY(${yTranslate}vh) scale(${0.9 + localP * 0.1})`;
                         step.style.filter = `blur(${(1 - localP) * 8}px)`;
                     });
                 },
@@ -110,8 +125,18 @@ const RocketProcess: React.FC = () => {
             ref={sectionRef}
             className="relative h-screen overflow-hidden z-20 mt-32"
         >
+            <style>{`
+                .step-card {
+                    top: var(--top-mob);
+                }
+                @media (min-width: 768px) {
+                    .step-card {
+                        top: var(--top-md);
+                    }
+                }
+            `}</style>
             {/* Section header */}
-            <div className="absolute top-8 left-0 right-0 text-center z-10 px-6">
+            <div className="section-header absolute top-8 left-0 right-0 text-center z-30 px-6 transition-all duration-300">
                 <p className="text-cyan-electric text-xs tracking-[0.3em] uppercase mb-3">
                     El Proceso
                 </p>
@@ -136,8 +161,8 @@ const RocketProcess: React.FC = () => {
                 </div>
             </div>
 
-            {/* Center rocket column */}
-            <div className="absolute left-1/2 -translate-x-1/2 bottom-[12%] flex flex-col items-center z-10">
+            {/* Rocket column - Left aligned on mobile, centered on desktop */}
+            <div className="absolute left-8 md:left-1/2 -translate-x-1/2 bottom-[12%] flex flex-col items-center z-10">
 
                 {/* Orbit rings — ambient decoration around the rocket */}
                 <div className="absolute -top-10 left-1/2 -translate-x-1/2 pointer-events-none">
@@ -197,21 +222,22 @@ const RocketProcess: React.FC = () => {
                 {STEPS.map((step, i) => {
                     const isLeft = i % 2 === 0;
                     // Vertical position: stagger cards down the viewport
-                    const topPercent = 18 + i * 18;
+                    const topPercentDesktop = 26 + i * 18; // Increased initial offset for more padding below header
+                    const topPercentMobile = 22 + i * 32; // Large vertical gap so cards never overlap on mobile
 
                     return (
                         <div
                             key={step.num}
                             ref={(el) => { stepsRef.current[i] = el; }}
-                            className={`absolute pointer-events-auto ${isLeft
-                                ? 'left-4 md:left-[20%]'
-                                : 'right-4 md:right-[20%]'
+                            className={`step-card absolute pointer-events-auto max-w-[340px] md:w-[340px] md:max-w-none ${isLeft
+                                ? 'left-[4.5rem] right-4 md:right-auto md:left-[10%] lg:left-[20%]'
+                                : 'left-[4.5rem] right-4 md:left-auto md:right-[10%] lg:right-[20%]'
                                 }`}
                             style={{
-                                top: `${topPercent}%`,
-                                width: 'min(320px, 42vw)',
+                                '--top-md': `${topPercentDesktop}%`,
+                                '--top-mob': `${topPercentMobile}%`,
                                 opacity: 0,
-                            }}
+                            } as React.CSSProperties}
                         >
                             <div
                                 className="rounded-2xl p-5 md:p-6 relative overflow-hidden border border-white/8"

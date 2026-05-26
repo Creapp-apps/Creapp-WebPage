@@ -174,15 +174,14 @@ const ShowroomSection: React.FC = () => {
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-electric/5 rounded-full blur-[200px] pointer-events-none" />
 
             {/* Title */}
-            <div ref={titleRef} className="max-w-7xl mx-auto mb-16">
+            <div ref={titleRef} className="max-w-7xl mx-auto mb-16 text-center md:text-left">
                 <p className="text-cyan-electric text-xs tracking-[0.3em] uppercase mb-3">
                     Showroom
                 </p>
                 <h2 className="font-display text-4xl md:text-5xl font-bold text-white mb-4">
-                    Nuestros{' '}
-                    <span className="text-gradient-cyan">Proyectos</span>
+                    Nuestros <span className="text-gradient-cyan">Proyectos</span>
                 </h2>
-                <p className="text-slate-400 text-lg max-w-xl">
+                <p className="text-slate-400 text-base md:text-lg max-w-xl mx-auto md:mx-0">
                     Apps reales, en producción. Explorá cada proyecto interactuando
                     directamente con la aplicación.
                 </p>
@@ -193,7 +192,7 @@ const ShowroomSection: React.FC = () => {
                 {/* Project grid */}
                 <div ref={gridRef} className="flex-1 w-full lg:max-w-[480px]">
                     {/* View mode toggle */}
-                    <div className="showroom-reveal flex gap-1 mb-6 p-1 rounded-full bg-white/5 border border-white/5 w-fit">
+                    <div className="showroom-reveal flex gap-1 mb-6 p-1 rounded-full bg-white/5 border border-white/5 w-fit mx-auto md:mx-0">
                         <button
                             onClick={() => setViewMode('app')}
                             className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${viewMode === 'app'
@@ -225,7 +224,7 @@ const ShowroomSection: React.FC = () => {
                                     exit={{ opacity: 0, x: -40, filter: 'blur(8px)' }}
                                     transition={{ duration: 0.5, delay: index * 0.1, ease: 'easeOut' }}
                                     key={project.id}
-                                    className={`showroom-reveal group relative text-left p-4 rounded-2xl border transition-all duration-300 overflow-hidden ${activeProject?.id === project.id
+                                    className={`showroom-reveal group relative text-center p-4 rounded-2xl border transition-all duration-300 overflow-hidden ${activeProject?.id === project.id
                                         ? 'bg-white/[0.06] border-cyan-electric/30 shadow-[0_0_30px_rgba(0,240,255,0.08)]'
                                         : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.04] hover:border-white/10'
                                         }`}
@@ -234,7 +233,7 @@ const ShowroomSection: React.FC = () => {
                                 >
                                     {/* Color accent dot */}
                                     <div
-                                        className="w-3 h-3 rounded-full mb-3"
+                                        className="w-3 h-3 rounded-full mb-3 mx-auto"
                                         style={{
                                             backgroundColor: project.color || '#FF2D78',
                                             boxShadow: `0 0 0 2px #050505, 0 0 0 3px ${project.color || '#FF2D78'}`,
@@ -250,7 +249,7 @@ const ShowroomSection: React.FC = () => {
 
                                     {/* Stack badges */}
                                     {project.stack && project.stack.length > 0 && (
-                                        <div className="flex flex-wrap gap-1 mt-3">
+                                        <div className="flex flex-wrap justify-center gap-1 mt-3">
                                             {project.stack.slice(0, 2).map((tech) => (
                                                 <span
                                                     key={tech}
@@ -296,23 +295,26 @@ const ShowroomSection: React.FC = () => {
 
                     {/* External link */}
                     {activeProject?.production_url && (
-                        <a
-                            href={activeProject.production_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="showroom-reveal inline-flex items-center gap-2 mt-6 text-sm text-slate-400 hover:text-cyan-electric transition-colors"
-                            data-cursor-hover
-                        >
-                            <ExternalLink size={14} />
-                            Abrir {activeProject.name} en nueva pestaña
-                        </a>
+                        <div className="mt-6 flex justify-center md:justify-start">
+                            <a
+                                href={activeProject.production_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="showroom-reveal inline-flex items-center gap-2 text-sm text-slate-400 hover:text-cyan-electric transition-colors"
+                                data-cursor-hover
+                            >
+                                <ExternalLink size={14} />
+                                Abrir {activeProject.name} en nueva pestaña
+                            </a>
+                        </div>
                     )}
                 </div>
 
                 {/* Dynamic Mockup (Phone or Desktop) */}
                 <div
                     ref={mockupRef}
-                    className="mockup-reveal flex-1 flex justify-center w-full lg:w-auto relative min-h-[660px] items-center"
+                    className={`mockup-reveal flex-1 flex justify-center w-full lg:w-auto relative items-center transition-[min-height] duration-500 ease-in-out ${viewMode === 'app' ? 'min-h-[660px]' : 'min-h-[260px] sm:min-h-[350px] lg:min-h-[660px]'
+                        }`}
                 >
                     <AnimatePresence mode="wait">
                         {activeUrl ? (

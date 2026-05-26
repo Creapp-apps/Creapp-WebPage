@@ -145,12 +145,12 @@ const LandingPage: React.FC = () => {
                 gsap.from(footerRef.current, {
                     scrollTrigger: {
                         trigger: footerRef.current,
-                        start: 'top 80%',
-                        end: 'top 40%',
-                        scrub: 1,
+                        start: 'top 75%',
                     },
                     y: 80,
                     opacity: 0,
+                    duration: 1.2,
+                    ease: 'power3.out',
                 });
             }, mainRef);
 

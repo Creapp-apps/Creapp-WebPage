@@ -794,16 +794,31 @@ const ProposalView: React.FC = () => {
               </AnimatePresence>
             </div>
             <div className="flex flex-col items-center justify-center">
-              <div className="text-center">
-                <p className="text-[11px] font-black text-slate-600 uppercase tracking-[0.5em] mb-4 px-2">Validación CreAPP</p>
-                <div className="relative mb-4 inline-block">
-                  <p className="font-display font-black text-xl md:text-2xl opacity-95 select-none tracking-tighter uppercase" style={{ color: brandPrimary }}>
-                    Sebastián Maza
-                  </p>
-                  <div className="h-[2px] w-full mt-3" style={{ background: gradientStyle }}></div>
+              <p className="text-[11px] font-black text-slate-600 uppercase tracking-[0.5em] mb-8 px-2 text-center">Validación CreAPP</p>
+              <div className="flex flex-col md:flex-row items-center md:items-start justify-center gap-12 md:gap-24 w-full">
+                {/* Sebastián Maza */}
+                <div className="text-center">
+                  <div className="relative mb-4 inline-block">
+                    <p className="font-display font-black text-xl md:text-2xl opacity-95 select-none tracking-tighter uppercase" style={{ color: brandPrimary }}>
+                      Sebastián Maza
+                    </p>
+                    <div className="h-[2px] w-full mt-3" style={{ background: gradientStyle }}></div>
+                  </div>
+                  <p className="text-[12px] font-display font-black text-white uppercase tracking-[0.25em]">Chief Technology Officer</p>
+                  <p className="text-[10px] text-slate-600 uppercase mt-2 tracking-widest italic font-bold">Innovación & Arquitectura de Software</p>
                 </div>
-                <p className="text-[12px] font-display font-black text-white uppercase tracking-[0.25em]">Chief Technology Officer</p>
-                <p className="text-[10px] text-slate-600 uppercase mt-2 tracking-widest italic font-bold">Innovación & Arquitectura de Software</p>
+
+                {/* Facundo Marceca */}
+                <div className="text-center">
+                  <div className="relative mb-4 inline-block">
+                    <p className="font-display font-black text-xl md:text-2xl opacity-95 select-none tracking-tighter uppercase" style={{ color: brandPrimary }}>
+                      Facundo Marceca
+                    </p>
+                    <div className="h-[2px] w-full mt-3" style={{ background: gradientStyle }}></div>
+                  </div>
+                  <p className="text-[12px] font-display font-black text-white uppercase tracking-[0.25em]">Project Manager</p>
+                  <p className="text-[10px] text-slate-600 uppercase mt-2 tracking-widest italic font-bold">Gestión y Estructura de proyecto</p>
+                </div>
               </div>
             </div>
           </div>
