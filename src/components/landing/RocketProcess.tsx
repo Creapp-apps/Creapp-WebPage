@@ -57,7 +57,7 @@ const RocketProcess: React.FC = () => {
             ScrollTrigger.create({
                 trigger: sectionRef.current,
                 start: 'top top',
-                end: '+=250%',
+                end: '+=220%',
                 pin: true,
                 anticipatePin: 1,
                 onUpdate: (self) => {
@@ -70,15 +70,19 @@ const RocketProcess: React.FC = () => {
                         indicator.style.opacity = `${Math.max(0, 1 - p * 20)}`;
                     }
 
-                    // ─── Fade out header text on mobile so cards don't overlap it ───
+                    // ─── Fade out header text ───
                     const header = sectionRef.current?.querySelector('.section-header') as HTMLElement | null;
-                    if (header && isMobile) {
-                        const headerFade = Math.max(0, 1 - p * 6); // fades out quickly in first ~17% of scroll
-                        header.style.opacity = `${headerFade}`;
-                        header.style.transform = `translateY(${-p * 40}px)`;
-                    } else if (header) {
-                        header.style.opacity = '1';
-                        header.style.transform = 'translateY(0)';
+                    if (header) {
+                        if (isMobile) {
+                            const headerFade = Math.max(0, 1 - p * 6); // fades out quickly in first ~17% of scroll
+                            header.style.opacity = `${headerFade}`;
+                            header.style.transform = `translateY(${-p * 40}px)`;
+                        } else {
+                            // On desktop, fade out at the very end (p > 0.93) to clear space for next section
+                            const headerOpacity = p > 0.93 ? Math.max(0, 1 - (p - 0.93) / 0.05) : 1;
+                            header.style.opacity = `${headerOpacity}`;
+                            header.style.transform = `translateY(${- (1 - headerOpacity) * 20}px)`;
+                        }
                     }
 
                     // ─── Rocket ascent ───
@@ -88,12 +92,17 @@ const RocketProcess: React.FC = () => {
                         const glowIntensity = Math.round(p * 50);
                         rocketRef.current.style.transform = `translateY(${rocketY}px) scale(${rocketScale})`;
                         rocketRef.current.style.filter = `drop-shadow(0 0 ${glowIntensity}px rgba(0, 240, 255, 0.5))`;
+                        
+                        // Elegant fade-out at the end of scroll
+                        const rocketOpacity = p > 0.93 ? Math.max(0, 1 - (p - 0.93) / 0.05) : 1;
+                        rocketRef.current.style.opacity = `${rocketOpacity}`;
                     }
 
                     // ─── Trail grows ───
                     if (trailRef.current) {
+                        const trailOpacity = p > 0.93 ? Math.max(0, 1 - (p - 0.93) / 0.05) : 1;
                         trailRef.current.style.height = `${p * 420}px`;
-                        trailRef.current.style.opacity = `${Math.min(p * 3, 1)}`;
+                        trailRef.current.style.opacity = `${Math.min(p * 3, 1) * trailOpacity}`;
                     }
 
                     // ─── Cards reveal at progress thresholds ───
@@ -109,9 +118,13 @@ const RocketProcess: React.FC = () => {
                         // Card 0 stays put; later cards rise gently into view.
                         const yTranslate = isMobile ? -(p * (4 + i * 10)) : 0;
 
-                        step.style.opacity = `${localP}`;
+                        // Elegant fade-out at the end of scroll for all cards
+                        const fadeOutFactor = p > 0.93 ? Math.max(0, 1 - (p - 0.93) / 0.05) : 1;
+                        const finalOpacity = localP * fadeOutFactor;
+
+                        step.style.opacity = `${finalOpacity}`;
                         step.style.transform = `translateY(${yTranslate}vh) scale(${0.9 + localP * 0.1})`;
-                        step.style.filter = `blur(${(1 - localP) * 8}px)`;
+                        step.style.filter = `blur(${(1 - finalOpacity) * 8}px)`;
                     });
                 },
             });
@@ -136,7 +149,7 @@ const RocketProcess: React.FC = () => {
                 }
             `}</style>
             {/* Section header */}
-            <div className="section-header absolute top-8 left-0 right-0 text-center z-30 px-6 transition-all duration-300">
+            <div className="section-header absolute top-24 md:top-28 left-0 right-0 text-center z-30 px-6 transition-all duration-300">
                 <p className="text-cyan-electric text-xs tracking-[0.3em] uppercase mb-3">
                     El Proceso
                 </p>
@@ -221,9 +234,8 @@ const RocketProcess: React.FC = () => {
             <div className="absolute inset-0 pointer-events-none z-20">
                 {STEPS.map((step, i) => {
                     const isLeft = i % 2 === 0;
-                    // Vertical position: stagger cards down the viewport
-                    const topPercentDesktop = 26 + i * 18; // Increased initial offset for more padding below header
-                    const topPercentMobile = 22 + i * 32; // Large vertical gap so cards never overlap on mobile
+                    const topPercentDesktop = 32 + i * 12; // Centered vertical staggering for balanced spacing
+                    const topPercentMobile = 26 + i * 20; // Safe spacing for mobile devices
 
                     return (
                         <div
