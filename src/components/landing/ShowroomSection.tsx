@@ -2,10 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ExternalLink, Monitor, Smartphone } from 'lucide-react';
+import { ExternalLink, Monitor } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import type { Project } from '../../lib/projectsService';
-import PhoneMockup from './PhoneMockup';
 import DesktopMockup from './DesktopMockup';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -13,7 +12,7 @@ gsap.registerPlugin(ScrollTrigger);
 const ShowroomSection: React.FC = () => {
     const [projects, setProjects] = useState<Project[]>([]);
     const [activeProject, setActiveProject] = useState<Project | null>(null);
-    const [viewMode, setViewMode] = useState<'app' | 'site'>('app');
+    const viewMode = 'site'; // Force 'site' (Web) mode only as requested
     const sectionRef = useRef<HTMLDivElement>(null);
     const titleRef = useRef<HTMLDivElement>(null);
     const gridRef = useRef<HTMLDivElement>(null);
@@ -37,7 +36,14 @@ const ShowroomSection: React.FC = () => {
                 const live = (data ?? []) as Project[];
                 console.log(`[Showroom] Loaded ${live.length} active projects`);
                 setProjects(live);
-                if (live.length > 0) setActiveProject(live[0]);
+                
+                // Select the first web project ('site') on initial load
+                const firstSite = live.find(p => p.category === 'site');
+                if (firstSite) {
+                    setActiveProject(firstSite);
+                } else if (live.length > 0) {
+                    setActiveProject(live[0]);
+                }
 
                 // CRITICAL FIX: The section expands from 0 to 2000px height. 
                 // We MUST tell GSAP to recalculate all trigger positions after the transition.
@@ -129,33 +135,21 @@ const ShowroomSection: React.FC = () => {
     // Get the current URL for the mockup (always use production_url for public viewing)
     const activeUrl = activeProject ? getFormattedUrl(activeProject.production_url) : '';
 
-    const filteredProjects = projects.filter(p =>
-        p.category === viewMode || (!p.category && viewMode === 'app')
-    );
+    const filteredProjects = projects.filter(p => p.category === 'site');
 
     // Keep the section visible if there are ANY active projects in the DB
     const hasProjects = projects.length > 0;
     const hasFilteredProjects = filteredProjects.length > 0;
 
-    // Auto-select the first project in the new category when switching views
-    useEffect(() => {
-        if (projects.length > 0) {
-            const newFiltered = projects.filter(p =>
-                p.category === viewMode || (!p.category && viewMode === 'app')
-            );
-            setActiveProject(newFiltered.length > 0 ? newFiltered[0] : null);
-        }
-    }, [viewMode, projects]);
-
     // Fix: Force GSAP to recalculate scroll positions after layout changes.
-    // Changing viewMode alters the grid height and cross-fades mockups. 
+    // Changing active project alters the dynamic mockup content. 
     // Without this, the pinned RocketProcess section below breaks because its top offset changes.
     useEffect(() => {
         const timer = setTimeout(() => {
             ScrollTrigger.refresh();
-        }, 550); // Wait for the 500ms AnimatePresence transitions to finish
+        }, 550); // Wait for the transitions to finish
         return () => clearTimeout(timer);
-    }, [viewMode, activeProject, projects]);
+    }, [activeProject, projects]);
 
     return (
         <section
@@ -174,15 +168,15 @@ const ShowroomSection: React.FC = () => {
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-electric/5 rounded-full blur-[200px] pointer-events-none" />
 
             {/* Title */}
-            <div ref={titleRef} className="max-w-7xl mx-auto mb-16 text-center md:text-left">
+            <div ref={titleRef} className="max-w-7xl mx-auto mb-8 text-center md:text-left">
                 <p className="text-cyan-electric text-xs tracking-[0.3em] uppercase mb-3">
                     Showroom
                 </p>
                 <h2 className="font-display text-4xl md:text-5xl font-bold text-white mb-4">
-                    Nuestros <span className="text-gradient-cyan">Proyectos</span>
+                    Nuestros <span className="text-gradient-cyan">Productos</span>
                 </h2>
                 <p className="text-slate-400 text-base md:text-lg max-w-xl mx-auto md:mx-0">
-                    Apps reales, en producción. Explorá cada proyecto interactuando
+                    Productos reales, en producción. Explorá cada producto interactuando
                     directamente con la aplicación.
                 </p>
             </div>
@@ -191,28 +185,6 @@ const ShowroomSection: React.FC = () => {
             <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-start gap-12">
                 {/* Project grid */}
                 <div ref={gridRef} className="flex-1 w-full lg:max-w-[480px]">
-                    {/* View mode toggle */}
-                    <div className="showroom-reveal flex gap-1 mb-6 p-1 rounded-full bg-white/5 border border-white/5 w-fit mx-auto md:mx-0">
-                        <button
-                            onClick={() => setViewMode('app')}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${viewMode === 'app'
-                                ? 'bg-cyan-electric/15 text-cyan-electric border border-cyan-electric/20'
-                                : 'text-slate-400 hover:text-white'
-                                }`}
-                        >
-                            <Smartphone size={14} /> App
-                        </button>
-                        <button
-                            onClick={() => setViewMode('site')}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${viewMode === 'site'
-                                ? 'bg-cyan-electric/15 text-cyan-electric border border-cyan-electric/20'
-                                : 'text-slate-400 hover:text-white'
-                                }`}
-                        >
-                            <Monitor size={14} /> Site
-                        </button>
-                    </div>
-
                     {/* Project cards */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                         <AnimatePresence mode="popLayout">
@@ -230,6 +202,7 @@ const ShowroomSection: React.FC = () => {
                                         }`}
                                     onClick={() => setActiveProject(project)}
                                     data-cursor-hover
+                                    style={{ cursor: 'pointer' }}
                                 >
                                     {/* Color accent dot */}
                                     <div
@@ -310,37 +283,23 @@ const ShowroomSection: React.FC = () => {
                     )}
                 </div>
 
-                {/* Dynamic Mockup (Phone or Desktop) */}
+                {/* Desktop Mockup only */}
                 <div
                     ref={mockupRef}
-                    className={`mockup-reveal flex-1 flex justify-center w-full lg:w-auto relative items-center transition-[min-height] duration-500 ease-in-out ${viewMode === 'app' ? 'min-h-[660px]' : 'min-h-[260px] sm:min-h-[350px] lg:min-h-[660px]'
-                        }`}
+                    className="mockup-reveal flex-grow lg:flex-1 flex justify-center w-full lg:w-auto relative items-center transition-[min-height] duration-500 ease-in-out min-h-[350px] lg:min-h-[480px]"
                 >
                     <AnimatePresence mode="wait">
                         {activeUrl ? (
-                            viewMode === 'app' ? (
-                                <motion.div
-                                    key="phone-mockup"
-                                    initial={{ opacity: 0, scale: 0.95, y: 15 }}
-                                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                                    exit={{ opacity: 0, scale: 0.95, y: -15 }}
-                                    transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                                    className="w-full flex justify-center"
-                                >
-                                    <PhoneMockup url={activeUrl} appName={activeProject?.name} />
-                                </motion.div>
-                            ) : (
-                                <motion.div
-                                    key="desktop-mockup"
-                                    initial={{ opacity: 0, scale: 0.95, y: 15 }}
-                                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                                    exit={{ opacity: 0, scale: 0.95, y: -15 }}
-                                    transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                                    className="w-full flex justify-center"
-                                >
-                                    <DesktopMockup url={activeUrl} appName={activeProject?.name} />
-                                </motion.div>
-                            )
+                            <motion.div
+                                key="desktop-mockup"
+                                initial={{ opacity: 0, scale: 0.95, y: 15 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95, y: -15 }}
+                                transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                                className="w-full flex justify-center"
+                            >
+                                <DesktopMockup url={activeUrl} appName={activeProject?.name} />
+                            </motion.div>
                         ) : (
                             <motion.div
                                 key="empty-mockup"
@@ -349,9 +308,9 @@ const ShowroomSection: React.FC = () => {
                                 exit={{ opacity: 0, scale: 0.95 }}
                                 transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                             >
-                                <div className="w-[320px] h-[660px] rounded-[3rem] bg-white/5 border border-white/10 flex items-center justify-center">
+                                <div className="w-full max-w-[600px] aspect-[16/10] rounded-[1.5rem] bg-white/5 border border-white/10 flex items-center justify-center">
                                     <p className="text-slate-500 text-sm text-center px-8">
-                                        Seleccioná un proyecto para interactuar
+                                        Seleccioná un producto para interactuar
                                     </p>
                                 </div>
                             </motion.div>
