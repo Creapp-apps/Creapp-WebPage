@@ -458,12 +458,14 @@ const ProposalView: React.FC = () => {
                               <p className="text-xs text-slate-500 leading-relaxed uppercase tracking-widest font-bold opacity-80">{item.description}</p>
                             </div>
                           </div>
-                          <div className={`flex flex-col justify-center transition-[opacity,transform] duration-300 [grid-area:stack] relative z-20 ${isTooltipActive ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 md:group-hover:opacity-100 md:group-hover:translate-y-0 pointer-events-none'}`}>
-                            <div className="flex items-center gap-2 mb-2">
-                              <div className="w-2 h-2 rounded-full animate-pulse shadow-lg" style={{ backgroundColor: brandPrimary }}></div>
-                              <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: brandPrimary }}>Detalle Técnico</p>
+                          <div className={`flex flex-col transition-[opacity,transform] duration-300 [grid-area:stack] relative z-20 h-full overflow-y-auto no-scrollbar ${isTooltipActive ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 md:group-hover:opacity-100 md:group-hover:translate-y-0 pointer-events-none'}`}>
+                            <div className="my-auto py-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <div className="w-2 h-2 rounded-full animate-pulse shadow-lg" style={{ backgroundColor: brandPrimary }}></div>
+                                <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: brandPrimary }}>Detalle Técnico</p>
+                              </div>
+                              <p className="text-[13px] text-slate-300 font-light leading-relaxed">{item.tooltip}</p>
                             </div>
-                            <p className="text-[13px] text-slate-300 font-light leading-relaxed">{item.tooltip}</p>
                           </div>
                           <div className={`absolute inset-0 z-[15] md:backdrop-blur-md transition-opacity duration-300 pointer-events-none ${isTooltipActive ? 'opacity-100' : 'opacity-0 md:group-hover:opacity-100'}`} style={{ backgroundColor: 'var(--color-proposal-dark)' }}></div>
                         </div>
@@ -492,12 +494,14 @@ const ProposalView: React.FC = () => {
                             <XCircle size={22} className="text-red-500 shrink-0 opacity-60" />
                             <p className="text-base text-slate-400 tracking-wide font-light italic">{item.title}</p>
                           </div>
-                          <div className={`flex flex-col justify-center transition-[opacity,transform] duration-300 [grid-area:stack] relative z-20 ${isTooltipActive ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 md:group-hover:opacity-100 md:group-hover:translate-y-0 pointer-events-none'}`}>
-                            <div className="flex items-center gap-2 mb-2">
-                              <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.6)]"></div>
-                              <p className="text-[10px] font-black uppercase tracking-widest text-red-500">Aclaración</p>
+                          <div className={`flex flex-col transition-[opacity,transform] duration-300 [grid-area:stack] relative z-20 h-full overflow-y-auto no-scrollbar ${isTooltipActive ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 md:group-hover:opacity-100 md:group-hover:translate-y-0 pointer-events-none'}`}>
+                            <div className="my-auto py-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.6)]"></div>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-red-500">Aclaración</p>
+                              </div>
+                              <p className="text-[13px] text-red-200/80 font-light leading-relaxed">{item.tooltip}</p>
                             </div>
-                            <p className="text-[13px] text-red-200/80 font-light leading-relaxed">{item.tooltip}</p>
                           </div>
                           <div className={`absolute inset-0 z-[15] md:backdrop-blur-md bg-[#160505]/95 transition-opacity duration-300 pointer-events-none ${isTooltipActive ? 'opacity-100' : 'opacity-0 md:group-hover:opacity-100'}`}></div>
                         </div>
@@ -535,31 +539,40 @@ const ProposalView: React.FC = () => {
 
               <div className="space-y-5">
                 <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.25em] mb-6 px-1 text-center md:text-left">Estructura de Desembolsos</p>
-                {proposal.payments.map((p, i) => (
-                  <div
-                    key={i}
-                    className="relative overflow-hidden flex items-center justify-between p-5 rounded-3xl bg-white/[0.02] border border-white/5 transition-all group cursor-default"
-                  >
-                    <div className="flex items-center justify-between w-full relative z-10 group-hover:opacity-0 transition-opacity duration-500">
-                      <div>
-                        <p className="text-[11px] font-black text-white uppercase mb-1 tracking-wider">{p.label}</p>
-                        <p className="text-[10px] text-slate-600 uppercase tracking-[0.1em] font-bold">{p.description}</p>
-                      </div>
-                      <span className="text-2xl font-display font-black" style={{ color: brandPrimary }}>
-                        {p.percentage}
-                      </span>
-                    </div>
-                    <div className="absolute inset-0 z-20 bg-[#050505]/95 backdrop-blur-md px-5 py-3.5 flex flex-col justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-3 group-hover:translate-y-0 text-left">
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <span className="text-sm font-display font-black" style={{ color: brandPrimary }}>
+                {proposal.payments.map((p, i) => {
+                  const charLimit = 48;
+                  const estimatedLines = Math.ceil((p.tooltip?.length || 0) / charLimit);
+                  const estimatedHeight = 75 + estimatedLines * 15;
+                  const cardMinHeight = Math.max(90, estimatedHeight);
+                  return (
+                    <div
+                      key={i}
+                      className="relative overflow-hidden flex items-center justify-between p-5 rounded-3xl bg-white/[0.02] border border-white/5 transition-all group cursor-default"
+                      style={{ minHeight: `${cardMinHeight}px` }}
+                    >
+                      <div className="flex items-center justify-between w-full relative z-10 group-hover:opacity-0 transition-opacity duration-500">
+                        <div>
+                          <p className="text-[11px] font-black text-white uppercase mb-1 tracking-wider">{p.label}</p>
+                          <p className="text-[10px] text-slate-600 uppercase tracking-[0.1em] font-bold">{p.description}</p>
+                        </div>
+                        <span className="text-2xl font-display font-black" style={{ color: brandPrimary }}>
                           {p.percentage}
                         </span>
-                        <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/50">{p.label}</p>
                       </div>
-                      <p className="text-[10.5px] text-slate-300 font-light leading-snug">{p.tooltip}</p>
+                      <div className="absolute inset-0 z-20 bg-[#050505]/95 backdrop-blur-md px-5 py-3.5 flex flex-col opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-3 group-hover:translate-y-0 text-left overflow-y-auto no-scrollbar">
+                        <div className="my-auto py-1">
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <span className="text-sm font-display font-black" style={{ color: brandPrimary }}>
+                              {p.percentage}
+                            </span>
+                            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/50">{p.label}</p>
+                          </div>
+                          <p className="text-[10.5px] text-slate-300 font-light leading-snug">{p.tooltip}</p>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 

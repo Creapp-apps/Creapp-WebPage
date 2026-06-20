@@ -87,6 +87,7 @@ const ContractRenderer: React.FC<ContractRendererProps> = ({
           );
         }
         
+        const inputWidth = Math.max(120, Math.min(320, (value || label).length * 8.5 + 16));
         return (
           <input
             key={index}
@@ -94,10 +95,11 @@ const ContractRenderer: React.FC<ContractRendererProps> = ({
             placeholder={label}
             value={value}
             onChange={(e) => handleInputChange(label, e.target.value)}
-            className="mx-1 md:mx-2 bg-transparent border-b-2 font-bold focus:outline-none text-center placeholder-opacity-50 transition-colors inline-block w-[150px] md:w-48 text-base md:text-sm truncate"
+            className="mx-1 md:mx-2 bg-transparent border-b-2 font-bold focus:outline-none text-center placeholder-opacity-50 transition-all duration-150 inline-block text-base md:text-sm"
             style={{ 
               borderColor: `${brandPrimary}66`, 
               color: brandPrimary,
+              width: `${inputWidth}px`
             }}
           />
         );
