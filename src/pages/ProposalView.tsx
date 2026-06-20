@@ -519,10 +519,10 @@ const ProposalView: React.FC = () => {
             whileInView="visible"
             viewport={{ once: true, margin: '-50px' }}
             variants={fadeUp}
-            className="rounded-[2.5rem] p-8 md:p-12 flex flex-col justify-between shadow-2xl relative overflow-hidden"
+            className="rounded-[2.5rem] p-8 md:p-12 flex flex-col justify-between shadow-2xl relative"
             style={{ backgroundColor: 'var(--color-proposal-dark)', borderColor: `${brandPrimary}4D`, borderWidth: '1px' }}
           >
-            <div className="absolute top-0 left-0 w-full h-1 opacity-40" style={{ background: gradientStyle }}></div>
+            <div className="absolute top-0 left-0 w-full h-1 opacity-40 rounded-t-[2.5rem]" style={{ background: gradientStyle }}></div>
             <div>
               <div className="flex items-center justify-center md:justify-start gap-4 mb-10" style={{ color: brandPrimary }}>
                 <div className="p-2.5 rounded-xl shadow-inner" style={{ backgroundColor: `${brandPrimary}1A` }}>
@@ -539,40 +539,38 @@ const ProposalView: React.FC = () => {
 
               <div className="space-y-5">
                 <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.25em] mb-6 px-1 text-center md:text-left">Estructura de Desembolsos</p>
-                {proposal.payments.map((p, i) => {
-                  const charLimit = 48;
-                  const estimatedLines = Math.ceil((p.tooltip?.length || 0) / charLimit);
-                  const estimatedHeight = 75 + estimatedLines * 15;
-                  const cardMinHeight = Math.max(90, estimatedHeight);
-                  return (
-                    <div
-                      key={i}
-                      className="relative overflow-hidden flex items-center justify-between p-5 rounded-3xl bg-white/[0.02] border border-white/5 transition-all group cursor-default"
-                      style={{ minHeight: `${cardMinHeight}px` }}
+                {proposal.payments.map((p, i) => (
+                  <div
+                    key={i}
+                    className="relative overflow-visible flex items-center justify-between p-5 rounded-3xl bg-white/[0.02] border border-white/5 transition-all duration-300 hover:bg-white/[0.05] hover:border-white/10 group cursor-default min-h-[80px]"
+                  >
+                    <div className="flex items-center justify-between w-full relative z-10">
+                      <div>
+                        <p className="text-[11px] font-black text-white uppercase mb-1 tracking-wider">{p.label}</p>
+                        <p className="text-[10px] text-slate-600 uppercase tracking-[0.1em] font-bold">{p.description}</p>
+                      </div>
+                      <span className="text-2xl font-display font-black" style={{ color: brandPrimary }}>
+                        {p.percentage}
+                      </span>
+                    </div>
+
+                    {/* Floating Detail Tooltip Popover */}
+                    <div 
+                      className="absolute opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 z-30 bg-[#050505]/98 backdrop-blur-xl p-5 rounded-2xl border shadow-2xl text-left
+                        lg:right-full lg:left-auto lg:top-1/2 lg:-translate-y-1/2 lg:bottom-auto lg:mb-0 lg:mr-4 lg:w-80
+                        bottom-full left-0 right-0 mb-3 w-auto"
+                      style={{ borderColor: `${brandPrimary}4D` }}
                     >
-                      <div className="flex items-center justify-between w-full relative z-10 group-hover:opacity-0 transition-opacity duration-500">
-                        <div>
-                          <p className="text-[11px] font-black text-white uppercase mb-1 tracking-wider">{p.label}</p>
-                          <p className="text-[10px] text-slate-600 uppercase tracking-[0.1em] font-bold">{p.description}</p>
-                        </div>
-                        <span className="text-2xl font-display font-black" style={{ color: brandPrimary }}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-sm font-display font-black" style={{ color: brandPrimary }}>
                           {p.percentage}
                         </span>
+                        <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/50">{p.label}</p>
                       </div>
-                      <div className="absolute inset-0 z-20 bg-[#050505]/95 backdrop-blur-md px-5 py-3.5 flex flex-col opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-3 group-hover:translate-y-0 text-left overflow-y-auto no-scrollbar">
-                        <div className="my-auto py-1">
-                          <div className="flex items-center gap-2 mb-1.5">
-                            <span className="text-sm font-display font-black" style={{ color: brandPrimary }}>
-                              {p.percentage}
-                            </span>
-                            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/50">{p.label}</p>
-                          </div>
-                          <p className="text-[10.5px] text-slate-300 font-light leading-snug">{p.tooltip}</p>
-                        </div>
-                      </div>
+                      <p className="text-[11px] text-slate-300 font-light leading-relaxed">{p.tooltip}</p>
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
             </div>
 
