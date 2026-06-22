@@ -45,6 +45,7 @@ import type {
 import { generateFullProposalPDF } from '@/lib/pdfService';
 import IconResolver from '@/components/ui/IconResolver';
 import creappLogoOfficial from '@/assets/CREAPP LOGO VECTOR.png';
+import { importProposalFromDocument } from '@/lib/geminiService';
 
 // =========================================================
 // Reusable Section Component
@@ -200,6 +201,105 @@ const ProposalEditor: React.FC = () => {
 
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(!isNew);
+
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [extractedData, setExtractedData] = useState<any>(null);
+
+  const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImporting(true);
+    setImportError(null);
+    setExtractedData(null);
+
+    try {
+      const reader = new FileReader();
+      const isPdf = file.type === 'application/pdf';
+      const isText = file.type === 'text/plain' || file.name.endsWith('.txt') || file.name.endsWith('.md');
+
+      if (!isPdf && !isText) {
+        throw new Error("Formato no soportado. Por favor sube un archivo PDF (.pdf) o Texto Plano (.txt, .md).");
+      }
+
+      reader.onload = async () => {
+        try {
+          let base64Content = '';
+          if (isPdf) {
+            const resultStr = reader.result as string;
+            base64Content = resultStr.split(',')[1];
+          } else {
+            base64Content = reader.result as string;
+          }
+
+          const parsedData = await importProposalFromDocument(
+            base64Content,
+            file.type,
+            isText
+          );
+
+          if (!parsedData || typeof parsedData !== 'object') {
+            throw new Error("No se pudo estructurar la información del documento.");
+          }
+
+          setExtractedData(parsedData);
+        } catch (err: any) {
+          setImportError(err.message || "Error al procesar el archivo con la IA.");
+        } finally {
+          setImporting(false);
+        }
+      };
+
+      if (isPdf) {
+        reader.readAsDataURL(file);
+      } else {
+        reader.readAsText(file);
+      }
+    } catch (err: any) {
+      setImportError(err.message);
+      setImporting(false);
+    }
+  };
+
+  const handleApplyImport = () => {
+    if (!extractedData) return;
+
+    if (extractedData.client_name) setClientName(extractedData.client_name);
+    if (extractedData.hero_title) setHeroTitle(extractedData.hero_title);
+    if (extractedData.hero_badge) setHeroBadge(extractedData.hero_badge);
+    if (extractedData.description) setDescription(extractedData.description);
+    if (extractedData.total_value) setTotalValue(extractedData.total_value);
+    if (extractedData.brand_color_primary) setBrandPrimary(extractedData.brand_color_primary);
+    if (extractedData.brand_color_secondary) setBrandSecondary(extractedData.brand_color_secondary);
+
+    if (Array.isArray(extractedData.inclusions)) {
+      setInclusions(extractedData.inclusions);
+    }
+    if (Array.isArray(extractedData.exclusions)) {
+      setExclusions(extractedData.exclusions);
+    }
+    if (Array.isArray(extractedData.milestones)) {
+      setMilestones(extractedData.milestones);
+    }
+    if (Array.isArray(extractedData.payments)) {
+      setPayments(extractedData.payments);
+    }
+    if (Array.isArray(extractedData.infrastructure_costs)) {
+      setInfrastructureCosts(extractedData.infrastructure_costs);
+    }
+    if (Array.isArray(extractedData.weekly_breakdown)) {
+      setWeeklyBreakdown(extractedData.weekly_breakdown);
+    }
+    if (extractedData.methodology) {
+      setMethodology(extractedData.methodology);
+    }
+
+    setIsImportModalOpen(false);
+    setExtractedData(null);
+    alert("¡Propuesta importada con éxito! Revisa los campos y guárdala.");
+  };
 
   // Main proposal fields
   const [slug, setSlug] = useState('');
@@ -1148,6 +1248,13 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
                 </button>
               </>
             )}
+            <button
+              onClick={() => setIsImportModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-slate-300 hover:text-white text-[11px] uppercase tracking-widest font-bold transition-all hover:bg-white/10 cursor-pointer"
+            >
+              <Upload size={14} className="text-secondary" />
+              Importar PDF/DOC
+            </button>
             <button
               onClick={handleSave}
               disabled={saving || !clientName}
@@ -2955,6 +3062,103 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
           </div>
         </div>
       </div>
+
+      {/* Import PDF/DOC Modal */}
+      {isImportModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md transition-all duration-300">
+          <div className="w-full max-w-xl rounded-3xl border border-white/10 bg-slate-900 shadow-2xl p-6 relative overflow-hidden">
+            <button
+              onClick={() => {
+                setIsImportModalOpen(false);
+                setExtractedData(null);
+                setImportError(null);
+              }}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white p-2 rounded-full hover:bg-white/5 transition-all cursor-pointer"
+            >
+              ✕
+            </button>
+
+            <h3 className="text-lg font-display font-black text-white uppercase tracking-widest mb-2 flex items-center gap-2">
+              <Upload size={18} className="text-secondary" /> Importar propuesta con IA
+            </h3>
+            <p className="text-xs text-slate-400 leading-relaxed mb-6">
+              Sube un documento PDF de requerimientos, pliego técnico o propuesta comercial en texto/markdown. Nuestro asistente inteligente Gemini analizará el contenido para rellenar los inputs del generador automáticamente.
+            </p>
+
+            <div className="flex flex-col gap-4">
+              {/* File dropzone */}
+              <div className="border-2 border-dashed border-white/10 hover:border-secondary/50 rounded-2xl p-8 flex flex-col items-center justify-center gap-3 bg-white/5 hover:bg-secondary/5 transition-all relative">
+                <input
+                  type="file"
+                  accept=".pdf,.txt,.md"
+                  onChange={handleFileImport}
+                  className="absolute inset-0 opacity-0 cursor-pointer"
+                  disabled={importing}
+                />
+                <FileText size={40} className="text-slate-400 group-hover:text-secondary transition-all" />
+                <div className="text-center">
+                  <p className="text-xs font-bold text-white uppercase tracking-wider">
+                    {importing ? "Analizando documento..." : "Selecciona o arrastra un archivo"}
+                  </p>
+                  <p className="text-[10px] text-slate-500 mt-1">
+                    Formatos soportados: PDF, TXT, MD
+                  </p>
+                </div>
+              </div>
+
+              {/* Progress / Loading */}
+              {importing && (
+                <div className="flex flex-col gap-2 p-4 rounded-xl bg-white/5 border border-white/5 items-center justify-center">
+                  <Loader2 size={24} className="animate-spin text-secondary mb-2" />
+                  <span className="text-xs text-slate-300 font-bold uppercase tracking-wider animate-pulse text-center">Gemini procesando y estructurando propuesta...</span>
+                  <span className="text-[10px] text-slate-500">Esto puede tomar de 3 a 5 segundos</span>
+                </div>
+              )}
+
+              {/* Error display */}
+              {importError && (
+                <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs leading-relaxed font-semibold">
+                  ⚠️ Error: {importError}
+                </div>
+              )}
+
+              {/* Success Preview */}
+              {extractedData && (
+                <div className="flex flex-col gap-3 p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
+                  <span className="text-xs text-emerald-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                    ✓ Documento analizado con éxito
+                  </span>
+                  <div className="grid grid-cols-2 gap-3 text-[11px] text-slate-300">
+                    <div className="space-y-1">
+                      <span className="text-[9px] text-slate-500 uppercase font-black block">Cliente</span>
+                      <strong className="text-white">{extractedData.client_name || 'No especificado'}</strong>
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-[9px] text-slate-500 uppercase font-black block">Valor Total</span>
+                      <strong className="text-white">{extractedData.total_value || 'No especificado'}</strong>
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-[9px] text-slate-500 uppercase font-black block">Entregables (Alcance)</span>
+                      <span className="text-white">{(extractedData.inclusions || []).length} ítems</span>
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-[9px] text-slate-500 uppercase font-black block">Hitos</span>
+                      <span className="text-white">{(extractedData.milestones || []).length} fases</span>
+                    </div>
+                  </div>
+                  
+                  <button
+                    onClick={handleApplyImport}
+                    className="w-full py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-black uppercase tracking-widest transition-all cursor-pointer shadow-lg mt-2 font-bold"
+                  >
+                    Aplicar Propuesta a los Inputs
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
