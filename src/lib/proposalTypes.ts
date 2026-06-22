@@ -22,6 +22,8 @@ export interface Proposal {
   updated_at: string;
   signed_contract_url?: string;
   signed_at?: string;
+  weekly_breakdown?: any;
+  methodology?: any;
 }
 
 export interface ProposalInclusion {
@@ -49,6 +51,9 @@ export interface ProposalMilestone {
   title: string;
   icon_name: string;
   sort_order: number;
+  description?: string;
+  control_milestone?: string;
+  price?: string;
 }
 
 export interface ProposalPayment {

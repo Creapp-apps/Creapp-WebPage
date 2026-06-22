@@ -33,13 +33,13 @@ interface FieldProps {
 }
 const Field: React.FC<FieldProps> = ({ label, type = 'text', placeholder, value, onChange }) => (
     <div className="space-y-1.5">
-        <label className="text-[10px] text-slate-500 uppercase tracking-widest font-bold block">{label}</label>
+        <label className="text-[9px] text-slate-500 uppercase tracking-widest font-black block">{label}</label>
         <input
             type={type}
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-slate-600 focus:outline-none focus:border-primary/50 transition-colors text-sm"
+            className="w-full bg-white/5 border border-white/10 hover:border-white/20 rounded-xl px-4 py-2.5 text-white placeholder-slate-600 focus:outline-none focus:border-primary/50 focus:bg-slate-950/40 transition-all text-sm font-semibold"
         />
     </div>
 );
@@ -148,7 +148,7 @@ const ProjectModal: React.FC<Props> = ({ project, onClose, onSave }) => {
                     initial={{ scale: 0.95, opacity: 0, y: 20 }}
                     animate={{ scale: 1, opacity: 1, y: 0 }}
                     exit={{ scale: 0.95, opacity: 0 }}
-                    className="w-full max-w-2xl glass rounded-2xl shadow-2xl max-h-[90vh] overflow-hidden flex flex-col"
+                    className="w-full max-w-2xl bg-[#060911] border border-white/10 rounded-2xl shadow-2xl max-h-[90vh] overflow-hidden flex flex-col"
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Header */}
@@ -161,7 +161,12 @@ const ProjectModal: React.FC<Props> = ({ project, onClose, onSave }) => {
                         </button>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="p-6 space-y-6 flex-1 overflow-y-auto" style={{ overscrollBehavior: 'contain' }}>
+                    <form 
+                        onSubmit={handleSubmit} 
+                        data-lenis-prevent
+                        className="p-6 space-y-6 flex-1 overflow-y-auto" 
+                        style={{ overscrollBehavior: 'contain' }}
+                    >
                         {/* Basics */}
                         <div className="grid grid-cols-2 gap-4">
                             <Field label="Nombre del proyecto *" value={form.name} onChange={(v) => set('name', v)} placeholder="TrazAPP" />
@@ -171,11 +176,11 @@ const ProjectModal: React.FC<Props> = ({ project, onClose, onSave }) => {
                         <div className="grid grid-cols-2 gap-4">
                             <Field label="Descripción" value={form.description ?? ''} onChange={(v) => set('description', v)} placeholder="Breve descripción del proyecto" />
                             <div className="space-y-1.5">
-                                <label className="text-[10px] text-slate-500 uppercase tracking-widest font-bold block">Categoría</label>
+                                <label className="text-[9px] text-slate-500 uppercase tracking-widest font-black block">Categoría</label>
                                 <select
                                     value={form.category || 'app'}
                                     onChange={(e) => set('category', e.target.value as 'app' | 'site')}
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-primary/50 transition-colors text-sm"
+                                    className="w-full bg-white/5 border border-white/10 hover:border-white/20 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-primary/50 focus:bg-slate-950/40 transition-all text-sm font-semibold cursor-pointer"
                                 >
                                     {CATEGORY_OPTIONS.map((s) => (
                                         <option key={s.value} value={s.value} className="bg-gray-900">
@@ -189,11 +194,11 @@ const ProjectModal: React.FC<Props> = ({ project, onClose, onSave }) => {
                         {/* Status + Color */}
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1.5">
-                                <label className="text-[10px] text-slate-500 uppercase tracking-widest font-bold block">Estado</label>
+                                <label className="text-[9px] text-slate-500 uppercase tracking-widest font-black block">Estado</label>
                                 <select
                                     value={form.status}
                                     onChange={(e) => set('status', e.target.value)}
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-primary/50 transition-colors text-sm"
+                                    className="w-full bg-white/5 border border-white/10 hover:border-white/20 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-primary/50 focus:bg-slate-950/40 transition-all text-sm font-semibold cursor-pointer"
                                 >
                                     {STATUS_OPTIONS.map((s) => (
                                         <option key={s.value} value={s.value} className="bg-gray-900">
@@ -203,18 +208,19 @@ const ProjectModal: React.FC<Props> = ({ project, onClose, onSave }) => {
                                 </select>
                             </div>
                             <div className="space-y-1.5">
-                                <label className="text-[10px] text-slate-500 uppercase tracking-widest font-bold block">Color</label>
+                                <label className="text-[9px] text-slate-500 uppercase tracking-widest font-black block">Color</label>
                                 <div className="flex gap-2 flex-wrap pt-1">
                                     {PALETTE.map((c) => (
                                         <button
                                             key={c}
                                             type="button"
                                             onClick={() => set('color', c)}
-                                            className="w-6 h-6 rounded-full border-2 transition-all"
+                                            className="w-6 h-6 rounded-full border-2 transition-all hover:scale-110 active:scale-95"
                                             style={{
                                                 background: c,
                                                 borderColor: form.color === c ? 'white' : 'transparent',
                                                 transform: form.color === c ? 'scale(1.2)' : 'scale(1)',
+                                                boxShadow: form.color === c ? `0 0 10px ${c}` : 'none'
                                             }}
                                         />
                                     ))}
@@ -224,7 +230,7 @@ const ProjectModal: React.FC<Props> = ({ project, onClose, onSave }) => {
 
                         {/* URLs */}
                         <div className="space-y-3">
-                            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Links del Proyecto</p>
+                            <p className="text-[9px] text-slate-500 uppercase tracking-widest font-black block">Links del Proyecto</p>
                             <div className="grid grid-cols-2 gap-4">
                                 <Field label="URL Producción" value={form.production_url ?? ''} onChange={(v) => set('production_url', v)} placeholder="https://app.com" />
                                 <Field label="URL GitHub" value={form.github_url ?? ''} onChange={(v) => set('github_url', v)} placeholder="https://github.com/..." />
@@ -232,11 +238,11 @@ const ProjectModal: React.FC<Props> = ({ project, onClose, onSave }) => {
                                 <Field label="URL Panel Admin" value={form.admin_url ?? ''} onChange={(v) => set('admin_url', v)} placeholder="https://app.com/admin" />
                             </div>
                         </div>
-
+ 
                         {/* Credentials */}
                         <div className="space-y-3">
                             <div className="flex items-center justify-between">
-                                <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">🔐 Credenciales Admin</p>
+                                <p className="text-[9px] text-slate-500 uppercase tracking-widest font-black">🔐 Credenciales Admin</p>
                                 <button
                                     type="button"
                                     onClick={addCredential}
@@ -246,57 +252,57 @@ const ProjectModal: React.FC<Props> = ({ project, onClose, onSave }) => {
                                     Añadir
                                 </button>
                             </div>
-
+ 
                             <div className="space-y-3">
                                 {(form.credentials ?? []).map((cred, idx) => (
                                     <div
                                         key={idx}
-                                        className="relative p-4 rounded-xl bg-white/5 border border-white/10 space-y-3"
+                                        className="relative p-4 rounded-xl bg-[#080d16] border border-white/5 space-y-3 hover:border-white/10 transition-all"
                                     >
                                         {/* Remove button — only if more than 1 */}
                                         {(form.credentials ?? []).length > 1 && (
                                             <button
                                                 type="button"
                                                 onClick={() => removeCredential(idx)}
-                                                className="absolute top-3 right-3 p-1 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-400/10 transition-all"
+                                                className="absolute top-3 right-3 p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-all"
                                             >
                                                 <Minus size={13} />
                                             </button>
                                         )}
-
+ 
                                         {/* Label */}
                                         <div className="space-y-1.5">
-                                            <label className="text-[10px] text-slate-500 uppercase tracking-widest font-bold block">Etiqueta</label>
+                                            <label className="text-[9px] text-slate-500 uppercase tracking-widest font-black block">Etiqueta</label>
                                             <input
                                                 type="text"
                                                 value={cred.label}
                                                 onChange={(e) => updateCredential(idx, 'label', e.target.value)}
                                                 placeholder="Admin, Supabase, Vercel..."
-                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-slate-600 focus:outline-none focus:border-primary/50 transition-colors text-sm"
+                                                className="w-full bg-white/5 border border-white/10 hover:border-white/20 rounded-xl px-4 py-2.5 text-white placeholder-slate-600 focus:outline-none focus:border-primary/50 focus:bg-slate-950/40 transition-all text-sm font-semibold"
                                             />
                                         </div>
-
+ 
                                         {/* Email + Password */}
                                         <div className="grid grid-cols-2 gap-3">
                                             <div className="space-y-1.5">
-                                                <label className="text-[10px] text-slate-500 uppercase tracking-widest font-bold block">Email / Usuario</label>
+                                                <label className="text-[9px] text-slate-500 uppercase tracking-widest font-black block">Email / Usuario</label>
                                                 <input
                                                     type="email"
                                                     value={cred.email}
                                                     onChange={(e) => updateCredential(idx, 'email', e.target.value)}
                                                     placeholder="admin@app.com"
-                                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-slate-600 focus:outline-none focus:border-primary/50 transition-colors text-sm"
+                                                    className="w-full bg-white/5 border border-white/10 hover:border-white/20 rounded-xl px-4 py-2.5 text-white placeholder-slate-600 focus:outline-none focus:border-primary/50 focus:bg-slate-950/40 transition-all text-sm font-semibold"
                                                 />
                                             </div>
                                             <div className="space-y-1.5">
-                                                <label className="text-[10px] text-slate-500 uppercase tracking-widest font-bold block">Contraseña</label>
+                                                <label className="text-[9px] text-slate-500 uppercase tracking-widest font-black block">Contraseña</label>
                                                 <div className="relative">
                                                     <input
                                                         type={showPasswords[idx] ? 'text' : 'password'}
                                                         value={cred.password}
                                                         onChange={(e) => updateCredential(idx, 'password', e.target.value)}
                                                         placeholder="••••••••"
-                                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 pr-10 text-white placeholder-slate-600 focus:outline-none focus:border-primary/50 transition-colors text-sm"
+                                                        className="w-full bg-white/5 border border-white/10 hover:border-white/20 rounded-xl px-4 py-2.5 pr-10 text-white placeholder-slate-600 focus:outline-none focus:border-primary/50 focus:bg-slate-950/40 transition-all text-sm font-semibold"
                                                     />
                                                     <button
                                                         type="button"
@@ -312,10 +318,10 @@ const ProjectModal: React.FC<Props> = ({ project, onClose, onSave }) => {
                                 ))}
                             </div>
                         </div>
-
+ 
                         {/* Stack Tags */}
                         <div className="space-y-1.5">
-                            <label className="text-[10px] text-slate-500 uppercase tracking-widest font-bold block">Stack Tecnológico</label>
+                            <label className="text-[9px] text-slate-500 uppercase tracking-widest font-black block">Stack Tecnológico</label>
                             <div className="flex gap-2">
                                 <input
                                     type="text"
@@ -323,7 +329,7 @@ const ProjectModal: React.FC<Props> = ({ project, onClose, onSave }) => {
                                     onChange={(e) => setStackInput(e.target.value)}
                                     onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag(); } }}
                                     placeholder="Next.js, Supabase, Vite..."
-                                    className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-slate-600 focus:outline-none focus:border-primary/50 transition-colors text-sm"
+                                    className="flex-1 bg-white/5 border border-white/10 hover:border-white/20 rounded-xl px-4 py-2.5 text-white placeholder-slate-600 focus:outline-none focus:border-primary/50 focus:bg-slate-950/40 transition-all text-sm font-semibold"
                                 />
                                 <button type="button" onClick={addTag} className="px-3 py-2.5 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-all">
                                     <Plus size={16} />
@@ -332,9 +338,9 @@ const ProjectModal: React.FC<Props> = ({ project, onClose, onSave }) => {
                             {(form.stack ?? []).length > 0 && (
                                 <div className="flex gap-2 flex-wrap mt-2">
                                     {(form.stack ?? []).map((tag) => (
-                                        <span key={tag} className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-slate-300 text-xs font-bold">
+                                        <span key={tag} className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 text-xs font-black uppercase tracking-wider">
                                             {tag}
-                                            <button type="button" onClick={() => removeTag(tag)}>
+                                            <button type="button" onClick={() => removeTag(tag)} className="hover:text-red-400 transition-colors">
                                                 <Minus size={10} />
                                             </button>
                                         </span>
@@ -342,19 +348,19 @@ const ProjectModal: React.FC<Props> = ({ project, onClose, onSave }) => {
                                 </div>
                             )}
                         </div>
-
+ 
                         {/* Notes */}
                         <div className="space-y-1.5">
-                            <label className="text-[10px] text-slate-500 uppercase tracking-widest font-bold block">Notas Internas</label>
+                            <label className="text-[9px] text-slate-500 uppercase tracking-widest font-black block">Notas Internas</label>
                             <textarea
                                 value={form.notes ?? ''}
                                 onChange={(e) => set('notes', e.target.value)}
                                 placeholder="Información relevante, tareas pendientes, decisiones técnicas..."
                                 rows={3}
-                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-slate-600 focus:outline-none focus:border-primary/50 transition-colors text-sm resize-none"
+                                className="w-full bg-white/5 border border-white/10 hover:border-white/20 rounded-xl px-4 py-2.5 text-white placeholder-slate-600 focus:outline-none focus:border-primary/50 focus:bg-slate-950/40 transition-all text-sm font-semibold resize-none"
                             />
                         </div>
-
+ 
                         {/* Actions */}
                         <div className="flex gap-3 pt-2">
                             <button

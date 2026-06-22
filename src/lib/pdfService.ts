@@ -76,3 +76,49 @@ export const generateAndUploadContractBox = async (
 
   return publicUrl;
 };
+
+export const generateFullProposalPDF = async (
+  templateElementId: string
+): Promise<Blob> => {
+  const container = document.getElementById(templateElementId);
+  if (!container) {
+    throw new Error('Print container not found');
+  }
+
+  const pages = Array.from(container.children) as HTMLElement[];
+  if (pages.length === 0) {
+    throw new Error('No pages found inside print container');
+  }
+
+  // Create a new jsPDF instance with standard A4 page dimensions in points (595.28 x 841.89)
+  const pdf = new jsPDF({
+    orientation: 'portrait',
+    unit: 'pt',
+    format: 'a4'
+  });
+
+  for (let i = 0; i < pages.length; i++) {
+    const page = pages[i];
+    
+    // Capture page with html2canvas
+    const canvas = await html2canvas(page, {
+      scale: 2.5, // Crisp resolution for text printing
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      logging: false,
+      windowWidth: page.offsetWidth,
+      windowHeight: page.offsetHeight
+    });
+
+    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+    
+    if (i > 0) {
+      pdf.addPage('a4', 'portrait');
+    }
+
+    // Draw the page canvas to fit the A4 page boundaries (595.28 x 841.89 pt)
+    pdf.addImage(imgData, 'JPEG', 0, 0, 595.28, 841.89);
+  }
+
+  return pdf.output('blob');
+};

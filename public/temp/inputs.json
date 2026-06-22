@@ -1,0 +1,167 @@
+{
+  "clientName": "Cannabunker",
+  "brandPrimary": "#A855F7",
+  "brandSecondary": "#EC4899",
+  "heroTitle": "cbkr App v2",
+  "inclusions": [
+    {
+      "id": "7a60f579-45aa-4f35-bd7c-27f1c8f14418",
+      "proposal_id": "6b3e3e4b-276c-4c33-8258-9b64dff2c28d",
+      "title": "Frontend Mobile-First",
+      "description": "Interfaz fluida y optimizada.",
+      "tooltip": "Desarrollo mobile-first con Next.js y Tailwind CSS v4 para garantizar la mejor experiencia al cultivador.",
+      "icon_name": "LayoutDashboard",
+      "sort_order": 0
+    },
+    {
+      "id": "cdad4e45-6fda-40b1-89ee-e237edcd8596",
+      "proposal_id": "6b3e3e4b-276c-4c33-8258-9b64dff2c28d",
+      "title": "Arquitectura Encastrable",
+      "description": "Estructura modular para expansión.",
+      "tooltip": "Código modular y desacoplado preparado para encastrar futuras expansiones de IoT, e-commerce o cursos sin afectar el núcleo.",
+      "icon_name": "Box",
+      "sort_order": 1
+    },
+    {
+      "id": "db7ae4cd-4d2c-463c-835b-e9d81504d386",
+      "proposal_id": "6b3e3e4b-276c-4c33-8258-9b64dff2c28d",
+      "title": "Dashboard de Cultivo",
+      "description": "Fotoperíodo dinámico e interactivo.",
+      "tooltip": "Hero inmersivo con fotoperíodo automático basado en la hora del sistema, chips de estado y barra interactiva de curado \"Cocinando\".",
+      "icon_name": "Clock",
+      "sort_order": 2
+    },
+    {
+      "id": "7fe50b76-506a-48ca-93a0-5be0ada66f36",
+      "proposal_id": "6b3e3e4b-276c-4c33-8258-9b64dff2c28d",
+      "title": "Mapeo de Suelos Vivos",
+      "description": "Tarjetas detalladas y bitácoras.",
+      "tooltip": "Pestaña con tarjetas completas de suelos activos, plantas (genéticas) y registro dinámico de fases del ciclo biológico.",
+      "icon_name": "Database",
+      "sort_order": 3
+    },
+    {
+      "id": "f9703267-aced-4672-bd23-ef4090416890",
+      "proposal_id": "6b3e3e4b-276c-4c33-8258-9b64dff2c28d",
+      "title": "Acciones Rápidas (+)",
+      "description": "Módulo flotante de riego y dosis.",
+      "tooltip": "Menú central para registro rápido de Riego (💧), Té de Compost (🫖) y Enmiendas (🍄) con lógica de advertencias por historial.",
+      "icon_name": "Cpu",
+      "sort_order": 4
+    },
+    {
+      "id": "282f75ea-6ca9-46b8-978b-edf505312811",
+      "proposal_id": "6b3e3e4b-276c-4c33-8258-9b64dff2c28d",
+      "title": "SueloIA & Asistencia",
+      "description": "Simulador de chat y FAQ dinámica.",
+      "tooltip": "Acordeón de preguntas frecuentes, simulador de asistente inteligente SueloIA y enlace pre-configurado de soporte vía WhatsApp.",
+      "icon_name": "MessageSquare",
+      "sort_order": 5
+    }
+  ],
+  "exclusions": [
+    {
+      "id": "290a58b7-773d-45ce-b277-1bf57faa331f",
+      "proposal_id": "6b3e3e4b-276c-4c33-8258-9b64dff2c28d",
+      "title": "Costos de servidores e infraestructura",
+      "tooltip": "Las plataformas de base de datos en la nube (como Supabase), hosting (Vercel) y APIs externas corren por cuenta del cliente.",
+      "sort_order": 0
+    },
+    {
+      "id": "07c15d84-0c24-492f-a74e-d3601512b7ea",
+      "proposal_id": "6b3e3e4b-276c-4c33-8258-9b64dff2c28d",
+      "title": "Creación de contenido y multimedia",
+      "tooltip": "Los videos tutoriales en bucle de 15s para el Wizard y los copys comerciales de la app deberán ser provistos por Cannabunker.",
+      "sort_order": 1
+    },
+    {
+      "id": "a6418544-984b-4573-b513-bc1e3a37c9f7",
+      "proposal_id": "6b3e3e4b-276c-4c33-8258-9b64dff2c28d",
+      "title": "Hardware e instalación física IoT",
+      "tooltip": "La aplicación queda estructurada para recibir datos, pero la adquisición, ensamble y configuración física de sensores no se incluye.",
+      "sort_order": 2
+    },
+    {
+      "id": "c91c9b59-664a-485e-b4a8-279cb8197d4b",
+      "proposal_id": "6b3e3e4b-276c-4c33-8258-9b64dff2c28d",
+      "title": "Redacción legal y condiciones",
+      "tooltip": "El redactado final de términos y condiciones de uso y políticas de tratamiento de datos personales deben ser validados por profesionales legales.",
+      "sort_order": 3
+    }
+  ],
+  "milestones": [
+    {
+      "id": "add58b9b-21bd-4c85-9101-e895c71f4cf5",
+      "proposal_id": "6b3e3e4b-276c-4c33-8258-9b64dff2c28d",
+      "week_range": "1-4",
+      "title": "Mes 1: Cimientos & Onboarding",
+      "icon_name": "LayoutDashboard",
+      "sort_order": 0
+    },
+    {
+      "id": "7b54b430-b3e3-419c-865e-63249d1e0a33",
+      "proposal_id": "6b3e3e4b-276c-4c33-8258-9b64dff2c28d",
+      "week_range": "5-8",
+      "title": "Mes 2: Dashboard & Panel",
+      "icon_name": "Clock",
+      "sort_order": 1
+    },
+    {
+      "id": "50696130-bb1b-4c4d-a8e3-0b13917b8f4f",
+      "proposal_id": "6b3e3e4b-276c-4c33-8258-9b64dff2c28d",
+      "week_range": "9-12",
+      "title": "Mes 3: Suelos vivos & IA",
+      "icon_name": "Database",
+      "sort_order": 2
+    },
+    {
+      "id": "074cc7da-af63-4db3-b25f-e08c5c841145",
+      "proposal_id": "6b3e3e4b-276c-4c33-8258-9b64dff2c28d",
+      "week_range": "13-16",
+      "title": "Mes 4: QA Estético & Bento",
+      "icon_name": "Rocket",
+      "sort_order": 3
+    }
+  ],
+  "payments": [
+    {
+      "id": "cee78d05-a316-4d0a-8109-6674ad85abf2",
+      "proposal_id": "6b3e3e4b-276c-4c33-8258-9b64dff2c28d",
+      "percentage": "25%",
+      "label": "Kick-off (Inicio)",
+      "description": "Inicio de Fase 1",
+      "tooltip": "Pago inicial de $550 USD al firmar el contrato para comenzar la estructuración de datos, entorno y Wizard de bienvenida.",
+      "sort_order": 0
+    },
+    {
+      "id": "570d2083-fea6-4690-8a60-19ac6b12f5e3",
+      "proposal_id": "6b3e3e4b-276c-4c33-8258-9b64dff2c28d",
+      "percentage": "25%",
+      "label": "Hito Dashboard",
+      "description": "Fin de Mes 2",
+      "tooltip": "Pago de $550 USD tras la aprobación del panel principal, barra de curado \"Cocinando\" y menú flotante de acciones rápidas.",
+      "sort_order": 1
+    },
+    {
+      "id": "3ab76a5b-8c6a-416c-9951-71622380136b",
+      "proposal_id": "6b3e3e4b-276c-4c33-8258-9b64dff2c28d",
+      "percentage": "25%",
+      "label": "Hito Suelos & IA",
+      "description": "Fin de Mes 3",
+      "tooltip": "Pago de $550 USD al finalizar la integración de múltiples suelos vivos, calculadoras de riego/tés y soporte inteligente SueloIA.",
+      "sort_order": 2
+    },
+    {
+      "id": "64c18fae-1411-433f-b01b-2c083e646786",
+      "proposal_id": "6b3e3e4b-276c-4c33-8258-9b64dff2c28d",
+      "percentage": "25%",
+      "label": "Hito Entrega Final",
+      "description": "Fin de Mes 4",
+      "tooltip": "Pago final de $550 USD tras completar el QA gráfico de espaciados Bento, responsive general en celulares y entrega formal.",
+      "sort_order": 3
+    }
+  ],
+  "totalValue": 2.2,
+  "clientLogoUrl": "",
+  "aspectRatio": "9:16"
+}

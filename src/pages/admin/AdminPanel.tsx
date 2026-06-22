@@ -14,7 +14,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
-import { getAllProposals, deleteProposal, seedAstillerosVision } from '@/lib/proposalService';
+import { getAllProposals, deleteProposal, seedAstillerosVision, seedCbkrApp } from '@/lib/proposalService';
 import type { Proposal } from '@/lib/proposalTypes';
 
 const statusColors: Record<string, string> = {
@@ -77,6 +77,18 @@ const AdminPanel: React.FC = () => {
     setSeeding(false);
   };
 
+  const handleSeedCbkr = async () => {
+    setSeeding(true);
+    try {
+      await seedCbkrApp();
+      await fetchProposals();
+    } catch (err) {
+      console.error('Error seeding cbkr:', err);
+      alert('Error al importar datos. ¿Ya existe una propuesta con slug "cbkr-app-v2"?');
+    }
+    setSeeding(false);
+  };
+
   return (
     <div className="min-h-screen bg-background-dark text-slate-200 font-body">
       {/* Header */}
@@ -135,14 +147,24 @@ const AdminPanel: React.FC = () => {
             <Plus size={16} />
             Nueva Propuesta
           </button>
-          {proposals.length === 0 && (
+          {!proposals.some(p => p.slug === 'cbkr-app-v2') && (
+            <button
+              onClick={handleSeedCbkr}
+              disabled={seeding}
+              className="flex items-center gap-3 px-6 py-3 rounded-xl bg-gradient-to-r from-primary/20 to-secondary/20 hover:from-primary/30 hover:to-secondary/30 border border-primary/30 text-white font-black uppercase tracking-widest text-[11px] transition-all disabled:opacity-50"
+            >
+              <Database size={16} />
+              {seeding ? 'Importando...' : 'Importar cbkr App v2'}
+            </button>
+          )}
+          {!proposals.some(p => p.slug === 'astilleros-vision') && (
             <button
               onClick={handleSeedAstilleros}
               disabled={seeding}
               className="flex items-center gap-3 px-6 py-3 rounded-xl bg-white/5 border border-white/10 text-slate-300 font-black uppercase tracking-widest text-[11px] hover:bg-white/10 transition-all disabled:opacity-50"
             >
               <Database size={16} />
-              {seeding ? 'Importando...' : 'Importar Datos Astilleros Vision'}
+              {seeding ? 'Importando...' : 'Importar Astilleros Vision'}
             </button>
           )}
         </div>
