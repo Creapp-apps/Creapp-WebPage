@@ -44,6 +44,7 @@ Debes devolver ÚNICAMENTE un objeto JSON que cumpla exactamente con el siguient
   "hero_title": "Título del proyecto comercial (string)",
   "hero_badge": "Insignia superior para el banner, ej. 'FINTECH INNOVATION' (string)",
   "description": "Descripción general atractiva de la propuesta (string)",
+  "contract_description": "Breve texto explicativo introductorio para el contrato, ej: 'Acuerdo formal que establece las bases y condiciones...' (string)",
   "total_value": "Valor total estimado del proyecto con el prefijo USD, ej. 'USD 18500' (string)",
   "brand_color_primary": "Color hex primario sugerido para el branding Fintech del cliente, ej. '#ff007f' (string)",
   "brand_color_secondary": "Color hex secundario sugerido, ej. '#9d00ff' (string)",
@@ -98,6 +99,7 @@ Debes devolver ÚNICAMENTE un objeto JSON que cumpla exactamente con el siguient
     }
   ],
   "methodology": {
+    "intro_text": "Texto introductorio de la metodología de trabajo, ej. 'Implementamos un proceso de desarrollo...' (string)",
     "incremental_title": "Título del bloque de desarrollo incremental (string)",
     "incremental_text": "Texto explicativo del desarrollo incremental (string). Nota: puedes usar '{client_name}' en el texto para referirte al cliente de forma dinámica.",
     "planning_title": "Título del bloque de planificación (string)",

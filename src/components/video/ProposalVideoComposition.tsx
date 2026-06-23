@@ -43,16 +43,13 @@ interface ProposalVideoCompositionProps {
   totalValue: number;
   clientLogoUrl?: string;
   aspectRatio?: '16:9' | '9:16';
+  currency?: string;
 }
 
 // Helper to format currency
-const formatPrice = (value: number) => {
-  return new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
-  }).format(value);
+const formatPrice = (value: number, currency: string = 'USD') => {
+  const formattedVal = Math.round(value).toLocaleString('es-AR');
+  return `${currency === 'ARS' ? 'ARS' : 'US$'} ${formattedVal}`;
 };
 
 // Background Floating Particles Component
@@ -97,6 +94,40 @@ const FloatingParticles: React.FC<{ frame: number; primaryColor: string; seconda
   );
 };
 
+// Word pop animation component for high-impact vertical presentation titles
+const WordPop: React.FC<{ text: string; primaryColor: string; secondaryColor: string; frame: number; delayOffset?: number }> = ({ text, primaryColor, secondaryColor, frame, delayOffset = 0 }) => {
+  const words = text.split(' ');
+  return (
+    <span style={{ display: 'inline-flex', flexWrap: 'wrap', justifyContent: 'center', gap: '14px', width: '100%' }}>
+      {words.map((word, i) => {
+        const wordDelay = delayOffset + i * 4;
+        const wordSpring = spring({ frame: frame - wordDelay, fps: 30, config: { damping: 10, stiffness: 150 } });
+        const scale = interpolate(wordSpring, [0, 0.5, 1], [0.3, 1.3, 1], { extrapolateRight: 'clamp' });
+        const opacity = interpolate(wordSpring, [0, 0.2], [0, 1], { extrapolateRight: 'clamp' });
+        
+        // Check if word contains highlight markers like [word]
+        const isHighlighted = word.startsWith('[') && word.endsWith(']');
+        const cleanedWord = word.replace('[', '').replace(']', '');
+        
+        return (
+          <span key={i} style={{
+            display: 'inline-block',
+            transform: `scale(${scale})`,
+            opacity: opacity,
+            fontWeight: '950',
+            background: isHighlighted ? `linear-gradient(to right, ${primaryColor}, ${secondaryColor || primaryColor})` : 'none',
+            WebkitBackgroundClip: isHighlighted ? 'text' : 'none',
+            WebkitTextFillColor: isHighlighted ? 'transparent' : 'inherit',
+            textShadow: isHighlighted ? `0 0 25px ${primaryColor}40` : 'none',
+          }}>
+            {cleanedWord}
+          </span>
+        );
+      })}
+    </span>
+  );
+};
+
 export const ProposalVideoComposition: React.FC<ProposalVideoCompositionProps> = ({
   clientName = 'Cliente',
   brandPrimary = '#0f172a',
@@ -109,6 +140,7 @@ export const ProposalVideoComposition: React.FC<ProposalVideoCompositionProps> =
   totalValue = 0,
   clientLogoUrl = '',
   aspectRatio = '16:9',
+  currency = 'USD',
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -256,6 +288,7 @@ export const ProposalVideoComposition: React.FC<ProposalVideoCompositionProps> =
           secondaryColor={secondaryColor}
           slideBgStyle={slideBgStyle}
           aspectRatio={aspectRatio}
+          currency={currency}
         />
       </Sequence>
 
@@ -614,22 +647,41 @@ const IntroSlide: React.FC<{
           </div>
 
           {/* Hero Title */}
-          <h1 style={{
-            fontSize: isVertical ? '76px' : '68px',
-            fontWeight: 950,
-            margin: 0,
-            letterSpacing: '-1.5px',
-            lineHeight: '1.15',
-            textTransform: 'uppercase',
-            maxWidth: isVertical ? '95%' : '850px',
-          }}>
-            Diseño y Desarrollo <span style={{
-              background: `linear-gradient(to right, ${primaryColor}, ${secondaryColor})`,
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              textShadow: `0 0 40px ${primaryColor}20`,
-            }}>{heroTitle}</span>
-          </h1>
+          {isVertical ? (
+            <h1 style={{
+              fontSize: '76px',
+              fontWeight: 950,
+              margin: 0,
+              letterSpacing: '-2px',
+              lineHeight: '1.2',
+              textTransform: 'uppercase',
+              maxWidth: '95%',
+            }}>
+              <WordPop 
+                text={`DISEÑO Y DESARROLLO [${heroTitle.toUpperCase()}]`} 
+                primaryColor={primaryColor} 
+                secondaryColor={secondaryColor} 
+                frame={frame - 110} 
+              />
+            </h1>
+          ) : (
+            <h1 style={{
+              fontSize: '68px',
+              fontWeight: 950,
+              margin: 0,
+              letterSpacing: '-1.5px',
+              lineHeight: '1.15',
+              textTransform: 'uppercase',
+              maxWidth: '850px',
+            }}>
+              Diseño y Desarrollo <span style={{
+                background: `linear-gradient(to right, ${primaryColor}, ${secondaryColor})`,
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                textShadow: `0 0 40px ${primaryColor}20`,
+              }}>{heroTitle}</span>
+            </h1>
+          )}
 
           {/* Client Name Subtitle */}
           <p style={{
@@ -663,12 +715,15 @@ const DeliverablesSlide: React.FC<{
   const exit = spring({ frame: frame - 165, fps, config: { damping: 12, stiffness: 100 } });
 
   // Transitions: slide in from right with Y-rotation, exit with zoom out & blur
-  const entranceX = interpolate(entrance, [0, 1], [300, 0]);
-  const entranceRotateY = interpolate(entrance, [0, 1], [30, 0]);
-  const exitScale = interpolate(exit, [0, 1], [1, 0.85]);
-  const exitBlur = interpolate(exit, [0, 1], [0, 12]);
+  const entranceX = interpolate(entrance, [0, 1], [isVertical ? 1080 : 300, 0]);
+  const exitX = interpolate(exit, [0, 1], [0, isVertical ? -1080 : 0]);
+  const entranceRotateY = isVertical ? 0 : interpolate(entrance, [0, 1], [30, 0]);
+  const exitScale = isVertical ? 1 : interpolate(exit, [0, 1], [1, 0.85]);
+  const exitBlur = isVertical ? 0 : interpolate(exit, [0, 1], [0, 12]);
   const opacity = entrance * interpolate(exit, [0, 1], [1, 0]);
-  const transform = `perspective(1200px) translateX(${entranceX}px) rotateY(${entranceRotateY}deg) scale(${exitScale})`;
+  const transform = isVertical
+    ? `translateX(${entranceX + exitX}px)`
+    : `perspective(1200px) translateX(${entranceX}px) rotateY(${entranceRotateY}deg) scale(${exitScale})`;
 
   const titleY = interpolate(entrance, [0, 1], [30, 0]);
 
@@ -735,11 +790,22 @@ const DeliverablesSlide: React.FC<{
       </svg>
 
       <div style={{ width: '100%', maxWidth: '1100px', display: 'flex', flexDirection: 'column', gap: isVertical ? '50px' : '25px', zIndex: 1, position: 'relative' }}>
-        <div style={{ transform: `translateY(${titleY}px)`, opacity: entrance }}>
-          <h2 style={{ fontSize: isVertical ? '72px' : '52px', fontWeight: 900, margin: 0, textTransform: 'uppercase', letterSpacing: '-1px' }}>
-            Alcance & <span style={{ color: primaryColor, fontStyle: 'italic' }}>Entregables</span>
-          </h2>
-          <p style={{ fontSize: isVertical ? '30px' : '20px', color: '#9ca3af', margin: '8px 0 0 0', fontWeight: 400 }}>
+        <div style={{ opacity: entrance }}>
+          {isVertical ? (
+            <h2 style={{ fontSize: '72px', fontWeight: 900, margin: 0, textTransform: 'uppercase', letterSpacing: '-2px', lineHeight: '1.2' }}>
+              <WordPop 
+                text={`ALCANCE Y [ENTREGABLES]`} 
+                primaryColor={primaryColor} 
+                secondaryColor={primaryColor} 
+                frame={frame - 10} 
+              />
+            </h2>
+          ) : (
+            <h2 style={{ fontSize: '52px', fontWeight: 900, margin: 0, textTransform: 'uppercase', letterSpacing: '-1px' }}>
+              Alcance & <span style={{ color: primaryColor, fontStyle: 'italic' }}>Entregables</span>
+            </h2>
+          )}
+          <p style={{ fontSize: isVertical ? '26px' : '20px', color: '#9ca3af', margin: isVertical ? '20px 0 0 0' : '8px 0 0 0', fontWeight: 400 }}>
             Componentes principales contemplados dentro del alcance del proyecto.
           </p>
         </div>
@@ -899,13 +965,17 @@ const ExclusionsSlide: React.FC<{
   const entrance = spring({ frame, fps, config: { damping: 12, stiffness: 100 } });
   const exit = spring({ frame: frame - 165, fps, config: { damping: 12, stiffness: 100 } });
 
-  // Transitions: radial clip path sweep entry, and a 3D rotate-down exit
+  // Transitions: lateral swipe for vertical, radial clip path sweep entry + 3D rotate-down exit for horizontal
+  const entranceX = interpolate(entrance, [0, 1], [isVertical ? 1080 : 0, 0]);
+  const exitX = interpolate(exit, [0, 1], [0, isVertical ? -1080 : 0]);
   const clipProgress = interpolate(entrance, [0, 1], [0, 100]);
-  const exitRotateX = interpolate(exit, [0, 1], [0, -90]);
-  const exitScale = interpolate(exit, [0, 1], [1, 0.8]);
+  const exitRotateX = isVertical ? 0 : interpolate(exit, [0, 1], [0, -90]);
+  const exitScale = isVertical ? 1 : interpolate(exit, [0, 1], [1, 0.8]);
   const opacity = entrance * interpolate(exit, [0, 1], [1, 0]);
-  const transform = `perspective(1200px) rotateX(${exitRotateX}deg) scale(${exitScale})`;
-  const clipPath = `circle(${clipProgress}% at 50% 50%)`;
+  const transform = isVertical
+    ? `translateX(${entranceX + exitX}px)`
+    : `perspective(1200px) rotateX(${exitRotateX}deg) scale(${exitScale})`;
+  const clipPath = isVertical ? 'none' : `circle(${clipProgress}% at 50% 50%)`;
 
   const titleY = interpolate(entrance, [0, 1], [30, 0]);
 
@@ -978,11 +1048,22 @@ const ExclusionsSlide: React.FC<{
       </svg>
 
       <div style={{ width: '100%', maxWidth: '1100px', display: 'flex', flexDirection: 'column', gap: isVertical ? '50px' : '25px', zIndex: 1, position: 'relative' }}>
-        <div style={{ transform: `translateY(${titleY}px)`, opacity: entrance }}>
-          <h2 style={{ fontSize: isVertical ? '72px' : '52px', fontWeight: 900, margin: 0, textTransform: 'uppercase', letterSpacing: '-1px' }}>
-            Fuera de <span style={{ color: '#f43f5e', fontStyle: 'italic' }}>Alcance</span>
-          </h2>
-          <p style={{ fontSize: isVertical ? '30px' : '20px', color: '#9ca3af', margin: '8px 0 0 0', fontWeight: 400 }}>
+        <div style={{ opacity: entrance }}>
+          {isVertical ? (
+            <h2 style={{ fontSize: '72px', fontWeight: 900, margin: 0, textTransform: 'uppercase', letterSpacing: '-2px', lineHeight: '1.2' }}>
+              <WordPop 
+                text={`FUERA DE [ALCANCE]`} 
+                primaryColor="#f43f5e" 
+                secondaryColor="#f43f5e" 
+                frame={frame - 10} 
+              />
+            </h2>
+          ) : (
+            <h2 style={{ fontSize: '52px', fontWeight: 900, margin: 0, textTransform: 'uppercase', letterSpacing: '-1px' }}>
+              Fuera de <span style={{ color: '#f43f5e', fontStyle: 'italic' }}>Alcance</span>
+            </h2>
+          )}
+          <p style={{ fontSize: isVertical ? '26px' : '20px', color: '#9ca3af', margin: isVertical ? '20px 0 0 0' : '8px 0 0 0', fontWeight: 400 }}>
             Aspectos, integraciones y requerimientos no contemplados en el desarrollo de la presente propuesta.
           </p>
         </div>
@@ -1158,12 +1239,16 @@ const TimelineSlide: React.FC<{
   const entrance = spring({ frame, fps, config: { damping: 12, stiffness: 100 } });
   const exit = spring({ frame: frame - 165, fps, config: { damping: 12, stiffness: 100 } });
 
-  // Transitions: vertical translation entry and exit
-  const entranceY = interpolate(entrance, [0, 1], [-200, 0]);
-  const exitY = interpolate(exit, [0, 1], [0, 250]);
+  // Transitions: vertical translation entry and exit for horizontal, horizontal swipe for vertical
+  const entranceX = interpolate(entrance, [0, 1], [isVertical ? 1080 : 0, 0]);
+  const exitX = interpolate(exit, [0, 1], [0, isVertical ? -1080 : 0]);
+  const entranceY = isVertical ? 0 : interpolate(entrance, [0, 1], [-200, 0]);
+  const exitY = isVertical ? 0 : interpolate(exit, [0, 1], [0, 250]);
   const opacity = entrance * interpolate(exit, [0, 1], [1, 0]);
-  const scale = interpolate(entrance, [0, 1], [0.85, 1]) * interpolate(exit, [0, 1], [1, 0.9]);
-  const transform = `translateY(${entranceY + exitY}px) scale(${scale})`;
+  const scale = isVertical ? 1 : interpolate(entrance, [0, 1], [0.85, 1]) * interpolate(exit, [0, 1], [1, 0.9]);
+  const transform = isVertical
+    ? `translateX(${entranceX + exitX}px)`
+    : `translateY(${entranceY + exitY}px) scale(${scale})`;
 
   // Progress of the timeline connector line
   const lineProgress = spring({ frame: frame - 10, fps, config: { damping: 15, stiffness: 80 } });
@@ -1229,11 +1314,22 @@ const TimelineSlide: React.FC<{
       }} />
 
       <div style={{ width: '100%', maxWidth: '1100px', display: 'flex', flexDirection: 'column', gap: isVertical ? '50px' : '30px', zIndex: 1, position: 'relative' }}>
-        <div style={{ transform: `translateY(${interpolate(entrance, [0, 1], [30, 0])}px)`, opacity: entrance }}>
-          <h2 style={{ fontSize: isVertical ? '72px' : '52px', fontWeight: 900, margin: 0, textTransform: 'uppercase', letterSpacing: '-1px' }}>
-            Plan de <span style={{ color: primaryColor, fontStyle: 'italic' }}>Trabajo</span>
-          </h2>
-          <p style={{ fontSize: isVertical ? '30px' : '20px', color: '#9ca3af', margin: '8px 0 0 0', fontWeight: 400 }}>
+        <div style={{ opacity: entrance }}>
+          {isVertical ? (
+            <h2 style={{ fontSize: '72px', fontWeight: 900, margin: 0, textTransform: 'uppercase', letterSpacing: '-2px', lineHeight: '1.2' }}>
+              <WordPop 
+                text={`PLAN DE [TRABAJO]`} 
+                primaryColor={primaryColor} 
+                secondaryColor={secondaryColor} 
+                frame={frame - 10} 
+              />
+            </h2>
+          ) : (
+            <h2 style={{ fontSize: '52px', fontWeight: 900, margin: 0, textTransform: 'uppercase', letterSpacing: '-1px' }}>
+              Plan de <span style={{ color: primaryColor, fontStyle: 'italic' }}>Trabajo</span>
+            </h2>
+          )}
+          <p style={{ fontSize: isVertical ? '26px' : '20px', color: '#9ca3af', margin: isVertical ? '20px 0 0 0' : '8px 0 0 0', fontWeight: 400 }}>
             Roadmap estructurado por fases y tiempos estimados de entrega.
           </p>
         </div>
@@ -1493,13 +1589,16 @@ const WeeksDetailSlide: React.FC<{
   const entrance = spring({ frame, fps, config: { damping: 12, stiffness: 100 } });
   const exit = spring({ frame: frame - 165, fps, config: { damping: 12, stiffness: 100 } });
 
-  // Transitions: slide up with skew entry, zoom out left exit
-  const entranceY = interpolate(entrance, [0, 1], [400, 0]);
-  const entranceSkew = interpolate(entrance, [0, 1], [8, 0]);
-  const exitX = interpolate(exit, [0, 1], [0, -350]);
-  const exitScale = interpolate(exit, [0, 1], [1, 0.85]);
+  // Transitions: slide up with skew entry, zoom out left exit for horizontal, horizontal swipe for vertical
+  const entranceX = interpolate(entrance, [0, 1], [isVertical ? 1080 : 0, 0]);
+  const exitX = interpolate(exit, [0, 1], [0, isVertical ? -1080 : -350]);
+  const entranceY = isVertical ? 0 : interpolate(entrance, [0, 1], [400, 0]);
+  const entranceSkew = isVertical ? 0 : interpolate(entrance, [0, 1], [8, 0]);
+  const exitScale = isVertical ? 1 : interpolate(exit, [0, 1], [1, 0.85]);
   const opacity = entrance * interpolate(exit, [0, 1], [1, 0]);
-  const transform = `perspective(1200px) translateY(${entranceY}px) skewY(${entranceSkew}deg) translateX(${exitX}px) scale(${exitScale})`;
+  const transform = isVertical
+    ? `translateX(${entranceX + exitX}px)`
+    : `perspective(1200px) translateY(${entranceY}px) skewY(${entranceSkew}deg) translateX(${exitX}px) scale(${exitScale})`;
 
   const titleY = interpolate(entrance, [0, 1], [30, 0]);
 
@@ -1537,11 +1636,22 @@ const WeeksDetailSlide: React.FC<{
       }} />
 
       <div style={{ width: '100%', maxWidth: '1100px', display: 'flex', flexDirection: 'column', gap: isVertical ? '50px' : '25px', zIndex: 1, position: 'relative' }}>
-        <div style={{ transform: `translateY(${titleY}px)`, opacity: entrance }}>
-          <h2 style={{ fontSize: isVertical ? '72px' : '52px', fontWeight: 900, margin: 0, textTransform: 'uppercase', letterSpacing: '-1px' }}>
-            Cronograma de <span style={{ color: primaryColor, fontStyle: 'italic' }}>Horas & Esfuerzo</span>
-          </h2>
-          <p style={{ fontSize: isVertical ? '30px' : '20px', color: '#9ca3af', margin: '8px 0 0 0', fontWeight: 400 }}>
+        <div style={{ opacity: entrance }}>
+          {isVertical ? (
+            <h2 style={{ fontSize: '72px', fontWeight: 900, margin: 0, textTransform: 'uppercase', letterSpacing: '-2px', lineHeight: '1.2' }}>
+              <WordPop 
+                text={`CRONOGRAMA DE [ESFUERZO]`} 
+                primaryColor={primaryColor} 
+                secondaryColor={secondaryColor} 
+                frame={frame - 10} 
+              />
+            </h2>
+          ) : (
+            <h2 style={{ fontSize: '52px', fontWeight: 900, margin: 0, textTransform: 'uppercase', letterSpacing: '-1px' }}>
+              Cronograma de <span style={{ color: primaryColor, fontStyle: 'italic' }}>Horas & Esfuerzo</span>
+            </h2>
+          )}
+          <p style={{ fontSize: isVertical ? '26px' : '20px', color: '#9ca3af', margin: isVertical ? '20px 0 0 0' : '8px 0 0 0', fontWeight: 400 }}>
             Desglose estimado de 160 horas de programación distribuidas en 16 semanas.
           </p>
         </div>
@@ -1751,13 +1861,17 @@ const MethodologySlide: React.FC<{
   const entrance = spring({ frame, fps, config: { damping: 12, stiffness: 100 } });
   const exit = spring({ frame: frame - 165, fps, config: { damping: 12, stiffness: 100 } });
 
-  // Transitions: rotation and shift entry, fade and blur exit
-  const entranceX = interpolate(entrance, [0, 1], [-200, 0]);
-  const entranceRotateY = interpolate(entrance, [0, 1], [-25, 0]);
-  const exitY = interpolate(exit, [0, 1], [0, -180]);
-  const exitScale = interpolate(exit, [0, 1], [1, 0.9]);
+  // Transitions: rotation and shift entry, fade and blur exit for horizontal, horizontal swipe for vertical
+  const entranceX_vert = interpolate(entrance, [0, 1], [1080, 0]);
+  const exitX_vert = interpolate(exit, [0, 1], [0, -1080]);
+  const entranceX = isVertical ? 0 : interpolate(entrance, [0, 1], [-200, 0]);
+  const entranceRotateY = isVertical ? 0 : interpolate(entrance, [0, 1], [-25, 0]);
+  const exitY = isVertical ? 0 : interpolate(exit, [0, 1], [0, -180]);
+  const exitScale = isVertical ? 1 : interpolate(exit, [0, 1], [1, 0.9]);
   const opacity = entrance * interpolate(exit, [0, 1], [1, 0]);
-  const transform = `perspective(1200px) translateX(${entranceX}px) rotateY(${entranceRotateY}deg) translateY(${exitY}px) scale(${exitScale})`;
+  const transform = isVertical
+    ? `translateX(${entranceX_vert + exitX_vert}px)`
+    : `perspective(1200px) translateX(${entranceX}px) rotateY(${entranceRotateY}deg) translateY(${exitY}px) scale(${exitScale})`;
 
   const titleY = interpolate(entrance, [0, 1], [30, 0]);
 
@@ -1794,11 +1908,22 @@ const MethodologySlide: React.FC<{
       }} />
 
       <div style={{ width: '100%', maxWidth: '1100px', display: 'flex', flexDirection: 'column', gap: isVertical ? '50px' : '25px', zIndex: 1, position: 'relative' }}>
-        <div style={{ transform: `translateY(${titleY}px)`, opacity: entrance }}>
-          <h2 style={{ fontSize: isVertical ? '72px' : '52px', fontWeight: 900, margin: 0, textTransform: 'uppercase', letterSpacing: '-1px' }}>
-            Metodología de <span style={{ color: primaryColor, fontStyle: 'italic' }}>Trabajo Ágil</span>
-          </h2>
-          <p style={{ fontSize: isVertical ? '30px' : '20px', color: '#9ca3af', margin: '8px 0 0 0', fontWeight: 400 }}>
+        <div style={{ opacity: entrance }}>
+          {isVertical ? (
+            <h2 style={{ fontSize: '72px', fontWeight: 900, margin: 0, textTransform: 'uppercase', letterSpacing: '-2px', lineHeight: '1.2' }}>
+              <WordPop 
+                text={`METODOLOGÍA [ÁGIL]`} 
+                primaryColor={primaryColor} 
+                secondaryColor={secondaryColor} 
+                frame={frame - 10} 
+              />
+            </h2>
+          ) : (
+            <h2 style={{ fontSize: '52px', fontWeight: 900, margin: 0, textTransform: 'uppercase', letterSpacing: '-1px' }}>
+              Metodología de <span style={{ color: primaryColor, fontStyle: 'italic' }}>Trabajo Ágil</span>
+            </h2>
+          )}
+          <p style={{ fontSize: isVertical ? '26px' : '20px', color: '#9ca3af', margin: isVertical ? '20px 0 0 0' : '8px 0 0 0', fontWeight: 400 }}>
             Implementamos Scrum iterativo semanal para asegurar lanzamientos estables y correcciones rápidas.
           </p>
         </div>
@@ -1895,50 +2020,86 @@ const MethodologySlide: React.FC<{
               {/* Anillo de neón giratorio */}
               <div style={{
                 position: 'absolute',
+                top: '50%',
+                left: '50%',
                 width: '100%',
                 height: '100%',
                 borderRadius: '50%',
                 border: `2.5px dashed ${primaryColor}40`,
-                transform: `rotate(${frame * 0.5}deg)`,
+                transform: `translate(-50%, -50%) rotate(${frame * 0.5}deg)`,
                 boxShadow: `0 0 25px ${primaryColor}15`
               }} />
               
               {/* Segundo Anillo giratorio opuesto */}
               <div style={{
                 position: 'absolute',
+                top: '50%',
+                left: '50%',
                 width: '80%',
                 height: '80%',
                 borderRadius: '50%',
                 border: `2px dashed ${secondaryColor}60`,
-                transform: `rotate(${-frame * 0.8}deg)`,
+                transform: `translate(-50%, -50%) rotate(${-frame * 0.8}deg)`,
                 boxShadow: `0 0 30px ${secondaryColor}20`
               }} />
  
-              {/* Centro palpitante */}
+              {/* Círculo de fondo palpitante */}
               <div style={{
                 position: 'absolute',
-                width: '60%',
-                height: '60%',
+                top: '50%',
+                left: '50%',
+                width: '65%',
+                height: '65%',
                 borderRadius: '50%',
-                background: `radial-gradient(circle, ${primaryColor}20 0%, rgba(0,0,0,0.85) 90%)`,
+                background: `radial-gradient(circle, ${primaryColor}20 0%, rgba(0,0,0,0.95) 90%)`,
                 border: '1px solid rgba(255, 255, 255, 0.1)',
+                transform: `translate(-50%, -50%) scale(${1 + Math.sin(frame / 8) * 0.03})`,
+                boxShadow: `0 0 35px ${primaryColor}30, inset 0 0 20px ${primaryColor}20`,
+                zIndex: 1,
+              }} />
+
+              {/* Contenedor de Texto Estático (Siempre Centrado Perfectamente) */}
+              <div style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                width: '65%',
+                height: '65%',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: isVertical ? '8px' : '4px',
-                transform: `scale(${1 + Math.sin(frame / 8) * 0.03})`,
-                boxShadow: `0 0 35px ${primaryColor}30, inset 0 0 20px ${primaryColor}20`,
+                gap: isVertical ? '6px' : '2px',
+                transform: 'translate(-50%, -50%)',
                 zIndex: 2,
+                pointerEvents: 'none'
               }}>
                 {/* Icono de Loop */}
                 <svg width={isVertical ? "32" : "24"} height={isVertical ? "32" : "24"} viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: `rotate(${frame * 1.5}deg)` }}>
                   <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
                 </svg>
-                <span style={{ fontSize: isVertical ? '18px' : '11px', fontWeight: '900', color: primaryColor, textTransform: 'uppercase', letterSpacing: '1px' }}>
+                <span style={{ 
+                  fontSize: isVertical ? '16px' : '11px', 
+                  fontWeight: '900', 
+                  color: primaryColor, 
+                  textTransform: 'uppercase', 
+                  letterSpacing: '1px',
+                  textAlign: 'center',
+                  whiteSpace: 'nowrap',
+                  display: 'block',
+                  width: '100%'
+                }}>
                   Ciclo Scrum
                 </span>
-                <span style={{ fontSize: isVertical ? '22px' : '14px', fontWeight: '800', color: '#ffffff' }}>
+                <span style={{ 
+                  fontSize: isVertical ? '20px' : '14px', 
+                  fontWeight: '800', 
+                  color: '#ffffff',
+                  textAlign: 'center',
+                  whiteSpace: 'nowrap',
+                  display: 'block',
+                  width: '100%'
+                }}>
                   Iterativo
                 </span>
               </div>
@@ -1999,7 +2160,8 @@ const FinancialsSlide: React.FC<{
   secondaryColor: string;
   slideBgStyle: React.CSSProperties;
   aspectRatio?: '16:9' | '9:16';
-}> = ({ totalValue, payments, primaryColor, secondaryColor, slideBgStyle, aspectRatio = '16:9' }) => {
+  currency?: string;
+}> = ({ totalValue, payments, primaryColor, secondaryColor, slideBgStyle, aspectRatio = '16:9', currency = 'USD' }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
@@ -2009,12 +2171,16 @@ const FinancialsSlide: React.FC<{
   const entrance = spring({ frame, fps, config: { damping: 12, stiffness: 100 } });
   const exit = spring({ frame: frame - 165, fps, config: { damping: 12, stiffness: 100 } });
 
-  // Transitions: 3D flip entry and rotation exit
-  const entranceRotateX = interpolate(entrance, [0, 1], [45, 0]);
-  const entranceScale = interpolate(entrance, [0, 1], [0.85, 1]);
-  const exitRotateY = interpolate(exit, [0, 1], [0, 90]);
+  // Transitions: 3D flip entry and rotation exit for horizontal, horizontal swipe for vertical
+  const entranceX = interpolate(entrance, [0, 1], [isVertical ? 1080 : 0, 0]);
+  const exitX = interpolate(exit, [0, 1], [0, isVertical ? -1080 : 0]);
+  const entranceRotateX = isVertical ? 0 : interpolate(entrance, [0, 1], [45, 0]);
+  const entranceScale = isVertical ? 1 : interpolate(entrance, [0, 1], [0.85, 1]);
+  const exitRotateY = isVertical ? 0 : interpolate(exit, [0, 1], [0, 90]);
   const opacity = entrance * interpolate(exit, [0, 1], [1, 0]);
-  const transform = `perspective(1200px) rotateX(${entranceRotateX}deg) rotateY(${exitRotateY}deg) scale(${entranceScale})`;
+  const transform = isVertical
+    ? `translateX(${entranceX + exitX}px)`
+    : `perspective(1200px) rotateX(${entranceRotateX}deg) rotateY(${exitRotateY}deg) scale(${entranceScale})`;
 
   const titleY = interpolate(entrance, [0, 1], [30, 0]);
   const valueSpring = spring({ frame: frame - 15, fps, config: { damping: 12, stiffness: 80 } });
@@ -2077,11 +2243,22 @@ const FinancialsSlide: React.FC<{
         textAlign: 'center'
       }}>
         {/* Título Centrado */}
-        <div style={{ transform: `translateY(${interpolate(entrance, [0, 1], [30, 0])}px)`, opacity: entrance }}>
-          <h2 style={{ fontSize: isVertical ? (displayPayments.length > 3 ? '60px' : '72px') : '52px', fontWeight: 900, margin: 0, textTransform: 'uppercase', letterSpacing: '-1px' }}>
-            Presupuesto & <span style={{ color: primaryColor, fontStyle: 'italic' }}>Financiación</span>
-          </h2>
-          <p style={{ fontSize: isVertical ? (displayPayments.length > 3 ? '24px' : '30px') : '20px', color: '#9ca3af', margin: '8px 0 0 0', fontWeight: 400 }}>
+        <div style={{ opacity: entrance }}>
+          {isVertical ? (
+            <h2 style={{ fontSize: displayPayments.length > 3 ? '60px' : '72px', fontWeight: 900, margin: 0, textTransform: 'uppercase', letterSpacing: '-2px', lineHeight: '1.2' }}>
+              <WordPop 
+                text={`PRESUPUESTO Y [INVERSIÓN]`} 
+                primaryColor={primaryColor} 
+                secondaryColor={secondaryColor} 
+                frame={frame - 10} 
+              />
+            </h2>
+          ) : (
+            <h2 style={{ fontSize: '52px', fontWeight: 900, margin: 0, textTransform: 'uppercase', letterSpacing: '-1px' }}>
+              Presupuesto & <span style={{ color: primaryColor, fontStyle: 'italic' }}>Financiación</span>
+            </h2>
+          )}
+          <p style={{ fontSize: isVertical ? (displayPayments.length > 3 ? '24px' : '26px') : '20px', color: '#9ca3af', margin: isVertical ? '20px 0 0 0' : '8px 0 0 0', fontWeight: 400 }}>
             Inversión del proyecto estructurada de forma clara y adaptada a tus necesidades.
           </p>
         </div>
@@ -2106,7 +2283,7 @@ const FinancialsSlide: React.FC<{
             INVERSIÓN TOTAL DEL PROYECTO
           </p>
           <h3 style={{ fontSize: isVertical ? (displayPayments.length > 3 ? '76px' : '90px') : '64px', fontWeight: 950, color: '#ffffff', margin: 0, letterSpacing: '-2px', fontFamily: 'monospace' }}>
-            US$ {Math.round(interpolate(spring({ frame: frame - 25, fps, config: { damping: 22, stiffness: 50 } }), [0, 1], [0, totalValue])).toLocaleString('es-AR')}
+            {currency === 'ARS' ? 'ARS' : 'US$'} {Math.round(interpolate(spring({ frame: frame - 25, fps, config: { damping: 22, stiffness: 50 } }), [0, 1], [0, totalValue])).toLocaleString('es-AR')}
           </h3>
           <div style={{
             padding: isVertical ? (displayPayments.length > 3 ? '10px 24px' : '14px 32px') : '6px 16px',
@@ -2178,7 +2355,7 @@ const FinancialsSlide: React.FC<{
                     {pay.label}
                   </span>
                   <span style={{ fontSize: isVertical ? (displayPayments.length > 3 ? '28px' : '34px') : (displayPayments.length > 3 ? '17px' : '20px'), fontWeight: '900', color: '#ffffff' }}>
-                    {formatPrice(pay.amount || 0)}
+                    {formatPrice(pay.amount || 0, currency)}
                   </span>
                 </div>
               </div>
@@ -2211,9 +2388,14 @@ const OutroSlide: React.FC<{
   const width = isVertical ? 1080 : 1920;
   const height = isVertical ? 1920 : 1080;
 
+  const entranceX = interpolate(titleSpring, [0, 1], [isVertical ? 1080 : 0, 0]);
+  const slideOpacity = interpolate(titleSpring, [0, 1], [0.5, 1]);
+
   return (
     <div style={{ 
       ...slideBgStyle,
+      transform: isVertical ? `translateX(${entranceX}px)` : 'none',
+      opacity: isVertical ? slideOpacity : 1,
       position: 'relative',
       overflow: 'hidden',
       justifyContent: 'center',
@@ -2249,10 +2431,21 @@ const OutroSlide: React.FC<{
 
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: isVertical ? '35px' : '30px', textAlign: 'center', zIndex: 1, position: 'relative', width: '100%', padding: isVertical ? '0 10px' : 0 }}>
         {/* Call to action message */}
-        <div style={{ transform: `translateY(${titleY}px)`, opacity: titleSpring }}>
-          <h2 style={{ fontSize: isVertical ? '54px' : '64px', fontWeight: 950, letterSpacing: '-2px', margin: 0, textTransform: 'uppercase', lineHeight: '1.2' }}>
-            ¿Comenzamos a <span style={{ color: primaryColor, fontStyle: 'italic' }}>Construir</span>?
-          </h2>
+        <div style={{ opacity: titleSpring }}>
+          {isVertical ? (
+            <h2 style={{ fontSize: '54px', fontWeight: 950, letterSpacing: '-2px', margin: 0, textTransform: 'uppercase', lineHeight: '1.2' }}>
+              <WordPop 
+                text={`¿COMENZAMOS A [CONSTRUIR]?`} 
+                primaryColor={primaryColor} 
+                secondaryColor={primaryColor} 
+                frame={frame} 
+              />
+            </h2>
+          ) : (
+            <h2 style={{ fontSize: '64px', fontWeight: 950, letterSpacing: '-2px', margin: 0, textTransform: 'uppercase', lineHeight: '1.2' }}>
+              ¿Comenzamos a <span style={{ color: primaryColor, fontStyle: 'italic' }}>Construir</span>?
+            </h2>
+          )}
           <p style={{ fontSize: isVertical ? '22px' : '24px', color: '#9ca3af', fontWeight: 400, marginTop: '12px', maxWidth: isVertical ? '100%' : '750px', lineHeight: '1.45' }}>
             Haz clic en "Aceptar propuesta" para iniciar formalmente el desarrollo del proyecto de <strong>{clientName}</strong>.
           </p>

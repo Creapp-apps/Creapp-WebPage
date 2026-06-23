@@ -47,6 +47,12 @@ import IconResolver from '@/components/ui/IconResolver';
 import creappLogoOfficial from '@/assets/CREAPP LOGO VECTOR.png';
 import { importProposalFromDocument } from '@/lib/geminiService';
 
+const getCurrencyFromTotal = (valString: string) => {
+  const clean = (valString || '').trim().toUpperCase();
+  if (clean.startsWith('ARS') || clean.includes('ARS')) return 'ARS';
+  return 'USD';
+};
+
 // =========================================================
 // Reusable Section Component
 // =========================================================
@@ -179,6 +185,12 @@ const DEFAULT_WEEKLY_BREAKDOWN = [
 ];
 
 const DEFAULT_METHODOLOGY = {
+  intro_text: "Implementamos un proceso de desarrollo iterativo para asegurar lanzamientos predecibles y la validación constante de la usabilidad de la interfaz por parte del cliente.",
+  scope_intro: "Detalle técnico del desarrollo y los entregables comprometidos para la ejecución del proyecto.",
+  exclusions_intro: "Aspectos, integraciones y requerimientos no contemplados en el desarrollo de la presente propuesta.",
+  phases_intro: "El plan de esfuerzo comprende un periodo de 4 meses (16 sprints semanales). Cada fase mensual concluye con un hito de control funcional y estético auditado antes de la liberación del siguiente incremento de software.",
+  weekly_breakdown_intro_1_8: "Desglose técnico del esfuerzo de desarrollo correspondiente a las primeras 80 horas de programación de la aplicación.",
+  weekly_breakdown_intro_9_16: "Desglose técnico de programación correspondiente a las últimas 80 horas de desarrollo enfocadas a utilidades, calculadoras y optimización de interacción.",
   incremental_title: "Desarrollo Incremental",
   incremental_text: "Cada sprint semanal se traduce en código estable. Esta metodología reduce la acumulación de errores estéticos y permite corregir flujos visuales incómodos directamente sobre el teléfono del usuario.",
   planning_title: "Planificación de Contenidos",
@@ -270,6 +282,7 @@ const ProposalEditor: React.FC = () => {
     if (extractedData.hero_title) setHeroTitle(extractedData.hero_title);
     if (extractedData.hero_badge) setHeroBadge(extractedData.hero_badge);
     if (extractedData.description) setDescription(extractedData.description);
+    if (extractedData.contract_description) setContractDescription(extractedData.contract_description);
     if (extractedData.total_value) setTotalValue(extractedData.total_value);
     if (extractedData.brand_color_primary) setBrandPrimary(extractedData.brand_color_primary);
     if (extractedData.brand_color_secondary) setBrandSecondary(extractedData.brand_color_secondary);
@@ -313,6 +326,7 @@ const ProposalEditor: React.FC = () => {
   const [clientLogoUrl, setClientLogoUrl] = useState('');
   const [status, setStatus] = useState<'draft' | 'published' | 'signed'>('draft');
   const [contractText, setContractText] = useState('');
+  const [contractDescription, setContractDescription] = useState('Acuerdo formal que establece las bases y condiciones legales para la ejecución del proyecto de desarrollo de software detallado en esta propuesta.');
   const [heroBadge, setHeroBadge] = useState('');
   const [heroTitle, setHeroTitle] = useState('');
 
@@ -368,6 +382,9 @@ const ProposalEditor: React.FC = () => {
       setClientLogoUrl(proposal.client_logo_url || '');
       setStatus(proposal.status);
       setContractText(proposal.contract_text || '');
+      if (proposal.contract_description !== undefined && proposal.contract_description !== null) {
+        setContractDescription(proposal.contract_description);
+      }
       setHeroBadge(proposal.hero_badge || '');
       setHeroTitle(proposal.hero_title || '');
       if (proposal.weekly_breakdown) {
@@ -543,6 +560,7 @@ const ProposalEditor: React.FC = () => {
         developer_signature_url: null,
         status,
         contract_text: contractText || null,
+        contract_description: contractDescription || null,
         hero_badge: heroBadge || null,
         hero_title: heroTitle || null,
         weekly_breakdown: weeklyBreakdown.length > 0 ? weeklyBreakdown : null,
@@ -694,7 +712,7 @@ const ProposalEditor: React.FC = () => {
               Alcance & <span style={{ fontStyle: 'italic', color: brandPrimary }}>Entregables</span>
             </h1>
             <p style={{ fontSize: p2SubTitleSize, color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
-              Detalle técnico del desarrollo y los entregables comprometidos para la ejecución del proyecto.
+              {(methodology || DEFAULT_METHODOLOGY).scope_intro || DEFAULT_METHODOLOGY.scope_intro}
             </p>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: p2Gap, width: '100%' }}>
@@ -731,7 +749,7 @@ const ProposalEditor: React.FC = () => {
                   Fuera de <span style={{ fontStyle: 'italic', color: '#e11d48' }}>Alcance</span>
                 </h1>
                 <p style={{ fontSize: p2SubTitleSize, color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
-                  Aspectos, integraciones y requerimientos no contemplados en el desarrollo de la presente propuesta.
+                  {(methodology || DEFAULT_METHODOLOGY).exclusions_intro || DEFAULT_METHODOLOGY.exclusions_intro}
                 </p>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: p2Gap, width: '100%' }}>
@@ -771,8 +789,10 @@ const ProposalEditor: React.FC = () => {
     );
   };
 
-  const renderPage3 = () => (
-    <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
+  const renderPage3 = () => {
+    const currency = getCurrencyFromTotal(totalValue);
+    return (
+      <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '25px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
           <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
@@ -785,7 +805,18 @@ const ProposalEditor: React.FC = () => {
           CRONOGRAMA DE FASES & <span style={{ fontStyle: 'italic', color: brandPrimary }}>ENTREGAS</span>
         </h1>
         <p style={{ fontSize: '11px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
-          El plan de esfuerzo comprende un periodo de <span style={{ fontWeight: 'bold', color: '#0f172a' }}>4 meses</span> (16 sprints semanales). Cada fase mensual concluye con un hito de control funcional y estético auditado antes de la liberación del siguiente incremento de software.
+          {(() => {
+            const meth = methodology || DEFAULT_METHODOLOGY;
+            const text = meth.phases_intro ?? DEFAULT_METHODOLOGY.phases_intro;
+            if (text === DEFAULT_METHODOLOGY.phases_intro) {
+              return (
+                <>
+                  El plan de esfuerzo comprende un periodo de <span style={{ fontWeight: 'bold', color: '#0f172a' }}>4 meses</span> (16 sprints semanales). Cada fase mensual concluye con un hito de control funcional y estético auditado antes de la liberación del siguiente incremento de software.
+                </>
+              );
+            }
+            return text;
+          })()}
         </p>
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: '10px', marginBottom: '5px' }}>
           <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Estructura de Sprints Mensuales</span>
@@ -813,7 +844,7 @@ const ProposalEditor: React.FC = () => {
               </div>
               <div style={{ width: '110px', borderLeft: '1px solid #e2e8f0', padding: '15px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', backgroundColor: '#fafafa' }}>
                 <span style={{ fontSize: '16px', fontWeight: '950', color: '#000000' }}>${m.price || '0'}</span>
-                <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b' }}>USD</span>
+                <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b' }}>{currency}</span>
               </div>
             </div>
           ))}
@@ -841,13 +872,37 @@ const ProposalEditor: React.FC = () => {
             </div>
           </div>
         )}
+
+        {payments && payments.length > 0 && (
+          <div style={{ marginTop: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '8px' }}>
+              <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Esquema de Pagos / Hitos de Financiamiento</span>
+              <div style={{ flexGrow: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
+            </div>
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', width: '100%' }}>
+              {payments.map((p, idx) => (
+                <div key={idx} style={{ flex: '1 1 0px', minWidth: '180px', padding: '8px 12px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '4px', boxSizing: 'border-box' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '5px' }}>
+                    <span style={{ fontSize: '9px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', lineHeight: '1.2' }}>{p.label}</span>
+                    <span style={{ fontSize: '12px', fontWeight: '950', color: brandPrimary, flexShrink: 0 }}>{p.percentage}</span>
+                  </div>
+                  <span style={{ fontSize: '9px', color: '#475569', fontWeight: '300', lineHeight: '1.3' }}>{p.description}</span>
+                  {p.tooltip && (
+                    <span style={{ fontSize: '8px', color: '#94a3b8', fontStyle: 'italic', lineHeight: '1.3', marginTop: '2px' }}>{p.tooltip}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
       <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
-        <span>Presupuesto Consolidado: <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{totalValue} USD TOTAL</span></span>
+        <span>Presupuesto Consolidado: <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{totalValue.toUpperCase().includes('ARS') || totalValue.toUpperCase().includes('USD') ? totalValue : `${currency} ${totalValue}`} TOTAL</span></span>
         <span>Página 3 de 7</span>
       </div>
     </div>
-  );
+    );
+  };
 
   const renderPage4 = () => {
     const list = weeklyBreakdown && weeklyBreakdown.length >= 10 ? weeklyBreakdown.slice(0, 10) : DEFAULT_WEEKLY_BREAKDOWN.slice(0, 10);
@@ -865,7 +920,7 @@ const ProposalEditor: React.FC = () => {
             DESGLOSE DE HORAS — <span style={{ fontStyle: 'italic', color: brandPrimary }}>SEMANAS 1 A 8</span>
           </h1>
           <p style={{ fontSize: '11px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
-            Desglose técnico del esfuerzo de desarrollo correspondiente a las primeras 80 horas de programación de la aplicación.
+            {(methodology || DEFAULT_METHODOLOGY).weekly_breakdown_intro_1_8 || DEFAULT_METHODOLOGY.weekly_breakdown_intro_1_8}
           </p>
           <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
             <thead>
@@ -923,7 +978,7 @@ const ProposalEditor: React.FC = () => {
             DESGLOSE DE HORAS — <span style={{ fontStyle: 'italic', color: brandPrimary }}>SEMANAS 9 A 16</span>
           </h1>
           <p style={{ fontSize: '11px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
-            Desglose técnico de programación correspondiente a las últimas 80 horas de desarrollo enfocadas a utilidades, calculadoras y optimización de interacción.
+            {(methodology || DEFAULT_METHODOLOGY).weekly_breakdown_intro_9_16 || DEFAULT_METHODOLOGY.weekly_breakdown_intro_9_16}
           </p>
           <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
             <thead>
@@ -983,7 +1038,7 @@ const ProposalEditor: React.FC = () => {
             METODOLOGÍA DE TRABAJO & <span style={{ fontStyle: 'italic', color: brandPrimary }}>PLAN DE ACCIÓN</span>
           </h1>
           <p style={{ fontSize: '11px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
-            Implementamos un proceso de desarrollo iterativo para asegurar lanzamientos predecibles y la validación constante de la usabilidad de la interfaz por parte del cliente.
+            {meth.intro_text || DEFAULT_METHODOLOGY.intro_text}
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '5px' }}>
             <div style={{ padding: '20px', borderRadius: '12px', backgroundColor: '#faf5ff', border: '1px solid #f3e8ff' }}>
@@ -1063,7 +1118,7 @@ const ProposalEditor: React.FC = () => {
           CONTRATO Y <span style={{ fontStyle: 'italic', color: brandPrimary }}>FIRMAS</span>
         </h1>
         <p style={{ fontSize: '11px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
-          Acuerdo formal que establece las bases y condiciones legales para la ejecución del proyecto de desarrollo de software detallado en esta propuesta.
+          {contractDescription || 'Acuerdo formal que establece las bases y condiciones legales para la ejecución del proyecto de desarrollo de software detallado en esta propuesta.'}
         </p>
         <div style={{ fontSize: '10px', color: '#334155', lineHeight: '1.6', whiteSpace: 'pre-wrap', fontFamily: 'system-ui, -apple-system, sans-serif', padding: '20px', backgroundColor: '#f8fafc', borderRadius: '20px', border: '1px solid #e2e8f0', maxHeight: '350px', overflow: 'hidden', marginTop: '5px' }}>
           {contractText ? (
@@ -1551,6 +1606,29 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
         {/* ALCANCE TAB */}
         {activeEditorTab === 'alcance' && (
           <div className="space-y-6">
+            <Section title="Introducciones de Alcance & Exclusiones">
+              <div className="p-4 rounded-xl bg-[#090d16] border border-white/5 shadow-lg space-y-4">
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Párrafo Principal de Alcance (Inclusiones)</label>
+                  <textarea
+                    value={methodology?.scope_intro ?? DEFAULT_METHODOLOGY.scope_intro}
+                    onChange={(e) => updateMethodologyField('scope_intro', e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-primary/50 min-h-[60px]"
+                    placeholder="Detalle técnico del desarrollo y los entregables comprometidos..."
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Párrafo Principal de Exclusiones (Fuera de Alcance)</label>
+                  <textarea
+                    value={methodology?.exclusions_intro ?? DEFAULT_METHODOLOGY.exclusions_intro}
+                    onChange={(e) => updateMethodologyField('exclusions_intro', e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-primary/50 min-h-[60px]"
+                    placeholder="Aspectos, integraciones y requerimientos no contemplados..."
+                  />
+                </div>
+              </div>
+            </Section>
+
             <Section 
               title={`Inclusiones (${inclusions.length})`} 
               onAdd={() => {
@@ -1776,6 +1854,20 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
                 />
               </div>
             </div>
+
+            <Section title="Introducción de Cronograma">
+              <div className="p-4 rounded-xl bg-[#090d16] border border-white/5 shadow-lg space-y-3">
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Párrafo Principal de Fases & Entregas</label>
+                  <textarea
+                    value={methodology?.phases_intro ?? DEFAULT_METHODOLOGY.phases_intro}
+                    onChange={(e) => updateMethodologyField('phases_intro', e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-primary/50 min-h-[60px]"
+                    placeholder="El plan de esfuerzo comprende un periodo de 4 meses..."
+                  />
+                </div>
+              </div>
+            </Section>
 
             {/* CRONOGRAMA DE FASES */}
             <Section 
@@ -2079,6 +2171,20 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
               </p>
             </div>
 
+            <Section title="Introducción de Desglose Semanas 1-8">
+              <div className="p-4 rounded-xl bg-[#090d16] border border-white/5 shadow-lg space-y-3">
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Párrafo Principal de Desglose (Semanas 1-8)</label>
+                  <textarea
+                    value={methodology?.weekly_breakdown_intro_1_8 ?? DEFAULT_METHODOLOGY.weekly_breakdown_intro_1_8}
+                    onChange={(e) => updateMethodologyField('weekly_breakdown_intro_1_8', e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-primary/50 min-h-[60px]"
+                    placeholder="Desglose técnico del esfuerzo de desarrollo correspondiente a las primeras 80 horas..."
+                  />
+                </div>
+              </div>
+            </Section>
+
             <div className="space-y-4">
               {(weeklyBreakdown && weeklyBreakdown.length >= 10 ? weeklyBreakdown.slice(0, 10) : DEFAULT_WEEKLY_BREAKDOWN.slice(0, 10)).map((item: any, localIndex: number) => {
                 const globalIndex = localIndex;
@@ -2184,6 +2290,20 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
               </p>
             </div>
 
+            <Section title="Introducción de Desglose Semanas 9-16">
+              <div className="p-4 rounded-xl bg-[#090d16] border border-white/5 shadow-lg space-y-3">
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Párrafo Principal de Desglose (Semanas 9-16)</label>
+                  <textarea
+                    value={methodology?.weekly_breakdown_intro_9_16 ?? DEFAULT_METHODOLOGY.weekly_breakdown_intro_9_16}
+                    onChange={(e) => updateMethodologyField('weekly_breakdown_intro_9_16', e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-primary/50 min-h-[60px]"
+                    placeholder="Desglose técnico de programación correspondiente a las últimas 80 horas..."
+                  />
+                </div>
+              </div>
+            </Section>
+
             <div className="space-y-4">
               {(weeklyBreakdown && weeklyBreakdown.length >= 20 ? weeklyBreakdown.slice(10, 20) : DEFAULT_WEEKLY_BREAKDOWN.slice(10, 20)).map((item: any, localIndex: number) => {
                 const globalIndex = 10 + localIndex;
@@ -2280,6 +2400,18 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
         {/* METODOLOGIA TAB */}
         {activeEditorTab === 'metodologia' && (
           <div className="space-y-6">
+            <Section title="Introducción de Metodología">
+              <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Texto Introductorio / Párrafo Principal</label>
+                <textarea
+                  value={methodology?.intro_text ?? DEFAULT_METHODOLOGY.intro_text}
+                  onChange={(e) => updateMethodologyField('intro_text', e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-primary/50 min-h-[60px]"
+                  placeholder="Implementamos un proceso de desarrollo iterativo para asegurar lanzamientos predecibles..."
+                />
+              </div>
+            </Section>
+
             <Section title="Pilares de Metodología">
               <div className="space-y-4">
                 <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-3">
@@ -2441,15 +2573,27 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
         {/* LEGAL TAB */}
         {activeEditorTab === 'legal' && (
           <Section title="Plantilla de Contrato Dinámico">
-            <p className="text-slate-400 text-sm mb-4">
-              Escriba el texto legal de la propuesta. Puede usar variables como <code>{'{client_name}'}</code>, <code>{'{date}'}</code>, <code>{'{location}'}</code> y definir campos interactivos usando <code>{'[input:Etiqueta del Campo]'}</code>.
-            </p>
-            <textarea
-              value={contractText}
-              onChange={(e) => setContractText(e.target.value)}
-              placeholder={`Si se deja vacío, se utilizará la plantilla genérica por defecto:\nEn la localidad de {location}, a los {date}... [input:Nombre]...`}
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white placeholder-slate-600 focus:outline-none focus:border-primary/50 min-h-[400px] font-mono text-sm leading-relaxed"
-            />
+            <div className="flex flex-col gap-2 mb-6">
+              <label className="text-slate-300 text-xs font-bold uppercase tracking-wider">Texto Descriptivo / Introducción</label>
+              <textarea
+                value={contractDescription}
+                onChange={(e) => setContractDescription(e.target.value)}
+                placeholder="Acuerdo formal que establece las bases y condiciones legales para la ejecución del proyecto..."
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-primary/50 min-h-[80px] text-sm leading-relaxed"
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="text-slate-300 text-xs font-bold uppercase tracking-wider">Cuerpo del Contrato</label>
+              <p className="text-slate-400 text-xs mb-2">
+                Puede usar variables como <code>{'{client_name}'}</code>, <code>{'{date}'}</code>, <code>{'{location}'}</code> y definir campos interactivos usando <code>{'[input:Etiqueta del Campo]'}</code>.
+              </p>
+              <textarea
+                value={contractText}
+                onChange={(e) => setContractText(e.target.value)}
+                placeholder={`Si se deja vacío, se utilizará la plantilla genérica por defecto:\nEn la localidad de {location}, a los {date}... [input:Nombre]...`}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white placeholder-slate-600 focus:outline-none focus:border-primary/50 min-h-[300px] font-mono text-sm leading-relaxed"
+              />
+            </div>
           </Section>
         )}
 
@@ -2502,6 +2646,7 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
                     payments={payments as any[]}
                     totalValue={parseFloat(totalValue.replace(/[^0-9.]/g, '')) || 0}
                     clientLogoUrl={clientLogoUrl}
+                    currency={getCurrencyFromTotal(totalValue)}
                   />
                 </div>
               </div>
@@ -2537,7 +2682,7 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
                 </div>
 
                 {/* Page Preview Container */}
-                <div className="flex-1 overflow-auto bg-slate-950/40 border border-white/5 rounded-xl p-4">
+                <div data-lenis-prevent className="flex-1 overflow-auto min-h-0 min-w-0 bg-slate-950/40 border border-white/5 rounded-xl p-4 scrollbar-thin scrollbar-thumb-white/10">
                   <div
                     style={{
                       width: `${794 * zoom}px`,
@@ -2675,7 +2820,7 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
                       Alcance & <span style={{ fontStyle: 'italic', color: brandPrimary }}>Entregables</span>
                     </h1>
                     <p style={{ fontSize: p2SubTitleSize, color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
-                      Detalle técnico del desarrollo y los entregables comprometidos para la ejecución del proyecto.
+                      {(methodology || DEFAULT_METHODOLOGY).scope_intro || DEFAULT_METHODOLOGY.scope_intro}
                     </p>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: p2Gap, width: '100%' }}>
@@ -2712,7 +2857,7 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
                           Fuera de <span style={{ fontStyle: 'italic', color: '#e11d48' }}>Alcance</span>
                         </h1>
                         <p style={{ fontSize: p2SubTitleSize, color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
-                          Aspectos, integraciones y requerimientos no contemplados en el desarrollo de la presente propuesta.
+                          {(methodology || DEFAULT_METHODOLOGY).exclusions_intro || DEFAULT_METHODOLOGY.exclusions_intro}
                         </p>
                       </div>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: p2Gap, width: '100%' }}>
@@ -2767,7 +2912,18 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
               CRONOGRAMA DE FASES & <span style={{ fontStyle: 'italic', color: brandPrimary }}>ENTREGAS</span>
             </h1>
             <p style={{ fontSize: '11px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
-              El plan de esfuerzo comprende un periodo de <span style={{ fontWeight: 'bold', color: '#0f172a' }}>4 meses</span> (16 sprints semanales). Cada fase mensual concluye con un hito de control funcional y estético auditado antes de la liberación del siguiente incremento de software.
+              {(() => {
+                const meth = methodology || DEFAULT_METHODOLOGY;
+                const text = meth.phases_intro ?? DEFAULT_METHODOLOGY.phases_intro;
+                if (text === DEFAULT_METHODOLOGY.phases_intro) {
+                  return (
+                    <>
+                      El plan de esfuerzo comprende un periodo de <span style={{ fontWeight: 'bold', color: '#0f172a' }}>4 meses</span> (16 sprints semanales). Cada fase mensual concluye con un hito de control funcional y estético auditado antes de la liberación del siguiente incremento de software.
+                    </>
+                  );
+                }
+                return text;
+              })()}
             </p>
             <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: '10px', marginBottom: '5px' }}>
               <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Estructura de Sprints Mensuales</span>
@@ -2794,7 +2950,7 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
                   </div>
                   <div style={{ width: '110px', borderLeft: '1px solid #e2e8f0', padding: '15px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', backgroundColor: '#fafafa' }}>
                     <span style={{ fontSize: '16px', fontWeight: '950', color: '#000000' }}>${m.price || '0'}</span>
-                    <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b' }}>USD</span>
+                    <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b' }}>{getCurrencyFromTotal(totalValue)}</span>
                   </div>
                 </div>
               ))}
@@ -2821,9 +2977,32 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
                 </div>
               </div>
             )}
+
+            {payments && payments.length > 0 && (
+              <div style={{ marginTop: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Esquema de Pagos / Hitos de Financiamiento</span>
+                  <div style={{ flexGrow: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
+                </div>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', width: '100%' }}>
+                  {payments.map((p, idx) => (
+                    <div key={idx} style={{ flex: '1 1 0px', minWidth: '180px', padding: '8px 12px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '4px', boxSizing: 'border-box' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '5px' }}>
+                        <span style={{ fontSize: '9px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', lineHeight: '1.2' }}>{p.label}</span>
+                        <span style={{ fontSize: '12px', fontWeight: '950', color: brandPrimary, flexShrink: 0 }}>{p.percentage}</span>
+                      </div>
+                      <span style={{ fontSize: '9px', color: '#475569', fontWeight: '300', lineHeight: '1.3' }}>{p.description}</span>
+                      {p.tooltip && (
+                        <span style={{ fontSize: '8px', color: '#94a3b8', fontStyle: 'italic', lineHeight: '1.3', marginTop: '2px' }}>{p.tooltip}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
           <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
-            <span>Presupuesto Consolidado: <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{totalValue} USD TOTAL</span></span>
+            <span>Presupuesto Consolidado: <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{totalValue.toUpperCase().includes('ARS') || totalValue.toUpperCase().includes('USD') ? totalValue : `${getCurrencyFromTotal(totalValue)} ${totalValue}`} TOTAL</span></span>
             <span>Página 3 de 7</span>
           </div>
         </div>
@@ -2842,7 +3021,7 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
               DESGLOSE DE HORAS — <span style={{ fontStyle: 'italic', color: brandPrimary }}>SEMANAS 1 A 8</span>
             </h1>
             <p style={{ fontSize: '11px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
-              Desglose técnico del esfuerzo de desarrollo correspondiente a las primeras 80 horas de programación de la aplicación.
+              {(methodology || DEFAULT_METHODOLOGY).weekly_breakdown_intro_1_8 || DEFAULT_METHODOLOGY.weekly_breakdown_intro_1_8}
             </p>
             <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
               <thead>
@@ -2896,7 +3075,7 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
               DESGLOSE DE HORAS — <span style={{ fontStyle: 'italic', color: brandPrimary }}>SEMANAS 9 A 16</span>
             </h1>
             <p style={{ fontSize: '11px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
-              Desglose técnico de programación correspondiente a las últimas 80 horas de desarrollo enfocadas a utilidades, calculadoras y optimización de interacción.
+              {(methodology || DEFAULT_METHODOLOGY).weekly_breakdown_intro_9_16 || DEFAULT_METHODOLOGY.weekly_breakdown_intro_9_16}
             </p>
             <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
               <thead>
@@ -2937,60 +3116,88 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
         </div>
 
         {/* PÁGINA 6: Metodología de Trabajo & Plan de Acción */}
-        <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '25px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
-              <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
-              <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{heroTitle ? heroTitle.toUpperCase() : 'CBKR APP V2'}</span>
-            </div>
-            <span style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>AGILE_METHODOLOGY // 04</span>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: '20px' }}>
-            <h1 style={{ fontSize: '28px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
-              METODOLOGÍA DE TRABAJO & <span style={{ fontStyle: 'italic', color: brandPrimary }}>PLAN DE ACCIÓN</span>
-            </h1>
-            <p style={{ fontSize: '11px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
-              Implementamos un proceso de desarrollo iterativo para asegurar lanzamientos predecibles y la validación constante de la usabilidad de la interfaz por parte del cliente.
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '5px' }}>
-              <div style={{ padding: '20px', borderRadius: '12px', backgroundColor: '#faf5ff', border: '1px solid #f3e8ff' }}>
-                <h4 style={{ fontSize: '10px', fontWeight: '900', color: brandPrimary, margin: '0 0 6px 0', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Desarrollo Incremental</h4>
-                <p style={{ fontSize: '11px', color: '#581c87', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
-                  Cada sprint semanal se traduce en código estable. Esta metodología reduce la acumulación de errores estéticos y permite corregir flujos visuales incómodos directamente sobre el teléfono del usuario.
+        {(() => {
+          const meth = methodology || DEFAULT_METHODOLOGY;
+          const clientNameReplacer = (text: string) => (text || '').replace('{client_name}', clientName || 'el cliente');
+          return (
+            <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '25px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
+                  <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
+                  <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{heroTitle ? heroTitle.toUpperCase() : 'CBKR APP V2'}</span>
+                </div>
+                <span style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>AGILE_METHODOLOGY // 04</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: '20px' }}>
+                <h1 style={{ fontSize: '28px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
+                  METODOLOGÍA DE TRABAJO & <span style={{ fontStyle: 'italic', color: brandPrimary }}>PLAN DE ACCIÓN</span>
+                </h1>
+                <p style={{ fontSize: '11px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
+                  {meth.intro_text || DEFAULT_METHODOLOGY.intro_text}
                 </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '5px' }}>
+                  <div style={{ padding: '20px', borderRadius: '12px', backgroundColor: '#faf5ff', border: '1px solid #f3e8ff' }}>
+                    <h4 style={{ fontSize: '10px', fontWeight: '900', color: brandPrimary, margin: '0 0 6px 0', letterSpacing: '1.5px', textTransform: 'uppercase' }}>
+                      {meth.incremental_title || DEFAULT_METHODOLOGY.incremental_title}
+                    </h4>
+                    <p style={{ fontSize: '11px', color: '#581c87', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
+                      {clientNameReplacer(meth.incremental_text || DEFAULT_METHODOLOGY.incremental_text)}
+                    </p>
+                  </div>
+                  <div style={{ padding: '20px', borderRadius: '12px', backgroundColor: '#fdf2f8', border: '1px solid #fce7f3' }}>
+                    <h4 style={{ fontSize: '10px', fontWeight: '900', color: brandSecondary, margin: '0 0 6px 0', letterSpacing: '1.5px', textTransform: 'uppercase' }}>
+                      {meth.planning_title || DEFAULT_METHODOLOGY.planning_title}
+                    </h4>
+                    <p style={{ fontSize: '11px', color: '#9d174d', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
+                      {clientNameReplacer(meth.planning_text || DEFAULT_METHODOLOGY.planning_text)}
+                    </p>
+                  </div>
+                  <div style={{ padding: '20px', borderRadius: '12px', border: '1px solid #0f172a', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div>
+                      <h5 style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                        {meth.schedule_monday_title || DEFAULT_METHODOLOGY.schedule_monday_title}
+                      </h5>
+                      <h6 style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', margin: '0 0 2px 0', textTransform: 'uppercase' }}>
+                        {meth.schedule_monday_subtitle || DEFAULT_METHODOLOGY.schedule_monday_subtitle}
+                      </h6>
+                      <p style={{ fontSize: '10px', color: '#475569', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
+                        {clientNameReplacer(meth.schedule_monday_text || DEFAULT_METHODOLOGY.schedule_monday_text)}
+                      </p>
+                    </div>
+                    <div style={{ height: '1px', backgroundColor: '#e2e8f0' }}></div>
+                    <div>
+                      <h5 style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                        {meth.schedule_tuesday_title || DEFAULT_METHODOLOGY.schedule_tuesday_title}
+                      </h5>
+                      <h6 style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', margin: '0 0 2px 0', textTransform: 'uppercase' }}>
+                        {meth.schedule_tuesday_subtitle || DEFAULT_METHODOLOGY.schedule_tuesday_subtitle}
+                      </h6>
+                      <p style={{ fontSize: '10px', color: '#475569', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
+                        {clientNameReplacer(meth.schedule_tuesday_text || DEFAULT_METHODOLOGY.schedule_tuesday_text)}
+                      </p>
+                    </div>
+                    <div style={{ height: '1px', backgroundColor: '#e2e8f0' }}></div>
+                    <div>
+                      <h5 style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                        {meth.schedule_friday_title || DEFAULT_METHODOLOGY.schedule_friday_title}
+                      </h5>
+                      <h6 style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', margin: '0 0 2px 0', textTransform: 'uppercase' }}>
+                        {meth.schedule_friday_subtitle || DEFAULT_METHODOLOGY.schedule_friday_subtitle}
+                      </h6>
+                      <p style={{ fontSize: '10px', color: '#475569', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
+                        {clientNameReplacer(meth.schedule_friday_text || DEFAULT_METHODOLOGY.schedule_friday_text)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div style={{ padding: '20px', borderRadius: '12px', backgroundColor: '#fdf2f8', border: '1px solid #fce7f3' }}>
-                <h4 style={{ fontSize: '10px', fontWeight: '900', color: brandSecondary, margin: '0 0 6px 0', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Planificación de Contenidos</h4>
-                <p style={{ fontSize: '11px', color: '#9d174d', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
-                  Para cumplir con la línea de tiempo establecida, Cannabunker proveerá los insumos audiovisuales (videos de 15s del wizard, listado de preguntas frecuentes) al Prestador antes de iniciar el sprint de su implementación.
-                </p>
-              </div>
-              <div style={{ padding: '20px', borderRadius: '12px', border: '1px solid #0f172a', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div>
-                  <h5 style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0', letterSpacing: '1px', textTransform: 'uppercase' }}>LUN</h5>
-                  <h6 style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', margin: '0 0 2px 0', textTransform: 'uppercase' }}>Sprint Kickoff (15 min)</h6>
-                  <p style={{ fontSize: '10px', color: '#475569', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>Reunión ágil para definir el objetivo de la semana, validar assets multimedia y fijar entregables técnicos inmediatos.</p>
-                </div>
-                <div style={{ height: '1px', backgroundColor: '#e2e8f0' }}></div>
-                <div>
-                  <h5 style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0', letterSpacing: '1px', textTransform: 'uppercase' }}>MAR - JUE</h5>
-                  <h6 style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', margin: '0 0 2px 0', textTransform: 'uppercase' }}>Desarrollo & Staging</h6>
-                  <p style={{ fontSize: '10px', color: '#475569', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>Escritura de código e integración de componentes. Despliegues continuos en entorno de pruebas. Consultas por canal de comunicación directo.</p>
-                </div>
-                <div style={{ height: '1px', backgroundColor: '#e2e8f0' }}></div>
-                <div>
-                  <h5 style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0', letterSpacing: '1px', textTransform: 'uppercase' }}>VIE</h5>
-                  <h6 style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', margin: '0 0 2px 0', textTransform: 'uppercase' }}>Demo Semanal & Aprobación</h6>
-                  <p style={{ fontSize: '10px', color: '#475569', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>Liberación de la versión semanal en móvil. A las 16:00 hs se audita el feedback y se aprueba formalmente el incremento de software.</p>
-                </div>
+              <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
+                <span>Propuesta Comercial | {clientName}</span>
+                <span>Página 6 de 7</span>
               </div>
             </div>
-          </div>
-          <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
-            <span>Propuesta Comercial | {clientName}</span>
-            <span>Página 6 de 7</span>
-          </div>
-        </div>
+          );
+        })()}
 
         {/* PÁGINA 7: Acuerdo de Servicios */}
         <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
@@ -3006,7 +3213,7 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
               CONTRATO Y <span style={{ fontStyle: 'italic', color: brandPrimary }}>FIRMAS</span>
             </h1>
             <p style={{ fontSize: '11px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
-              Acuerdo formal que establece las bases y condiciones legales para la ejecución del proyecto de desarrollo de software detallado en esta propuesta.
+              {contractDescription || 'Acuerdo formal que establece las bases y condiciones legales para la ejecución del proyecto de desarrollo de software detallado en esta propuesta.'}
             </p>
             <div style={{ fontSize: '10px', color: '#334155', lineHeight: '1.6', whiteSpace: 'pre-wrap', fontFamily: 'system-ui, -apple-system, sans-serif', padding: '20px', backgroundColor: '#f8fafc', borderRadius: '20px', border: '1px solid #e2e8f0', maxHeight: '350px', overflow: 'hidden', marginTop: '5px' }}>
               {contractText ? (

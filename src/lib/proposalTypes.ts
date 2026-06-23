@@ -18,6 +18,7 @@ export interface Proposal {
   developer_signature_url: string | null;
   status: 'draft' | 'published' | 'signed';
   contract_text: string | null;
+  contract_description?: string | null;
   created_at: string;
   updated_at: string;
   signed_contract_url?: string;

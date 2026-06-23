@@ -14,6 +14,7 @@ interface ProposalVideoPlayerProps {
   payments: any[];
   totalValue: number;
   clientLogoUrl?: string;
+  currency?: string;
 }
 
 export const ProposalVideoPlayer: React.FC<ProposalVideoPlayerProps> = ({
@@ -27,6 +28,7 @@ export const ProposalVideoPlayer: React.FC<ProposalVideoPlayerProps> = ({
   payments,
   totalValue,
   clientLogoUrl = '',
+  currency = 'USD',
 }) => {
   const [selectedRatio, setSelectedRatio] = useState<'16:9' | '9:16'>('16:9');
   const [renderStatus, setRenderStatus] = useState<'idle' | 'rendering' | 'completed'>('idle');
@@ -70,6 +72,7 @@ export const ProposalVideoPlayer: React.FC<ProposalVideoPlayerProps> = ({
           totalValue,
           clientLogoUrl,
           aspectRatio: selectedRatio,
+          currency,
         }),
       });
 
@@ -140,6 +143,7 @@ export const ProposalVideoPlayer: React.FC<ProposalVideoPlayerProps> = ({
             totalValue,
             clientLogoUrl,
             aspectRatio: selectedRatio,
+            currency,
           }}
           durationInFrames={1440} // 48 seconds at 30 fps
           fps={30}
