@@ -151,6 +151,7 @@ void mainImage(out vec4 o, vec2 C) {
 
   vec2 P = vec2(2.0, 1.0) * uv0 - (r / r.x) * vec2(0.0, 1.0);
   vec4 O = vec4(uBgColor * 90.0 * uBgGlow / (1e3 * dot(P, P) + 6.0), 0.0);
+  float centerMask = smoothstep(0.08, 0.28, length(uv0));
 
   float mGlow = 0.0;
   if (uMouseEnabled > 0.5) {
@@ -176,7 +177,7 @@ void mainImage(out vec4 o, vec2 C) {
     weight *= (1.0 + mGlow * 2.0);
     vec2 inner = vec2(length(max(Pp, vec2(-1.0, 0.0))), length(Pp) - zr) - zr;
     vec2 sm = vec2(1.0) - smoothstep(-rr, rr, inner);
-    O.rgb += dot(sm, vec2(exp(tail * Pp.y), 3.0)) * col * weight;
+    O.rgb += dot(sm, vec2(exp(tail * Pp.y), 3.0)) * col * weight * centerMask;
     C.x += Y.x / 8.0;
   }
 

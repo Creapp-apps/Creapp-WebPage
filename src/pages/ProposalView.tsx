@@ -1159,7 +1159,7 @@ const ProposalView: React.FC = () => {
           streakLength={1.0}
           glow={1.2}
           density={0.45}
-          twinkle={0.8}
+          twinkle={0}
           zoom={2.2}
           backgroundGlow={0.2}
           opacity={0.35}
