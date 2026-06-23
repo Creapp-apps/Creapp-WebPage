@@ -635,27 +635,27 @@ const ProposalView: React.FC = () => {
     switch (currentSlide) {
       case 0:
         return (
-          <div className="flex flex-col items-center justify-center text-center py-6 min-h-[420px] relative">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full blur-[140px] pointer-events-none" style={{ backgroundColor: `${brandPrimary}15` }}></div>
-            <div className="flex flex-col items-center gap-6 relative z-10">
+          <div className="flex flex-col items-center justify-center text-center py-10 min-h-[480px] relative">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full blur-[150px] pointer-events-none animate-float-y-1" style={{ backgroundColor: `${brandPrimary}15` }}></div>
+            <div className="flex flex-col items-center gap-8 relative z-10">
               {/* Capsule pill badge */}
-              <div className="px-4 py-1.5 rounded-full border text-[9px] font-black tracking-[0.25em] uppercase gsap-reveal-scale shadow-sm select-none"
+              <div className="px-6 py-2.5 rounded-full border text-[11px] font-black tracking-[0.3em] uppercase gsap-reveal-scale shadow-lg select-none animate-float-pulse"
                 style={{ backgroundColor: `${brandPrimary}15`, color: brandPrimary, borderColor: `${brandPrimary}33` }}>
                 Propuesta Comercial
               </div>
               
               {/* Massive Title */}
-              <h1 className="text-4xl md:text-6xl lg:text-7xl font-display font-black text-white tracking-tighter max-w-4xl leading-[1.1] uppercase gsap-reveal-up select-none mt-2">
-                Diseño y Desarrollo <span className="bg-clip-text text-transparent block mt-3" style={{ backgroundImage: gradientStyle }}>{proposal.hero_title || 'Ecosistema Digital'}</span>
+              <h1 className="text-5xl md:text-8xl lg:text-[92px] font-display font-black text-white tracking-tighter max-w-5xl leading-[1.0] uppercase gsap-reveal-up select-none mt-2 animate-text-glow-pulse">
+                Diseño y Desarrollo <span className="bg-clip-text text-transparent block mt-4" style={{ backgroundImage: gradientStyle }}>{proposal.hero_title || 'Ecosistema Digital'}</span>
               </h1>
               
               {/* Target client */}
-              <p className="text-[12px] md:text-sm text-slate-400 font-light mt-4 gsap-reveal-up select-none">
-                Preparado exclusivamente para <strong className="text-white font-black uppercase tracking-wider ml-1">{proposal.client_name}</strong>
+              <p className="text-sm md:text-xl text-slate-300 font-light mt-6 gsap-reveal-up select-none tracking-wide">
+                Preparado exclusivamente para <strong className="text-white font-black uppercase tracking-[0.1em] ml-1">{proposal.client_name}</strong>
               </p>
               
               {/* Date & Location */}
-              <div className="flex gap-4 text-[9px] uppercase tracking-widest font-black text-slate-600 mt-1 gsap-reveal-up select-none">
+              <div className="flex gap-4 text-[11px] uppercase tracking-[0.25em] font-black text-slate-500 mt-2 gsap-reveal-up select-none">
                 <span>{proposal.date}</span>
                 <span>•</span>
                 <span>{proposal.location}</span>
@@ -664,24 +664,24 @@ const ProposalView: React.FC = () => {
               {/* CTA button */}
               <button
                 onClick={nextSlide}
-                className="mt-6 px-10 py-4.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-white shadow-2xl flex items-center gap-3 transition-all hover:scale-105 cursor-pointer active:scale-95 border border-white/5 brand-btn-glow gsap-reveal-scale"
+                className="mt-8 px-12 py-5.5 rounded-2xl text-[12px] font-black uppercase tracking-[0.2em] text-white shadow-2xl flex items-center gap-3 transition-all hover:scale-105 cursor-pointer active:scale-95 border border-white/5 brand-btn-glow gsap-reveal-scale animate-float-y-3"
                 style={{ background: gradientStyle }}
               >
-                Explorar Propuesta <ArrowRight size={13} />
+                Explorar Propuesta <ArrowRight size={15} />
               </button>
             </div>
           </div>
         );
       case 1:
         return (
-          <div className="grid md:grid-cols-2 gap-10 items-center py-4 min-h-[420px]">
-            <div className="gsap-reveal-left">
-              <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-[9px] font-black tracking-widest mb-6 border uppercase"
+          <div className="grid md:grid-cols-2 gap-12 items-center py-6 min-h-[480px]">
+            <div className="gsap-reveal-left space-y-6">
+              <span className="inline-flex items-center gap-2 px-5 py-2 rounded-full text-[11px] font-black tracking-[0.25em] border uppercase animate-float-pulse"
                 style={{ backgroundColor: `${brandPrimary}15`, color: brandPrimary, borderColor: `${brandPrimary}33` }}>
-                <Rocket size={12} className="fill-current" />
+                <Rocket size={14} className="fill-current" />
                 {proposal.hero_badge || 'Resumen'}
               </span>
-              <h3 className="text-3xl md:text-4xl font-display font-black text-white mb-6 leading-tight tracking-tight">
+              <h3 className="text-4xl md:text-6xl lg:text-[70px] font-display font-black text-white leading-[1.05] tracking-tighter uppercase">
                 {proposal.hero_title ? (
                   <span className="bg-clip-text text-transparent" style={{ backgroundImage: gradientStyle }}>
                     {proposal.hero_title}
@@ -690,20 +690,20 @@ const ProposalView: React.FC = () => {
                   <>Llevamos tu sistema al <span className="bg-clip-text text-transparent" style={{ backgroundImage: gradientStyle }}>próximo nivel.</span></>
                 )}
               </h3>
-              <p className="text-slate-400 text-sm md:text-base leading-relaxed font-light">{proposal.description}</p>
+              <p className="text-slate-300 text-base md:text-lg lg:text-xl leading-relaxed font-light">{proposal.description}</p>
             </div>
-            <div className="relative gsap-reveal-right">
-              <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-transparent to-white/[0.02] border border-white/5 pointer-events-none"></div>
-              <div className="bg-black/40 backdrop-blur-md rounded-2xl p-6 border border-white/5 font-mono text-xs overflow-hidden shadow-inner">
+            <div className="relative gsap-reveal-right animate-float-y-1">
+              <div className="absolute inset-0 rounded-3xl bg-gradient-to-tr from-transparent to-white/[0.02] border border-white/5 pointer-events-none"></div>
+              <div className="bg-black/40 backdrop-blur-md rounded-3xl p-8 border border-white/5 font-mono text-sm overflow-hidden shadow-2xl">
                 <div className="flex justify-between items-center mb-6">
-                  <div className="flex gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-red-500/40"></div>
-                    <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/40"></div>
-                    <div className="w-2.5 h-2.5 rounded-full bg-green-500/40"></div>
+                  <div className="flex gap-2">
+                    <div className="w-3 h-3 rounded-full bg-red-500/40"></div>
+                    <div className="w-3 h-3 rounded-full bg-yellow-500/40"></div>
+                    <div className="w-3 h-3 rounded-full bg-green-500/40"></div>
                   </div>
-                  <span className="text-[9px] text-slate-700 font-bold uppercase tracking-widest">AppCore.ts</span>
+                  <span className="text-[10px] text-slate-600 font-bold uppercase tracking-widest">AppCore.ts</span>
                 </div>
-                <div className="space-y-2 text-slate-400">
+                <div className="space-y-2.5 text-slate-400">
                   <p style={{ color: brandSecondary }}>import <span className="text-white">App</span> from <span style={{ color: brandPrimary }}>'@creapp/core'</span>;</p>
                   <p className="text-slate-700 italic mt-3">// Inicializar infraestructura...</p>
                   <p style={{ color: brandSecondary }}>const <span className="text-blue-400">startSystem</span> = <span className="text-white">async</span> () =&gt; {'{'}</p>
@@ -719,41 +719,42 @@ const ProposalView: React.FC = () => {
         );
       case 2:
         return (
-          <div className="space-y-6 min-h-[420px]">
+          <div className="space-y-8 min-h-[480px]">
             <div className="gsap-reveal-up">
-              <h3 className="text-2xl md:text-3xl font-display font-black text-white uppercase tracking-tight">
+              <h3 className="text-4xl md:text-5xl lg:text-6xl font-display font-black text-white uppercase tracking-tighter animate-text-glow-pulse">
                 Alcance del Desarrollo
               </h3>
-              <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mt-1.5 leading-relaxed">
+              <p className="text-xs md:text-sm text-slate-400 uppercase tracking-[0.2em] font-bold mt-2 leading-relaxed">
                 {(proposal.methodology || DEFAULT_METHODOLOGY).scope_intro || DEFAULT_METHODOLOGY.scope_intro}
               </p>
             </div>
-            <div data-lenis-prevent className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[440px] overflow-y-auto pr-2 custom-scrollbar">
+            <div data-lenis-prevent className="grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
               {proposal.inclusions.map((item, i) => {
                 const isTooltipActive = activeTooltip === `inclusion-${i}`;
+                const floatClass = i % 3 === 0 ? 'animate-float-y-1' : i % 3 === 1 ? 'animate-float-y-2' : 'animate-float-y-3';
                 return (
                   <div
                     key={i}
                     onClick={() => setActiveTooltip(isTooltipActive ? null : `inclusion-${i}`)}
                     onMouseLeave={() => setActiveTooltip(null)}
-                    className="relative overflow-hidden p-5 rounded-2xl bg-white/[0.015] border border-white/5 md:hover:border-white/10 transition-all duration-300 group cursor-pointer shadow-sm grid [grid-template-areas:'stack'] items-center min-h-[85px] brand-hover-card gsap-reveal-scale"
+                    className={`relative overflow-hidden p-6 rounded-2xl bg-white/[0.015] border border-white/5 md:hover:border-white/10 transition-all duration-300 group cursor-pointer shadow-xl grid [grid-template-areas:'stack'] items-center min-h-[100px] brand-hover-card gsap-reveal-scale ${floatClass}`}
                   >
-                    <div className={`flex gap-4 relative z-10 transition-opacity duration-300 items-center [grid-area:stack] ${isTooltipActive ? 'opacity-0 pointer-events-none' : ''}`}>
-                      <div className="shrink-0 rounded-xl flex items-center justify-center w-11 h-11 bg-white/5 border border-white/5">
-                        <IconResolver name={item.icon_name} size={18} style={{ color: brandPrimary }} />
+                    <div className={`flex gap-5 relative z-10 transition-opacity duration-300 items-center [grid-area:stack] ${isTooltipActive ? 'opacity-0 pointer-events-none' : ''}`}>
+                      <div className="shrink-0 rounded-2xl flex items-center justify-center w-14 h-14 bg-white/5 border border-white/5 transition-transform group-hover:rotate-6">
+                        <IconResolver name={item.icon_name} size={22} style={{ color: brandPrimary }} />
                       </div>
                       <div>
-                        <h4 className="font-display font-bold text-base text-white flex items-center gap-1.5 tracking-tight">
+                        <h4 className="font-display font-black text-lg md:text-xl text-white flex items-center gap-1.5 tracking-tight">
                           {item.title}
-                          <ChevronRight size={14} style={{ color: brandPrimary }} className="opacity-60" />
+                          <ChevronRight size={16} style={{ color: brandPrimary }} className="opacity-60 transition-transform group-hover:translate-x-1" />
                         </h4>
-                        <p className="text-[10px] text-slate-500 leading-relaxed uppercase tracking-wider font-bold">{item.description}</p>
+                        <p className="text-xs text-slate-400 leading-relaxed uppercase tracking-wider font-bold mt-0.5">{item.description}</p>
                       </div>
                     </div>
                     <div data-lenis-prevent className={`flex flex-col transition-[opacity,transform] duration-300 [grid-area:stack] relative z-20 h-full overflow-y-auto no-scrollbar ${isTooltipActive ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}`}>
                       <div className="my-auto">
-                        <p className="text-[9px] font-black uppercase tracking-widest mb-1" style={{ color: brandPrimary }}>Detalle Técnico</p>
-                        <p className="text-xs text-slate-300 font-light leading-relaxed">{item.tooltip}</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest mb-1.5" style={{ color: brandPrimary }}>Detalle Técnico</p>
+                        <p className="text-sm text-slate-200 font-light leading-relaxed">{item.tooltip}</p>
                       </div>
                     </div>
                     <div className={`absolute inset-0 z-[15] md:backdrop-blur-sm transition-opacity duration-300 pointer-events-none ${isTooltipActive ? 'opacity-100' : 'opacity-0'}`} style={{ backgroundColor: 'var(--color-proposal-dark)' }}></div>
@@ -765,33 +766,34 @@ const ProposalView: React.FC = () => {
         );
       case 3:
         return (
-          <div className="space-y-6 min-h-[420px]">
+          <div className="space-y-8 min-h-[480px]">
             <div className="gsap-reveal-up">
-              <h3 className="text-2xl md:text-3xl font-display font-black text-white uppercase tracking-tight">
+              <h3 className="text-4xl md:text-5xl lg:text-6xl font-display font-black text-white uppercase tracking-tighter animate-text-glow-pulse">
                 Exclusiones de Propuesta
               </h3>
-              <p className="text-[10px] text-red-500/80 uppercase tracking-widest font-bold mt-1.5 leading-relaxed">
+              <p className="text-xs md:text-sm text-red-400/80 uppercase tracking-[0.2em] font-bold mt-2 leading-relaxed">
                 {(proposal.methodology || DEFAULT_METHODOLOGY).exclusions_intro || DEFAULT_METHODOLOGY.exclusions_intro}
               </p>
             </div>
-            <div data-lenis-prevent className="grid grid-cols-1 gap-3 max-h-[440px] overflow-y-auto pr-2 custom-scrollbar">
+            <div data-lenis-prevent className="grid grid-cols-1 gap-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
               {proposal.exclusions.map((item, i) => {
                 const isTooltipActive = activeTooltip === `exclusion-${i}`;
+                const floatClass = i % 2 === 0 ? 'animate-float-y-1' : 'animate-float-y-3';
                 return (
                   <div
                     key={i}
                     onClick={() => setActiveTooltip(isTooltipActive ? null : `exclusion-${i}`)}
                     onMouseLeave={() => setActiveTooltip(null)}
-                    className="relative overflow-hidden p-4 rounded-xl bg-red-500/[0.015] border border-red-500/10 md:hover:border-red-500/20 transition-all duration-300 group cursor-pointer grid [grid-template-areas:'stack'] items-center min-h-[60px] brand-hover-card-excl gsap-reveal-up"
+                    className={`relative overflow-hidden p-6 rounded-2xl bg-red-500/[0.015] border border-red-500/10 md:hover:border-red-500/20 transition-all duration-300 group cursor-pointer grid [grid-template-areas:'stack'] items-center min-h-[70px] brand-hover-card-excl gsap-reveal-up ${floatClass}`}
                   >
-                    <div className={`flex items-center gap-4 relative z-10 transition-opacity duration-300 [grid-area:stack] ${isTooltipActive ? 'opacity-0 pointer-events-none' : ''}`}>
-                      <XCircle size={18} className="text-red-500 shrink-0 opacity-60" />
-                      <p className="text-sm text-slate-300 font-light tracking-wide italic">{item.title}</p>
+                    <div className={`flex items-center gap-5 relative z-10 transition-opacity duration-300 [grid-area:stack] ${isTooltipActive ? 'opacity-0 pointer-events-none' : ''}`}>
+                      <XCircle size={22} className="text-red-500 shrink-0 opacity-60 transition-transform group-hover:scale-110" />
+                      <p className="text-base text-slate-200 font-light tracking-wide italic">{item.title}</p>
                     </div>
                     <div data-lenis-prevent className={`flex flex-col transition-[opacity,transform] duration-300 [grid-area:stack] relative z-20 h-full overflow-y-auto no-scrollbar ${isTooltipActive ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}`}>
                       <div className="my-auto">
-                        <p className="text-[9px] font-black uppercase tracking-widest text-red-500 mb-1">Aclaración de Exclusión</p>
-                        <p className="text-xs text-red-200/80 font-light leading-relaxed">{item.tooltip}</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-red-500 mb-1.5">Aclaración de Exclusión</p>
+                        <p className="text-sm text-red-200/80 font-light leading-relaxed">{item.tooltip}</p>
                       </div>
                     </div>
                     <div className={`absolute inset-0 z-[15] md:backdrop-blur-sm bg-red-950/90 transition-opacity duration-300 pointer-events-none ${isTooltipActive ? 'opacity-100' : 'opacity-0'}`}></div>
@@ -803,30 +805,30 @@ const ProposalView: React.FC = () => {
         );
       case 4:
         return (
-          <div className="grid md:grid-cols-2 gap-10 items-center py-4 min-h-[420px]">
-            <div className="space-y-4 gsap-reveal-left">
+          <div className="grid md:grid-cols-2 gap-12 items-center py-6 min-h-[480px]">
+            <div className="space-y-6 gsap-reveal-left">
               <div>
-                <h3 className="text-2xl md:text-3xl font-display font-black text-white uppercase tracking-tight">
+                <h3 className="text-4xl md:text-5xl lg:text-6xl font-display font-black text-white uppercase tracking-tighter animate-text-glow-pulse">
                   Ciclo Scrum Semanal
                 </h3>
-                <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mt-1.5 leading-relaxed">
+                <p className="text-xs md:text-sm text-slate-400 uppercase tracking-[0.2em] font-bold mt-2 leading-relaxed">
                   {(proposal.methodology || DEFAULT_METHODOLOGY).intro_text || DEFAULT_METHODOLOGY.intro_text}
                 </p>
               </div>
-              <div className="space-y-2.5">
+              <div className="space-y-3.5">
                 {scrumSteps.map((step, idx) => (
                   <div
                     key={idx}
                     onClick={() => setActiveScrumDay(step.day as any)}
-                    className={`p-4 rounded-xl border transition-all duration-300 cursor-pointer ${
+                    className={`p-5 rounded-2xl border transition-all duration-300 cursor-pointer ${
                       activeScrumDay === step.day
                         ? 'bg-white/[0.03] border-white/10 shadow-lg shadow-black/20'
                         : 'bg-transparent border-transparent hover:bg-white/[0.01]'
                     }`}
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-4">
                       <span
-                        className="px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest border shrink-0"
+                        className="px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border shrink-0"
                         style={
                           activeScrumDay === step.day
                             ? { backgroundColor: `${brandPrimary}15`, color: brandPrimary, borderColor: `${brandPrimary}33` }
@@ -835,14 +837,14 @@ const ProposalView: React.FC = () => {
                       >
                         {step.day}
                       </span>
-                      <span className="text-xs md:text-sm font-bold text-white uppercase tracking-tight">{step.title}</span>
-                      <span className="text-[9px] text-slate-500">— {step.subtitle}</span>
+                      <span className="text-sm md:text-base font-black text-white uppercase tracking-tight">{step.title}</span>
+                      <span className="text-xs text-slate-500 font-medium">— {step.subtitle}</span>
                     </div>
                     {activeScrumDay === step.day && (
                       <motion.p
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
-                        className="text-xs text-slate-400 font-light leading-relaxed mt-2"
+                        className="text-sm text-slate-400 font-light leading-relaxed mt-3"
                       >
                         {step.text}
                       </motion.p>
@@ -852,25 +854,29 @@ const ProposalView: React.FC = () => {
               </div>
             </div>
             <div className="flex flex-col items-center justify-center h-full">
-              <div className="relative w-64 h-64 flex items-center justify-center gsap-reveal-scale mx-auto">
+              <div className="relative w-80 h-80 flex items-center justify-center gsap-reveal-scale mx-auto">
                 <div
-                  className="absolute top-1/2 left-1/2 w-full h-full rounded-full border-2 border-dashed pointer-events-none transition-transform duration-[1000ms] ease-out"
+                  className="absolute top-1/2 left-1/2 w-full h-full rounded-full border-2 border-dashed pointer-events-none animate-spin-slow"
                   style={{
                     borderColor: `${brandPrimary}35`,
-                    transform: `translate(-50%, -50%) rotate(${activeScrumDay === 'LUN' ? 0 : activeScrumDay === 'MAR - JUE' ? 120 : 240}deg)`,
+                    transformOrigin: '0 0',
+                    marginTop: '-50%',
+                    marginLeft: '-50%',
                     boxShadow: `0 0 25px ${brandPrimary}15`
                   }}
                 />
                 <div
-                  className="absolute top-1/2 left-1/2 w-[82%] h-[82%] rounded-full border border-dashed pointer-events-none transition-transform duration-[1000ms] ease-out"
+                  className="absolute top-1/2 left-1/2 w-[82%] h-[82%] rounded-full border border-dashed pointer-events-none animate-spin-slow-ccw"
                   style={{
                     borderColor: `${brandSecondary}50`,
-                    transform: `translate(-50%, -50%) rotate(${activeScrumDay === 'LUN' ? 0 : activeScrumDay === 'MAR - JUE' ? -120 : -240}deg)`,
+                    transformOrigin: '0 0',
+                    marginTop: '-41%',
+                    marginLeft: '-41%',
                     boxShadow: `0 0 30px ${brandSecondary}20`
                   }}
                 />
                 <div
-                  className="absolute top-1/2 left-1/2 w-[65%] h-[65%] rounded-full flex flex-col items-center justify-center p-4 text-center border pointer-events-none transition-all duration-700"
+                  className="absolute top-1/2 left-1/2 w-[65%] h-[65%] rounded-full flex flex-col items-center justify-center p-6 text-center border pointer-events-none transition-all duration-700"
                   style={{
                     background: `radial-gradient(circle, ${brandPrimary}25 0%, rgba(3,7,18,0.98) 90%)`,
                     borderColor: 'rgba(255,255,255,0.1)',
@@ -879,22 +885,22 @@ const ProposalView: React.FC = () => {
                   }}
                 >
                   <svg 
-                    width="24" 
-                    height="24" 
+                    width="32" 
+                    height="32" 
                     viewBox="0 0 24 24" 
                     fill="none" 
                     stroke="#ffffff" 
                     strokeWidth="2.5" 
                     strokeLinecap="round" 
                     strokeLinejoin="round" 
-                    className="animate-spin-slow mb-1"
+                    className="animate-spin-slow mb-2"
                   >
                     <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
                   </svg>
-                  <span className="text-[9px] font-black uppercase tracking-widest text-[#f3f4f6]">
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#f3f4f6]">
                     Ciclo Scrum
                   </span>
-                  <span className="text-[11px] font-black uppercase tracking-tight mt-0.5" style={{ color: brandPrimary }}>
+                  <span className="text-xs font-black uppercase tracking-tight mt-1.5" style={{ color: brandPrimary }}>
                     {activeScrumDay}
                   </span>
                 </div>
@@ -904,56 +910,59 @@ const ProposalView: React.FC = () => {
         );
       case 5:
         return (
-          <div className="space-y-6 min-h-[420px]">
+          <div className="space-y-8 min-h-[480px]">
             <div className="gsap-reveal-up">
-              <h3 className="text-2xl md:text-3xl font-display font-black text-white uppercase tracking-tight">
+              <h3 className="text-4xl md:text-5xl lg:text-6xl font-display font-black text-white uppercase tracking-tighter animate-text-glow-pulse">
                 Cronograma de Fases
               </h3>
-              <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mt-1.5 leading-relaxed">
+              <p className="text-xs md:text-sm text-slate-400 uppercase tracking-[0.2em] font-bold mt-2 leading-relaxed">
                 {(proposal.methodology || DEFAULT_METHODOLOGY).phases_intro || DEFAULT_METHODOLOGY.phases_intro}
               </p>
             </div>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 pt-4">
-              {proposal.milestones.map((m, i) => (
-                <div
-                  key={i}
-                  className="relative p-6 rounded-2xl border border-white/5 text-center transition-all bg-white/[0.01] group shadow-xl brand-hover-card gsap-reveal-scale"
-                >
-                  <div className="absolute top-2 right-3 text-[9px] font-bold text-slate-700">#{i + 1}</div>
-                  <div className="mb-4 flex justify-center text-slate-500 group-hover:scale-110 transition-transform">
-                    <IconResolver name={m.icon_name} size={18} />
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 pt-6">
+              {proposal.milestones.map((m, i) => {
+                const floatClass = i % 3 === 0 ? 'animate-float-y-1' : i % 3 === 1 ? 'animate-float-y-2' : 'animate-float-y-3';
+                return (
+                  <div
+                    key={i}
+                    className={`relative p-8 rounded-2xl border border-white/5 text-center transition-all bg-white/[0.01] group shadow-2xl brand-hover-card gsap-reveal-scale ${floatClass}`}
+                  >
+                    <div className="absolute top-3 right-4 text-xs font-black text-slate-700">#{i + 1}</div>
+                    <div className="mb-6 flex justify-center text-slate-400 group-hover:scale-110 transition-transform">
+                      <IconResolver name={m.icon_name} size={24} style={{ color: brandPrimary }} />
+                    </div>
+                    <div className="flex flex-col items-center mb-2">
+                      <span className="text-[8px] font-black text-slate-500 uppercase tracking-[0.25em] mb-1">Semanas</span>
+                      <p className="text-sm font-black tracking-widest leading-none" style={{ color: brandPrimary }}>
+                        {m.week_range}
+                      </p>
+                    </div>
+                    <p className="text-sm md:text-base font-display font-black text-white leading-snug tracking-tight uppercase">{m.title}</p>
                   </div>
-                  <div className="flex flex-col items-center mb-1">
-                    <span className="text-[7px] font-black text-slate-500 uppercase tracking-[0.2em] mb-0.5">Semanas</span>
-                    <p className="text-xs font-black tracking-widest leading-none" style={{ color: brandPrimary }}>
-                      {m.week_range}
-                    </p>
-                  </div>
-                  <p className="text-xs font-display font-black text-white leading-snug tracking-tight">{m.title}</p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         );
       case 6:
         return (
-          <div className="space-y-6 min-h-[420px]">
-            <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4 gsap-reveal-up">
+          <div className="space-y-8 min-h-[480px]">
+            <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-6 gsap-reveal-up">
               <div>
-                <h3 className="text-2xl md:text-3xl font-display font-black text-white uppercase tracking-tight">
+                <h3 className="text-4xl md:text-5xl lg:text-6xl font-display font-black text-white uppercase tracking-tighter animate-text-glow-pulse">
                   Desglose Técnico de Horas
                 </h3>
-                <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mt-1.5 leading-relaxed max-w-lg">
+                <p className="text-xs md:text-sm text-slate-400 uppercase tracking-[0.2em] font-bold mt-2 leading-relaxed max-w-xl">
                   {activeDesgloseTab === 'w1-8'
                     ? (proposal.methodology || DEFAULT_METHODOLOGY).weekly_breakdown_intro_1_8 || DEFAULT_METHODOLOGY.weekly_breakdown_intro_1_8
                     : (proposal.methodology || DEFAULT_METHODOLOGY).weekly_breakdown_intro_9_16 || DEFAULT_METHODOLOGY.weekly_breakdown_intro_9_16
                   }
                 </p>
               </div>
-              <div className="flex bg-white/5 rounded-xl border border-white/5 p-1 shrink-0 self-start md:self-end">
+              <div className="flex bg-white/5 rounded-2xl border border-white/5 p-1.5 shrink-0 self-start md:self-end">
                 <button
                   onClick={() => setActiveDesgloseTab('w1-8')}
-                  className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                  className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
                     activeDesgloseTab === 'w1-8' ? 'bg-white/10 text-white' : 'text-slate-500 hover:text-slate-300'
                   }`}
                 >
@@ -961,7 +970,7 @@ const ProposalView: React.FC = () => {
                 </button>
                 <button
                   onClick={() => setActiveDesgloseTab('w9-16')}
-                  className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                  className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
                     activeDesgloseTab === 'w9-16' ? 'bg-white/10 text-white' : 'text-slate-500 hover:text-slate-300'
                   }`}
                 >
@@ -970,69 +979,75 @@ const ProposalView: React.FC = () => {
               </div>
             </div>
 
-            <div data-lenis-prevent className="space-y-2 max-h-[420px] overflow-y-auto pr-2 custom-scrollbar">
-              {(activeDesgloseTab === 'w1-8' ? WEEKS_BREAKDOWN_1_8 : WEEKS_BREAKDOWN_9_16).map((week) => (
-                <div key={week.id} className="p-4 rounded-xl bg-white/[0.01] border border-white/5 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 brand-hover-card gsap-reveal-up">
-                  <div className="flex gap-4 items-start">
-                    <span className="text-xs font-black uppercase font-mono px-2 py-0.5 rounded border border-white/5 text-slate-500 bg-white/5">
-                      {week.id}
-                    </span>
-                    <div>
-                      <h4 className="text-sm font-black text-white uppercase tracking-tight mb-0.5">{week.title}</h4>
-                      <p className="text-xs text-slate-400 font-light leading-relaxed">{week.desc}</p>
+            <div data-lenis-prevent className="space-y-3 max-h-[340px] md:max-h-[380px] overflow-y-auto pr-2 custom-scrollbar">
+              {(activeDesgloseTab === 'w1-8' ? WEEKS_BREAKDOWN_1_8 : WEEKS_BREAKDOWN_9_16).map((week, i) => {
+                const floatClass = i % 3 === 0 ? 'animate-float-y-1' : i % 3 === 1 ? 'animate-float-y-2' : 'animate-float-y-3';
+                return (
+                  <div key={week.id} className={`p-5 rounded-2xl bg-white/[0.01] border border-white/5 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 brand-hover-card gsap-reveal-up ${floatClass}`}>
+                    <div className="flex gap-4 items-start">
+                      <span className="text-sm font-black uppercase font-mono px-3 py-1 rounded-lg border border-white/5 text-slate-400 bg-white/5">
+                        {week.id}
+                      </span>
+                      <div>
+                        <h4 className="text-base md:text-lg font-black text-white uppercase tracking-tight mb-0.5">{week.title}</h4>
+                        <p className="text-sm text-slate-400 font-light leading-relaxed">{week.desc}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0 self-end md:self-center">
+                      <div className="w-24 h-1 bg-white/5 rounded-full overflow-hidden hidden md:block">
+                        <div className="h-full rounded-full gsap-progress-bar origin-left" style={{ width: '100%', background: gradientStyle }}></div>
+                      </div>
+                      <span className="text-sm md:text-base font-black font-mono" style={{ color: brandSecondary }}>{week.hours.toFixed(1)} hs</span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 shrink-0 self-end md:self-center">
-                    <div className="w-16 h-1 bg-white/5 rounded-full overflow-hidden hidden md:block">
-                      <div className="h-full rounded-full gsap-progress-bar origin-left" style={{ width: '100%', background: gradientStyle }}></div>
-                    </div>
-                    <span className="text-xs font-black font-mono" style={{ color: brandSecondary }}>{week.hours.toFixed(1)} hs</span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         );
       case 7:
         return (
-          <div className="space-y-6 min-h-[420px]">
+          <div className="space-y-8 min-h-[480px]">
             <div className="gsap-reveal-up">
-              <h3 className="text-2xl md:text-3xl font-display font-black text-white uppercase tracking-tight">
+              <h3 className="text-4xl md:text-5xl lg:text-6xl font-display font-black text-white uppercase tracking-tighter animate-text-glow-pulse">
                 Estructura de Inversión
               </h3>
-              <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mt-1.5 leading-relaxed">
+              <p className="text-xs md:text-sm text-slate-400 uppercase tracking-[0.2em] font-bold mt-2 leading-relaxed">
                 Presupuesto y estructura financiera con costos mensuales operativos del software.
               </p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
-              <div className="p-6 rounded-2xl border border-white/5 bg-white/[0.01] flex flex-col justify-between min-h-[200px] brand-hover-card gsap-reveal-left">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-4">
+              <div className="p-8 rounded-3xl border border-white/5 bg-white/[0.01] flex flex-col justify-between min-h-[220px] brand-hover-card gsap-reveal-left animate-float-pulse">
                 <div>
-                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-2">Presupuesto Final</p>
-                  <h4 className="text-4xl lg:text-5xl font-display font-black text-white tracking-tighter mb-4 gsap-reveal-scale">{proposal.total_value}</h4>
+                  <p className="text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Presupuesto Final</p>
+                  <h4 className="text-5xl lg:text-6xl font-display font-black text-white tracking-tighter mb-4 gsap-reveal-scale">{proposal.total_value}</h4>
                 </div>
                 <button
                   onClick={openContractModal}
                   disabled={isConfirmed}
-                  className="w-full py-4 rounded-xl font-black uppercase tracking-widest text-[9px] flex items-center justify-center gap-2 text-white shadow-lg active:scale-98 transition-all cursor-pointer brand-btn-glow"
+                  className="w-full py-5 rounded-2xl font-black uppercase tracking-widest text-[11px] flex items-center justify-center gap-2 text-white shadow-lg active:scale-98 transition-all cursor-pointer brand-btn-glow"
                   style={!isConfirmed ? { background: gradientStyle } : { backgroundColor: 'var(--color-proposal-dark)', border: '1px solid rgba(255,255,255,0.1)' }}
                 >
-                  {isConfirmed ? 'Proyecto Confirmado' : 'Confirmar Proyecto'} <ChevronRight size={12} />
+                  {isConfirmed ? 'Proyecto Confirmado' : 'Confirmar Proyecto'} <ChevronRight size={14} />
                 </button>
               </div>
-              <div className="p-6 rounded-2xl border border-white/5 bg-white/[0.01] md:col-span-2 space-y-3 brand-hover-card gsap-reveal-right">
-                <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-4">Estructura de Desembolsos</p>
-                <div className="space-y-2">
-                  {proposal.payments.map((p, i) => (
-                    <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-white/[0.015] border border-white/5 hover:bg-white/[0.03] transition-all cursor-default">
-                      <div>
-                        <p className="text-xs font-black text-white uppercase tracking-wider mb-0.5">{p.label}</p>
-                        <p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">{p.description}</p>
+              <div className="p-8 rounded-3xl border border-white/5 bg-white/[0.01] md:col-span-2 space-y-4 brand-hover-card gsap-reveal-right">
+                <p className="text-xs font-black uppercase tracking-widest text-slate-500 mb-4">Estructura de Desembolsos</p>
+                <div className="space-y-3">
+                  {proposal.payments.map((p, i) => {
+                    const floatClass = i % 2 === 0 ? 'animate-float-y-1' : 'animate-float-y-3';
+                    return (
+                      <div key={i} className={`flex items-center justify-between p-4 rounded-2xl bg-white/[0.015] border border-white/5 hover:bg-white/[0.03] transition-all cursor-default ${floatClass}`}>
+                        <div>
+                          <p className="text-sm md:text-base font-black text-white uppercase tracking-wider mb-0.5">{p.label}</p>
+                          <p className="text-xs text-slate-400 uppercase tracking-widest font-bold">{p.description}</p>
+                        </div>
+                        <span className="text-lg md:text-xl font-display font-black" style={{ color: brandPrimary }}>
+                          {p.percentage}
+                        </span>
                       </div>
-                      <span className="text-base font-display font-black" style={{ color: brandPrimary }}>
-                        {p.percentage}
-                      </span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -1040,40 +1055,40 @@ const ProposalView: React.FC = () => {
         );
       case 8:
         return (
-          <div className="space-y-6 min-h-[420px]">
+          <div className="space-y-8 min-h-[480px]">
             <div className="gsap-reveal-up">
-              <h3 className="text-2xl md:text-3xl font-display font-black text-white uppercase tracking-tight">
+              <h3 className="text-4xl md:text-5xl lg:text-6xl font-display font-black text-white uppercase tracking-tighter animate-text-glow-pulse">
                 Confirmación de Propuesta
               </h3>
-              <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mt-1.5 leading-relaxed">
+              <p className="text-xs md:text-sm text-slate-400 uppercase tracking-[0.2em] font-bold mt-2 leading-relaxed">
                 Formalizá la contratación firmando digitalmente el contrato de servicios comerciales.
               </p>
             </div>
-            <div className="p-6 rounded-2xl border border-white/5 bg-white/[0.01] relative overflow-hidden flex flex-col items-center justify-center text-center min-h-[260px] brand-hover-card gsap-reveal-scale">
+            <div className="p-8 rounded-3xl border border-white/5 bg-white/[0.01] relative overflow-hidden flex flex-col items-center justify-center text-center min-h-[300px] brand-hover-card gsap-reveal-scale animate-float-pulse">
               <div className="absolute inset-0 bg-gradient-to-tr from-transparent to-white/[0.01] pointer-events-none"></div>
-              <div className="relative z-10 max-w-md mx-auto space-y-6">
-                <div className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mx-auto gsap-reveal-scale">
-                  <ShieldCheck size={28} style={{ color: brandPrimary }} />
+              <div className="relative z-10 max-w-lg mx-auto space-y-8">
+                <div className="w-20 h-20 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mx-auto gsap-reveal-scale shadow-xl animate-float-y-1">
+                  <ShieldCheck size={36} style={{ color: brandPrimary }} />
                 </div>
                 {isConfirmed ? (
-                  <div className="space-y-2 gsap-reveal-up">
-                    <h4 className="text-xl font-display font-black text-white tracking-tight uppercase">Propuesta Aceptada</h4>
-                    <p className="text-xs text-emerald-400 font-bold uppercase tracking-widest">
+                  <div className="space-y-3 gsap-reveal-up">
+                    <h4 className="text-2xl font-display font-black text-white tracking-tight uppercase">Propuesta Aceptada</h4>
+                    <p className="text-sm text-emerald-400 font-bold uppercase tracking-widest">
                       Contrato firmado digitalmente el {new Date().toLocaleDateString()}
                     </p>
                   </div>
                 ) : (
-                  <div className="space-y-3 gsap-reveal-up">
-                    <h4 className="text-lg font-display font-black text-white uppercase tracking-tight">Contrato de Servicios Listo</h4>
-                    <p className="text-xs text-slate-400 font-light leading-relaxed">
+                  <div className="space-y-4 gsap-reveal-up">
+                    <h4 className="text-xl font-display font-black text-white uppercase tracking-tight">Contrato de Servicios Listo</h4>
+                    <p className="text-sm text-slate-300 font-light leading-relaxed">
                       Al hacer clic en el botón a continuación, se abrirá la interfaz para firmar digitalmente y descargar el contrato formal.
                     </p>
                     <button
                       onClick={openContractModal}
-                      className="px-8 py-4.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-white shadow-2xl flex items-center gap-3 transition-all hover:scale-105 mx-auto cursor-pointer active:scale-95 mt-4 brand-btn-glow"
+                      className="px-12 py-5.5 rounded-2xl text-[11px] font-black uppercase tracking-widest text-white shadow-2xl flex items-center gap-3 transition-all hover:scale-105 mx-auto cursor-pointer active:scale-95 mt-6 brand-btn-glow"
                       style={{ background: gradientStyle }}
                     >
-                      Firmar Digitalmente <FileText size={14} />
+                      Firmar Digitalmente <FileText size={16} />
                     </button>
                   </div>
                 )}
@@ -1122,8 +1137,57 @@ const ProposalView: React.FC = () => {
         .brand-btn-glow:hover {
           box-shadow: 0 0 30px ${brandPrimary}55;
         }
+        
+        /* Constant Motion & Pulse Animations */
+        @keyframes float-y-1 {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-8px); }
+        }
+        @keyframes float-y-2 {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(8px); }
+        }
+        @keyframes float-y-3 {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-5px); }
+        }
+        @keyframes float-pulse {
+          0%, 100% { transform: translateY(0px) scale(1); }
+          50% { transform: translateY(-6px) scale(1.02); }
+        }
+        @keyframes text-glow-pulse {
+          0%, 100% { text-shadow: 0 0 10px rgba(255, 255, 255, 0.05); }
+          50% { text-shadow: 0 0 20px ${brandPrimary}66, 0 0 10px ${brandSecondary}44; }
+        }
+        @keyframes border-glow-pulse {
+          0%, 100% { border-color: rgba(255, 255, 255, 0.05); }
+          50% { border-color: ${brandPrimary}25; }
+        }
+        
+        .animate-float-y-1 {
+          animation: float-y-1 6s ease-in-out infinite;
+        }
+        .animate-float-y-2 {
+          animation: float-y-2 7s ease-in-out infinite;
+        }
+        .animate-float-y-3 {
+          animation: float-y-3 5s ease-in-out infinite;
+        }
+        .animate-float-pulse {
+          animation: float-pulse 8s ease-in-out infinite;
+        }
+        .animate-text-glow-pulse {
+          animation: text-glow-pulse 4s ease-in-out infinite;
+        }
+        .animate-border-glow-pulse {
+          animation: border-glow-pulse 5s ease-in-out infinite;
+        }
+        
         .animate-spin-slow {
-          animation: spin 8s linear infinite;
+          animation: spin 15s linear infinite;
+        }
+        .animate-spin-slow-ccw {
+          animation: spin 18s linear infinite reverse;
         }
         @keyframes spin {
           from {
@@ -1170,11 +1234,11 @@ const ProposalView: React.FC = () => {
       </div>
 
       {/* Decorative ambient gradient blobs */}
-      <div className="absolute top-[10%] left-[20%] w-[500px] h-[500px] rounded-full blur-[140px] opacity-[0.08] pointer-events-none" style={{ backgroundColor: brandPrimary }} />
-      <div className="absolute bottom-[15%] right-[10%] w-[600px] h-[600px] rounded-full blur-[160px] opacity-[0.06] pointer-events-none" style={{ backgroundColor: brandSecondary }} />
+      <div className="absolute top-[10%] left-[20%] w-[500px] h-[500px] rounded-full blur-[140px] opacity-[0.08] pointer-events-none animate-float-y-1" style={{ backgroundColor: brandPrimary }} />
+      <div className="absolute bottom-[15%] right-[10%] w-[600px] h-[600px] rounded-full blur-[160px] opacity-[0.06] pointer-events-none animate-float-y-2" style={{ backgroundColor: brandSecondary }} />
 
       {/* Top Header */}
-      <header className="w-full max-w-6xl mx-auto flex justify-between items-center z-20 relative px-2">
+      <header className="w-full max-w-7xl mx-auto flex justify-between items-center z-20 relative px-4">
         <div className="flex items-center gap-2 select-none">
           <div className="w-2 h-2 rounded-full animate-pulse shadow-lg" style={{ backgroundColor: brandPrimary, boxShadow: `0 0 10px ${brandPrimary}` }} />
           <span className="text-[12px] font-black uppercase tracking-[0.25em] text-white">CREAPP</span>
@@ -1185,7 +1249,7 @@ const ProposalView: React.FC = () => {
       </header>
 
       {/* Main Slide Deck Viewport */}
-      <main className="flex-1 flex flex-col justify-center items-center relative z-10 w-full max-w-6xl mx-auto my-6 overflow-hidden px-2">
+      <main className="flex-1 flex flex-col justify-center items-center relative z-10 w-full max-w-7xl mx-auto my-6 overflow-hidden px-4">
         <div className="w-full h-full flex flex-col justify-center">
           <AnimatePresence mode="wait" initial={false} custom={direction}>
             <motion.div
