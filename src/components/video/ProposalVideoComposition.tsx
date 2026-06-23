@@ -49,7 +49,8 @@ interface ProposalVideoCompositionProps {
 // Helper to format currency
 const formatPrice = (value: number, currency: string = 'USD') => {
   const formattedVal = Math.round(value).toLocaleString('es-AR');
-  return `${currency === 'ARS' ? 'ARS' : 'US$'} ${formattedVal}`;
+  const displayCurrency = currency === 'ARS' ? 'ARS' : currency === 'USD' ? 'US$' : currency;
+  return `${displayCurrency} ${formattedVal}`;
 };
 
 // Background Floating Particles Component

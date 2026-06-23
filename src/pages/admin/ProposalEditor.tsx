@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft,
   Save,
   Eye,
+  EyeOff,
   Plus,
   Trash2,
   GripVertical,
@@ -49,8 +50,30 @@ import { importProposalFromDocument } from '@/lib/geminiService';
 
 const getCurrencyFromTotal = (valString: string) => {
   const clean = (valString || '').trim().toUpperCase();
-  if (clean.startsWith('ARS') || clean.includes('ARS')) return 'ARS';
+  const match = clean.match(/^([A-Z\$]{1,5})/);
+  if (match) {
+    return match[1];
+  }
+  const currencies = ['USD', 'ARS', 'EUR', 'CLP', 'MXN', 'UYU', 'BRL', 'PEN', 'COP'];
+  for (const curr of currencies) {
+    if (clean.includes(curr)) return curr;
+  }
   return 'USD';
+};
+
+const getValueFromTotal = (valString: string) => {
+  const clean = (valString || '').trim();
+  const match = clean.match(/^[A-Z\$]{1,5}\s*(.*)$/i);
+  if (match) {
+    return match[1];
+  }
+  return clean;
+};
+
+const formatTotalValue = (valString: string) => {
+  const clean = (valString || '').trim();
+  if (/^[A-Z\$]{1,5}\s/i.test(clean)) return clean;
+  return `${getCurrencyFromTotal(clean)} ${clean}`;
 };
 
 // =========================================================
@@ -213,6 +236,8 @@ const ProposalEditor: React.FC = () => {
 
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(!isNew);
+  const [showToast, setShowToast] = useState(false);
+  const skipNextFetchRef = useRef(false);
 
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -360,7 +385,20 @@ const ProposalEditor: React.FC = () => {
   const [zoom, setZoom] = useState<number>(0.6);
 
   useEffect(() => {
+    if (showToast) {
+      const timer = setTimeout(() => {
+        setShowToast(false);
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [showToast]);
+
+  useEffect(() => {
     if (isNew) return;
+    if (skipNextFetchRef.current) {
+      skipNextFetchRef.current = false;
+      return;
+    }
 
     const fetchData = async () => {
       setLoading(true);
@@ -586,7 +624,12 @@ const ProposalEditor: React.FC = () => {
         upsertChildItems('proposal_infrastructure_costs', proposalId!, infrastructureCosts as Record<string, unknown>[]),
       ]);
 
-      navigate('/admin');
+      if (isNew) {
+        skipNextFetchRef.current = true;
+        navigate(`/admin/propuesta/${proposalId}`, { replace: true });
+      }
+
+      setShowToast(true);
     } catch (err) {
       console.error('Error saving:', err);
       const message = err instanceof Error ? err.message : (err as any)?.message || 'Error desconocido';
@@ -783,7 +826,7 @@ const ProposalEditor: React.FC = () => {
         </div>
         <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
           <span>Propuesta Comercial | {clientName}</span>
-          <span>Página 2 de 7</span>
+          <span>{getPageFooter('alcance')}</span>
         </div>
       </div>
     );
@@ -897,8 +940,8 @@ const ProposalEditor: React.FC = () => {
         )}
       </div>
       <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
-        <span>Presupuesto Consolidado: <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{totalValue.toUpperCase().includes('ARS') || totalValue.toUpperCase().includes('USD') ? totalValue : `${currency} ${totalValue}`} TOTAL</span></span>
-        <span>Página 3 de 7</span>
+        <span>Presupuesto Consolidado: <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{formatTotalValue(totalValue)} TOTAL</span></span>
+        <span>{getPageFooter('hitos')}</span>
       </div>
     </div>
     );
@@ -956,7 +999,7 @@ const ProposalEditor: React.FC = () => {
         </div>
         <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
           <span>CREAPP // ACCUMULATED_HOURS_80</span>
-          <span>Página 4 de 7</span>
+          <span>{getPageFooter('sem1-6')}</span>
         </div>
       </div>
     );
@@ -1014,7 +1057,7 @@ const ProposalEditor: React.FC = () => {
         </div>
         <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
           <span>CREAPP // ESTIMATED_HOURS_160_TOTAL</span>
-          <span>Página 5 de 7</span>
+          <span>{getPageFooter('sem9-16')}</span>
         </div>
       </div>
     );
@@ -1098,7 +1141,7 @@ const ProposalEditor: React.FC = () => {
         </div>
         <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
           <span>Propuesta Comercial | {clientName}</span>
-          <span>Página 6 de 7</span>
+          <span>{getPageFooter('metodologia')}</span>
         </div>
       </div>
     );
@@ -1170,31 +1213,101 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
       </div>
       <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
         <span>Propuesta Comercial | {clientName}</span>
-        <span>Página 7 de 7</span>
+        <span>{getPageFooter('legal')}</span>
       </div>
     </div>
   );
 
-  const getPageNumber = (tab: EditorTab) => {
-    switch (tab) {
-      case 'config':
-      case 'portada':
-        return 1;
-      case 'alcance':
-        return 2;
-      case 'hitos':
-        return 3;
-      case 'sem1-6':
-        return 4;
-      case 'sem9-16':
-        return 5;
-      case 'metodologia':
-        return 6;
-      case 'legal':
-        return 7;
-      default:
-        return 1;
+  const ALL_PAGES = [
+    { id: 'portada', name: 'Portada' },
+    { id: 'alcance', name: 'Alcance & Entregables' },
+    { id: 'hitos', name: 'Cronograma & Pagos' },
+    { id: 'sem1-6', name: 'Desglose 1-8' },
+    { id: 'sem9-16', name: 'Desglose 9-16' },
+    { id: 'metodologia', name: 'Metodología' },
+    { id: 'legal', name: 'Legal' }
+  ];
+
+  const isPageHidden = (pageId: string) => {
+    const currentHidden = methodology?.hidden_pages || [];
+    return currentHidden.includes(pageId);
+  };
+
+  const togglePageVisibility = (pageId: string) => {
+    const currentHidden = methodology?.hidden_pages || [];
+    let updatedHidden: string[];
+    if (currentHidden.includes(pageId)) {
+      updatedHidden = currentHidden.filter(id => id !== pageId);
+    } else {
+      updatedHidden = [...currentHidden, pageId];
     }
+    setMethodology((prev: any) => ({
+      ...(prev || DEFAULT_METHODOLOGY),
+      hidden_pages: updatedHidden
+    }));
+  };
+
+  const getPageFooter = (pageId: string) => {
+    const hiddenPages = methodology?.hidden_pages || [];
+    const visiblePages = ALL_PAGES.filter(p => !hiddenPages.includes(p.id));
+    const pageIndex = visiblePages.findIndex(p => p.id === pageId);
+    if (pageIndex === -1) {
+      const conceptualIndex = ALL_PAGES.findIndex(p => p.id === pageId);
+      return `Página ${conceptualIndex + 1} (Oculta)`;
+    }
+    return `Página ${pageIndex + 1} de ${visiblePages.length}`;
+  };
+
+  const getPageNumber = (tab: EditorTab) => {
+    const hiddenPages = methodology?.hidden_pages || [];
+    const visiblePages = ALL_PAGES.filter(p => !hiddenPages.includes(p.id));
+    
+    const targetId = tab === 'config' ? 'portada' : tab;
+    const pageIndex = visiblePages.findIndex(p => p.id === targetId);
+    
+    if (pageIndex === -1) {
+      const conceptualIndex = ALL_PAGES.findIndex(p => p.id === targetId);
+      return `${conceptualIndex + 1} (Oculta)`;
+    }
+    
+    return pageIndex + 1;
+  };
+
+  const renderVisibilityCard = (pageId: string, pageName: string) => {
+    const isHidden = isPageHidden(pageId);
+    return (
+      <div className={`glass rounded-2xl p-4 border transition-all duration-300 flex items-center justify-between mb-6 ${
+        isHidden 
+          ? 'border-rose-500/30 bg-rose-500/[0.02] shadow-lg shadow-rose-500/[0.02]' 
+          : 'border-white/5 bg-slate-900/40'
+      }`}>
+        <div className="flex items-center gap-3">
+          <div className={`p-2.5 rounded-xl ${isHidden ? 'bg-rose-500/10 text-rose-400' : 'bg-white/5 text-slate-400'}`}>
+            {isHidden ? <EyeOff size={18} /> : <Eye size={18} />}
+          </div>
+          <div>
+            <h4 className="text-xs font-black uppercase tracking-wider text-slate-200">
+              Visibilidad de la Página
+            </h4>
+            <p className="text-[10px] text-slate-400 mt-0.5">
+              {isHidden 
+                ? `La página "${pageName}" está oculta. No se exportará al PDF.` 
+                : `La página "${pageName}" está activa y se incluirá en el PDF.`}
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={() => togglePageVisibility(pageId)}
+          className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer ${
+            isHidden 
+              ? 'bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 border border-rose-500/30' 
+              : 'bg-white/5 text-slate-300 hover:bg-white/10 border border-white/10'
+          }`}
+        >
+          {isHidden ? 'Mostrar Página' : 'Ocultar Página'}
+        </button>
+      </div>
+    );
   };
 
   const renderPreviewPage = (tab: EditorTab) => {
@@ -1326,28 +1439,33 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
         {/* Tab Navigation */}
         <div className="flex items-center gap-1 mb-6 overflow-x-auto pb-2 scrollbar-hide">
           {([
-            { id: 'config' as EditorTab, label: 'Config', icon: Settings },
-            { id: 'portada' as EditorTab, label: 'Portada (P1)', icon: BookOpen },
-            { id: 'alcance' as EditorTab, label: 'Alcance (P2)', icon: CheckCircle2 },
-            { id: 'hitos' as EditorTab, label: 'Hitos (P3)', icon: Target },
-            { id: 'sem1-6' as EditorTab, label: 'Sem 1-6 (P4)', icon: Calendar },
-            { id: 'sem9-16' as EditorTab, label: 'Sem 9-16 (P5)', icon: Clock },
-            { id: 'metodologia' as EditorTab, label: 'Metodol. (P6)', icon: Scale },
-            { id: 'legal' as EditorTab, label: 'Legal (P7)', icon: FileSignature },
-          ]).map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              onClick={() => setActiveEditorTab(id)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all duration-300 border ${
-                activeEditorTab === id
-                  ? 'bg-white/10 text-white border-white/20 shadow-lg'
-                  : 'text-slate-500 hover:text-slate-300 border-transparent hover:border-white/5'
-              }`}
-            >
-              <Icon size={14} />
-              {label}
-            </button>
-          ))}
+            { id: 'config' as EditorTab, label: 'Config', icon: Settings, pageId: null },
+            { id: 'portada' as EditorTab, label: 'Portada (P1)', icon: BookOpen, pageId: 'portada' },
+            { id: 'alcance' as EditorTab, label: 'Alcance (P2)', icon: CheckCircle2, pageId: 'alcance' },
+            { id: 'hitos' as EditorTab, label: 'Hitos (P3)', icon: Target, pageId: 'hitos' },
+            { id: 'sem1-6' as EditorTab, label: 'Sem 1-6 (P4)', icon: Calendar, pageId: 'sem1-6' },
+            { id: 'sem9-16' as EditorTab, label: 'Sem 9-16 (P5)', icon: Clock, pageId: 'sem9-16' },
+            { id: 'metodologia' as EditorTab, label: 'Metodol. (P6)', icon: Scale, pageId: 'metodologia' },
+            { id: 'legal' as EditorTab, label: 'Legal (P7)', icon: FileSignature, pageId: 'legal' },
+          ]).map(({ id, label, icon: Icon, pageId }) => {
+            const isHidden = pageId ? isPageHidden(pageId) : false;
+            return (
+              <button
+                key={id}
+                onClick={() => setActiveEditorTab(id)}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all duration-300 border ${
+                  activeEditorTab === id
+                    ? 'bg-white/10 text-white border-white/20 shadow-lg'
+                    : isHidden
+                      ? 'text-rose-500/50 hover:text-rose-400 border-dashed border-rose-500/10 hover:border-rose-500/20 line-through bg-rose-500/[0.01]'
+                      : 'text-slate-500 hover:text-slate-300 border-transparent hover:border-white/5'
+                }`}
+              >
+                {isHidden ? <EyeOff size={14} className="text-rose-500/80" /> : <Icon size={14} />}
+                {label}
+              </button>
+            );
+          })}
           <button
             onClick={() => setActiveEditorTab('video')}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all duration-300 border ${
@@ -1466,6 +1584,7 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
         {/* PORTADA TAB */}
         {activeEditorTab === 'portada' && (
           <div className="space-y-6">
+            {renderVisibilityCard('portada', 'Portada')}
             <h2 className="text-xl font-display font-black text-white">
               Portada (P1) — Contenido
             </h2>
@@ -1606,6 +1725,7 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
         {/* ALCANCE TAB */}
         {activeEditorTab === 'alcance' && (
           <div className="space-y-6">
+            {renderVisibilityCard('alcance', 'Alcance & Entregables')}
             <Section title="Introducciones de Alcance & Exclusiones">
               <div className="p-4 rounded-xl bg-[#090d16] border border-white/5 shadow-lg space-y-4">
                 <div>
@@ -1838,20 +1958,40 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
         {/* HITOS TAB */}
         {activeEditorTab === 'hitos' && (
           <div className="space-y-8">
+            {renderVisibilityCard('hitos', 'Cronograma & Pagos')}
             <div className="flex justify-between items-center border-b border-white/5 pb-4">
               <h2 className="text-xl font-display font-black text-white">
                 Finanzas & Cronograma (P3 / P7)
               </h2>
-              {/* Presupuesto Consolidado */}
-              <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/10">
-                <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Total Consolidado:</span>
-                <input
-                  type="text"
-                  value={totalValue}
-                  onChange={(e) => setTotalValue(e.target.value)}
-                  placeholder="USD 2.200"
-                  className="bg-transparent text-primary text-sm font-black w-24 focus:outline-none text-right font-mono"
-                />
+              {/* Presupuesto Consolidado & Divisa */}
+              <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-xl border border-white/10">
+                <div className="flex items-center gap-1.5 border-r border-white/10 pr-2">
+                  <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Divisa:</span>
+                  <input
+                    type="text"
+                    value={getCurrencyFromTotal(totalValue)}
+                    onChange={(e) => {
+                      const newCurrency = e.target.value.toUpperCase().replace(/[^A-Z\$]/g, '').slice(0, 5);
+                      const amount = getValueFromTotal(totalValue);
+                      setTotalValue(`${newCurrency} ${amount}`);
+                    }}
+                    placeholder="USD"
+                    className="bg-transparent text-primary text-sm font-black w-14 focus:outline-none text-center font-mono border-b border-white/10 focus:border-primary pb-0.5"
+                  />
+                </div>
+                <div className="flex items-center gap-1.5 pl-1">
+                  <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Monto:</span>
+                  <input
+                    type="text"
+                    value={getValueFromTotal(totalValue)}
+                    onChange={(e) => {
+                      const currency = getCurrencyFromTotal(totalValue);
+                      setTotalValue(`${currency} ${e.target.value}`);
+                    }}
+                    placeholder="2.200"
+                    className="bg-transparent text-primary text-sm font-black w-24 focus:outline-none text-right font-mono border-b border-white/10 focus:border-primary pb-0.5"
+                  />
+                </div>
               </div>
             </div>
 
@@ -2162,6 +2302,7 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
         {/* SEM 1-6 TAB */}
         {activeEditorTab === 'sem1-6' && (
           <div className="space-y-6">
+            {renderVisibilityCard('sem1-6', 'Desglose Semanas 1 a 8')}
             <div>
               <h2 className="text-xl font-display font-black text-white uppercase tracking-wider">
                 Desglose Semanas 1-8 (Mes 1 y 2)
@@ -2281,6 +2422,7 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
         {/* SEM 9-16 TAB */}
         {activeEditorTab === 'sem9-16' && (
           <div className="space-y-6">
+            {renderVisibilityCard('sem9-16', 'Desglose Semanas 9 a 16')}
             <div>
               <h2 className="text-xl font-display font-black text-white uppercase tracking-wider">
                 Desglose Semanas 9-16 (Mes 3 y 4)
@@ -2400,6 +2542,7 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
         {/* METODOLOGIA TAB */}
         {activeEditorTab === 'metodologia' && (
           <div className="space-y-6">
+            {renderVisibilityCard('metodologia', 'Metodología')}
             <Section title="Introducción de Metodología">
               <div>
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Texto Introductorio / Párrafo Principal</label>
@@ -2572,29 +2715,32 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
 
         {/* LEGAL TAB */}
         {activeEditorTab === 'legal' && (
-          <Section title="Plantilla de Contrato Dinámico">
-            <div className="flex flex-col gap-2 mb-6">
-              <label className="text-slate-300 text-xs font-bold uppercase tracking-wider">Texto Descriptivo / Introducción</label>
-              <textarea
-                value={contractDescription}
-                onChange={(e) => setContractDescription(e.target.value)}
-                placeholder="Acuerdo formal que establece las bases y condiciones legales para la ejecución del proyecto..."
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-primary/50 min-h-[80px] text-sm leading-relaxed"
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <label className="text-slate-300 text-xs font-bold uppercase tracking-wider">Cuerpo del Contrato</label>
-              <p className="text-slate-400 text-xs mb-2">
-                Puede usar variables como <code>{'{client_name}'}</code>, <code>{'{date}'}</code>, <code>{'{location}'}</code> y definir campos interactivos usando <code>{'[input:Etiqueta del Campo]'}</code>.
-              </p>
-              <textarea
-                value={contractText}
-                onChange={(e) => setContractText(e.target.value)}
-                placeholder={`Si se deja vacío, se utilizará la plantilla genérica por defecto:\nEn la localidad de {location}, a los {date}... [input:Nombre]...`}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white placeholder-slate-600 focus:outline-none focus:border-primary/50 min-h-[300px] font-mono text-sm leading-relaxed"
-              />
-            </div>
-          </Section>
+          <div className="space-y-6">
+            {renderVisibilityCard('legal', 'Legal')}
+            <Section title="Plantilla de Contrato Dinámico">
+              <div className="flex flex-col gap-2 mb-6">
+                <label className="text-slate-300 text-xs font-bold uppercase tracking-wider">Texto Descriptivo / Introducción</label>
+                <textarea
+                  value={contractDescription}
+                  onChange={(e) => setContractDescription(e.target.value)}
+                  placeholder="Acuerdo formal que establece las bases y condiciones legales para la ejecución del proyecto..."
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-primary/50 min-h-[80px] text-sm leading-relaxed"
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="text-slate-300 text-xs font-bold uppercase tracking-wider">Cuerpo del Contrato</label>
+                <p className="text-slate-400 text-xs mb-2">
+                  Puede usar variables como <code>{'{client_name}'}</code>, <code>{'{date}'}</code>, <code>{'{location}'}</code> y definir campos interactivos usando <code>{'[input:Etiqueta del Campo]'}</code>.
+                </p>
+                <textarea
+                  value={contractText}
+                  onChange={(e) => setContractText(e.target.value)}
+                  placeholder={`Si se deja vacío, se utilizará la plantilla genérica por defecto:\nEn la localidad de {location}, a los {date}... [input:Nombre]...`}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white placeholder-slate-600 focus:outline-none focus:border-primary/50 min-h-[300px] font-mono text-sm leading-relaxed"
+                />
+              </div>
+            </Section>
+          </div>
         )}
 
         {/* VIDEO TAB - Left panel info */}
@@ -2705,6 +2851,29 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
                       }}
                     >
                       {renderPreviewPage(activeEditorTab)}
+                      {(() => {
+                        const getTabPageId = (tab: EditorTab): string | null => {
+                          if (tab === 'config' || tab === 'video') return null;
+                          return tab;
+                        };
+                        const pageId = getTabPageId(activeEditorTab);
+                        if (pageId && isPageHidden(pageId)) {
+                          return (
+                            <div className="absolute inset-0 bg-rose-950/20 backdrop-blur-[2px] z-50 flex items-center justify-center border-4 border-rose-500/30">
+                              <div className="bg-slate-900/95 border border-rose-500/40 p-6 rounded-2xl flex flex-col items-center gap-3 max-w-xs text-center shadow-2xl">
+                                <div className="p-3 bg-rose-500/10 rounded-full text-rose-500">
+                                  <EyeOff size={28} />
+                                </div>
+                                <span className="text-sm font-black uppercase tracking-wider text-white">Esta página está oculta</span>
+                                <span className="text-[11px] text-slate-400 leading-relaxed">
+                                  No estará visible en el PDF final generado ni en el visor del cliente.
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
                   </div>
                 </div>
@@ -2721,402 +2890,412 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
         style={{ width: '794px', color: '#0f172a', fontFamily: 'system-ui, -apple-system, sans-serif', backgroundColor: '#ffffff' }}
       >
         {/* PÁGINA 1: Portada */}
-        <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
-          <div style={{ position: 'absolute', top: '0', left: '0', right: '0', height: '8px', background: `linear-gradient(to right, ${brandPrimary}, ${brandSecondary})` }}></div>
-          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', flexGrow: 1, gap: '65px', marginTop: '20px', textAlign: 'center' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', alignItems: 'center' }}>
-              <img src={creappLogoOfficial} alt="CreAPP Logo" style={{ height: '105px', objectFit: 'contain' }} />
+        {!isPageHidden('portada') && (
+          <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
+            <div style={{ position: 'absolute', top: '0', left: '0', right: '0', height: '8px', background: `linear-gradient(to right, ${brandPrimary}, ${brandSecondary})` }}></div>
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', flexGrow: 1, gap: '65px', marginTop: '20px', textAlign: 'center' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', alignItems: 'center' }}>
+                <img src={creappLogoOfficial} alt="CreAPP Logo" style={{ height: '105px', objectFit: 'contain' }} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <span style={{ fontSize: '12px', fontWeight: '800', color: brandPrimary, letterSpacing: '3px', textTransform: 'uppercase' }}>
+                  {heroBadge || 'Propuesta Técnica Comercial'}
+                </span>
+                <h1 style={{ fontSize: '42px', fontWeight: '950', color: '#0f172a', margin: '15px 0 10px 0', lineHeight: '1.1', letterSpacing: '-1px', textAlign: 'center' }}>
+                  {heroTitle || 'Desarrollo de Software Integrado'}
+                </h1>
+                <div style={{ height: '2px', width: '80px', backgroundColor: `${brandPrimary}44`, margin: '20px auto' }}></div>
+                <p style={{ fontSize: '14px', color: '#475569', lineHeight: '1.6', maxWidth: '560px', fontWeight: '300', textAlign: 'center' }}>
+                  {description}
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: '60px', justifyContent: 'center', width: '100%' }}>
+                <div style={{ textAlign: 'center' }}>
+                  <p style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1.5px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '5px' }}>Preparado para</p>
+                  <p style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>{clientName}</p>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <p style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1.5px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '5px' }}>Fecha</p>
+                  <p style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>{date}</p>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <p style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1.5px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '5px' }}>Ubicación</p>
+                  <p style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>{location}</p>
+                </div>
+              </div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <span style={{ fontSize: '12px', fontWeight: '800', color: brandPrimary, letterSpacing: '3px', textTransform: 'uppercase' }}>
-                {heroBadge || 'Propuesta Técnica Comercial'}
-              </span>
-              <h1 style={{ fontSize: '42px', fontWeight: '950', color: '#0f172a', margin: '15px 0 10px 0', lineHeight: '1.1', letterSpacing: '-1px', textAlign: 'center' }}>
-                {heroTitle || 'Desarrollo de Software Integrado'}
-              </h1>
-              <div style={{ height: '2px', width: '80px', backgroundColor: `${brandPrimary}44`, margin: '20px auto' }}></div>
-              <p style={{ fontSize: '14px', color: '#475569', lineHeight: '1.6', maxWidth: '560px', fontWeight: '300', textAlign: 'center' }}>
-                {description}
-              </p>
-            </div>
-            <div style={{ display: 'flex', gap: '60px', justifyContent: 'center', width: '100%' }}>
-              <div style={{ textAlign: 'center' }}>
-                <p style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1.5px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '5px' }}>Preparado para</p>
-                <p style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>{clientName}</p>
-              </div>
-              <div style={{ textAlign: 'center' }}>
-                <p style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1.5px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '5px' }}>Fecha</p>
-                <p style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>{date}</p>
-              </div>
-              <div style={{ textAlign: 'center' }}>
-                <p style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1.5px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '5px' }}>Ubicación</p>
-                <p style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>{location}</p>
-              </div>
+            <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #e2e8f0', paddingTop: '25px' }}>
+              <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold' }}>CreAPP Software & Automation</span>
+              <span style={{ fontSize: '10px', color: '#94a3b8' }}>Dossier Oficial de Propuesta</span>
             </div>
           </div>
-          <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #e2e8f0', paddingTop: '25px' }}>
-            <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold' }}>CreAPP Software & Automation</span>
-            <span style={{ fontSize: '10px', color: '#94a3b8' }}>Dossier Oficial de Propuesta</span>
-          </div>
-        </div>
+        )}
 
         {/* PÁGINA 2: Alcance y Entregables */}
-        <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
-          {(() => {
-            const totalVisibleInclusions = inclusions.slice(0, 6).length;
-            const totalVisibleExclusions = exclusions.slice(0, 6).length;
-            const totalItemsPage2 = totalVisibleInclusions + totalVisibleExclusions;
+        {!isPageHidden('alcance') && (
+          <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
+            {(() => {
+              const totalVisibleInclusions = inclusions.slice(0, 6).length;
+              const totalVisibleExclusions = exclusions.slice(0, 6).length;
+              const totalItemsPage2 = totalVisibleInclusions + totalVisibleExclusions;
 
-            let p2Gap = '15px';
-            let p2CardPadding = '12px';
-            let p2TitleMarginTop = '15px';
-            let p2MainGap = '20px';
-            let p2DescriptionSize = '10px';
-            let p2TitleSize = '28px';
-            let p2SubTitleSize = '11px';
-            let p2TextGap = '4px';
+              let p2Gap = '15px';
+              let p2CardPadding = '12px';
+              let p2TitleMarginTop = '15px';
+              let p2MainGap = '20px';
+              let p2DescriptionSize = '10px';
+              let p2TitleSize = '28px';
+              let p2SubTitleSize = '11px';
+              let p2TextGap = '4px';
 
-            if (totalItemsPage2 > 10) {
-              p2Gap = '8px';
-              p2CardPadding = '8px';
-              p2TitleMarginTop = '4px';
-              p2MainGap = '8px';
-              p2DescriptionSize = '9px';
-              p2TitleSize = '20px';
-              p2SubTitleSize = '10px';
-              p2TextGap = '2px';
-            } else if (totalItemsPage2 > 8) {
-              p2Gap = '10px';
-              p2CardPadding = '10px';
-              p2TitleMarginTop = '8px';
-              p2MainGap = '14px';
-              p2DescriptionSize = '9.5px';
-              p2TitleSize = '24px';
-              p2SubTitleSize = '10.5px';
-              p2TextGap = '3px';
-            } else if (totalItemsPage2 < 7) {
-              p2Gap = '20px';
-              p2CardPadding = '14px';
-              p2TitleMarginTop = '25px';
-              p2MainGap = '30px';
-              p2DescriptionSize = '11px';
-              p2TitleSize = '32px';
-              p2SubTitleSize = '12px';
-              p2TextGap = '6px';
-            }
+              if (totalItemsPage2 > 10) {
+                p2Gap = '8px';
+                p2CardPadding = '8px';
+                p2TitleMarginTop = '4px';
+                p2MainGap = '8px';
+                p2DescriptionSize = '9px';
+                p2TitleSize = '20px';
+                p2SubTitleSize = '10px';
+                p2TextGap = '2px';
+              } else if (totalItemsPage2 > 8) {
+                p2Gap = '10px';
+                p2CardPadding = '10px';
+                p2TitleMarginTop = '8px';
+                p2MainGap = '14px';
+                p2DescriptionSize = '9.5px';
+                p2TitleSize = '24px';
+                p2SubTitleSize = '10.5px';
+                p2TextGap = '3px';
+              } else if (totalItemsPage2 < 7) {
+                p2Gap = '20px';
+                p2CardPadding = '14px';
+                p2TitleMarginTop = '25px';
+                p2MainGap = '30px';
+                p2DescriptionSize = '11px';
+                p2TitleSize = '32px';
+                p2SubTitleSize = '12px';
+                p2TextGap = '6px';
+              }
 
-            return (
-              <>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '25px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
-                    <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
-                    <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{heroTitle ? heroTitle.toUpperCase() : 'CBKR APP V2'}</span>
-                  </div>
-                  <span style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>PROJECT_SCOPE // 02</span>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: p2MainGap }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <h1 style={{ fontSize: p2TitleSize, fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
-                      Alcance & <span style={{ fontStyle: 'italic', color: brandPrimary }}>Entregables</span>
-                    </h1>
-                    <p style={{ fontSize: p2SubTitleSize, color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
-                      {(methodology || DEFAULT_METHODOLOGY).scope_intro || DEFAULT_METHODOLOGY.scope_intro}
-                    </p>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: p2Gap, width: '100%' }}>
-                    {inclusions.slice(0, 6).map((inc, index) => {
-                      const totalVisible = inclusions.slice(0, 6).length;
-                      const isLastAndOdd = totalVisible % 2 !== 0 && index === totalVisible - 1;
-                      return (
-                        <div key={index} style={{
-                          padding: p2CardPadding,
-                          borderRadius: '12px',
-                          border: '1px solid #f1f5f9',
-                          backgroundColor: '#f8fafc',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: p2TextGap,
-                          gridColumn: isLastAndOdd ? 'span 2' : 'auto'
-                        }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <div style={{ color: brandPrimary, display: 'flex', alignItems: 'center' }}>
-                              <IconResolver name={inc.icon_name || 'CheckCircle2'} className="w-4 h-4" />
-                            </div>
-                            <h4 style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', margin: '0', textTransform: 'uppercase' }}>{inc.title || 'Entregable'}</h4>
-                          </div>
-                          <p style={{ fontSize: p2DescriptionSize, color: '#475569', margin: '0', lineHeight: '1.4', fontWeight: '300' }}>{inc.description || 'Descripción del alcance.'}</p>
-                          {inc.tooltip && <p style={{ fontSize: '9px', color: '#94a3b8', margin: '2px 0 0 0', fontStyle: 'italic' }}>{inc.tooltip}</p>}
-                        </div>
-                      );
-                    })}
-                  </div>
-                  {exclusions.length > 0 && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: p2MainGap === '8px' ? '4px' : '10px', marginTop: p2TitleMarginTop }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <h1 style={{ fontSize: p2TitleSize, fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
-                          Fuera de <span style={{ fontStyle: 'italic', color: '#e11d48' }}>Alcance</span>
-                        </h1>
-                        <p style={{ fontSize: p2SubTitleSize, color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
-                          {(methodology || DEFAULT_METHODOLOGY).exclusions_intro || DEFAULT_METHODOLOGY.exclusions_intro}
-                        </p>
-                      </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: p2Gap, width: '100%' }}>
-                        {exclusions.slice(0, 6).map((exc, index) => {
-                          const totalVisible = exclusions.slice(0, 6).length;
-                          const isLastAndOdd = totalVisible % 2 !== 0 && index === totalVisible - 1;
-                          return (
-                            <div key={index} style={{
-                              padding: p2CardPadding,
-                              borderRadius: '12px',
-                              border: '1px solid #ffe4e6',
-                              backgroundColor: '#fff5f5',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: p2TextGap,
-                              gridColumn: isLastAndOdd ? 'span 2' : 'auto'
-                            }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <div style={{ color: '#e11d48', display: 'flex', alignItems: 'center' }}>
-                                  <IconResolver name="XCircle" className="w-4 h-4" />
-                                </div>
-                                <h4 style={{ fontSize: '11px', fontWeight: '850', color: '#9f1239', margin: '0', textTransform: 'uppercase' }}>{exc.title || 'Exclusión'}</h4>
-                              </div>
-                              <p style={{ fontSize: p2DescriptionSize, color: '#b91c1c', margin: '0', lineHeight: '1.4', fontWeight: '300' }}>{exc.tooltip || 'No incluido en el presupuesto base.'}</p>
-                            </div>
-                          );
-                        })}
-                      </div>
+              return (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '25px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
+                      <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
+                      <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{heroTitle ? heroTitle.toUpperCase() : 'CBKR APP V2'}</span>
                     </div>
-                  )}
-                </div>
-                <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
-                  <span>Propuesta Comercial | {clientName}</span>
-                  <span>Página 2 de 7</span>
-                </div>
-              </>
-            );
-          })()}
-        </div>
+                    <span style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>PROJECT_SCOPE // 02</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: p2MainGap }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <h1 style={{ fontSize: p2TitleSize, fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
+                        Alcance & <span style={{ fontStyle: 'italic', color: brandPrimary }}>Entregables</span>
+                      </h1>
+                      <p style={{ fontSize: p2SubTitleSize, color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
+                        {(methodology || DEFAULT_METHODOLOGY).scope_intro || DEFAULT_METHODOLOGY.scope_intro}
+                      </p>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: p2Gap, width: '100%' }}>
+                      {inclusions.slice(0, 6).map((inc, index) => {
+                        const totalVisible = inclusions.slice(0, 6).length;
+                        const isLastAndOdd = totalVisible % 2 !== 0 && index === totalVisible - 1;
+                        return (
+                          <div key={index} style={{
+                            padding: p2CardPadding,
+                            borderRadius: '12px',
+                            border: '1px solid #f1f5f9',
+                            backgroundColor: '#f8fafc',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: p2TextGap,
+                            gridColumn: isLastAndOdd ? 'span 2' : 'auto'
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <div style={{ color: brandPrimary, display: 'flex', alignItems: 'center' }}>
+                                <IconResolver name={inc.icon_name || 'CheckCircle2'} className="w-4 h-4" />
+                              </div>
+                              <h4 style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', margin: '0', textTransform: 'uppercase' }}>{inc.title || 'Entregable'}</h4>
+                            </div>
+                            <p style={{ fontSize: p2DescriptionSize, color: '#475569', margin: '0', lineHeight: '1.4', fontWeight: '300' }}>{inc.description || 'Descripción del alcance.'}</p>
+                            {inc.tooltip && <p style={{ fontSize: '9px', color: '#94a3b8', margin: '2px 0 0 0', fontStyle: 'italic' }}>{inc.tooltip}</p>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {exclusions.length > 0 && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: p2MainGap === '8px' ? '4px' : '10px', marginTop: p2TitleMarginTop }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <h1 style={{ fontSize: p2TitleSize, fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
+                            Fuera de <span style={{ fontStyle: 'italic', color: '#e11d48' }}>Alcance</span>
+                          </h1>
+                          <p style={{ fontSize: p2SubTitleSize, color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
+                            {(methodology || DEFAULT_METHODOLOGY).exclusions_intro || DEFAULT_METHODOLOGY.exclusions_intro}
+                          </p>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: p2Gap, width: '100%' }}>
+                          {exclusions.slice(0, 6).map((exc, index) => {
+                            const totalVisible = exclusions.slice(0, 6).length;
+                            const isLastAndOdd = totalVisible % 2 !== 0 && index === totalVisible - 1;
+                            return (
+                              <div key={index} style={{
+                                padding: p2CardPadding,
+                                borderRadius: '12px',
+                                border: '1px solid #ffe4e6',
+                                backgroundColor: '#fff5f5',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: p2TextGap,
+                                gridColumn: isLastAndOdd ? 'span 2' : 'auto'
+                              }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <div style={{ color: '#e11d48', display: 'flex', alignItems: 'center' }}>
+                                    <IconResolver name="XCircle" className="w-4 h-4" />
+                                  </div>
+                                  <h4 style={{ fontSize: '11px', fontWeight: '850', color: '#9f1239', margin: '0', textTransform: 'uppercase' }}>{exc.title || 'Exclusión'}</h4>
+                                </div>
+                                <p style={{ fontSize: p2DescriptionSize, color: '#b91c1c', margin: '0', lineHeight: '1.4', fontWeight: '300' }}>{exc.tooltip || 'No incluido en el presupuesto base.'}</p>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
+                    <span>Propuesta Comercial | {clientName}</span>
+                    <span>Página 2 de 7</span>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        )}
 
         {/* PÁGINA 3: Cronograma de Fases & Entregas */}
-        <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '25px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
-              <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
-              <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{heroTitle ? heroTitle.toUpperCase() : 'CBKR APP V2'}</span>
-            </div>
-            <span style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>PROJECT_ROADMAP // 02</span>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: '20px' }}>
-            <h1 style={{ fontSize: '28px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
-              CRONOGRAMA DE FASES & <span style={{ fontStyle: 'italic', color: brandPrimary }}>ENTREGAS</span>
-            </h1>
-            <p style={{ fontSize: '11px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
-              {(() => {
-                const meth = methodology || DEFAULT_METHODOLOGY;
-                const text = meth.phases_intro ?? DEFAULT_METHODOLOGY.phases_intro;
-                if (text === DEFAULT_METHODOLOGY.phases_intro) {
-                  return (
-                    <>
-                      El plan de esfuerzo comprende un periodo de <span style={{ fontWeight: 'bold', color: '#0f172a' }}>4 meses</span> (16 sprints semanales). Cada fase mensual concluye con un hito de control funcional y estético auditado antes de la liberación del siguiente incremento de software.
-                    </>
-                  );
-                }
-                return text;
-              })()}
-            </p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: '10px', marginBottom: '5px' }}>
-              <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Estructura de Sprints Mensuales</span>
-              <div style={{ flexGrow: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-              {milestones && milestones.map((m, i) => (
-                <div key={m.id || i} style={{ display: 'flex', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', minHeight: '95px' }}>
-                  <div style={{ width: '80px', backgroundColor: '#000000', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: '#ffffff', gap: '4px' }}>
-                    <span style={{ fontSize: '9px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.8 }}>Fase</span>
-                    <span style={{ fontSize: '20px', fontWeight: '950' }}>{i + 1}</span>
-                  </div>
-                  <div style={{ flexGrow: 1, padding: '15px 20px', display: 'flex', flexDirection: 'column', gap: '5px', justifyContent: 'center' }}>
-                    <h4 style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', margin: '0', textTransform: 'uppercase' }}>{m.title}</h4>
-                    <p style={{ fontSize: '10px', color: '#475569', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
-                      {m.description || 'Sin descripción de entregables.'}
-                    </p>
-                  </div>
-                  <div style={{ width: '120px', borderLeft: '1px solid #e2e8f0', padding: '15px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '4px', backgroundColor: '#fafafa' }}>
-                    <span style={{ fontSize: '7px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Hito Control</span>
-                    <span style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', textAlign: 'center', lineHeight: '1.1' }}>
-                      {m.control_milestone || 'VERIFICACIÓN'}
-                    </span>
-                  </div>
-                  <div style={{ width: '110px', borderLeft: '1px solid #e2e8f0', padding: '15px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', backgroundColor: '#fafafa' }}>
-                    <span style={{ fontSize: '16px', fontWeight: '950', color: '#000000' }}>${m.price || '0'}</span>
-                    <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b' }}>{getCurrencyFromTotal(totalValue)}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-            {infrastructureCosts && infrastructureCosts.length > 0 && (
-              <div style={{ marginTop: '5px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Costos de Infraestructura Asociados</span>
-                  <div style={{ flexGrow: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
-                </div>
-                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                  {infrastructureCosts.map((infra, idx) => (
-                    <div key={idx} style={{ flex: '1 1 180px', padding: '6px 12px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '9px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                        <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{infra.provider}</span>
-                        {infra.is_optional && (
-                          <span style={{ fontSize: '7px', padding: '1px 4px', backgroundColor: '#fef3c7', color: '#d97706', borderRadius: '4px', fontWeight: '900', letterSpacing: '0.5px' }}>OPCIONAL</span>
-                        )}
-                        <span style={{ color: '#64748b' }}> — {infra.title}</span>
-                      </div>
-                      <span style={{ fontWeight: 'bold', color: brandPrimary, flexShrink: 0, marginLeft: '10px' }}>{infra.monthly_cost}</span>
-                    </div>
-                  ))}
-                </div>
+        {!isPageHidden('hitos') && (
+          <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '25px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
+                <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
+                <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{heroTitle ? heroTitle.toUpperCase() : 'CBKR APP V2'}</span>
               </div>
-            )}
+              <span style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>PROJECT_ROADMAP // 02</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: '20px' }}>
+              <h1 style={{ fontSize: '28px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
+                CRONOGRAMA DE FASES & <span style={{ fontStyle: 'italic', color: brandPrimary }}>ENTREGAS</span>
+              </h1>
+              <p style={{ fontSize: '11px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
+                {(() => {
+                  const meth = methodology || DEFAULT_METHODOLOGY;
+                  const text = meth.phases_intro ?? DEFAULT_METHODOLOGY.phases_intro;
+                  if (text === DEFAULT_METHODOLOGY.phases_intro) {
+                    return (
+                      <>
+                        El plan de esfuerzo comprende un periodo de <span style={{ fontWeight: 'bold', color: '#0f172a' }}>4 meses</span> (16 sprints semanales). Cada fase mensual concluye con un hito de control funcional y estético auditado antes de la liberación del siguiente incremento de software.
+                      </>
+                    );
+                  }
+                  return text;
+                })()}
+              </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: '10px', marginBottom: '5px' }}>
+                <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Estructura de Sprints Mensuales</span>
+                <div style={{ flexGrow: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                {milestones && milestones.map((m, i) => (
+                  <div key={m.id || i} style={{ display: 'flex', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', minHeight: '95px' }}>
+                    <div style={{ width: '80px', backgroundColor: '#000000', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: '#ffffff', gap: '4px' }}>
+                      <span style={{ fontSize: '9px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.8 }}>Fase</span>
+                      <span style={{ fontSize: '20px', fontWeight: '950' }}>{i + 1}</span>
+                    </div>
+                    <div style={{ flexGrow: 1, padding: '15px 20px', display: 'flex', flexDirection: 'column', gap: '5px', justifyContent: 'center' }}>
+                      <h4 style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', margin: '0', textTransform: 'uppercase' }}>{m.title}</h4>
+                      <p style={{ fontSize: '10px', color: '#475569', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
+                        {m.description || 'Sin descripción de entregables.'}
+                      </p>
+                    </div>
+                    <div style={{ width: '120px', borderLeft: '1px solid #e2e8f0', padding: '15px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '4px', backgroundColor: '#fafafa' }}>
+                      <span style={{ fontSize: '7px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Hito Control</span>
+                      <span style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', textAlign: 'center', lineHeight: '1.1' }}>
+                        {m.control_milestone || 'VERIFICACIÓN'}
+                      </span>
+                    </div>
+                    <div style={{ width: '110px', borderLeft: '1px solid #e2e8f0', padding: '15px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', backgroundColor: '#fafafa' }}>
+                      <span style={{ fontSize: '16px', fontWeight: '950', color: '#000000' }}>${m.price || '0'}</span>
+                      <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b' }}>{getCurrencyFromTotal(totalValue)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {infrastructureCosts && infrastructureCosts.length > 0 && (
+                <div style={{ marginTop: '5px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Costos de Infraestructura Asociados</span>
+                    <div style={{ flexGrow: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                    {infrastructureCosts.map((infra, idx) => (
+                      <div key={idx} style={{ flex: '1 1 180px', padding: '6px 12px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '9px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                          <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{infra.provider}</span>
+                          {infra.is_optional && (
+                            <span style={{ fontSize: '7px', padding: '1px 4px', backgroundColor: '#fef3c7', color: '#d97706', borderRadius: '4px', fontWeight: '900', letterSpacing: '0.5px' }}>OPCIONAL</span>
+                          )}
+                          <span style={{ color: '#64748b' }}> — {infra.title}</span>
+                        </div>
+                        <span style={{ fontWeight: 'bold', color: brandPrimary, flexShrink: 0, marginLeft: '10px' }}>{infra.monthly_cost}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
-            {payments && payments.length > 0 && (
-              <div style={{ marginTop: '10px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Esquema de Pagos / Hitos de Financiamiento</span>
-                  <div style={{ flexGrow: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
-                </div>
-                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', width: '100%' }}>
-                  {payments.map((p, idx) => (
-                    <div key={idx} style={{ flex: '1 1 0px', minWidth: '180px', padding: '8px 12px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '4px', boxSizing: 'border-box' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '5px' }}>
-                        <span style={{ fontSize: '9px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', lineHeight: '1.2' }}>{p.label}</span>
-                        <span style={{ fontSize: '12px', fontWeight: '950', color: brandPrimary, flexShrink: 0 }}>{p.percentage}</span>
+              {payments && payments.length > 0 && (
+                <div style={{ marginTop: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Esquema de Pagos / Hitos de Financiamiento</span>
+                    <div style={{ flexGrow: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', width: '100%' }}>
+                    {payments.map((p, idx) => (
+                      <div key={idx} style={{ flex: '1 1 0px', minWidth: '180px', padding: '8px 12px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '4px', boxSizing: 'border-box' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '5px' }}>
+                          <span style={{ fontSize: '9px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', lineHeight: '1.2' }}>{p.label}</span>
+                          <span style={{ fontSize: '12px', fontWeight: '950', color: brandPrimary, flexShrink: 0 }}>{p.percentage}</span>
+                        </div>
+                        <span style={{ fontSize: '9px', color: '#475569', fontWeight: '300', lineHeight: '1.3' }}>{p.description}</span>
+                        {p.tooltip && (
+                          <span style={{ fontSize: '8px', color: '#94a3b8', fontStyle: 'italic', lineHeight: '1.3', marginTop: '2px' }}>{p.tooltip}</span>
+                        )}
                       </div>
-                      <span style={{ fontSize: '9px', color: '#475569', fontWeight: '300', lineHeight: '1.3' }}>{p.description}</span>
-                      {p.tooltip && (
-                        <span style={{ fontSize: '8px', color: '#94a3b8', fontStyle: 'italic', lineHeight: '1.3', marginTop: '2px' }}>{p.tooltip}</span>
-                      )}
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
+            <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
+              <span>Presupuesto Consolidado: <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{formatTotalValue(totalValue)} TOTAL</span></span>
+              <span>Página 3 de 7</span>
+            </div>
           </div>
-          <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
-            <span>Presupuesto Consolidado: <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{totalValue.toUpperCase().includes('ARS') || totalValue.toUpperCase().includes('USD') ? totalValue : `${getCurrencyFromTotal(totalValue)} ${totalValue}`} TOTAL</span></span>
-            <span>Página 3 de 7</span>
-          </div>
-        </div>
+        )}
 
         {/* PÁGINA 4: Desglose de Horas — Semanas 1 a 8 */}
-        <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '25px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
-              <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
-              <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{heroTitle ? heroTitle.toUpperCase() : 'CBKR APP V2'}</span>
+        {!isPageHidden('sem1-6') && (
+          <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '25px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
+                <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
+                <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{heroTitle ? heroTitle.toUpperCase() : 'CBKR APP V2'}</span>
+              </div>
+              <span style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>TIME_ESTIMATION // MES 1 Y 2</span>
             </div>
-            <span style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>TIME_ESTIMATION // MES 1 Y 2</span>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: '15px' }}>
-            <h1 style={{ fontSize: '28px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
-              DESGLOSE DE HORAS — <span style={{ fontStyle: 'italic', color: brandPrimary }}>SEMANAS 1 A 8</span>
-            </h1>
-            <p style={{ fontSize: '11px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
-              {(methodology || DEFAULT_METHODOLOGY).weekly_breakdown_intro_1_8 || DEFAULT_METHODOLOGY.weekly_breakdown_intro_1_8}
-            </p>
-            <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
-              <thead>
-                <tr style={{ backgroundColor: '#0f172a', color: '#ffffff' }}>
-                  <th style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '900', textAlign: 'left', letterSpacing: '1px', width: '10%' }}>SEMANA</th>
-                  <th style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '900', textAlign: 'left', letterSpacing: '1px', width: '25%' }}>HITO / TAREA</th>
-                  <th style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '900', textAlign: 'left', letterSpacing: '1px', width: '50%' }}>DETALLE TÉCNICO DE IMPLEMENTACIÓN</th>
-                  <th style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '900', textAlign: 'right', letterSpacing: '1px', width: '15%', color: brandSecondary }}>ESFUERZO</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(weeklyBreakdown && weeklyBreakdown.length >= 10 ? weeklyBreakdown.slice(0, 10) : DEFAULT_WEEKLY_BREAKDOWN.slice(0, 10)).map((item: any) => {
-                  if (item.type === 'milestone') {
+            <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: '15px' }}>
+              <h1 style={{ fontSize: '28px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
+                DESGLOSE DE HORAS — <span style={{ fontStyle: 'italic', color: brandPrimary }}>SEMANAS 1 A 8</span>
+              </h1>
+              <p style={{ fontSize: '11px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
+                {(methodology || DEFAULT_METHODOLOGY).weekly_breakdown_intro_1_8 || DEFAULT_METHODOLOGY.weekly_breakdown_intro_1_8}
+              </p>
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
+                <thead>
+                  <tr style={{ backgroundColor: '#0f172a', color: '#ffffff' }}>
+                    <th style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '900', textAlign: 'left', letterSpacing: '1px', width: '10%' }}>SEMANA</th>
+                    <th style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '900', textAlign: 'left', letterSpacing: '1px', width: '25%' }}>HITO / TAREA</th>
+                    <th style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '900', textAlign: 'left', letterSpacing: '1px', width: '50%' }}>DETALLE TÉCNICO DE IMPLEMENTACIÓN</th>
+                    <th style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '900', textAlign: 'right', letterSpacing: '1px', width: '15%', color: brandSecondary }}>ESFUERZO</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(weeklyBreakdown && weeklyBreakdown.length >= 10 ? weeklyBreakdown.slice(0, 10) : DEFAULT_WEEKLY_BREAKDOWN.slice(0, 10)).map((item: any) => {
+                    if (item.type === 'milestone') {
+                      return (
+                        <tr key={item.id} style={{ backgroundColor: '#f1f5f9' }}>
+                          <td style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '800', color: '#0f172a' }}>{item.id}</td>
+                          <td colSpan={2} style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase' }}>{item.title}</td>
+                          <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: '900', color: '#0f172a', textAlign: 'right' }}>{item.hours} hs</td>
+                        </tr>
+                      );
+                    }
                     return (
-                      <tr key={item.id} style={{ backgroundColor: '#f1f5f9' }}>
-                        <td style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '800', color: '#0f172a' }}>{item.id}</td>
-                        <td colSpan={2} style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase' }}>{item.title}</td>
-                        <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: '900', color: '#0f172a', textAlign: 'right' }}>{item.hours} hs</td>
+                      <tr key={item.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                        <td style={{ padding: '10px 12px', fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>{item.id}</td>
+                        <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: '800', color: '#0f172a' }}>{item.title}</td>
+                        <td style={{ padding: '10px 12px', fontSize: '10px', color: '#475569', lineHeight: '1.4', fontWeight: '300' }}>{item.detail}</td>
+                        <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: 'bold', color: brandSecondary, textAlign: 'right' }}>{item.hours} hs</td>
                       </tr>
                     );
-                  }
-                  return (
-                    <tr key={item.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                      <td style={{ padding: '10px 12px', fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>{item.id}</td>
-                      <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: '800', color: '#0f172a' }}>{item.title}</td>
-                      <td style={{ padding: '10px 12px', fontSize: '10px', color: '#475569', lineHeight: '1.4', fontWeight: '300' }}>{item.detail}</td>
-                      <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: 'bold', color: brandSecondary, textAlign: 'right' }}>{item.hours} hs</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
+              <span>CREAPP // ACCUMULATED_HOURS_80</span>
+              <span>Página 4 de 7</span>
+            </div>
           </div>
-          <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
-            <span>CREAPP // ACCUMULATED_HOURS_80</span>
-            <span>Página 4 de 7</span>
-          </div>
-        </div>
+        )}
 
         {/* PÁGINA 5: Desglose de Horas — Semanas 9 a 16 */}
-        <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '25px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
-              <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
-              <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{heroTitle ? heroTitle.toUpperCase() : 'CBKR APP V2'}</span>
+        {!isPageHidden('sem9-16') && (
+          <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '25px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
+                <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
+                <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{heroTitle ? heroTitle.toUpperCase() : 'CBKR APP V2'}</span>
+              </div>
+              <span style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>TIME_ESTIMATION // MES 3 Y 4</span>
             </div>
-            <span style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>TIME_ESTIMATION // MES 3 Y 4</span>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: '15px' }}>
-            <h1 style={{ fontSize: '28px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
-              DESGLOSE DE HORAS — <span style={{ fontStyle: 'italic', color: brandPrimary }}>SEMANAS 9 A 16</span>
-            </h1>
-            <p style={{ fontSize: '11px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
-              {(methodology || DEFAULT_METHODOLOGY).weekly_breakdown_intro_9_16 || DEFAULT_METHODOLOGY.weekly_breakdown_intro_9_16}
-            </p>
-            <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
-              <thead>
-                <tr style={{ backgroundColor: '#0f172a', color: '#ffffff' }}>
-                  <th style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '900', textAlign: 'left', letterSpacing: '1px', width: '10%' }}>SEMANA</th>
-                  <th style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '900', textAlign: 'left', letterSpacing: '1px', width: '25%' }}>HITO / TAREA</th>
-                  <th style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '900', textAlign: 'left', letterSpacing: '1px', width: '50%' }}>DETALLE TÉCNICO DE IMPLEMENTACIÓN</th>
-                  <th style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '900', textAlign: 'right', letterSpacing: '1px', width: '15%', color: brandSecondary }}>ESFUERZO</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(weeklyBreakdown && weeklyBreakdown.length >= 20 ? weeklyBreakdown.slice(10, 20) : DEFAULT_WEEKLY_BREAKDOWN.slice(10, 20)).map((item: any) => {
-                  if (item.type === 'milestone') {
+            <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: '15px' }}>
+              <h1 style={{ fontSize: '28px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
+                DESGLOSE DE HORAS — <span style={{ fontStyle: 'italic', color: brandPrimary }}>SEMANAS 9 A 16</span>
+              </h1>
+              <p style={{ fontSize: '11px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
+                {(methodology || DEFAULT_METHODOLOGY).weekly_breakdown_intro_9_16 || DEFAULT_METHODOLOGY.weekly_breakdown_intro_9_16}
+              </p>
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
+                <thead>
+                  <tr style={{ backgroundColor: '#0f172a', color: '#ffffff' }}>
+                    <th style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '900', textAlign: 'left', letterSpacing: '1px', width: '10%' }}>SEMANA</th>
+                    <th style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '900', textAlign: 'left', letterSpacing: '1px', width: '25%' }}>HITO / TAREA</th>
+                    <th style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '900', textAlign: 'left', letterSpacing: '1px', width: '50%' }}>DETALLE TÉCNICO DE IMPLEMENTACIÓN</th>
+                    <th style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '900', textAlign: 'right', letterSpacing: '1px', width: '15%', color: brandSecondary }}>ESFUERZO</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(weeklyBreakdown && weeklyBreakdown.length >= 20 ? weeklyBreakdown.slice(10, 20) : DEFAULT_WEEKLY_BREAKDOWN.slice(10, 20)).map((item: any) => {
+                    if (item.type === 'milestone') {
+                      return (
+                        <tr key={item.id} style={{ backgroundColor: '#f1f5f9' }}>
+                          <td style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '800', color: '#0f172a' }}>{item.id}</td>
+                          <td colSpan={2} style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase' }}>{item.title}</td>
+                          <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: '900', color: '#0f172a', textAlign: 'right' }}>{item.hours} hs</td>
+                        </tr>
+                      );
+                    }
                     return (
-                      <tr key={item.id} style={{ backgroundColor: '#f1f5f9' }}>
-                        <td style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '800', color: '#0f172a' }}>{item.id}</td>
-                        <td colSpan={2} style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase' }}>{item.title}</td>
-                        <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: '900', color: '#0f172a', textAlign: 'right' }}>{item.hours} hs</td>
+                      <tr key={item.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                        <td style={{ padding: '10px 12px', fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>{item.id}</td>
+                        <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: '800', color: '#0f172a' }}>{item.title}</td>
+                        <td style={{ padding: '10px 12px', fontSize: '10px', color: '#475569', lineHeight: '1.4', fontWeight: '300' }}>{item.detail}</td>
+                        <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: 'bold', color: brandSecondary, textAlign: 'right' }}>{item.hours} hs</td>
                       </tr>
                     );
-                  }
-                  return (
-                    <tr key={item.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                      <td style={{ padding: '10px 12px', fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>{item.id}</td>
-                      <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: '800', color: '#0f172a' }}>{item.title}</td>
-                      <td style={{ padding: '10px 12px', fontSize: '10px', color: '#475569', lineHeight: '1.4', fontWeight: '300' }}>{item.detail}</td>
-                      <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: 'bold', color: brandSecondary, textAlign: 'right' }}>{item.hours} hs</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
+              <span>CREAPP // ESTIMATED_HOURS_160_TOTAL</span>
+              <span>Página 5 de 7</span>
+            </div>
           </div>
-          <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
-            <span>CREAPP // ESTIMATED_HOURS_160_TOTAL</span>
-            <span>Página 5 de 7</span>
-          </div>
-        </div>
+        )}
 
         {/* PÁGINA 6: Metodología de Trabajo & Plan de Acción */}
-        {(() => {
+        {!isPageHidden('metodologia') && (() => {
           const meth = methodology || DEFAULT_METHODOLOGY;
           const clientNameReplacer = (text: string) => (text || '').replace('{client_name}', clientName || 'el cliente');
           return (
@@ -3200,74 +3379,76 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
         })()}
 
         {/* PÁGINA 7: Acuerdo de Servicios */}
-        <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '25px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
-              <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
-              <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{heroTitle ? heroTitle.toUpperCase() : 'CBKR APP V2'}</span>
+        {!isPageHidden('contrato') && (
+          <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '25px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
+                <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
+                <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{heroTitle ? heroTitle.toUpperCase() : 'CBKR APP V2'}</span>
+              </div>
+              <span style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>LEGAL_AGREEMENT // 05</span>
             </div>
-            <span style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>LEGAL_AGREEMENT // 05</span>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: '20px', marginBottom: '60px' }}>
-            <h1 style={{ fontSize: '28px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
-              CONTRATO Y <span style={{ fontStyle: 'italic', color: brandPrimary }}>FIRMAS</span>
-            </h1>
-            <p style={{ fontSize: '11px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
-              {contractDescription || 'Acuerdo formal que establece las bases y condiciones legales para la ejecución del proyecto de desarrollo de software detallado en esta propuesta.'}
-            </p>
-            <div style={{ fontSize: '10px', color: '#334155', lineHeight: '1.6', whiteSpace: 'pre-wrap', fontFamily: 'system-ui, -apple-system, sans-serif', padding: '20px', backgroundColor: '#f8fafc', borderRadius: '20px', border: '1px solid #e2e8f0', maxHeight: '350px', overflow: 'hidden', marginTop: '5px' }}>
-              {contractText ? (
-                contractText
-                  .replace(/\{location\}/g, location)
-                  .replace(/\{date\}/g, date)
-                  .replace(/\{client_name\}/g, clientName)
-                  .replace(/\{total_value\}/g, totalValue)
-                  .replace(/\[input:[^\]]+\]/g, '________________________')
-              ) : (
-                `CONTRATO DE DESARROLLO DE SOFTWARE
- 
-Entre Creapp Software Lab y ${clientName}, se acuerda el desarrollo integral del sistema conforme a los alcances y términos especificados en esta propuesta comercial por un valor total de ${totalValue}.
- 
-Este contrato entra en vigencia a partir de la firma del presente documento el día ${date} en la localidad de ${location}.`
-              )}
-            </div>
-            <div style={{ display: 'flex', gap: '20px', marginTop: '20px' }}>
-              <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '2px' }}>Por CreAPP Software Lab</p>
-                <div style={{ height: '60px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0', padding: '8px' }}>
-                  <img src="/firmaseba.png" alt="Firma Seba" style={{ height: '100%', objectFit: 'contain' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: '20px', marginBottom: '60px' }}>
+              <h1 style={{ fontSize: '28px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
+                CONTRATO Y <span style={{ fontStyle: 'italic', color: brandPrimary }}>FIRMAS</span>
+              </h1>
+              <p style={{ fontSize: '11px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
+                {contractDescription || 'Acuerdo formal que establece las bases y condiciones legales para la ejecución del proyecto de desarrollo de software detallado en esta propuesta.'}
+              </p>
+              <div style={{ fontSize: '10px', color: '#334155', lineHeight: '1.6', whiteSpace: 'pre-wrap', fontFamily: 'system-ui, -apple-system, sans-serif', padding: '20px', backgroundColor: '#f8fafc', borderRadius: '20px', border: '1px solid #e2e8f0', maxHeight: '350px', overflow: 'hidden', marginTop: '5px' }}>
+                {contractText ? (
+                  contractText
+                    .replace(/\{location\}/g, location)
+                    .replace(/\{date\}/g, date)
+                    .replace(/\{client_name\}/g, clientName)
+                    .replace(/\{total_value\}/g, totalValue)
+                    .replace(/\[input:[^\]]+\]/g, '________________________')
+                ) : (
+                  `CONTRATO DE DESARROLLO DE SOFTWARE
+   
+  Entre Creapp Software Lab y ${clientName}, se acuerda el desarrollo integral del sistema conforme a los alcances y términos especificados en esta propuesta comercial por un valor total de ${totalValue}.
+   
+  Este contrato entra en vigencia a partir de la firma del presente documento el día ${date} en la localidad de ${location}.`
+                )}
+              </div>
+              <div style={{ display: 'flex', gap: '20px', marginTop: '20px' }}>
+                <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '2px' }}>Por CreAPP Software Lab</p>
+                  <div style={{ height: '60px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0', padding: '8px' }}>
+                    <img src="/firmaseba.png" alt="Firma Seba" style={{ height: '100%', objectFit: 'contain' }} />
+                  </div>
+                  <div style={{ fontSize: '10px' }}>
+                    <p style={{ fontWeight: '800', color: '#0f172a' }}>Sebastián Maza</p>
+                    <p style={{ color: '#64748b', fontSize: '9px' }}>Chief Technology Officer</p>
+                  </div>
                 </div>
-                <div style={{ fontSize: '10px' }}>
-                  <p style={{ fontWeight: '800', color: '#0f172a' }}>Sebastián Maza</p>
-                  <p style={{ color: '#64748b', fontSize: '9px' }}>Chief Technology Officer</p>
+                <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '2px' }}>Por CreAPP Software Lab</p>
+                  <div style={{ height: '60px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1', padding: '8px' }}>
+                  </div>
+                  <div style={{ fontSize: '10px' }}>
+                    <p style={{ fontWeight: '800', color: '#0f172a' }}>Facundo Marceca</p>
+                    <p style={{ color: '#64748b', fontSize: '9px' }}>Project Manager</p>
+                  </div>
+                </div>
+                <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '2px' }}>Por {clientName}</p>
+                  <div style={{ height: '60px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1', color: '#94a3b8', fontSize: '10px', textAlign: 'center' }}>
+                    Pendiente de Firma
+                  </div>
+                  <div style={{ fontSize: '10px' }}>
+                    <p style={{ fontWeight: '800', color: '#0f172a' }}>________________________</p>
+                    <p style={{ color: '#64748b', fontSize: '9px' }}>Representante Autorizado</p>
+                  </div>
                 </div>
               </div>
-              <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '2px' }}>Por CreAPP Software Lab</p>
-                <div style={{ height: '60px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1', padding: '8px' }}>
-                </div>
-                <div style={{ fontSize: '10px' }}>
-                  <p style={{ fontWeight: '800', color: '#0f172a' }}>Facundo Marceca</p>
-                  <p style={{ color: '#64748b', fontSize: '9px' }}>Project Manager</p>
-                </div>
-              </div>
-              <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '2px' }}>Por {clientName}</p>
-                <div style={{ height: '60px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1', color: '#94a3b8', fontSize: '10px', textAlign: 'center' }}>
-                  Pendiente de Firma
-                </div>
-                <div style={{ fontSize: '10px' }}>
-                  <p style={{ fontWeight: '800', color: '#0f172a' }}>________________________</p>
-                  <p style={{ color: '#64748b', fontSize: '9px' }}>Representante Autorizado</p>
-                </div>
-              </div>
+            </div>
+            <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
+              <span>Propuesta Comercial | {clientName}</span>
+              <span>Página 7 de 7</span>
             </div>
           </div>
-          <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
-            <span>Propuesta Comercial | {clientName}</span>
-            <span>Página 7 de 7</span>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Import PDF/DOC Modal */}
@@ -3366,6 +3547,31 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
           </div>
         </div>
       )}
+
+      <AnimatePresence>
+        {showToast && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.95, x: 20 }}
+            animate={{ opacity: 1, y: 0, scale: 1, x: 0 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95, transition: { duration: 0.2 } }}
+            className="fixed top-6 right-6 z-[100] flex items-center gap-3 px-5 py-4 rounded-2xl border border-emerald-500/30 bg-surface-dark/95 backdrop-blur-xl shadow-2xl shadow-emerald-500/10 min-w-[300px]"
+          >
+            <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+              <ShieldCheck size={18} className="animate-pulse" />
+            </div>
+            <div className="flex-1">
+              <p className="text-xs font-black uppercase tracking-wider text-white">Éxito</p>
+              <p className="text-[11px] text-slate-400 font-medium">Cambios guardados</p>
+            </div>
+            <button 
+              onClick={() => setShowToast(false)}
+              className="text-slate-500 hover:text-white transition-colors cursor-pointer text-xs font-bold"
+            >
+              ✕
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

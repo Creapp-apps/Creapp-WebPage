@@ -29,8 +29,30 @@ import Lightfall from '@/components/backgrounds/Lightfall';
 
 const getCurrencyFromTotal = (valString: string) => {
   const clean = (valString || '').trim().toUpperCase();
-  if (clean.startsWith('ARS') || clean.includes('ARS')) return 'ARS';
+  const match = clean.match(/^([A-Z\$]{1,5})/);
+  if (match) {
+    return match[1];
+  }
+  const currencies = ['USD', 'ARS', 'EUR', 'CLP', 'MXN', 'UYU', 'BRL', 'PEN', 'COP'];
+  for (const curr of currencies) {
+    if (clean.includes(curr)) return curr;
+  }
   return 'USD';
+};
+
+const getValueFromTotal = (valString: string) => {
+  const clean = (valString || '').trim();
+  const match = clean.match(/^[A-Z\$]{1,5}\s*(.*)$/i);
+  if (match) {
+    return match[1];
+  }
+  return clean;
+};
+
+const formatTotalValue = (valString: string) => {
+  const clean = (valString || '').trim();
+  if (/^[A-Z\$]{1,5}\s/i.test(clean)) return clean;
+  return `${getCurrencyFromTotal(clean)} ${clean}`;
 };
 
 const fadeUp: Variants = {
@@ -1891,7 +1913,7 @@ const ProposalView: React.FC = () => {
 
           {/* Footer Fijo */}
           <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
-            <span>Presupuesto Consolidado: <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{proposal.total_value.toUpperCase().includes('ARS') || proposal.total_value.toUpperCase().includes('USD') ? proposal.total_value : `${getCurrencyFromTotal(proposal.total_value)} ${proposal.total_value}`} TOTAL</span></span>
+            <span>Presupuesto Consolidado: <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{formatTotalValue(proposal.total_value)} TOTAL</span></span>
             <span>Página 3 de 7</span>
           </div>
         </div>
