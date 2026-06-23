@@ -25,6 +25,7 @@ import IconResolver from '@/components/ui/IconResolver';
 import ContractRenderer from '@/components/ui/ContractRenderer';
 import { generateAndUploadContractBox, generateFullProposalPDF } from '@/lib/pdfService';
 import creappLogoOfficial from '@/assets/CREAPP LOGO VECTOR.png';
+import Lightfall from '@/components/backgrounds/Lightfall';
 
 const getCurrencyFromTotal = (valString: string) => {
   const clean = (valString || '').trim().toUpperCase();
@@ -1147,8 +1148,26 @@ const ProposalView: React.FC = () => {
           background: ${brandPrimary}44;
         }
       `}</style>
-      {/* Background Particles Layer */}
-      <CanvasParticles primaryColor={brandPrimary} secondaryColor={brandSecondary} />
+      {/* Background Lightfall Layer */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <Lightfall
+          colors={[brandPrimary, brandSecondary, brandPrimary]}
+          backgroundColor="#030712"
+          speed={0.45}
+          streakCount={5}
+          streakWidth={1.5}
+          streakLength={1.0}
+          glow={1.2}
+          density={0.45}
+          twinkle={0.8}
+          zoom={2.2}
+          backgroundGlow={0.2}
+          opacity={0.35}
+          mouseInteraction={true}
+          mouseStrength={0.8}
+          mouseRadius={0.7}
+        />
+      </div>
 
       {/* Decorative ambient gradient blobs */}
       <div className="absolute top-[10%] left-[20%] w-[500px] h-[500px] rounded-full blur-[140px] opacity-[0.08] pointer-events-none animate-pulse duration-[8s]" style={{ backgroundColor: brandPrimary }} />

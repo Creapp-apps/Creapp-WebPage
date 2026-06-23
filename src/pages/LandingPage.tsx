@@ -19,7 +19,7 @@ import MagneticButton from '../components/ui/MagneticButton';
 import CustomCursor from '../components/systems/CustomCursor';
 import Preloader from '../components/systems/Preloader';
 import WebGLCanvas from '../components/canvas/WebGLCanvas';
-import FloatingLines from '../components/backgrounds/FloatingLines';
+import Lightfall from '../components/backgrounds/Lightfall';
 import ShowroomSection from '../components/landing/ShowroomSection';
 import RocketProcess from '../components/landing/RocketProcess';
 
@@ -189,18 +189,22 @@ const LandingPage: React.FC = () => {
                     className="fixed inset-0 pointer-events-none"
                     style={{ zIndex: 0 }}
                 >
-                    <FloatingLines
-                        linesGradient={['#FF2D78', '#9B30FF', '#EC4899', '#FF2D78']}
-                        enabledWaves={['middle', 'bottom']}
-                        lineCount={[8, 6]}
-                        lineDistance={[4, 3]}
-                        animationSpeed={0.6}
-                        interactive={true}
-                        bendRadius={6}
-                        bendStrength={-0.4}
-                        parallax={true}
-                        parallaxStrength={0.15}
-                        mixBlendMode="screen"
+                    <Lightfall
+                        colors={['#FF2D78', '#9B30FF', '#EC4899', '#FF2D78']}
+                        backgroundColor="#030712"
+                        speed={0.45}
+                        streakCount={5}
+                        streakWidth={1.5}
+                        streakLength={1.0}
+                        glow={1.2}
+                        density={0.45}
+                        twinkle={0.8}
+                        zoom={2.2}
+                        backgroundGlow={0.2}
+                        opacity={0.35}
+                        mouseInteraction={true}
+                        mouseStrength={0.8}
+                        mouseRadius={0.7}
                     />
                 </motion.div>
             )}
