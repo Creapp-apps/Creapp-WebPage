@@ -1838,26 +1838,29 @@ const ProposalView: React.FC = () => {
             {/* Listado de Fases (Fase 1 a 4) */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
               {proposal.milestones && proposal.milestones.map((m, i) => (
-                <div key={m.id || i} style={{ display: 'flex', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', minHeight: '95px' }}>
-                  <div style={{ width: '80px', backgroundColor: '#000000', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: '#ffffff', gap: '4px' }}>
+                <div key={m.id || i} style={{ display: 'flex', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', minHeight: '95px', boxSizing: 'border-box' }}>
+                  <div style={{ width: '80px', flexShrink: 0, flexGrow: 0, backgroundColor: '#000000', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: '#ffffff', gap: '4px', boxSizing: 'border-box' }}>
                     <span style={{ fontSize: '9px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.8 }}>Fase</span>
                     <span style={{ fontSize: '20px', fontWeight: '950' }}>{i + 1}</span>
                   </div>
-                  <div style={{ flexGrow: 1, padding: '15px 20px', display: 'flex', flexDirection: 'column', gap: '5px', justifyContent: 'center' }}>
+                  <div style={{ flexGrow: 1, flexShrink: 1, minWidth: 0, padding: '15px 20px', display: 'flex', flexDirection: 'column', gap: '5px', justifyContent: 'center', boxSizing: 'border-box' }}>
                     <h4 style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', margin: '0', textTransform: 'uppercase' }}>{m.title}</h4>
                     <p style={{ fontSize: '10px', color: '#475569', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
                       {m.description || 'Sin descripción de entregables.'}
                     </p>
                   </div>
-                  <div style={{ width: '120px', borderLeft: '1px solid #e2e8f0', padding: '15px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '4px', backgroundColor: '#fafafa' }}>
+                  <div style={{ width: '120px', flexShrink: 0, flexGrow: 0, borderLeft: '1px solid #e2e8f0', padding: '15px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '4px', backgroundColor: '#fafafa', boxSizing: 'border-box' }}>
                     <span style={{ fontSize: '7px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Hito Control</span>
                     <span style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', textAlign: 'center', lineHeight: '1.1' }}>
                       {m.control_milestone || 'VERIFICACIÓN'}
                     </span>
                   </div>
-                  <div style={{ width: '110px', borderLeft: '1px solid #e2e8f0', padding: '15px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', backgroundColor: '#fafafa' }}>
-                    <span style={{ fontSize: '16px', fontWeight: '950', color: '#000000' }}>${m.price || '0'}</span>
-                    <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b' }}>{getCurrencyFromTotal(proposal.total_value)}</span>
+                  <div style={{ width: '120px', flexShrink: 0, flexGrow: 0, borderLeft: '1px solid #e2e8f0', padding: '15px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '4px', backgroundColor: '#fafafa', boxSizing: 'border-box' }}>
+                    <span style={{ fontSize: '7px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Inversión</span>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}>
+                      <span style={{ fontSize: '14px', fontWeight: '950', color: '#000000', lineHeight: '1.1' }}>${m.price || '0'}</span>
+                      <span style={{ fontSize: '8px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', lineHeight: '1.1' }}>{getCurrencyFromTotal(proposal.total_value)}</span>
+                    </div>
                   </div>
                 </div>
               ))}
