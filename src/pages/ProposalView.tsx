@@ -511,6 +511,35 @@ const ProposalView: React.FC = () => {
   const brandSecondary = proposal.brand_color_secondary;
   const gradientStyle = `linear-gradient(to right, ${brandPrimary}, ${brandSecondary})`;
 
+  // Dynamically resolve weekly breakdown from proposal data or fallback to defaults
+  const weeklyBreakdown = proposal.weekly_breakdown && Array.isArray(proposal.weekly_breakdown) && proposal.weekly_breakdown.length > 0
+    ? proposal.weekly_breakdown
+    : [
+        { id: 'W01', type: 'week', title: 'CIMIENTOS CORE', detail: 'Setup del proyecto en Next.js, Tailwind. Definición de variables de estilos y estructura del modelo relacional de base de datos para Suelos, Plantas y Acciones.', hours: '10.0' },
+        { id: 'W02', type: 'week', title: 'WELCOME SCREEN', detail: 'Maquetación de la pantalla de bienvenida dual ("¿Ya tenés un suelo?"). Lógica mobile-first, redireccionamiento condicional a tienda o asistente.', hours: '10.0' },
+        { id: 'W03', type: 'week', title: 'SETUP WIZARD', detail: 'Implementación del flujo de 4 pasos interactivos para el armado de la cama. Soporte para bucles de video cortos (15s) y almacenamiento temporal en localStorage.', hours: '10.0' },
+        { id: 'W04', type: 'week', title: 'DNI BIOLÓGICO', detail: 'Lógica algorítmica para determinar el nivel de XP del cultivador. Modelado e implementación de la tarjeta digital DNI del suelo y redirección al Dashboard.', hours: '10.0' },
+        { id: 'M01', type: 'milestone', title: 'SUBTOTAL HITO: ESTRUCTURA DE ONBOARDING Y TARJETA DNI FINALIZADA', hours: '40.0' },
+        { id: 'W05', type: 'week', title: 'HERO & FOTOPERIODO', detail: 'Maquetación de la cabecera inmersiva con luces reactivas. Componente inteligente de fotoperíodo automático según la hora local del dispositivo.', hours: '10.0' },
+        { id: 'W06', type: 'week', title: 'BLOQUEO DE CURADO', detail: 'Controlador lógico de estado temporal (21 días) para curado de suelos nuevos. Implementación de barra de progreso con cuenta regresiva para desbloqueo.', hours: '10.0' },
+        { id: 'W07', type: 'week', title: 'ACCIONES RÁPIDAS', detail: 'Diseño e integración de menú flotante (+). Despliegue de Bottom Sheet interactiva de carga para Riego, Té de Compost y Enmienda.', hours: '10.0' },
+        { id: 'W08', type: 'week', title: 'ADVERTENCIAS IA', detail: 'Algoritmo preventivo de dosificación según historial reciente (alertas de sobre-riego o saturación de té). Modales informativos con checks animados.', hours: '10.0' },
+        { id: 'M02', type: 'milestone', title: 'SUBTOTAL HITO: DASHBOARD CENTRAL Y CONTROLES RÁPIDOS DE ACCIONES', hours: '40.0' },
+        { id: 'W09', type: 'week', title: 'TARJETAS SUELOS', detail: 'Desarrollo del panel alternativo de listado de Suelos. Tarjetas con desglose detallado de cultivo y selector dinámico de suelo activo para el Dashboard.', hours: '10.0' },
+        { id: 'W10', type: 'week', title: 'BITÁCORA FASES', detail: 'Línea de tiempo histórica y control de plantas (genéticas de cultivo). Modales para cambios biológicos manuales (Vegetativo, Flora, Descanso).', hours: '10.0' },
+        { id: 'W11', type: 'week', title: 'CALCULADORAS', detail: 'Integración de algoritmos de cálculo de riego (5% del volumen de maceta) y té de compost (10% + tabla dinámica de ingredientes). Guías ilustradas.', hours: '10.0' },
+        { id: 'W12', type: 'week', title: 'SUELOIA SUPPORT', detail: 'Estructuración de FAQ expandible, simulación de respuestas inmediatas mediante bot de chat local y redirección automatizada a WhatsApp con pre-cargas.', hours: '10.0' },
+        { id: 'M03', type: 'milestone', title: 'SUBTOTAL HITO: PESTAÑA DE LISTADO DE SUELOS, CALCULADORAS Y SOPORTE BÁSICO', hours: '40.0' },
+        { id: 'W13', type: 'week', title: 'BENTO SPACING', detail: 'Homogeneización visual del Dashboard bajo formato de Bento UI. Alineación matemática de espaciados, fuentes y coherencia tipográfica general.', hours: '10.0' },
+        { id: 'W14', type: 'week', title: 'MICRO-INTERACTIONS', detail: 'Animaciones en interacciones de clicks (press-scale) en botones de acción. Suavizado en la carga entre pantallas y animaciones de entrada.', hours: '10.0' },
+        { id: 'W15', type: 'week', title: 'RESPONSIVE QA', detail: 'Pruebas en emuladores y celulares físicos de múltiples tamaños (iPhone SE a tablets) y reajuste de reglas CSS para evitar saltos o desbordes de texto.', hours: '10.0' },
+        { id: 'W16', type: 'week', title: 'E2E & DELIVERY', detail: 'Pruebas extremo a extremo simulando workflows de cultivo. Proceso de optimización de archivos finales de código y entrega formal de documentación.', hours: '10.0' },
+        { id: 'M04', type: 'milestone', title: 'SUBTOTAL HITO: QA FINAL, DEPURACIÓN DE CÓDIGO Y ENTREGA DEL SISTEMA', hours: '40.0' }
+      ];
+
+  const weeks1to8 = weeklyBreakdown.slice(0, 10);
+  const weeks9to16 = weeklyBreakdown.slice(10, 20);
+
   const CreAPPLogo = () => {
     if (logoError) {
       return (
@@ -657,27 +686,27 @@ const ProposalView: React.FC = () => {
     switch (currentSlide) {
       case 0:
         return (
-          <div className="flex flex-col items-center justify-center text-center py-10 min-h-[480px] relative">
+          <div className="flex flex-col items-center justify-center text-center py-4 min-h-[380px] relative">
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full blur-[150px] pointer-events-none animate-float-y-1" style={{ backgroundColor: `${brandPrimary}15` }}></div>
-            <div className="flex flex-col items-center gap-8 relative z-10">
+            <div className="flex flex-col items-center gap-5 relative z-10">
               {/* Capsule pill badge */}
-              <div className="px-6 py-2.5 rounded-full border text-[11px] font-black tracking-[0.3em] uppercase gsap-reveal-scale shadow-lg select-none animate-float-pulse"
+              <div className="px-6 py-2 rounded-full border text-[10px] font-black tracking-[0.3em] uppercase gsap-reveal-scale shadow-lg select-none animate-float-pulse"
                 style={{ backgroundColor: `${brandPrimary}15`, color: brandPrimary, borderColor: `${brandPrimary}33` }}>
                 Propuesta Comercial
               </div>
               
               {/* Massive Title */}
-              <h1 className="text-5xl md:text-8xl lg:text-[92px] font-display font-black text-white tracking-tighter max-w-5xl leading-[1.0] uppercase gsap-reveal-up select-none mt-2 animate-text-glow-pulse">
-                Diseño y Desarrollo <span className="bg-clip-text text-transparent block mt-4" style={{ backgroundImage: gradientStyle }}>{proposal.hero_title || 'Ecosistema Digital'}</span>
+              <h1 className="text-4xl md:text-6xl lg:text-[76px] font-display font-black text-white tracking-tighter max-w-5xl leading-[1.0] uppercase gsap-reveal-up select-none mt-1 animate-text-glow-pulse">
+                Diseño y Desarrollo <span className="bg-clip-text text-transparent block mt-1.5" style={{ backgroundImage: gradientStyle }}>{proposal.hero_title || 'Ecosistema Digital'}</span>
               </h1>
               
               {/* Target client */}
-              <p className="text-sm md:text-xl text-slate-300 font-light mt-6 gsap-reveal-up select-none tracking-wide">
+              <p className="text-sm md:text-lg text-slate-300 font-light mt-2 gsap-reveal-up select-none tracking-wide">
                 Preparado exclusivamente para <strong className="text-white font-black uppercase tracking-[0.1em] ml-1">{proposal.client_name}</strong>
               </p>
               
               {/* Date & Location */}
-              <div className="flex gap-4 text-[11px] uppercase tracking-[0.25em] font-black text-slate-500 mt-2 gsap-reveal-up select-none">
+              <div className="flex gap-4 text-[10px] uppercase tracking-[0.25em] font-black text-slate-500 mt-1 gsap-reveal-up select-none">
                 <span>{proposal.date}</span>
                 <span>•</span>
                 <span>{proposal.location}</span>
@@ -686,7 +715,7 @@ const ProposalView: React.FC = () => {
               {/* CTA button */}
               <button
                 onClick={nextSlide}
-                className="mt-8 px-12 py-5.5 rounded-2xl text-[12px] font-black uppercase tracking-[0.2em] text-white shadow-2xl flex items-center gap-3 transition-all hover:scale-105 cursor-pointer active:scale-95 border border-white/5 brand-btn-glow gsap-reveal-scale animate-float-y-3"
+                className="mt-4 px-10 py-4.5 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] text-white shadow-2xl flex items-center gap-3 transition-all hover:scale-105 cursor-pointer active:scale-95 border border-white/5 brand-btn-glow gsap-reveal-scale animate-float-y-3"
                 style={{ background: gradientStyle }}
               >
                 Explorar Propuesta <ArrowRight size={15} />
@@ -696,7 +725,7 @@ const ProposalView: React.FC = () => {
         );
       case 1:
         return (
-          <div className="grid md:grid-cols-2 gap-12 items-center py-6 min-h-[480px]">
+          <div className="grid md:grid-cols-2 gap-8 items-center py-3 min-h-[360px]">
             <div className="gsap-reveal-left space-y-6">
               <span className="inline-flex items-center gap-2 px-5 py-2 rounded-full text-[11px] font-black tracking-[0.25em] border uppercase animate-float-pulse"
                 style={{ backgroundColor: `${brandPrimary}15`, color: brandPrimary, borderColor: `${brandPrimary}33` }}>
@@ -716,7 +745,7 @@ const ProposalView: React.FC = () => {
             </div>
             <div className="relative gsap-reveal-right animate-float-y-1">
               <div className="absolute inset-0 rounded-3xl bg-gradient-to-tr from-transparent to-white/[0.02] border border-white/5 pointer-events-none"></div>
-              <div className="bg-black/40 backdrop-blur-md rounded-3xl p-8 border border-white/5 font-mono text-sm overflow-hidden shadow-2xl">
+              <div className="bg-black/75 backdrop-blur-lg rounded-3xl p-8 border border-white/10 font-mono text-sm overflow-hidden shadow-2xl">
                 <div className="flex justify-between items-center mb-6">
                   <div className="flex gap-2">
                     <div className="w-3 h-3 rounded-full bg-red-500/40"></div>
@@ -741,7 +770,7 @@ const ProposalView: React.FC = () => {
         );
       case 2:
         return (
-          <div className="space-y-8 min-h-[480px]">
+          <div className="space-y-4 md:space-y-6 min-h-[360px]">
             <div className="gsap-reveal-up">
               <h3 className="text-4xl md:text-5xl lg:text-6xl font-display font-black text-white uppercase tracking-tighter animate-text-glow-pulse">
                 Alcance del Desarrollo
@@ -750,7 +779,7 @@ const ProposalView: React.FC = () => {
                 {(proposal.methodology || DEFAULT_METHODOLOGY).scope_intro || DEFAULT_METHODOLOGY.scope_intro}
               </p>
             </div>
-            <div data-lenis-prevent className="grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+            <div data-lenis-prevent className="grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[320px] md:max-h-[420px] overflow-y-auto pr-2 custom-scrollbar">
               {proposal.inclusions.map((item, i) => {
                 const isTooltipActive = activeTooltip === `inclusion-${i}`;
                 const floatClass = i % 3 === 0 ? 'animate-float-y-1' : i % 3 === 1 ? 'animate-float-y-2' : 'animate-float-y-3';
@@ -788,7 +817,7 @@ const ProposalView: React.FC = () => {
         );
       case 3:
         return (
-          <div className="space-y-8 min-h-[480px]">
+          <div className="space-y-4 md:space-y-6 min-h-[360px]">
             <div className="gsap-reveal-up">
               <h3 className="text-4xl md:text-5xl lg:text-6xl font-display font-black text-white uppercase tracking-tighter animate-text-glow-pulse">
                 Exclusiones de Propuesta
@@ -797,7 +826,7 @@ const ProposalView: React.FC = () => {
                 {(proposal.methodology || DEFAULT_METHODOLOGY).exclusions_intro || DEFAULT_METHODOLOGY.exclusions_intro}
               </p>
             </div>
-            <div data-lenis-prevent className="grid grid-cols-1 gap-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+            <div data-lenis-prevent className="grid grid-cols-1 gap-4 max-h-[320px] md:max-h-[420px] overflow-y-auto pr-2 custom-scrollbar">
               {proposal.exclusions.map((item, i) => {
                 const isTooltipActive = activeTooltip === `exclusion-${i}`;
                 const floatClass = i % 2 === 0 ? 'animate-float-y-1' : 'animate-float-y-3';
@@ -827,7 +856,7 @@ const ProposalView: React.FC = () => {
         );
       case 4:
         return (
-          <div className="grid md:grid-cols-2 gap-12 items-center py-6 min-h-[480px]">
+          <div className="grid md:grid-cols-2 gap-8 items-center py-3 min-h-[360px]">
             <div className="space-y-6 gsap-reveal-left">
               <div>
                 <h3 className="text-4xl md:text-5xl lg:text-6xl font-display font-black text-white uppercase tracking-tighter animate-text-glow-pulse">
@@ -842,10 +871,10 @@ const ProposalView: React.FC = () => {
                   <div
                     key={idx}
                     onClick={() => setActiveScrumDay(step.day as any)}
-                    className={`p-5 rounded-2xl border transition-all duration-300 cursor-pointer ${
+                    className={`p-5 rounded-2xl border backdrop-blur-md transition-all duration-300 cursor-pointer ${
                       activeScrumDay === step.day
-                        ? 'bg-white/[0.03] border-white/10 shadow-lg shadow-black/20'
-                        : 'bg-transparent border-transparent hover:bg-white/[0.01]'
+                        ? 'bg-white/[0.08] border-white/10 shadow-lg shadow-black/20'
+                        : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.04]'
                     }`}
                   >
                     <div className="flex items-center gap-4">
@@ -932,7 +961,7 @@ const ProposalView: React.FC = () => {
         );
       case 5:
         return (
-          <div className="space-y-8 min-h-[480px]">
+          <div className="space-y-4 md:space-y-6 min-h-[360px]">
             <div className="gsap-reveal-up">
               <h3 className="text-4xl md:text-5xl lg:text-6xl font-display font-black text-white uppercase tracking-tighter animate-text-glow-pulse">
                 Cronograma de Fases
@@ -968,7 +997,7 @@ const ProposalView: React.FC = () => {
         );
       case 6:
         return (
-          <div className="space-y-8 min-h-[480px]">
+          <div className="space-y-4 md:space-y-6 min-h-[360px]">
             <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-6 gsap-reveal-up">
               <div>
                 <h3 className="text-4xl md:text-5xl lg:text-6xl font-display font-black text-white uppercase tracking-tighter animate-text-glow-pulse">
@@ -1001,35 +1030,37 @@ const ProposalView: React.FC = () => {
               </div>
             </div>
 
-            <div data-lenis-prevent className="space-y-3 max-h-[340px] md:max-h-[380px] overflow-y-auto pr-2 custom-scrollbar">
-              {(activeDesgloseTab === 'w1-8' ? WEEKS_BREAKDOWN_1_8 : WEEKS_BREAKDOWN_9_16).map((week, i) => {
-                const floatClass = i % 3 === 0 ? 'animate-float-y-1' : i % 3 === 1 ? 'animate-float-y-2' : 'animate-float-y-3';
-                return (
-                  <div key={week.id} className={`p-5 rounded-2xl bg-white/[0.01] border border-white/5 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 brand-hover-card gsap-reveal-up ${floatClass}`}>
-                    <div className="flex gap-4 items-start">
-                      <span className="text-sm font-black uppercase font-mono px-3 py-1 rounded-lg border border-white/5 text-slate-400 bg-white/5">
-                        {week.id}
-                      </span>
-                      <div>
-                        <h4 className="text-base md:text-lg font-black text-white uppercase tracking-tight mb-0.5">{week.title}</h4>
-                        <p className="text-sm text-slate-400 font-light leading-relaxed">{week.desc}</p>
+            <div data-lenis-prevent className="space-y-2.5 max-h-[240px] md:max-h-[340px] overflow-y-auto pr-2 custom-scrollbar">
+              {(activeDesgloseTab === 'w1-8' ? weeks1to8 : weeks9to16)
+                .filter((item: any) => item.type === 'week')
+                .map((week: any, i: number) => {
+                  const floatClass = i % 3 === 0 ? 'animate-float-y-1' : i % 3 === 1 ? 'animate-float-y-2' : 'animate-float-y-3';
+                  return (
+                    <div key={week.id} className={`p-5 rounded-2xl bg-white/[0.01] border border-white/5 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 brand-hover-card gsap-reveal-up ${floatClass}`}>
+                      <div className="flex gap-4 items-start">
+                        <span className="text-sm font-black uppercase font-mono px-3 py-1 rounded-lg border border-white/5 text-slate-400 bg-white/5">
+                          {week.id}
+                        </span>
+                        <div>
+                          <h4 className="text-base md:text-lg font-black text-white uppercase tracking-tight mb-0.5">{week.title}</h4>
+                          <p className="text-sm text-slate-400 font-light leading-relaxed">{week.detail || week.desc}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0 self-end md:self-center">
+                        <div className="w-24 h-1 bg-white/5 rounded-full overflow-hidden hidden md:block">
+                          <div className="h-full rounded-full gsap-progress-bar origin-left" style={{ width: '100%', background: gradientStyle }}></div>
+                        </div>
+                        <span className="text-sm md:text-base font-black font-mono" style={{ color: brandSecondary }}>{parseFloat(week.hours).toFixed(1)} hs</span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 shrink-0 self-end md:self-center">
-                      <div className="w-24 h-1 bg-white/5 rounded-full overflow-hidden hidden md:block">
-                        <div className="h-full rounded-full gsap-progress-bar origin-left" style={{ width: '100%', background: gradientStyle }}></div>
-                      </div>
-                      <span className="text-sm md:text-base font-black font-mono" style={{ color: brandSecondary }}>{week.hours.toFixed(1)} hs</span>
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
             </div>
           </div>
         );
       case 7:
         return (
-          <div className="space-y-8 min-h-[480px]">
+          <div className="space-y-4 md:space-y-6 min-h-[360px]">
             <div className="gsap-reveal-up">
               <h3 className="text-4xl md:text-5xl lg:text-6xl font-display font-black text-white uppercase tracking-tighter animate-text-glow-pulse">
                 Estructura de Inversión
@@ -1059,7 +1090,7 @@ const ProposalView: React.FC = () => {
                   {proposal.payments.map((p, i) => {
                     const floatClass = i % 2 === 0 ? 'animate-float-y-1' : 'animate-float-y-3';
                     return (
-                      <div key={i} className={`flex items-center justify-between p-4 rounded-2xl bg-white/[0.015] border border-white/5 hover:bg-white/[0.03] transition-all cursor-default ${floatClass}`}>
+                      <div key={i} className={`flex items-center justify-between p-4 rounded-2xl bg-white/[0.04] border border-white/10 hover:bg-white/[0.08] backdrop-blur-md transition-all cursor-default ${floatClass}`}>
                         <div>
                           <p className="text-sm md:text-base font-black text-white uppercase tracking-wider mb-0.5">{p.label}</p>
                           <p className="text-xs text-slate-400 uppercase tracking-widest font-bold">{p.description}</p>
@@ -1077,7 +1108,7 @@ const ProposalView: React.FC = () => {
         );
       case 8:
         return (
-          <div className="space-y-8 min-h-[480px]">
+          <div className="space-y-4 md:space-y-6 min-h-[360px]">
             <div className="gsap-reveal-up">
               <h3 className="text-4xl md:text-5xl lg:text-6xl font-display font-black text-white uppercase tracking-tighter animate-text-glow-pulse">
                 Confirmación de Propuesta
@@ -1125,32 +1156,32 @@ const ProposalView: React.FC = () => {
 
   return (
     <div
-      className="h-screen w-screen text-slate-200 font-body p-6 md:p-10 lg:p-12 overflow-hidden relative flex flex-col justify-between select-none"
+      className="h-screen w-screen text-slate-200 font-body p-4 md:p-6 lg:p-8 overflow-hidden relative flex flex-col justify-between select-none"
       style={{ backgroundColor: 'var(--color-proposal-dark)' }}
     >
       <style>{`
         .brand-hover-card {
           transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-          background-color: rgba(255, 255, 255, 0.01) !important;
-          backdrop-filter: blur(8px);
-          border-color: rgba(255, 255, 255, 0.05) !important;
+          background-color: rgba(3, 7, 18, 0.65) !important;
+          backdrop-filter: blur(16px);
+          border-color: rgba(255, 255, 255, 0.08) !important;
         }
         .brand-hover-card:hover {
-          border-color: ${brandPrimary}38 !important;
-          box-shadow: 0 20px 40px -15px ${brandPrimary}1c, inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
-          background-color: rgba(255, 255, 255, 0.025) !important;
+          border-color: ${brandPrimary}45 !important;
+          box-shadow: 0 20px 40px -15px ${brandPrimary}25, inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+          background-color: rgba(3, 7, 18, 0.8) !important;
           transform: translateY(-3px);
         }
         .brand-hover-card-excl {
           transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-          background-color: rgba(255, 255, 255, 0.01) !important;
-          backdrop-filter: blur(8px);
-          border-color: rgba(255, 255, 255, 0.05) !important;
+          background-color: rgba(3, 7, 18, 0.65) !important;
+          backdrop-filter: blur(16px);
+          border-color: rgba(239, 68, 68, 0.15) !important;
         }
         .brand-hover-card-excl:hover {
-          border-color: rgba(239, 68, 68, 0.28) !important;
-          box-shadow: 0 20px 40px -15px rgba(239, 68, 68, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
-          background-color: rgba(239, 68, 68, 0.015) !important;
+          border-color: rgba(239, 68, 68, 0.35) !important;
+          box-shadow: 0 20px 40px -15px rgba(239, 68, 68, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+          background-color: rgba(239, 68, 68, 0.08) !important;
           transform: translateY(-3px);
         }
         .brand-btn-glow {
@@ -1271,7 +1302,7 @@ const ProposalView: React.FC = () => {
       </header>
 
       {/* Main Slide Deck Viewport */}
-      <main className="flex-1 flex flex-col justify-center items-center relative z-10 w-full max-w-7xl mx-auto my-6 overflow-hidden px-4">
+      <main className="flex-1 flex flex-col justify-center items-center relative z-10 w-full max-w-7xl mx-auto my-2 md:my-3 overflow-hidden px-4">
         <div className="w-full h-full flex flex-col justify-center">
           <AnimatePresence mode="wait" initial={false} custom={direction}>
             <motion.div
@@ -1953,64 +1984,25 @@ const ProposalView: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>W01</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: '800', color: '#0f172a' }}>CIMIENTOS CORE</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', color: '#475569', lineHeight: '1.4', fontWeight: '300' }}>Setup del proyecto en Next.js, Tailwind v4. Definición de variables de estilos y estructura del modelo relacional de base de datos para Suelos, Plantas y Acciones.</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: 'bold', color: brandSecondary, textAlign: 'right' }}>10.0 hs</td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>W02</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: '800', color: '#0f172a' }}>WELCOME SCREEN</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', color: '#475569', lineHeight: '1.4', fontWeight: '300' }}>Maquetación de la pantalla de bienvenida dual ("¿Ya tenés un suelo?"). Lógica mobile-first, redireccionamiento condicional a tienda o asistente.</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: 'bold', color: brandSecondary, textAlign: 'right' }}>10.0 hs</td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>W03</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: '800', color: '#0f172a' }}>SETUP WIZARD</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', color: '#475569', lineHeight: '1.4', fontWeight: '300' }}>Implementación del flujo de 4 pasos interactivos para el armado de la cama. Soporte para bucles de video cortos (15s) y almacenamiento temporal en localStorage.</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: 'bold', color: brandSecondary, textAlign: 'right' }}>10.0 hs</td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>W04</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: '800', color: '#0f172a' }}>DNI BIOLÓGICO</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', color: '#475569', lineHeight: '1.4', fontWeight: '300' }}>Lógica algorítmica para determinar el nivel de XP del cultivador. Modelado e implementación de la tarjeta digital DNI del suelo y redirección al Dashboard.</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: 'bold', color: brandSecondary, textAlign: 'right' }}>10.0 hs</td>
-                </tr>
-                <tr style={{ backgroundColor: '#f1f5f9' }}>
-                  <td style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '800', color: '#0f172a' }}>M01</td>
-                  <td colSpan={2} style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase' }}>SUBTOTAL HITO: ESTRUCTURA DE ONBOARDING Y TARJETA DNI FINALIZADA</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: '900', color: '#0f172a', textAlign: 'right' }}>40.0 hs</td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>W05</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: '800', color: '#0f172a' }}>HERO & FOTOPERIODO</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', color: '#475569', lineHeight: '1.4', fontWeight: '300' }}>Maquetación de la cabecera inmersiva con luces reactivas. Componente inteligente de fotoperíodo automático según la hora local del dispositivo.</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: 'bold', color: brandSecondary, textAlign: 'right' }}>10.0 hs</td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>W06</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: '800', color: '#0f172a' }}>BLOQUEO DE CURADO</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', color: '#475569', lineHeight: '1.4', fontWeight: '300' }}>Controlador lógico de estado temporal (21 días) para curado de suelos nuevos. Implementación de barra de progreso con cuenta regresiva para desbloqueo.</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: 'bold', color: brandSecondary, textAlign: 'right' }}>10.0 hs</td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>W07</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: '800', color: '#0f172a' }}>ACCIONES RÁPIDAS</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', color: '#475569', lineHeight: '1.4', fontWeight: '300' }}>Diseño e integración de menú flotante (+). Despliegue de Bottom Sheet interactiva de carga para Riego, Té de Compost y Enmienda.</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: 'bold', color: brandSecondary, textAlign: 'right' }}>10.0 hs</td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>W08</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: '800', color: '#0f172a' }}>ADVERTENCIAS IA</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', color: '#475569', lineHeight: '1.4', fontWeight: '300' }}>Algoritmo preventivo de dosificación según historial reciente (alertas de sobre-riego o saturación de té). Modales informativos con checks animados.</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: 'bold', color: brandSecondary, textAlign: 'right' }}>10.0 hs</td>
-                </tr>
-                <tr style={{ backgroundColor: '#f1f5f9' }}>
-                  <td style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '800', color: '#0f172a' }}>M02</td>
-                  <td colSpan={2} style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase' }}>SUBTOTAL HITO: DASHBOARD CENTRAL Y CONTROLES RÁPIDOS DE ACCIONES</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: '900', color: '#0f172a', textAlign: 'right' }}>40.0 hs</td>
-                </tr>
+                {weeks1to8.map((item: any) => {
+                  if (item.type === 'milestone') {
+                    return (
+                      <tr key={item.id} style={{ backgroundColor: '#f1f5f9' }}>
+                        <td style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '800', color: '#0f172a' }}>{item.id}</td>
+                        <td colSpan={2} style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase' }}>{item.title}</td>
+                        <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: '900', color: '#0f172a', textAlign: 'right' }}>{parseFloat(item.hours).toFixed(1)} hs</td>
+                      </tr>
+                    );
+                  }
+                  return (
+                    <tr key={item.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <td style={{ padding: '10px 12px', fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>{item.id}</td>
+                      <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: '800', color: '#0f172a' }}>{item.title}</td>
+                      <td style={{ padding: '10px 12px', fontSize: '10px', color: '#475569', lineHeight: '1.4', fontWeight: '300' }}>{item.detail || item.desc}</td>
+                      <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: 'bold', color: brandSecondary, textAlign: 'right' }}>{parseFloat(item.hours).toFixed(1)} hs</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -2054,64 +2046,25 @@ const ProposalView: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>W09</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: '800', color: '#0f172a' }}>TARJETAS SUELOS</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', color: '#475569', lineHeight: '1.4', fontWeight: '300' }}>Desarrollo del panel alternativo de listado de Suelos (icono Leaf). Tarjetas con desglose detallado de cultivo y selector dinámico de suelo activo para el Dashboard.</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: 'bold', color: brandSecondary, textAlign: 'right' }}>10.0 hs</td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>W10</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: '800', color: '#0f172a' }}>BITÁCORA FASES</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', color: '#475569', lineHeight: '1.4', fontWeight: '300' }}>Línea de tiempo histórica y control de plantas (genéticas de cultivo). Modales para cambios biológicos manuales (Vegetativo, Flora, Descanso).</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: 'bold', color: brandSecondary, textAlign: 'right' }}>10.0 hs</td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>W11</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: '800', color: '#0f172a' }}>CALCULADORAS</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', color: '#475569', lineHeight: '1.4', fontWeight: '300' }}>Integración de algoritmos de cálculo de riego (5% del volumen de maceta) y té de compost (10% + tabla dinámica de ingredientes). Guías ilustradas.</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: 'bold', color: brandSecondary, textAlign: 'right' }}>10.0 hs</td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>W12</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: '800', color: '#0f172a' }}>SUELOIA SUPPORT</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', color: '#475569', lineHeight: '1.4', fontWeight: '300' }}>Estructuración de FAQ expandible, simulación de respuestas inmediatas mediante bot de chat local y redirección automatizada a WhatsApp con pre-cargas.</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: 'bold', color: brandSecondary, textAlign: 'right' }}>10.0 hs</td>
-                </tr>
-                <tr style={{ backgroundColor: '#f1f5f9' }}>
-                  <td style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '800', color: '#0f172a' }}>M03</td>
-                  <td colSpan={2} style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase' }}>SUBTOTAL HITO: PESTAÑA DE LISTADO DE SUELOS, CALCULADORAS Y SOPORTE BÁSICO</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: '900', color: '#0f172a', textAlign: 'right' }}>40.0 hs</td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>W13</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: '800', color: '#0f172a' }}>BENTO SPACING</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', color: '#475569', lineHeight: '1.4', fontWeight: '300' }}>Homogeneización visual del Dashboard bajo formato de rejilla Bento UI. Alineación matemática de espaciados, fuentes y coherencia tipográfica general.</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: 'bold', color: brandSecondary, textAlign: 'right' }}>10.0 hs</td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>W14</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: '800', color: '#0f172a' }}>MICRO-INTERACTIONS</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', color: '#475569', lineHeight: '1.4', fontWeight: '300' }}>Animaciones en interacciones de clicks (press-scale) en botones de acción. Suavizado en la carga entre pantallas y animaciones de entrada.</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: 'bold', color: brandSecondary, textAlign: 'right' }}>10.0 hs</td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>W15</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: '800', color: '#0f172a' }}>RESPONSIVE QA</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', color: '#475569', lineHeight: '1.4', fontWeight: '300' }}>Pruebas en emuladores y celulares físicos de múltiples tamaños (iPhone SE a tablets) y reajuste de reglas CSS para evitar saltos o desbordes de texto.</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: 'bold', color: brandSecondary, textAlign: 'right' }}>10.0 hs</td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>W16</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: '800', color: '#0f172a' }}>E2E & DELIVERY</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', color: '#475569', lineHeight: '1.4', fontWeight: '300' }}>Pruebas extremo a extremo simulando workflows de cultivo. Proceso de optimización de archivos finales de código y entrega formal de documentación.</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: 'bold', color: brandSecondary, textAlign: 'right' }}>10.0 hs</td>
-                </tr>
-                <tr style={{ backgroundColor: '#f1f5f9' }}>
-                  <td style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '800', color: '#0f172a' }}>M04</td>
-                  <td colSpan={2} style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase' }}>SUBTOTAL HITO: QA FINAL, DEPURACIÓN DE CÓDIGO Y ENTREGA DEL SISTEMA</td>
-                  <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: '900', color: '#0f172a', textAlign: 'right' }}>40.0 hs</td>
-                </tr>
+                {weeks9to16.map((item: any) => {
+                  if (item.type === 'milestone') {
+                    return (
+                      <tr key={item.id} style={{ backgroundColor: '#f1f5f9' }}>
+                        <td style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '800', color: '#0f172a' }}>{item.id}</td>
+                        <td colSpan={2} style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase' }}>{item.title}</td>
+                        <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: '900', color: '#0f172a', textAlign: 'right' }}>{parseFloat(item.hours).toFixed(1)} hs</td>
+                      </tr>
+                    );
+                  }
+                  return (
+                    <tr key={item.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <td style={{ padding: '10px 12px', fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>{item.id}</td>
+                      <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: '800', color: '#0f172a' }}>{item.title}</td>
+                      <td style={{ padding: '10px 12px', fontSize: '10px', color: '#475569', lineHeight: '1.4', fontWeight: '300' }}>{item.detail || item.desc}</td>
+                      <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: 'bold', color: brandSecondary, textAlign: 'right' }}>{parseFloat(item.hours).toFixed(1)} hs</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
