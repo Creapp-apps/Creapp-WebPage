@@ -155,3 +155,35 @@ Debes devolver ÚNICAMENTE un objeto JSON que cumpla exactamente con el siguient
   }
 };
 
+export const optimizeText = async (text: string, context?: string) => {
+  if (!API_KEY) throw new Error("Servicio de IA no disponible temporalmente (falta la API key).");
+
+  const ai = new GoogleGenAI({ apiKey: API_KEY });
+  try {
+    const systemInstruction = `
+Eres un redactor experto en propuestas comerciales y desarrollo de software para Creapp, un Fintech Innovation Hub.
+Tu tarea es optimizar, pulir y mejorar descripciones de entregables, alcances o justificaciones técnicas.
+Debes hacer que el texto suene extremadamente profesional, convincente, claro y moderno (siguiendo mejores prácticas de la industria Fintech y SaaS).
+El texto optimizado resultante debe ser muy conciso, teniendo obligatoriamente un límite máximo estricto de 200 caracteres (incluyendo espacios). Conserva los detalles clave, alcances o números del original.
+Devuelve ÚNICAMENTE la versión optimizada en español, sin preámbulos, explicaciones ni comillas adicionales.
+    `;
+
+    const userPrompt = `Optimiza la siguiente descripción:\n\n"${text}"${context ? `\n\nContexto adicional del proyecto:\n${context}` : ''}`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: userPrompt,
+      config: {
+        systemInstruction: systemInstruction,
+        temperature: 0.3,
+      }
+    });
+
+    return response.text?.trim() || text;
+  } catch (error) {
+    console.error("Error al optimizar el texto con Gemini:", error);
+    throw error;
+  }
+};
+
+

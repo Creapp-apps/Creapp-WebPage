@@ -26,6 +26,7 @@ import {
   ZoomIn,
   ZoomOut,
   Upload,
+  Sparkles,
 } from 'lucide-react';
 import { ProposalVideoPlayer } from '@/components/video/ProposalVideoPlayer';
 import { supabase } from '@/lib/supabaseClient';
@@ -46,7 +47,7 @@ import type {
 import { generateFullProposalPDF } from '@/lib/pdfService';
 import IconResolver from '@/components/ui/IconResolver';
 import creappLogoOfficial from '@/assets/CREAPP LOGO VECTOR.png';
-import { importProposalFromDocument } from '@/lib/geminiService';
+import { importProposalFromDocument, optimizeText } from '@/lib/geminiService';
 
 const getCurrencyFromTotal = (valString: string) => {
   const clean = (valString || '').trim().toUpperCase();
@@ -378,6 +379,23 @@ const ProposalEditor: React.FC = () => {
   const [videoProgressVertical, setVideoProgressVertical] = useState(0);
   const [videoProgressHorizontal, setVideoProgressHorizontal] = useState(0);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+
+  // AI Optimization state
+  const [optimizingFieldId, setOptimizingFieldId] = useState<string | null>(null);
+
+  const handleOptimizeField = async (fieldId: string, currentText: string, setter: (newVal: string) => void) => {
+    if (!currentText || !currentText.trim()) return;
+    setOptimizingFieldId(fieldId);
+    try {
+      const result = await optimizeText(currentText, heroTitle || clientName);
+      setter(result);
+    } catch (err: any) {
+      alert("Error al optimizar el texto con la IA: " + (err.message || err));
+    } finally {
+      setOptimizingFieldId(null);
+    }
+  };
+
 
   // Tab navigation state
   type EditorTab = 'config' | 'portada' | 'alcance' | 'hitos' | 'sem1-6' | 'sem9-16' | 'metodologia' | 'legal' | 'video';
@@ -1636,11 +1654,27 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
                 {/* Separator line */}
                 <div className="w-16 h-[2px] bg-white/10 my-1"></div>
 
-                {/* Description Textarea */}
+                 {/* Description Textarea */}
                 <div className="w-full space-y-1.5">
-                  <label className="text-[9px] text-slate-500 uppercase tracking-widest font-black block">
-                    Texto Descriptivo
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-[9px] text-slate-500 uppercase tracking-widest font-black block">
+                      Texto Descriptivo
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => handleOptimizeField('description', description, setDescription)}
+                      disabled={optimizingFieldId === 'description' || !description || !description.trim()}
+                      className="flex items-center gap-1 text-[9px] font-bold text-primary hover:text-primary-hover disabled:opacity-30 disabled:hover:text-primary transition-all cursor-pointer bg-white/5 hover:bg-white/10 px-2 py-0.5 rounded-full border border-white/5"
+                      title="Optimizar texto con Inteligencia Artificial de Gemini"
+                    >
+                      {optimizingFieldId === 'description' ? (
+                        <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-2.5 h-2.5 text-primary animate-pulse" />
+                      )}
+                      <span>Gemini AI</span>
+                    </button>
+                  </div>
                   <textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
@@ -1732,7 +1766,22 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
             <Section title="Introducciones de Alcance & Exclusiones">
               <div className="p-4 rounded-xl bg-[#090d16] border border-white/5 shadow-lg space-y-4">
                 <div>
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Párrafo Principal de Alcance (Inclusiones)</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Párrafo Principal de Alcance (Inclusiones)</label>
+                    <button
+                      type="button"
+                      onClick={() => handleOptimizeField('scope_intro', methodology?.scope_intro ?? '', (newVal) => updateMethodologyField('scope_intro', newVal))}
+                      disabled={optimizingFieldId === 'scope_intro' || !(methodology?.scope_intro ?? '').trim()}
+                      className="flex items-center gap-1 text-[9px] font-bold text-primary hover:text-primary-hover disabled:opacity-30 disabled:hover:text-primary transition-all cursor-pointer bg-white/5 hover:bg-white/10 px-2 py-0.5 rounded-full border border-white/5"
+                    >
+                      {optimizingFieldId === 'scope_intro' ? (
+                        <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-2.5 h-2.5 text-primary animate-pulse" />
+                      )}
+                      <span>Gemini AI</span>
+                    </button>
+                  </div>
                   <textarea
                     value={methodology?.scope_intro ?? DEFAULT_METHODOLOGY.scope_intro}
                     onChange={(e) => updateMethodologyField('scope_intro', e.target.value)}
@@ -1741,7 +1790,22 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Párrafo Principal de Exclusiones (Fuera de Alcance)</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Párrafo Principal de Exclusiones (Fuera de Alcance)</label>
+                    <button
+                      type="button"
+                      onClick={() => handleOptimizeField('exclusions_intro', methodology?.exclusions_intro ?? '', (newVal) => updateMethodologyField('exclusions_intro', newVal))}
+                      disabled={optimizingFieldId === 'exclusions_intro' || !(methodology?.exclusions_intro ?? '').trim()}
+                      className="flex items-center gap-1 text-[9px] font-bold text-primary hover:text-primary-hover disabled:opacity-30 disabled:hover:text-primary transition-all cursor-pointer bg-white/5 hover:bg-white/10 px-2 py-0.5 rounded-full border border-white/5"
+                    >
+                      {optimizingFieldId === 'exclusions_intro' ? (
+                        <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-2.5 h-2.5 text-primary animate-pulse" />
+                      )}
+                      <span>Gemini AI</span>
+                    </button>
+                  </div>
                   <textarea
                     value={methodology?.exclusions_intro ?? DEFAULT_METHODOLOGY.exclusions_intro}
                     onChange={(e) => updateMethodologyField('exclusions_intro', e.target.value)}
@@ -1832,8 +1896,21 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
                                   el.style.height = `${el.scrollHeight}px`;
                                 }
                               }}
-                              className="w-full bg-white/5 border border-white/10 hover:border-white/20 rounded-lg pl-3 pr-14 py-2 text-white text-sm focus:outline-none focus:border-primary/50 placeholder-slate-600 font-medium transition-all resize-none overflow-hidden" 
+                              className="w-full bg-white/5 border border-white/10 hover:border-white/20 rounded-lg pl-3 pr-20 py-2 text-white text-sm focus:outline-none focus:border-primary/50 placeholder-slate-600 font-medium transition-all resize-none overflow-hidden" 
                             />
+                            <button
+                              type="button"
+                              onClick={() => handleOptimizeField(`incl-desc-${i}`, item.description || '', (newVal) => updateItem(inclusions, setInclusions, i, 'description', newVal))}
+                              disabled={optimizingFieldId === `incl-desc-${i}` || !(item.description || '').trim()}
+                              className="absolute right-14 top-2 text-[9px] font-bold text-primary hover:text-primary-hover disabled:opacity-30 disabled:hover:text-primary transition-all cursor-pointer bg-black/40 hover:bg-black/60 p-1 rounded-md border border-white/5"
+                              title="Optimizar descripción con Gemini"
+                            >
+                              {optimizingFieldId === `incl-desc-${i}` ? (
+                                <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                              ) : (
+                                <Sparkles className="w-2.5 h-2.5 text-primary animate-pulse" />
+                              )}
+                            </button>
                             <span className={`absolute right-3 top-2.5 text-[9px] font-mono font-bold select-none ${
                               descLen > 80 ? 'text-red-400' : 'text-slate-500'
                             }`}>
@@ -2001,7 +2078,22 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
             <Section title="Introducción de Cronograma">
               <div className="p-4 rounded-xl bg-[#090d16] border border-white/5 shadow-lg space-y-3">
                 <div>
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Párrafo Principal de Fases & Entregas</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Párrafo Principal de Fases & Entregas</label>
+                    <button
+                      type="button"
+                      onClick={() => handleOptimizeField('phases_intro', methodology?.phases_intro ?? '', (newVal) => updateMethodologyField('phases_intro', newVal))}
+                      disabled={optimizingFieldId === 'phases_intro' || !(methodology?.phases_intro ?? '').trim()}
+                      className="flex items-center gap-1 text-[9px] font-bold text-primary hover:text-primary-hover disabled:opacity-30 disabled:hover:text-primary transition-all cursor-pointer bg-white/5 hover:bg-white/10 px-2 py-0.5 rounded-full border border-white/5"
+                    >
+                      {optimizingFieldId === 'phases_intro' ? (
+                        <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-2.5 h-2.5 text-primary animate-pulse" />
+                      )}
+                      <span>Gemini AI</span>
+                    </button>
+                  </div>
                   <textarea
                     value={methodology?.phases_intro ?? DEFAULT_METHODOLOGY.phases_intro}
                     onChange={(e) => updateMethodologyField('phases_intro', e.target.value)}
@@ -2089,8 +2181,21 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
                                   el.style.height = `${el.scrollHeight}px`;
                                 }
                               }}
-                              className="w-full bg-white/5 border border-white/10 hover:border-white/20 rounded-lg pl-3 pr-14 py-2 text-white text-sm focus:outline-none focus:border-primary/50 placeholder-slate-600 font-medium transition-all resize-none overflow-hidden" 
+                              className="w-full bg-white/5 border border-white/10 hover:border-white/20 rounded-lg pl-3 pr-20 py-2 text-white text-sm focus:outline-none focus:border-primary/50 placeholder-slate-600 font-medium transition-all resize-none overflow-hidden" 
                             />
+                            <button
+                              type="button"
+                              onClick={() => handleOptimizeField(`mile-desc-${i}`, item.description || '', (newVal) => updateItem(milestones, setMilestones, i, 'description', newVal))}
+                              disabled={optimizingFieldId === `mile-desc-${i}` || !(item.description || '').trim()}
+                              className="absolute right-14 top-2 text-[9px] font-bold text-primary hover:text-primary-hover disabled:opacity-30 disabled:hover:text-primary transition-all cursor-pointer bg-black/40 hover:bg-black/60 p-1 rounded-md border border-white/5"
+                              title="Optimizar descripción con Gemini"
+                            >
+                              {optimizingFieldId === `mile-desc-${i}` ? (
+                                <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                              ) : (
+                                <Sparkles className="w-2.5 h-2.5 text-primary animate-pulse" />
+                              )}
+                            </button>
                             <span className={`absolute right-3 top-2.5 text-[9px] font-mono font-bold select-none ${
                               descLen > 240 ? 'text-red-400' : 'text-slate-500'
                             }`}>
@@ -2318,7 +2423,22 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
             <Section title="Introducción de Desglose Semanas 1-8">
               <div className="p-4 rounded-xl bg-[#090d16] border border-white/5 shadow-lg space-y-3">
                 <div>
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Párrafo Principal de Desglose (Semanas 1-8)</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Párrafo Principal de Desglose (Semanas 1-8)</label>
+                    <button
+                      type="button"
+                      onClick={() => handleOptimizeField('weekly_breakdown_intro_1_8', methodology?.weekly_breakdown_intro_1_8 ?? '', (newVal) => updateMethodologyField('weekly_breakdown_intro_1_8', newVal))}
+                      disabled={optimizingFieldId === 'weekly_breakdown_intro_1_8' || !(methodology?.weekly_breakdown_intro_1_8 ?? '').trim()}
+                      className="flex items-center gap-1 text-[9px] font-bold text-primary hover:text-primary-hover disabled:opacity-30 disabled:hover:text-primary transition-all cursor-pointer bg-white/5 hover:bg-white/10 px-2 py-0.5 rounded-full border border-white/5"
+                    >
+                      {optimizingFieldId === 'weekly_breakdown_intro_1_8' ? (
+                        <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-2.5 h-2.5 text-primary animate-pulse" />
+                      )}
+                      <span>Gemini AI</span>
+                    </button>
+                  </div>
                   <textarea
                     value={methodology?.weekly_breakdown_intro_1_8 ?? DEFAULT_METHODOLOGY.weekly_breakdown_intro_1_8}
                     onChange={(e) => updateMethodologyField('weekly_breakdown_intro_1_8', e.target.value)}
@@ -2393,7 +2513,26 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
                         {/* Detail text - only for week type */}
                         {!isMilestone && (
                           <div className="space-y-1">
-                            <label className="text-[9px] text-slate-500 uppercase tracking-widest font-black">Detalle de Entregable</label>
+                            <div className="flex items-center justify-between mb-1">
+                              <label className="text-[9px] text-slate-500 uppercase tracking-widest font-black">Detalle de Entregable</label>
+                              <button
+                                type="button"
+                                onClick={() => handleOptimizeField(`wb-detail-${globalIndex}`, item.detail || '', (newVal) => {
+                                  const newBreakdown = [...weeklyBreakdown];
+                                  newBreakdown[globalIndex] = { ...newBreakdown[globalIndex], detail: newVal };
+                                  setWeeklyBreakdown(newBreakdown);
+                                })}
+                                disabled={optimizingFieldId === `wb-detail-${globalIndex}` || !(item.detail || '').trim()}
+                                className="flex items-center gap-1 text-[9px] font-bold text-primary hover:text-primary-hover disabled:opacity-30 disabled:hover:text-primary transition-all cursor-pointer bg-white/5 hover:bg-white/10 px-2 py-0.5 rounded-full border border-white/5"
+                              >
+                                {optimizingFieldId === `wb-detail-${globalIndex}` ? (
+                                  <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                                ) : (
+                                  <Sparkles className="w-2.5 h-2.5 text-primary animate-pulse" />
+                                )}
+                                <span>Gemini AI</span>
+                              </button>
+                            </div>
                             <textarea 
                               value={item.detail || ''} 
                               onChange={(e) => {
@@ -2438,7 +2577,22 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
             <Section title="Introducción de Desglose Semanas 9-16">
               <div className="p-4 rounded-xl bg-[#090d16] border border-white/5 shadow-lg space-y-3">
                 <div>
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Párrafo Principal de Desglose (Semanas 9-16)</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Párrafo Principal de Desglose (Semanas 9-16)</label>
+                    <button
+                      type="button"
+                      onClick={() => handleOptimizeField('weekly_breakdown_intro_9_16', methodology?.weekly_breakdown_intro_9_16 ?? '', (newVal) => updateMethodologyField('weekly_breakdown_intro_9_16', newVal))}
+                      disabled={optimizingFieldId === 'weekly_breakdown_intro_9_16' || !(methodology?.weekly_breakdown_intro_9_16 ?? '').trim()}
+                      className="flex items-center gap-1 text-[9px] font-bold text-primary hover:text-primary-hover disabled:opacity-30 disabled:hover:text-primary transition-all cursor-pointer bg-white/5 hover:bg-white/10 px-2 py-0.5 rounded-full border border-white/5"
+                    >
+                      {optimizingFieldId === 'weekly_breakdown_intro_9_16' ? (
+                        <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-2.5 h-2.5 text-primary animate-pulse" />
+                      )}
+                      <span>Gemini AI</span>
+                    </button>
+                  </div>
                   <textarea
                     value={methodology?.weekly_breakdown_intro_9_16 ?? DEFAULT_METHODOLOGY.weekly_breakdown_intro_9_16}
                     onChange={(e) => updateMethodologyField('weekly_breakdown_intro_9_16', e.target.value)}
@@ -2513,7 +2667,26 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
                         {/* Detail text - only for week type */}
                         {!isMilestone && (
                           <div className="space-y-1">
-                            <label className="text-[9px] text-slate-500 uppercase tracking-widest font-black">Detalle de Entregable</label>
+                            <div className="flex items-center justify-between mb-1">
+                              <label className="text-[9px] text-slate-500 uppercase tracking-widest font-black">Detalle de Entregable</label>
+                              <button
+                                type="button"
+                                onClick={() => handleOptimizeField(`wb-detail-${globalIndex}`, item.detail || '', (newVal) => {
+                                  const newBreakdown = [...weeklyBreakdown];
+                                  newBreakdown[globalIndex] = { ...newBreakdown[globalIndex], detail: newVal };
+                                  setWeeklyBreakdown(newBreakdown);
+                                })}
+                                disabled={optimizingFieldId === `wb-detail-${globalIndex}` || !(item.detail || '').trim()}
+                                className="flex items-center gap-1 text-[9px] font-bold text-primary hover:text-primary-hover disabled:opacity-30 disabled:hover:text-primary transition-all cursor-pointer bg-white/5 hover:bg-white/10 px-2 py-0.5 rounded-full border border-white/5"
+                              >
+                                {optimizingFieldId === `wb-detail-${globalIndex}` ? (
+                                  <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                                ) : (
+                                  <Sparkles className="w-2.5 h-2.5 text-primary animate-pulse" />
+                                )}
+                                <span>Gemini AI</span>
+                              </button>
+                            </div>
                             <textarea 
                               value={item.detail || ''} 
                               onChange={(e) => {
@@ -2548,7 +2721,22 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
             {renderVisibilityCard('metodologia', 'Metodología')}
             <Section title="Introducción de Metodología">
               <div>
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Texto Introductorio / Párrafo Principal</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Texto Introductorio / Párrafo Principal</label>
+                  <button
+                    type="button"
+                    onClick={() => handleOptimizeField('intro_text', methodology?.intro_text ?? '', (newVal) => updateMethodologyField('intro_text', newVal))}
+                    disabled={optimizingFieldId === 'intro_text' || !(methodology?.intro_text ?? '').trim()}
+                    className="flex items-center gap-1 text-[9px] font-bold text-primary hover:text-primary-hover disabled:opacity-30 disabled:hover:text-primary transition-all cursor-pointer bg-white/5 hover:bg-white/10 px-2 py-0.5 rounded-full border border-white/5"
+                  >
+                    {optimizingFieldId === 'intro_text' ? (
+                      <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-2.5 h-2.5 text-primary animate-pulse" />
+                    )}
+                    <span>Gemini AI</span>
+                  </button>
+                </div>
                 <textarea
                   value={methodology?.intro_text ?? DEFAULT_METHODOLOGY.intro_text}
                   onChange={(e) => updateMethodologyField('intro_text', e.target.value)}
@@ -2575,7 +2763,22 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Descripción</label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Descripción</label>
+                      <button
+                        type="button"
+                        onClick={() => handleOptimizeField('incremental_text', methodology?.incremental_text ?? '', (newVal) => updateMethodologyField('incremental_text', newVal))}
+                        disabled={optimizingFieldId === 'incremental_text' || !(methodology?.incremental_text ?? '').trim()}
+                        className="flex items-center gap-1 text-[9px] font-bold text-primary hover:text-primary-hover disabled:opacity-30 disabled:hover:text-primary transition-all cursor-pointer bg-white/5 hover:bg-white/10 px-2 py-0.5 rounded-full border border-white/5"
+                      >
+                        {optimizingFieldId === 'incremental_text' ? (
+                          <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                        ) : (
+                          <Sparkles className="w-2.5 h-2.5 text-primary animate-pulse" />
+                        )}
+                        <span>Gemini AI</span>
+                      </button>
+                    </div>
                     <textarea
                       value={methodology?.incremental_text ?? DEFAULT_METHODOLOGY.incremental_text}
                       onChange={(e) => updateMethodologyField('incremental_text', e.target.value)}
@@ -2599,7 +2802,22 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Descripción</label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Descripción</label>
+                      <button
+                        type="button"
+                        onClick={() => handleOptimizeField('planning_text', methodology?.planning_text ?? '', (newVal) => updateMethodologyField('planning_text', newVal))}
+                        disabled={optimizingFieldId === 'planning_text' || !(methodology?.planning_text ?? '').trim()}
+                        className="flex items-center gap-1 text-[9px] font-bold text-primary hover:text-primary-hover disabled:opacity-30 disabled:hover:text-primary transition-all cursor-pointer bg-white/5 hover:bg-white/10 px-2 py-0.5 rounded-full border border-white/5"
+                      >
+                        {optimizingFieldId === 'planning_text' ? (
+                          <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                        ) : (
+                          <Sparkles className="w-2.5 h-2.5 text-primary animate-pulse" />
+                        )}
+                        <span>Gemini AI</span>
+                      </button>
+                    </div>
                     <textarea
                       value={methodology?.planning_text ?? DEFAULT_METHODOLOGY.planning_text}
                       onChange={(e) => updateMethodologyField('planning_text', e.target.value)}
@@ -2637,7 +2855,22 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
                     </div>
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Descripción</label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Descripción</label>
+                      <button
+                        type="button"
+                        onClick={() => handleOptimizeField('schedule_monday_text', methodology?.schedule_monday_text ?? '', (newVal) => updateMethodologyField('schedule_monday_text', newVal))}
+                        disabled={optimizingFieldId === 'schedule_monday_text' || !(methodology?.schedule_monday_text ?? '').trim()}
+                        className="flex items-center gap-1 text-[9px] font-bold text-primary hover:text-primary-hover disabled:opacity-30 disabled:hover:text-primary transition-all cursor-pointer bg-white/5 hover:bg-white/10 px-2 py-0.5 rounded-full border border-white/5"
+                      >
+                        {optimizingFieldId === 'schedule_monday_text' ? (
+                          <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                        ) : (
+                          <Sparkles className="w-2.5 h-2.5 text-primary animate-pulse" />
+                        )}
+                        <span>Gemini AI</span>
+                      </button>
+                    </div>
                     <textarea
                       value={methodology?.schedule_monday_text ?? DEFAULT_METHODOLOGY.schedule_monday_text}
                       onChange={(e) => updateMethodologyField('schedule_monday_text', e.target.value)}
@@ -2670,7 +2903,22 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
                     </div>
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Descripción</label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Descripción</label>
+                      <button
+                        type="button"
+                        onClick={() => handleOptimizeField('schedule_tuesday_text', methodology?.schedule_tuesday_text ?? '', (newVal) => updateMethodologyField('schedule_tuesday_text', newVal))}
+                        disabled={optimizingFieldId === 'schedule_tuesday_text' || !(methodology?.schedule_tuesday_text ?? '').trim()}
+                        className="flex items-center gap-1 text-[9px] font-bold text-primary hover:text-primary-hover disabled:opacity-30 disabled:hover:text-primary transition-all cursor-pointer bg-white/5 hover:bg-white/10 px-2 py-0.5 rounded-full border border-white/5"
+                      >
+                        {optimizingFieldId === 'schedule_tuesday_text' ? (
+                          <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                        ) : (
+                          <Sparkles className="w-2.5 h-2.5 text-primary animate-pulse" />
+                        )}
+                        <span>Gemini AI</span>
+                      </button>
+                    </div>
                     <textarea
                       value={methodology?.schedule_tuesday_text ?? DEFAULT_METHODOLOGY.schedule_tuesday_text}
                       onChange={(e) => updateMethodologyField('schedule_tuesday_text', e.target.value)}
@@ -2703,7 +2951,22 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
                     </div>
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Descripción</label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Descripción</label>
+                      <button
+                        type="button"
+                        onClick={() => handleOptimizeField('schedule_friday_text', methodology?.schedule_friday_text ?? '', (newVal) => updateMethodologyField('schedule_friday_text', newVal))}
+                        disabled={optimizingFieldId === 'schedule_friday_text' || !(methodology?.schedule_friday_text ?? '').trim()}
+                        className="flex items-center gap-1 text-[9px] font-bold text-primary hover:text-primary-hover disabled:opacity-30 disabled:hover:text-primary transition-all cursor-pointer bg-white/5 hover:bg-white/10 px-2 py-0.5 rounded-full border border-white/5"
+                      >
+                        {optimizingFieldId === 'schedule_friday_text' ? (
+                          <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                        ) : (
+                          <Sparkles className="w-2.5 h-2.5 text-primary animate-pulse" />
+                        )}
+                        <span>Gemini AI</span>
+                      </button>
+                    </div>
                     <textarea
                       value={methodology?.schedule_friday_text ?? DEFAULT_METHODOLOGY.schedule_friday_text}
                       onChange={(e) => updateMethodologyField('schedule_friday_text', e.target.value)}
@@ -3576,6 +3839,33 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
               ✕
             </button>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {optimizingFieldId && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/65 backdrop-blur-md transition-all duration-300">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="flex flex-col items-center gap-4 px-8 py-7 rounded-3xl border border-white/10 bg-slate-900/90 backdrop-blur-xl shadow-2xl text-center max-w-sm"
+            >
+              <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/15 border border-primary/25 text-primary shadow-lg shadow-primary/10">
+                <Sparkles size={28} className="animate-bounce" style={{ animationDuration: '2s' }} />
+              </div>
+              <div className="space-y-1">
+                <h4 className="text-xs font-black uppercase tracking-widest text-white">Gemini AI</h4>
+                <p className="text-xs text-slate-300 font-bold uppercase tracking-wider animate-pulse">Enriqueciendo descripción...</p>
+                <p className="text-[10px] text-slate-500 font-medium">Optimizando gramática y adaptando tono</p>
+              </div>
+              <div className="flex items-center gap-1.5 justify-center mt-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: '300ms' }} />
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </div>
