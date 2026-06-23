@@ -1170,9 +1170,8 @@ const ProposalView: React.FC = () => {
       </div>
 
       {/* Decorative ambient gradient blobs */}
-      <div className="absolute top-[10%] left-[20%] w-[500px] h-[500px] rounded-full blur-[140px] opacity-[0.08] pointer-events-none animate-pulse duration-[8s]" style={{ backgroundColor: brandPrimary }} />
-      <div className="absolute bottom-[15%] right-[10%] w-[600px] h-[600px] rounded-full blur-[160px] opacity-[0.06] pointer-events-none animate-pulse duration-[12s]" style={{ backgroundColor: brandSecondary }} />
-      <div className="absolute top-[40%] right-[30%] w-[400px] h-[400px] rounded-full blur-[130px] opacity-[0.04] pointer-events-none animate-pulse duration-[10s]" style={{ backgroundColor: brandPrimary }} />
+      <div className="absolute top-[10%] left-[20%] w-[500px] h-[500px] rounded-full blur-[140px] opacity-[0.08] pointer-events-none" style={{ backgroundColor: brandPrimary }} />
+      <div className="absolute bottom-[15%] right-[10%] w-[600px] h-[600px] rounded-full blur-[160px] opacity-[0.06] pointer-events-none" style={{ backgroundColor: brandSecondary }} />
 
       {/* Top Header */}
       <header className="w-full max-w-6xl mx-auto flex justify-between items-center z-20 relative px-2">
