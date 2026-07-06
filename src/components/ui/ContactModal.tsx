@@ -29,7 +29,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) =
                         exit={{ opacity: 0, scale: 0.9, y: 20 }}
                         className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-xl z-[101] p-4"
                     >
-                        <div className="bg-surface-dark border border-white/10 rounded-3xl overflow-hidden shadow-2xl relative">
+                        <div className="bg-surface-dark border border-white/10 rounded-3xl shadow-2xl relative">
                             <div className="absolute top-0 right-0 p-4 z-10">
                                 <button
                                     onClick={onClose}

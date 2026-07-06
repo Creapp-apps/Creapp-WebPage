@@ -16,9 +16,92 @@ import {
     Mail,
     PhoneCall,
     Sparkles,
+    ChevronDown,
 } from 'lucide-react';
 import logo from '../../assets/creapp-logo.png';
 import { supabase } from '../../lib/supabaseClient';
+
+interface CustomSelectProps {
+    value: string;
+    options: { value: string; label: string }[];
+    onChange: (val: string) => void;
+}
+
+const CustomSelect: React.FC<CustomSelectProps> = ({ value, options, onChange }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const selectedOption = options.find(opt => opt.value === value) || options[0];
+
+    return (
+        <div ref={dropdownRef} className="relative w-full text-left">
+            <button
+                type="button"
+                onClick={() => setIsOpen(!isOpen)}
+                className={`w-full bg-white/5 border rounded-xl px-4 py-3 text-white text-xs sm:text-sm font-medium flex items-center justify-between cursor-pointer focus:outline-none transition-all hover:bg-white/[0.07] ${
+                    isOpen ? 'border-cyan-electric/50 ring-1 ring-cyan-electric/50' : 'border-white/10'
+                }`}
+            >
+                <span className="truncate">{selectedOption.label}</span>
+                <ChevronDown className={`w-4 h-4 text-slate-400 flex-shrink-0 transition-transform duration-300 ${isOpen ? 'rotate-180 text-white' : ''}`} />
+            </button>
+
+            <AnimatePresence>
+                {isOpen && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                        transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+                        className="absolute z-50 left-0 right-0 mt-1.5 bg-[#120F24]/98 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden shadow-[0_12px_30px_rgba(0,0,0,0.6)] max-h-60 overflow-y-auto"
+                    >
+                        <div className="p-1">
+                            {options.map((option) => {
+                                const isSelected = option.value === value;
+                                return (
+                                    <button
+                                        key={option.value}
+                                        type="button"
+                                        onClick={() => {
+                                            onChange(option.value);
+                                            setIsOpen(false);
+                                        }}
+                                        className={`w-full text-left px-3 py-2.5 text-xs sm:text-sm rounded-lg transition-all flex items-center justify-between ${
+                                            isSelected
+                                                ? 'bg-white/[0.08] text-cyan-electric font-semibold'
+                                                : 'text-slate-300 hover:bg-white/[0.04] hover:text-white'
+                                        }`}
+                                    >
+                                        <span className="truncate">{option.label}</span>
+                                        {isSelected && <Check className="w-4 h-4 text-cyan-electric stroke-[3] flex-shrink-0 ml-2" />}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+};
+
+
+
+const urgencyOptions = [
+    { value: 'Baja (1-3 meses)', label: 'Baja (1-3 meses)' },
+    { value: 'Media (1 mes)', label: 'Media (1 mes)' },
+    { value: 'Alta (ASAP)', label: 'Alta (ASAP)' },
+];
 
 interface MeetingSchedulerProps {
     onSuccess?: () => void;
@@ -35,6 +118,37 @@ export const MeetingScheduler: React.FC<MeetingSchedulerProps> = ({
     className = '',
 }) => {
     const [step, setStep] = useState(1);
+    const [direction, setDirection] = useState(1); // 1 = forward, -1 = backward
+    const [isAnimating, setIsAnimating] = useState(false);
+
+    const stepVariants = {
+        enter: (dir: number) => ({
+            x: dir * 40,
+            opacity: 0,
+            scale: 0.98,
+        }),
+        center: {
+            x: 0,
+            opacity: 1,
+            scale: 1,
+            transition: {
+                x: { type: 'spring', stiffness: 350, damping: 32 },
+                opacity: { duration: 0.25 },
+                scale: { duration: 0.3, ease: 'easeOut' },
+            }
+        },
+        exit: (dir: number) => ({
+            x: -dir * 40,
+            opacity: 0,
+            scale: 0.98,
+            transition: {
+                x: { duration: 0.25, ease: [0.16, 1, 0.3, 1] },
+                opacity: { duration: 0.15 },
+                scale: { duration: 0.25, ease: [0.16, 1, 0.3, 1] },
+            }
+        })
+    };
+
     const [meetingType, setMeetingType] = useState<'video' | 'voice' | null>(null);
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [selectedTime, setSelectedTime] = useState<string | null>(null);
@@ -44,7 +158,7 @@ export const MeetingScheduler: React.FC<MeetingSchedulerProps> = ({
         email: '',
         phone: '',
         idea: '',
-        budget: '5k-15k',
+        budget: '',
         urgency: 'Media (1 mes)',
     });
     const [isLoading, setIsLoading] = useState(false);
@@ -127,11 +241,15 @@ export const MeetingScheduler: React.FC<MeetingSchedulerProps> = ({
     };
 
     const handleNext = () => {
+        setDirection(1);
+        setIsAnimating(true);
         if (step === 1 && meetingType) setStep(2);
         else if (step === 2 && selectedDate && selectedTime) setStep(3);
     };
 
     const handleBack = () => {
+        setDirection(-1);
+        setIsAnimating(true);
         if (step > 1) setStep(step - 1);
     };
 
@@ -162,6 +280,7 @@ export const MeetingScheduler: React.FC<MeetingSchedulerProps> = ({
             console.error('Failed to insert lead:', err);
         } finally {
             setIsLoading(false);
+            setDirection(1);
             setStep(4);
         }
     };
@@ -239,9 +358,13 @@ export const MeetingScheduler: React.FC<MeetingSchedulerProps> = ({
     // Step 1: Format & Type
     const renderStep1 = () => (
         <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
+            key="step1"
+            custom={direction}
+            variants={stepVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            onAnimationComplete={() => setIsAnimating(false)}
             className="space-y-6"
         >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -249,23 +372,21 @@ export const MeetingScheduler: React.FC<MeetingSchedulerProps> = ({
                 <button
                     type="button"
                     onClick={() => setMeetingType('voice')}
-                    className={`p-6 rounded-2xl border text-left transition-all duration-300 relative group overflow-hidden ${
+                    className={`p-6 rounded-2xl border flex flex-col items-center text-center transition-all duration-300 relative group overflow-hidden ${
                         meetingType === 'voice'
                             ? 'bg-white/[0.04] border-cyan-electric shadow-[0_0_30px_rgba(255,45,120,0.15)]'
                             : 'bg-white/[0.02] border-white/5 hover:border-white/10 hover:bg-white/[0.03]'
                     }`}
                 >
-                    <div className="flex items-center justify-between mb-4">
-                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                            meetingType === 'voice' ? 'bg-cyan-electric/20 text-cyan-electric' : 'bg-white/5 text-slate-400'
-                        }`}>
-                            <Phone className="w-6 h-6" />
-                        </div>
-                        {meetingType === 'voice' && (
-                            <span className="w-5 h-5 rounded-full bg-cyan-electric flex items-center justify-center text-black">
-                                <Check className="w-3.5 h-3.5 stroke-[3]" />
-                            </span>
-                        )}
+                    {meetingType === 'voice' && (
+                        <span className="absolute top-4 right-4 w-5 h-5 rounded-full bg-cyan-electric flex items-center justify-center text-black">
+                            <Check className="w-3.5 h-3.5 stroke-[3]" />
+                        </span>
+                    )}
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${
+                        meetingType === 'voice' ? 'bg-cyan-electric/20 text-cyan-electric' : 'bg-white/5 text-slate-400'
+                    }`}>
+                        <Phone className="w-6 h-6" />
                     </div>
                     <h3 className="font-display text-lg font-bold text-white mb-1">Llamada de Voz</h3>
                     <p className="text-slate-400 text-xs leading-relaxed">
@@ -278,26 +399,24 @@ export const MeetingScheduler: React.FC<MeetingSchedulerProps> = ({
                 <button
                     type="button"
                     onClick={() => setMeetingType('video')}
-                    className={`p-6 rounded-2xl border text-left transition-all duration-300 relative group overflow-hidden ${
+                    className={`p-6 rounded-2xl border flex flex-col items-center text-center transition-all duration-300 relative group overflow-hidden ${
                         meetingType === 'video'
                             ? 'bg-white/[0.04] border-purple-digital shadow-[0_0_30px_rgba(155,48,255,0.15)]'
                             : 'bg-white/[0.02] border-white/5 hover:border-white/10 hover:bg-white/[0.03]'
                     }`}
                 >
-                    <div className="flex items-center justify-between mb-4">
-                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                            meetingType === 'video' ? 'bg-purple-digital/20 text-purple-digital' : 'bg-white/5 text-slate-400'
-                        }`}>
-                            <Video className="w-6 h-6" />
-                        </div>
-                        {meetingType === 'video' && (
-                            <span className="w-5 h-5 rounded-full bg-purple-digital flex items-center justify-center text-white">
-                                <Check className="w-3.5 h-3.5 stroke-[3]" />
-                            </span>
-                        )}
+                    {meetingType === 'video' && (
+                        <span className="absolute top-4 right-4 w-5 h-5 rounded-full bg-purple-digital flex items-center justify-center text-white">
+                            <Check className="w-3.5 h-3.5 stroke-[3]" />
+                        </span>
+                    )}
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${
+                        meetingType === 'video' ? 'bg-purple-digital/20 text-purple-digital' : 'bg-white/5 text-slate-400'
+                    }`}>
+                        <Video className="w-6 h-6" />
                     </div>
-                    <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-display text-lg font-bold text-white">Videollamada</h3>
+                    <div className="flex flex-col items-center gap-1.5 mb-2">
+                        <h3 className="font-display text-lg font-bold text-white leading-none">Videollamada</h3>
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-digital/20 text-purple-300 border border-purple-digital/30">
                             Recomendado
                         </span>
@@ -336,9 +455,13 @@ export const MeetingScheduler: React.FC<MeetingSchedulerProps> = ({
 
         return (
             <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
+                key="step2"
+                custom={direction}
+                variants={stepVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                onAnimationComplete={() => setIsAnimating(false)}
                 className="space-y-6"
             >
                 {/* Horizontal Date Picker Stripe */}
@@ -348,7 +471,7 @@ export const MeetingScheduler: React.FC<MeetingSchedulerProps> = ({
                     </label>
                     <div
                         ref={calendarScrollRef}
-                        className="flex gap-2.5 overflow-x-auto pb-2 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10 no-scrollbar"
+                        className="flex gap-2.5 overflow-x-auto pt-2.5 pb-3 px-3 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10 no-scrollbar"
                     >
                         {datesList.map((date, idx) => {
                             const isSelected =
@@ -439,9 +562,14 @@ export const MeetingScheduler: React.FC<MeetingSchedulerProps> = ({
     // Step 3: Contact Form & Brief
     const renderStep3 = () => (
         <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
+            key="step3"
+            custom={direction}
+            variants={stepVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            onAnimationComplete={() => setIsAnimating(false)}
+            className="space-y-4"
         >
             <form onSubmit={handleBook} className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
@@ -493,33 +621,28 @@ export const MeetingScheduler: React.FC<MeetingSchedulerProps> = ({
 
                 <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1 block">
                             Presupuesto
                         </label>
-                        <select
+                        <input
+                            type="text"
+                            placeholder="Ej: $10,000 USD"
+                            required
                             value={formData.budget}
                             onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
-                            className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-3 text-white text-xs focus:outline-none focus:border-cyan-electric/50 hover:bg-white/10 transition-colors cursor-pointer"
-                        >
-                            <option className="bg-surface-dark" value="<5k">Idea / MVP (&lt; $5K USD)</option>
-                            <option className="bg-surface-dark" value="5k-15k">Startup ($5K - $15K USD)</option>
-                            <option className="bg-surface-dark" value=">15k">Empresarial (+$15K USD)</option>
-                        </select>
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-slate-600 focus:outline-none focus:border-cyan-electric/50 focus:ring-1 focus:ring-cyan-electric/50 transition-all text-sm font-medium"
+                        />
                     </div>
 
                     <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1 block">
                             Urgencia
                         </label>
-                        <select
+                        <CustomSelect
                             value={formData.urgency}
-                            onChange={(e) => setFormData({ ...formData, urgency: e.target.value })}
-                            className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-3 text-white text-xs focus:outline-none focus:border-cyan-electric/50 hover:bg-white/10 transition-colors cursor-pointer"
-                        >
-                            <option className="bg-surface-dark">Baja (1-3 meses)</option>
-                            <option className="bg-surface-dark">Media (1 mes)</option>
-                            <option className="bg-surface-dark">Alta (ASAP)</option>
-                        </select>
+                            options={urgencyOptions}
+                            onChange={(val) => setFormData({ ...formData, urgency: val })}
+                        />
                     </div>
                 </div>
 
@@ -550,8 +673,13 @@ export const MeetingScheduler: React.FC<MeetingSchedulerProps> = ({
 
         return (
             <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
+                key="step4"
+                custom={direction}
+                variants={stepVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                onAnimationComplete={() => setIsAnimating(false)}
                 className="text-center space-y-6 py-4"
             >
                 {/* Celebratory Rocket Space Backdrop */}
@@ -688,12 +816,22 @@ export const MeetingScheduler: React.FC<MeetingSchedulerProps> = ({
             )}
 
             {/* Stepper Panels */}
-            <AnimatePresence mode="wait">
-                {step === 1 && renderStep1()}
-                {step === 2 && renderStep2()}
-                {step === 3 && renderStep3()}
-                {step === 4 && renderStep4()}
-            </AnimatePresence>
+            <motion.div
+                layout
+                className={`relative ${isAnimating ? 'overflow-hidden' : 'overflow-visible'}`}
+                transition={{
+                    layout: { type: "spring", stiffness: 350, damping: 32 }
+                }}
+                onLayoutAnimationStart={() => setIsAnimating(true)}
+                onLayoutAnimationComplete={() => setIsAnimating(false)}
+            >
+                <AnimatePresence mode="wait" custom={direction} initial={false}>
+                    {step === 1 && renderStep1()}
+                    {step === 2 && renderStep2()}
+                    {step === 3 && renderStep3()}
+                    {step === 4 && renderStep4()}
+                </AnimatePresence>
+            </motion.div>
         </div>
     );
 };
