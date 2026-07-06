@@ -2157,7 +2157,15 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
                               </span>
                             </div>
 
-
+                            <div className="w-32 shrink-0">
+                              <input 
+                                type="text" 
+                                value={item.week_range || ''} 
+                                onChange={(e) => updateItem(milestones, setMilestones, i, 'week_range', e.target.value)} 
+                                placeholder="Semanas (ej: 1-4)" 
+                                className="w-full bg-white/5 border border-white/10 hover:border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-primary/50 placeholder-slate-600 font-medium transition-all" 
+                              />
+                            </div>
 
                             <button 
                               onClick={() => removeItem(milestones, setMilestones, i)} 

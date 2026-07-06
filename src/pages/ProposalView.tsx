@@ -439,6 +439,16 @@ const ProposalView: React.FC = () => {
     }
   }, [proposal]);
 
+  // Synchronize active desglose tab if weeks 1-8 page is hidden
+  useEffect(() => {
+    if (proposal && proposal.methodology?.hidden_pages) {
+      const hidden = proposal.methodology.hidden_pages;
+      if (hidden.includes('sem1-6') && !hidden.includes('sem9-16')) {
+        setActiveDesgloseTab('w9-16');
+      }
+    }
+  }, [proposal]);
+
   const slideRef = useRef<HTMLDivElement>(null);
 
   // GSAP slide transition micro-animations
@@ -510,6 +520,44 @@ const ProposalView: React.FC = () => {
   const brandPrimary = proposal.brand_color_primary;
   const brandSecondary = proposal.brand_color_secondary;
   const gradientStyle = `linear-gradient(to right, ${brandPrimary}, ${brandSecondary})`;
+
+  const hiddenPages = proposal?.methodology?.hidden_pages || [];
+
+  const activeSlides = proposal ? [
+    { name: 'Portada', id: 'portada', component: () => renderSlideContent(0) },
+    { name: 'Resumen', id: 'portada', component: () => renderSlideContent(1) },
+    { name: 'Incluye', id: 'alcance', component: () => renderSlideContent(2) },
+    { name: 'No incluye', id: 'alcance', component: () => renderSlideContent(3) },
+    { name: 'Metodología', id: 'metodologia', component: () => renderSlideContent(4) },
+    { name: 'Fases', id: 'hitos', component: () => renderSlideContent(5) },
+    { name: 'Desglose', id: 'desglose', component: () => renderSlideContent(6) },
+    { name: 'Presupuesto', id: 'hitos', component: () => renderSlideContent(7) },
+    { name: 'Contrato', id: 'legal', component: () => renderSlideContent(8) }
+  ].filter(slide => {
+    if (slide.id === 'desglose') {
+      return !hiddenPages.includes('sem1-6') || !hiddenPages.includes('sem9-16');
+    }
+    return !hiddenPages.includes(slide.id);
+  }) : [];
+
+  const safeSlideIndex = Math.min(currentSlide, Math.max(0, activeSlides.length - 1));
+
+  const PRINT_PAGES = [
+    { id: 'portada', elementId: 'page-portada' },
+    { id: 'alcance', elementId: 'page-alcance' },
+    { id: 'hitos', elementId: 'page-hitos' },
+    { id: 'sem1-6', elementId: 'page-sem1-8' },
+    { id: 'sem9-16', elementId: 'page-sem9-16' },
+    { id: 'metodologia', elementId: 'page-metodologia' },
+    { id: 'legal', elementId: 'page-legal' }
+  ].filter(p => !hiddenPages.includes(p.id));
+
+  const totalPrintPages = PRINT_PAGES.length;
+
+  const getPrintPageNumber = (pageId: string) => {
+    const idx = PRINT_PAGES.findIndex(p => p.id === pageId);
+    return idx !== -1 ? idx + 1 : 0;
+  };
 
   // Dynamically resolve weekly breakdown from proposal data or fallback to defaults
   const weeklyBreakdown = proposal.weekly_breakdown && Array.isArray(proposal.weekly_breakdown) && proposal.weekly_breakdown.length > 0
@@ -645,14 +693,14 @@ const ProposalView: React.FC = () => {
   };
 
   const nextSlide = () => {
-    if (currentSlide < SLIDES.length - 1) {
+    if (safeSlideIndex < activeSlides.length - 1) {
       setDirection(1);
       setCurrentSlide(prev => prev + 1);
     }
   };
 
   const prevSlide = () => {
-    if (currentSlide > 0) {
+    if (safeSlideIndex > 0) {
       setDirection(-1);
       setCurrentSlide(prev => prev - 1);
     }
@@ -682,8 +730,8 @@ const ProposalView: React.FC = () => {
     }
   ];
 
-  const renderSlide = () => {
-    switch (currentSlide) {
+  const renderSlideContent = (index: number) => {
+    switch (index) {
       case 0:
         return (
           <div className="flex flex-col items-center justify-center text-center py-4 min-h-[380px] relative">
@@ -1011,22 +1059,26 @@ const ProposalView: React.FC = () => {
                 </p>
               </div>
               <div className="flex bg-white/5 rounded-2xl border border-white/5 p-1.5 shrink-0 self-start md:self-end">
-                <button
-                  onClick={() => setActiveDesgloseTab('w1-8')}
-                  className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
-                    activeDesgloseTab === 'w1-8' ? 'bg-white/10 text-white' : 'text-slate-500 hover:text-slate-300'
-                  }`}
-                >
-                  Semanas 1 - 8
-                </button>
-                <button
-                  onClick={() => setActiveDesgloseTab('w9-16')}
-                  className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
-                    activeDesgloseTab === 'w9-16' ? 'bg-white/10 text-white' : 'text-slate-500 hover:text-slate-300'
-                  }`}
-                >
-                  Semanas 9 - 16
-                </button>
+                {!hiddenPages.includes('sem1-6') && (
+                  <button
+                    onClick={() => setActiveDesgloseTab('w1-8')}
+                    className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                      activeDesgloseTab === 'w1-8' ? 'bg-white/10 text-white' : 'text-slate-500 hover:text-slate-300'
+                    }`}
+                  >
+                    Semanas 1 - 8
+                  </button>
+                )}
+                {!hiddenPages.includes('sem9-16') && (
+                  <button
+                    onClick={() => setActiveDesgloseTab('w9-16')}
+                    className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                      activeDesgloseTab === 'w9-16' ? 'bg-white/10 text-white' : 'text-slate-500 hover:text-slate-300'
+                    }`}
+                  >
+                    Semanas 9 - 16
+                  </button>
+                )}
               </div>
             </div>
 
@@ -1152,6 +1204,11 @@ const ProposalView: React.FC = () => {
       default:
         return null;
     }
+  };
+
+  const renderSlide = () => {
+    if (activeSlides.length === 0 || !activeSlides[safeSlideIndex]) return null;
+    return activeSlides[safeSlideIndex].component();
   };
 
   return (
@@ -1331,34 +1388,34 @@ const ProposalView: React.FC = () => {
         <div className="flex items-center gap-3 bg-white/[0.02] border border-white/5 rounded-full p-2 select-none">
           <button
             onClick={prevSlide}
-            disabled={currentSlide === 0}
+            disabled={safeSlideIndex === 0}
             className="p-1 text-slate-400 hover:text-white disabled:opacity-20 disabled:pointer-events-none transition-colors cursor-pointer"
           >
             <ChevronLeft size={16} />
           </button>
           
           <div className="flex items-center gap-2 px-1">
-            {SLIDES.map((_, idx) => (
+            {activeSlides.map((slide, idx) => (
               <button
                 key={idx}
                 onClick={() => {
-                  setDirection(idx > currentSlide ? 1 : -1);
+                  setDirection(idx > safeSlideIndex ? 1 : -1);
                   setCurrentSlide(idx);
                 }}
                 className="w-2 h-2 rounded-full transition-all duration-300 cursor-pointer"
                 style={{ 
-                  backgroundColor: currentSlide === idx ? brandPrimary : 'rgba(255,255,255,0.15)',
-                  transform: currentSlide === idx ? 'scale(1.3)' : 'scale(1)',
-                  boxShadow: currentSlide === idx ? `0 0 8px ${brandPrimary}` : 'none'
+                  backgroundColor: safeSlideIndex === idx ? brandPrimary : 'rgba(255,255,255,0.15)',
+                  transform: safeSlideIndex === idx ? 'scale(1.3)' : 'scale(1)',
+                  boxShadow: safeSlideIndex === idx ? `0 0 8px ${brandPrimary}` : 'none'
                 }}
-                title={SLIDES[idx]}
+                title={slide.name}
               />
             ))}
           </div>
 
           <button
             onClick={nextSlide}
-            disabled={currentSlide === SLIDES.length - 1}
+            disabled={safeSlideIndex === activeSlides.length - 1}
             className="p-1 text-slate-400 hover:text-white disabled:opacity-20 disabled:pointer-events-none transition-colors cursor-pointer"
           >
             <ChevronRight size={16} />
@@ -1634,7 +1691,8 @@ const ProposalView: React.FC = () => {
         style={{ width: '794px', color: '#0f172a', fontFamily: 'system-ui, -apple-system, sans-serif', backgroundColor: '#ffffff' }}
       >
         {/* PÁGINA 1: Portada */}
-        <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
+        {!hiddenPages.includes('portada') && (
+          <div id="page-portada" style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
           {/* Top Brand Line */}
           <div style={{ position: 'absolute', top: '0', left: '0', right: '0', height: '8px', background: `linear-gradient(to right, ${brandPrimary}, ${brandSecondary})` }}></div>
           
@@ -1682,9 +1740,11 @@ const ProposalView: React.FC = () => {
             <span style={{ fontSize: '10px', color: '#94a3b8' }}>Dossier Oficial de Propuesta</span>
           </div>
         </div>
+        )}
 
         {/* PÁGINA 2: Alcance y Entregables */}
-        <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
+        {!hiddenPages.includes('alcance') && (
+          <div id="page-alcance" style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
           {(() => {
             const totalVisibleInclusions = proposal.inclusions.slice(0, 6).length;
             const totalVisibleExclusions = proposal.exclusions.slice(0, 6).length;
@@ -1822,15 +1882,17 @@ const ProposalView: React.FC = () => {
                 {/* Footer Fijo */}
                 <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
                   <span>Propuesta Comercial | {proposal.client_name}</span>
-                  <span>Página 2 de 7</span>
+                  <span>Página {getPrintPageNumber('alcance')} de {totalPrintPages}</span>
                 </div>
               </>
             );
           })()}
         </div>
+        )}
 
         {/* PÁGINA 3: Cronograma de Fases & Entregas */}
-        <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
+        {!hiddenPages.includes('hitos') && (
+          <div id="page-hitos" style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
           {/* Header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '25px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
@@ -1948,12 +2010,14 @@ const ProposalView: React.FC = () => {
           {/* Footer Fijo */}
           <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
             <span>Presupuesto Consolidado: <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{formatTotalValue(proposal.total_value)} TOTAL</span></span>
-            <span>Página 3 de 7</span>
+            <span>Página {getPrintPageNumber('hitos')} de {totalPrintPages}</span>
           </div>
         </div>
+        )}
 
         {/* PÁGINA 4: Desglose de Horas — Semanas 1 a 8 */}
-        <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
+        {!hiddenPages.includes('sem1-6') && (
+          <div id="page-sem1-8" style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
           {/* Header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '25px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
@@ -2010,12 +2074,14 @@ const ProposalView: React.FC = () => {
           {/* Footer Fijo */}
           <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
             <span>CREAPP // ACCUMULATED_HOURS_80</span>
-            <span>Página 4 de 7</span>
+            <span>Página {getPrintPageNumber('sem1-6')} de {totalPrintPages}</span>
           </div>
         </div>
+        )}
 
         {/* PÁGINA 5: Desglose de Horas — Semanas 9 a 16 */}
-        <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
+        {!hiddenPages.includes('sem9-16') && (
+          <div id="page-sem9-16" style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
           {/* Header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '25px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
@@ -2072,12 +2138,14 @@ const ProposalView: React.FC = () => {
           {/* Footer Fijo */}
           <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
             <span>CREAPP // ESTIMATED_HOURS_160_TOTAL</span>
-            <span>Página 5 de 7</span>
+            <span>Página {getPrintPageNumber('sem9-16')} de {totalPrintPages}</span>
           </div>
         </div>
+        )}
 
         {/* PÁGINA 6: Metodología de Trabajo & Plan de Acción */}
-        <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
+        {!hiddenPages.includes('metodologia') && (
+          <div id="page-metodologia" style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
           {/* Header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '25px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
@@ -2205,12 +2273,14 @@ const ProposalView: React.FC = () => {
           {/* Footer Fijo */}
           <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
             <span>Propuesta Comercial | {proposal.client_name}</span>
-            <span>Página 6 de 7</span>
+            <span>Página {getPrintPageNumber('metodologia')} de {totalPrintPages}</span>
           </div>
         </div>
+        )}
 
         {/* PÁGINA 7: Acuerdo de Servicios */}
-        <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
+        {!hiddenPages.includes('legal') && (
+          <div id="page-legal" style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
           {/* Header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '25px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
@@ -2300,9 +2370,10 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
           {/* Footer Fijo */}
           <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
             <span>Propuesta Comercial | {proposal.client_name}</span>
-            <span>Página 7 de 7</span>
+            <span>Página {getPrintPageNumber('legal')} de {totalPrintPages}</span>
           </div>
         </div>
+        )}
       </div>
     </div>
   );

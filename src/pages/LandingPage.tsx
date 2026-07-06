@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import {
-    MessageCircle,
+    Calendar,
     Globe,
     Smartphone,
     Code2,
@@ -288,8 +288,8 @@ const LandingPage: React.FC = () => {
                                 onClick={() => setIsModalOpen(true)}
                                 className="px-10 py-4 rounded-full bg-gradient-to-r from-cyan-electric to-purple-digital text-black font-bold text-lg shadow-[0_0_40px_rgba(0,240,255,0.3)] hover:shadow-[0_0_60px_rgba(0,240,255,0.5)] transition-all duration-300"
                             >
-                                Contactanos
-                                <MessageCircle className="w-5 h-5" />
+                                Agenda una llamada
+                                <Calendar className="w-5 h-5" />
                             </MagneticButton>
 
                             <MagneticButton
