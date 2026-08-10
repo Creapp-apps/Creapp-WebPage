@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { ContactForm } from '../components/ui/ContactForm';
 import { ContactModal } from '../components/ui/ContactModal';
+import { Navbar } from '../components/ui/Navbar';
 import MagneticButton from '../components/ui/MagneticButton';
 import CustomCursor from '../components/systems/CustomCursor';
 import Preloader from '../components/systems/Preloader';
@@ -22,8 +23,6 @@ import WebGLCanvas from '../components/canvas/WebGLCanvas';
 import Lightfall from '../components/backgrounds/Lightfall';
 import ShowroomSection from '../components/landing/ShowroomSection';
 import RocketProcess from '../components/landing/RocketProcess';
-
-import logo from '../assets/creapp-logo.png';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -211,52 +210,12 @@ const LandingPage: React.FC = () => {
 
             {/* ═══════════════ DOM LAYER ═══════════════ */}
             <div ref={mainRef} className="relative z-10">
-                {/* ── Navigation ── */}
-                <nav
-                    ref={navRef}
-                    className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl transition-all duration-500 opacity-0"
-                    style={{
-                        paddingTop: scrolled ? '1rem' : '1.5rem',
-                        paddingBottom: scrolled ? '1rem' : '1.5rem',
-                        backgroundColor: scrolled ? 'rgba(5,5,5,0.3)' : 'rgba(5,5,5,0)',
-                        borderBottom: scrolled ? '1px solid rgba(255,255,255,0.08)' : '1px solid transparent',
-                    }}
-                >
-                    <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
-                        <div className="flex items-center gap-1">
-                            <img
-                                src={logo}
-                                alt="CreAPP"
-                                className="w-12 h-12 object-contain"
-                            />
-                            <span className="font-display font-bold text-2xl tracking-tighter">
-                                creapp
-                            </span>
-                        </div>
-
-                        <div className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-400">
-                            {['Servicios', 'Nosotros', 'Contacto'].map((label) => (
-                                <a
-                                    key={label}
-                                    href={`#${label.toLowerCase()}`}
-                                    className="relative px-3 py-2 hover:text-white transition-colors duration-300 group"
-                                    data-cursor-hover
-                                >
-                                    {label}
-                                    <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-[1px] bg-cyan-electric group-hover:w-full transition-all duration-300" />
-                                </a>
-                            ))}
-
-                            <MagneticButton
-                                onClick={() => setIsModalOpen(true)}
-                                className="relative px-6 py-2.5 rounded-full bg-gradient-to-r from-cyan-electric/20 to-purple-digital/20 border border-cyan-electric/30 text-white text-sm font-medium hover:border-cyan-electric/60 transition-all duration-300 overflow-hidden group"
-                            >
-                                <span className="relative z-10">Hablemos</span>
-                                <div className="absolute inset-0 bg-gradient-to-r from-cyan-electric/10 to-purple-digital/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                            </MagneticButton>
-                        </div>
-                    </div>
-                </nav>
+                {/* ── Floating Pill Navigation ── */}
+                <Navbar
+                    scrolled={scrolled}
+                    onOpenContact={() => setIsModalOpen(true)}
+                    navRef={navRef}
+                />
 
                 {/* ── HERO SECTION (0%) ── */}
                 <section

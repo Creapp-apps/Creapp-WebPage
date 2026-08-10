@@ -121,7 +121,7 @@ export const MeetingScheduler: React.FC<MeetingSchedulerProps> = ({
     const [direction, setDirection] = useState(1); // 1 = forward, -1 = backward
     const [isAnimating, setIsAnimating] = useState(false);
 
-    const stepVariants = {
+    const stepVariants: any = {
         enter: (dir: number) => ({
             x: dir * 40,
             opacity: 0,
@@ -132,9 +132,9 @@ export const MeetingScheduler: React.FC<MeetingSchedulerProps> = ({
             opacity: 1,
             scale: 1,
             transition: {
-                x: { type: 'spring', stiffness: 350, damping: 32 },
+                x: { type: 'spring' as const, stiffness: 350, damping: 32 },
                 opacity: { duration: 0.25 },
-                scale: { duration: 0.3, ease: 'easeOut' },
+                scale: { duration: 0.3, ease: 'easeOut' as const },
             }
         },
         exit: (dir: number) => ({
