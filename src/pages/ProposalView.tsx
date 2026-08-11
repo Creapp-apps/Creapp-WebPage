@@ -1903,7 +1903,7 @@ const ProposalView: React.FC = () => {
           </div>
 
           {/* Contenido */}
-          <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: '20px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: (proposal.milestones && proposal.milestones.length >= 4) || (proposal.payments && proposal.payments.length >= 4) ? '10px' : '20px' }}>
             <h1 style={{ fontSize: '28px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
               CRONOGRAMA DE FASES & <span style={{ fontStyle: 'italic', color: brandPrimary }}>ENTREGAS</span>
             </h1>
@@ -1923,32 +1923,32 @@ const ProposalView: React.FC = () => {
               })()}
             </p>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: '10px', marginBottom: '5px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: '5px', marginBottom: '2px' }}>
               <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Estructura de Sprints Mensuales</span>
               <div style={{ flexGrow: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
             </div>
 
             {/* Listado de Fases (Fase 1 a 4) */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: proposal.milestones && proposal.milestones.length >= 4 ? '10px' : '15px' }}>
               {proposal.milestones && proposal.milestones.map((m, i) => (
-                <div key={m.id || i} style={{ display: 'flex', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', minHeight: '95px', boxSizing: 'border-box' }}>
+                <div key={m.id || i} style={{ display: 'flex', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', minHeight: proposal.milestones && proposal.milestones.length >= 4 ? '76px' : '95px', boxSizing: 'border-box' }}>
                   <div style={{ width: '80px', flexShrink: 0, flexGrow: 0, backgroundColor: '#000000', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: '#ffffff', gap: '4px', boxSizing: 'border-box' }}>
                     <span style={{ fontSize: '9px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.8 }}>Fase</span>
                     <span style={{ fontSize: '20px', fontWeight: '950' }}>{i + 1}</span>
                   </div>
-                  <div style={{ flexGrow: 1, flexShrink: 1, minWidth: 0, padding: '15px 20px', display: 'flex', flexDirection: 'column', gap: '5px', justifyContent: 'center', boxSizing: 'border-box' }}>
+                  <div style={{ flexGrow: 1, flexShrink: 1, minWidth: 0, padding: proposal.milestones && proposal.milestones.length >= 4 ? '10px 15px' : '15px 20px', display: 'flex', flexDirection: 'column', gap: '4px', justifyContent: 'center', boxSizing: 'border-box' }}>
                     <h4 style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', margin: '0', textTransform: 'uppercase' }}>{m.title}</h4>
-                    <p style={{ fontSize: '10px', color: '#475569', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
+                    <p style={{ fontSize: '10px', color: '#475569', lineHeight: '1.3', margin: '0', fontWeight: '300' }}>
                       {m.description || 'Sin descripción de entregables.'}
                     </p>
                   </div>
-                  <div style={{ width: '120px', flexShrink: 0, flexGrow: 0, borderLeft: '1px solid #e2e8f0', padding: '15px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '4px', backgroundColor: '#fafafa', boxSizing: 'border-box' }}>
+                  <div style={{ width: '120px', flexShrink: 0, flexGrow: 0, borderLeft: '1px solid #e2e8f0', padding: '10px 15px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '4px', backgroundColor: '#fafafa', boxSizing: 'border-box' }}>
                     <span style={{ fontSize: '7px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Hito Control</span>
                     <span style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', textAlign: 'center', lineHeight: '1.1' }}>
                       {m.control_milestone || 'VERIFICACIÓN'}
                     </span>
                   </div>
-                  <div style={{ width: '120px', flexShrink: 0, flexGrow: 0, borderLeft: '1px solid #e2e8f0', padding: '15px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '4px', backgroundColor: '#fafafa', boxSizing: 'border-box' }}>
+                  <div style={{ width: '120px', flexShrink: 0, flexGrow: 0, borderLeft: '1px solid #e2e8f0', padding: '10px 15px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '4px', backgroundColor: '#fafafa', boxSizing: 'border-box' }}>
                     <span style={{ fontSize: '7px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Inversión</span>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}>
                       <span style={{ fontSize: '14px', fontWeight: '950', color: '#000000', lineHeight: '1.1' }}>${m.price || '0'}</span>
@@ -1961,8 +1961,8 @@ const ProposalView: React.FC = () => {
 
             {/* Costos de Infraestructura (Mini-bloque compacto horizontal) */}
             {proposal.infrastructure_costs && proposal.infrastructure_costs.length > 0 && (
-              <div style={{ marginTop: '5px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '8px' }}>
+              <div style={{ marginTop: '2px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '6px' }}>
                   <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Costos de Infraestructura Asociados</span>
                   <div style={{ flexGrow: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
                 </div>
@@ -1984,21 +1984,21 @@ const ProposalView: React.FC = () => {
             )}
 
             {proposal.payments && proposal.payments.length > 0 && (
-              <div style={{ marginTop: '10px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '8px' }}>
+              <div style={{ marginTop: '4px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '6px' }}>
                   <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Esquema de Pagos / Hitos de Financiamiento</span>
                   <div style={{ flexGrow: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
                 </div>
-                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', width: '100%' }}>
+                <div style={{ display: 'flex', gap: proposal.payments.length > 3 ? '6px' : '10px', flexWrap: 'nowrap', width: '100%' }}>
                   {proposal.payments.map((p, idx) => (
-                    <div key={idx} style={{ flex: '1 1 0px', minWidth: '180px', padding: '8px 12px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '4px', boxSizing: 'border-box' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '5px' }}>
-                        <span style={{ fontSize: '9px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', lineHeight: '1.2' }}>{p.label}</span>
-                        <span style={{ fontSize: '12px', fontWeight: '950', color: brandPrimary, flexShrink: 0 }}>{p.percentage}</span>
+                    <div key={idx} style={{ flex: '1 1 0px', minWidth: '0px', padding: proposal.payments.length > 3 ? '6px 8px' : '8px 12px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '3px', boxSizing: 'border-box' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '4px' }}>
+                        <span style={{ fontSize: proposal.payments.length > 3 ? '8.5px' : '9px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', lineHeight: '1.2' }}>{p.label}</span>
+                        <span style={{ fontSize: proposal.payments.length > 3 ? '11px' : '12px', fontWeight: '950', color: brandPrimary, flexShrink: 0 }}>{p.percentage}</span>
                       </div>
-                      <span style={{ fontSize: '9px', color: '#475569', fontWeight: '300', lineHeight: '1.3' }}>{p.description}</span>
+                      <span style={{ fontSize: proposal.payments.length > 3 ? '8px' : '9px', color: '#475569', fontWeight: '300', lineHeight: '1.25' }}>{p.description}</span>
                       {p.tooltip && (
-                        <span style={{ fontSize: '8px', color: '#94a3b8', fontStyle: 'italic', lineHeight: '1.3', marginTop: '2px' }}>{p.tooltip}</span>
+                        <span style={{ fontSize: proposal.payments.length > 3 ? '7.5px' : '8px', color: '#94a3b8', fontStyle: 'italic', lineHeight: '1.2', marginTop: '1px' }}>{p.tooltip}</span>
                       )}
                     </div>
                   ))}
