@@ -17,15 +17,18 @@ import {
   Eraser,
   ExternalLink,
   Github,
+  Zap,
 } from 'lucide-react';
 import SignatureCanvas from 'react-signature-canvas';
 import { getProposalBySlug } from '@/lib/proposalService';
-import type { FullProposal } from '@/lib/proposalTypes';
+import type { FullProposal, ServiceDetails } from '@/lib/proposalTypes';
 import IconResolver from '@/components/ui/IconResolver';
 import ContractRenderer from '@/components/ui/ContractRenderer';
 import { generateAndUploadContractBox, generateFullProposalPDF } from '@/lib/pdfService';
 import creappLogoOfficial from '@/assets/CREAPP LOGO VECTOR.png';
 import Lightfall from '@/components/backgrounds/Lightfall';
+import { getPillars } from '@/lib/proposalTypes';
+import { DEFAULT_SERVICE_DETAILS, STACKED_CONTRACT_DESCRIPTION, STACKED_SERVICE_CONTRACT_TEMPLATE } from '@/lib/serviceContractTemplates';
 
 const getCurrencyFromTotal = (valString: string) => {
   const clean = (valString || '').trim().toUpperCase();
@@ -417,6 +420,13 @@ const ProposalView: React.FC = () => {
           setError('Propuesta no encontrada.');
         } else {
           setProposal(data);
+          if (data.methodology?.client_legal_data) {
+            const legal = data.methodology.client_legal_data;
+            if (legal.representative_name) setClientRepName(legal.representative_name);
+            if (legal.representative_dni) setClientDNI(legal.representative_dni);
+            else if (legal.tax_id) setClientDNI(legal.tax_id);
+            if (legal.representative_role) setClientRole(legal.representative_role);
+          }
         }
       })
       .catch(() => setError('Error al cargar la propuesta.'))
@@ -521,9 +531,25 @@ const ProposalView: React.FC = () => {
   const brandSecondary = proposal.brand_color_secondary;
   const gradientStyle = `linear-gradient(to right, ${brandPrimary}, ${brandSecondary})`;
 
-  const hiddenPages = proposal?.methodology?.hidden_pages || [];
+  const isServiceProposal = proposal?.proposal_type === 'service' || proposal?.methodology?.proposal_type === 'service';
+  const rawServiceDetails: ServiceDetails = proposal?.methodology?.service_details || DEFAULT_SERVICE_DETAILS;
+  const effectiveRecurringFee = (proposal?.total_value && proposal.total_value !== '$350 USD / mes')
+    ? proposal.total_value
+    : (rawServiceDetails.recurring_fee || proposal?.total_value || '$350 USD / mes');
+  const serviceDetails: ServiceDetails = {
+    ...rawServiceDetails,
+    recurring_fee: effectiveRecurringFee,
+  };
 
-  const activeSlides = proposal ? [
+  const hiddenPages = [
+    ...(proposal?.methodology?.hidden_pages || []),
+    ...(isServiceProposal ? ['alcance', 'hitos', 'metodologia', 'sem1-6', 'sem9-16'] : []),
+  ];
+
+  const activeSlides = proposal ? (isServiceProposal ? [
+    { name: 'Portada', id: 'portada', component: () => renderSlideContent(0) },
+    { name: 'Contrato y Firmas', id: 'legal', component: () => renderSlideContent(8) }
+  ] : [
     { name: 'Portada', id: 'portada', component: () => renderSlideContent(0) },
     { name: 'Resumen', id: 'portada', component: () => renderSlideContent(1) },
     { name: 'Incluye', id: 'alcance', component: () => renderSlideContent(2) },
@@ -533,7 +559,7 @@ const ProposalView: React.FC = () => {
     { name: 'Desglose', id: 'desglose', component: () => renderSlideContent(6) },
     { name: 'Presupuesto', id: 'hitos', component: () => renderSlideContent(7) },
     { name: 'Contrato', id: 'legal', component: () => renderSlideContent(8) }
-  ].filter(slide => {
+  ]).filter(slide => {
     if (slide.id === 'desglose') {
       return !hiddenPages.includes('sem1-6') || !hiddenPages.includes('sem9-16');
     }
@@ -542,7 +568,11 @@ const ProposalView: React.FC = () => {
 
   const safeSlideIndex = Math.min(currentSlide, Math.max(0, activeSlides.length - 1));
 
-  const PRINT_PAGES = [
+  const PRINT_PAGES = (isServiceProposal ? [
+    { id: 'portada', elementId: 'page-portada' },
+    { id: 'legal', elementId: 'page-legal' },
+    { id: 'legal2', elementId: 'page-legal2' }
+  ] : [
     { id: 'portada', elementId: 'page-portada' },
     { id: 'alcance', elementId: 'page-alcance' },
     { id: 'hitos', elementId: 'page-hitos' },
@@ -550,7 +580,7 @@ const ProposalView: React.FC = () => {
     { id: 'sem9-16', elementId: 'page-sem9-16' },
     { id: 'metodologia', elementId: 'page-metodologia' },
     { id: 'legal', elementId: 'page-legal' }
-  ].filter(p => !hiddenPages.includes(p.id));
+  ]).filter(p => !hiddenPages.includes(p.id));
 
   const totalPrintPages = PRINT_PAGES.length;
 
@@ -737,20 +767,83 @@ const ProposalView: React.FC = () => {
           <div className="flex flex-col items-center justify-center text-center py-4 min-h-[380px] relative">
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full blur-[150px] pointer-events-none animate-float-y-1" style={{ backgroundColor: `${brandPrimary}15` }}></div>
             <div className="flex flex-col items-center gap-5 relative z-10">
+              {/* Co-Branding Logos or Single Product Logo */}
+              {isServiceProposal ? (
+                proposal.client_logo_url && (
+                  <div className="flex items-center justify-center mb-2 gsap-reveal-scale">
+                    <img
+                      src={proposal.client_logo_url}
+                      alt={proposal.hero_title || "Logo Producto"}
+                      className="h-16 md:h-20 object-contain"
+                      style={{
+                        transform: `scale(${(proposal.methodology?.client_logo_scale || 100) / 100})`,
+                        transformOrigin: 'center'
+                      }}
+                    />
+                  </div>
+                )
+              ) : (
+                proposal.client_logo_url && (
+                  <div className="flex items-center gap-6 mb-1 gsap-reveal-scale">
+                    <img src={creappLogoOfficial} alt="CreAPP Logo" className="h-10 md:h-14 object-contain" />
+                    <span className="text-lg md:text-xl font-black text-slate-500 select-none">✕</span>
+                    <img
+                      src={proposal.client_logo_url}
+                      alt="Logo Cliente / Producto"
+                      className="h-10 md:h-14 object-contain"
+                      style={{
+                        transform: `scale(${(proposal.methodology?.client_logo_scale || 100) / 100})`,
+                        transformOrigin: 'center'
+                      }}
+                    />
+                  </div>
+                )
+              )}
+
               {/* Capsule pill badge */}
-              <div className="px-6 py-2 rounded-full border text-[10px] font-black tracking-[0.3em] uppercase gsap-reveal-scale shadow-lg select-none animate-float-pulse"
+              <div className="px-6 py-2 rounded-full border text-[10px] font-black tracking-[0.3em] uppercase gsap-reveal-scale shadow-lg select-none animate-float-pulse flex items-center gap-2"
                 style={{ backgroundColor: `${brandPrimary}15`, color: brandPrimary, borderColor: `${brandPrimary}33` }}>
-                Propuesta Comercial
+                {isServiceProposal ? (
+                  <>
+                    <span className="opacity-80">CreAPP Software Lab</span>
+                    <span className="opacity-40">•</span>
+                    <span>{proposal.hero_badge || 'Contrato de Servicio SaaS'}</span>
+                  </>
+                ) : (
+                  proposal.hero_badge || 'Propuesta Comercial'
+                )}
               </div>
               
               {/* Massive Title */}
               <h1 className="text-4xl md:text-6xl lg:text-[76px] font-display font-black text-white tracking-tighter max-w-5xl leading-[1.0] uppercase gsap-reveal-up select-none mt-1 animate-text-glow-pulse">
-                Diseño y Desarrollo <span className="bg-clip-text text-transparent block mt-1.5" style={{ backgroundImage: gradientStyle }}>{proposal.hero_title || 'Ecosistema Digital'}</span>
+                {isServiceProposal ? (
+                  <>
+                    Contrato de Servicio{' '}
+                    <span className="bg-clip-text text-transparent block mt-1.5" style={{ backgroundImage: gradientStyle }}>
+                      {proposal.hero_title || 'Plataforma SaaS'}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    Diseño y Desarrollo{' '}
+                    <span className="bg-clip-text text-transparent block mt-1.5" style={{ backgroundImage: gradientStyle }}>
+                      {proposal.hero_title || 'Ecosistema Digital'}
+                    </span>
+                  </>
+                )}
               </h1>
               
               {/* Target client */}
               <p className="text-sm md:text-lg text-slate-300 font-light mt-2 gsap-reveal-up select-none tracking-wide">
-                Preparado exclusivamente para <strong className="text-white font-black uppercase tracking-[0.1em] ml-1">{proposal.client_name}</strong>
+                {isServiceProposal ? (
+                  <>
+                    Licencia y prestación técnica para <strong className="text-white font-black uppercase tracking-[0.1em] ml-1">{proposal.client_name}</strong>
+                  </>
+                ) : (
+                  <>
+                    Preparado exclusivamente para <strong className="text-white font-black uppercase tracking-[0.1em] ml-1">{proposal.client_name}</strong>
+                  </>
+                )}
               </p>
               
               {/* Date & Location */}
@@ -758,6 +851,12 @@ const ProposalView: React.FC = () => {
                 <span>{proposal.date}</span>
                 <span>•</span>
                 <span>{proposal.location}</span>
+                {isServiceProposal && (
+                  <>
+                    <span>•</span>
+                    <span className="text-emerald-400">Propiedad Intelectual CreAPP</span>
+                  </>
+                )}
               </div>
               
               {/* CTA button */}
@@ -766,7 +865,7 @@ const ProposalView: React.FC = () => {
                 className="mt-4 px-10 py-4.5 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] text-white shadow-2xl flex items-center gap-3 transition-all hover:scale-105 cursor-pointer active:scale-95 border border-white/5 brand-btn-glow gsap-reveal-scale animate-float-y-3"
                 style={{ background: gradientStyle }}
               >
-                Explorar Propuesta <ArrowRight size={15} />
+                {isServiceProposal ? 'Ver Contrato y Firmar' : 'Explorar Propuesta'} <ArrowRight size={15} />
               </button>
             </div>
           </div>
@@ -908,49 +1007,51 @@ const ProposalView: React.FC = () => {
             <div className="space-y-6 gsap-reveal-left">
               <div>
                 <h3 className="text-4xl md:text-5xl lg:text-6xl font-display font-black text-white uppercase tracking-tighter animate-text-glow-pulse">
-                  Ciclo Scrum Semanal
+                  {proposal.methodology?.hide_weekly_schedule ? "Metodología de Trabajo" : "Ciclo Scrum Semanal"}
                 </h3>
                 <p className="text-xs md:text-sm text-slate-400 uppercase tracking-[0.2em] font-bold mt-2 leading-relaxed">
                   {(proposal.methodology || DEFAULT_METHODOLOGY).intro_text || DEFAULT_METHODOLOGY.intro_text}
                 </p>
               </div>
-              <div className="space-y-3.5">
-                {scrumSteps.map((step, idx) => (
-                  <div
-                    key={idx}
-                    onClick={() => setActiveScrumDay(step.day as any)}
-                    className={`p-5 rounded-2xl border backdrop-blur-md transition-all duration-300 cursor-pointer ${
-                      activeScrumDay === step.day
-                        ? 'bg-white/[0.08] border-white/10 shadow-lg shadow-black/20'
-                        : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.04]'
-                    }`}
-                  >
-                    <div className="flex items-center gap-4">
-                      <span
-                        className="px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border shrink-0"
-                        style={
-                          activeScrumDay === step.day
-                            ? { backgroundColor: `${brandPrimary}15`, color: brandPrimary, borderColor: `${brandPrimary}33` }
-                            : { backgroundColor: 'transparent', color: '#64748b', borderColor: 'rgba(255,255,255,0.05)' }
-                        }
-                      >
-                        {step.day}
-                      </span>
-                      <span className="text-sm md:text-base font-black text-white uppercase tracking-tight">{step.title}</span>
-                      <span className="text-xs text-slate-500 font-medium">— {step.subtitle}</span>
+              {!proposal.methodology?.hide_weekly_schedule && (
+                <div className="space-y-3.5">
+                  {scrumSteps.map((step, idx) => (
+                    <div
+                      key={idx}
+                      onClick={() => setActiveScrumDay(step.day as any)}
+                      className={`p-5 rounded-2xl border backdrop-blur-md transition-all duration-300 cursor-pointer ${
+                        activeScrumDay === step.day
+                          ? 'bg-white/[0.08] border-white/10 shadow-lg shadow-black/20'
+                          : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.04]'
+                      }`}
+                    >
+                      <div className="flex items-center gap-4">
+                        <span
+                          className="px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border shrink-0"
+                          style={
+                            activeScrumDay === step.day
+                              ? { backgroundColor: `${brandPrimary}15`, color: brandPrimary, borderColor: `${brandPrimary}33` }
+                              : { backgroundColor: 'transparent', color: '#64748b', borderColor: 'rgba(255,255,255,0.05)' }
+                          }
+                        >
+                          {step.day}
+                        </span>
+                        <span className="text-sm md:text-base font-black text-white uppercase tracking-tight">{step.title}</span>
+                        <span className="text-xs text-slate-500 font-medium">— {step.subtitle}</span>
+                      </div>
+                      {activeScrumDay === step.day && (
+                        <motion.p
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          className="text-sm text-slate-400 font-light leading-relaxed mt-3"
+                        >
+                          {step.text}
+                        </motion.p>
+                      )}
                     </div>
-                    {activeScrumDay === step.day && (
-                      <motion.p
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        className="text-sm text-slate-400 font-light leading-relaxed mt-3"
-                      >
-                        {step.text}
-                      </motion.p>
-                    )}
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="flex flex-col items-center justify-center h-full">
               <div className="relative w-80 h-80 flex items-center justify-center gsap-reveal-scale mx-auto">
@@ -1003,6 +1104,30 @@ const ProposalView: React.FC = () => {
                     {activeScrumDay}
                   </span>
                 </div>
+              </div>
+
+              {/* Pilares de Metodología */}
+              <div className="w-full space-y-3 mt-6">
+                {getPillars(proposal.methodology, brandPrimary, brandSecondary).map((pillar, idx) => {
+                  const pColor = pillar.color || (idx % 2 === 0 ? brandPrimary : brandSecondary);
+                  return (
+                    <div
+                      key={pillar.id || idx}
+                      className="p-4 rounded-xl border backdrop-blur-md transition-all duration-300"
+                      style={{
+                        backgroundColor: `${pColor}0F`,
+                        borderColor: `${pColor}33`,
+                      }}
+                    >
+                      <h4 className="text-xs font-black uppercase tracking-wider mb-1" style={{ color: pColor }}>
+                        {pillar.title}
+                      </h4>
+                      <p className="text-xs text-slate-300 font-light leading-relaxed">
+                        {(pillar.description || '').replace(/\{client_name\}/g, proposal.client_name || 'el cliente')}
+                      </p>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -1111,6 +1236,125 @@ const ProposalView: React.FC = () => {
           </div>
         );
       case 7:
+        if (isServiceProposal) {
+          const billingLabel = serviceDetails.billing_frequency === 'annual' 
+            ? 'Facturación Anual' 
+            : serviceDetails.billing_frequency === 'quarterly' 
+              ? 'Facturación Trimestral' 
+              : 'Facturación Mensual';
+
+          return (
+            <div className="space-y-4 md:space-y-6 min-h-[360px]">
+              <div className="gsap-reveal-up">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1.5 w-fit">
+                    <Zap size={11} className="text-amber-400" /> Plan SaaS & SLA
+                  </span>
+                </div>
+                <h3 className="text-4xl md:text-5xl lg:text-6xl font-display font-black text-white uppercase tracking-tighter animate-text-glow-pulse">
+                  Planes & Acuerdo de Servicio
+                </h3>
+                <p className="text-xs md:text-sm text-slate-400 uppercase tracking-[0.2em] font-bold mt-2 leading-relaxed">
+                  Suscripción de servicio plataforma {serviceDetails.plan_name || 'Stacked'}, condiciones operativas y niveles de servicio garantizados (SLA).
+                </p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-4">
+                <div className="p-8 rounded-3xl border border-white/5 bg-white/[0.01] flex flex-col justify-between min-h-[220px] brand-hover-card gsap-reveal-left animate-float-pulse">
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-xs font-black uppercase tracking-widest text-slate-400">Abono Recurrente</p>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 font-bold text-slate-300 uppercase">{billingLabel}</span>
+                    </div>
+                    <h4 className="text-4xl lg:text-5xl font-display font-black text-white tracking-tighter mb-2 gsap-reveal-scale">
+                      {serviceDetails.recurring_fee || proposal.total_value}
+                    </h4>
+                    {serviceDetails.setup_fee && (
+                      <p className="text-xs text-slate-400 font-mono mb-3">
+                        + Setup / Onboarding: <span className="text-white font-bold">{serviceDetails.setup_fee}</span>
+                      </p>
+                    )}
+                    <div className="space-y-2 py-3 border-y border-white/10 text-xs text-slate-300">
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-400">Permanencia mínima:</span>
+                        <span className="font-bold text-white font-mono">{serviceDetails.min_term_months || '6 meses'}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-400">Renovación:</span>
+                        <span className="font-bold text-emerald-400">{serviceDetails.auto_renew !== false ? 'Automática' : 'Manual'}</span>
+                      </div>
+                      {serviceDetails.limits?.users && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-slate-400">Usuarios:</span>
+                          <span className="font-bold text-white">{serviceDetails.limits.users}</span>
+                        </div>
+                      )}
+                      {serviceDetails.limits?.branches && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-slate-400">Sucursales:</span>
+                          <span className="font-bold text-white">{serviceDetails.limits.branches}</span>
+                        </div>
+                      )}
+                      {serviceDetails.limits?.storage && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-slate-400">Almacenamiento:</span>
+                          <span className="font-bold text-white">{serviceDetails.limits.storage}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    onClick={openContractModal}
+                    disabled={isConfirmed}
+                    className="w-full mt-4 py-5 rounded-2xl font-black uppercase tracking-widest text-[11px] flex items-center justify-center gap-2 text-white shadow-lg active:scale-98 transition-all cursor-pointer brand-btn-glow"
+                    style={!isConfirmed ? { background: gradientStyle } : { backgroundColor: 'var(--color-proposal-dark)', border: '1px solid rgba(255,255,255,0.1)' }}
+                  >
+                    {isConfirmed ? 'Contrato Confirmado' : 'Firmar Contrato de Servicio'} <ChevronRight size={14} />
+                  </button>
+                </div>
+                <div className="p-8 rounded-3xl border border-white/5 bg-white/[0.01] md:col-span-2 space-y-4 brand-hover-card gsap-reveal-right">
+                  <p className="text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Acuerdo de Nivel de Servicio (SLA) & Garantías</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/10 flex flex-col justify-between">
+                      <div>
+                        <p className="text-[10px] text-slate-400 uppercase tracking-widest font-black mb-1">Disponibilidad de Servicio</p>
+                        <p className="text-3xl font-display font-black text-emerald-400">{serviceDetails.sla_uptime || '99.5%'}</p>
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-2">Monitoreo continuo de uptime de servidores y base de datos.</p>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/10 flex flex-col justify-between">
+                      <div>
+                        <p className="text-[10px] text-slate-400 uppercase tracking-widest font-black mb-1">Canales de Soporte</p>
+                        <p className="text-sm font-bold text-white mt-1">{serviceDetails.support_channels || 'WhatsApp Prioritario + Tickets'}</p>
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-2">Atención técnica directa sin intermediarios.</p>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/10 flex flex-col justify-between">
+                      <div>
+                        <p className="text-[10px] text-slate-400 uppercase tracking-widest font-black mb-1">Incidentes Críticos (P1)</p>
+                        <p className="text-xl font-display font-black text-amber-400">{serviceDetails.response_time_critical || '< 2 horas'}</p>
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-2">Fallas totales o bloqueantes que impidan operar el negocio.</p>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/10 flex flex-col justify-between">
+                      <div>
+                        <p className="text-[10px] text-slate-400 uppercase tracking-widest font-black mb-1">Soporte Regular (P2)</p>
+                        <p className="text-xl font-display font-black text-blue-400">{serviceDetails.response_time_normal || '< 12 horas hábiles'}</p>
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-2">Consultas operativas, onboarding o incidencias menores.</p>
+                    </div>
+                  </div>
+                  {serviceDetails.limits?.custom_notes && (
+                    <div className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/5 text-xs text-slate-300 flex items-start gap-2.5">
+                      <span className="text-amber-400 font-black">★</span>
+                      <span>{serviceDetails.limits.custom_notes}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        }
+
         return (
           <div className="space-y-4 md:space-y-6 min-h-[360px]">
             <div className="gsap-reveal-up">
@@ -1349,12 +1593,22 @@ const ProposalView: React.FC = () => {
 
       {/* Top Header */}
       <header className="w-full max-w-7xl mx-auto flex justify-between items-center z-20 relative px-4">
-        <div className="flex items-center gap-2 select-none">
+        <div className="flex items-center gap-2.5 select-none">
           <div className="w-2 h-2 rounded-full animate-pulse shadow-lg" style={{ backgroundColor: brandPrimary, boxShadow: `0 0 10px ${brandPrimary}` }} />
-          <span className="text-[12px] font-black uppercase tracking-[0.25em] text-white">CREAPP</span>
+          <span className="text-[12px] font-black uppercase tracking-[0.25em] text-white">
+            {isServiceProposal ? 'CREAPP SOFTWARE LAB' : 'CREAPP'}
+          </span>
+          {isServiceProposal && proposal.hero_badge && (
+            <span className="text-[9px] font-black tracking-wider uppercase px-2 py-0.5 rounded-full border border-white/10 bg-white/5 text-slate-300 hidden md:inline-block">
+              {proposal.hero_badge}
+            </span>
+          )}
         </div>
-        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right max-w-md hidden sm:block select-none">
-          PLAN CREATIVO Y COPYWRITING WEB {proposal.client_name.toUpperCase()} APP V2
+        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right max-w-md hidden sm:block select-none">
+          {isServiceProposal
+            ? `CONTRATO DE SERVICIO SAAS • ${proposal.hero_title ? proposal.hero_title.toUpperCase() : 'PLATAFORMA'} • ${proposal.client_name.toUpperCase()}`
+            : (proposal.hero_title ? `${proposal.hero_title.toUpperCase()} • ${proposal.client_name.toUpperCase()}` : `PROPUESTA TÉCNICA COMERCIAL • ${proposal.client_name.toUpperCase()}`)
+          }
         </div>
       </header>
 
@@ -1380,8 +1634,8 @@ const ProposalView: React.FC = () => {
 
       {/* Bottom Footer & Navigation */}
       <footer className="w-full max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 z-20 relative border-t border-white/5 pt-6 px-2 pb-2">
-        <div className="text-[10px] text-slate-600 tracking-wider select-none">
-          Propuesta Comercial Interactiva
+        <div className="text-[10px] text-slate-500 tracking-wider select-none font-medium">
+          {isServiceProposal ? 'Contrato de Servicio SaaS • CreAPP Software Lab' : 'Propuesta Comercial Interactiva • CreAPP'}
         </div>
 
         {/* Dynamic Navigation Dots */}
@@ -1535,7 +1789,7 @@ const ProposalView: React.FC = () => {
                     <div className="flex flex-col items-center">
                       <img src={creappLogoOfficial} alt="CreAPP Logo" className="h-20 md:h-28 mb-10 object-contain" />
                       <h1 className="text-2xl md:text-4xl font-display font-black text-white uppercase tracking-[0.2em] text-center">
-                        Contrato de Servicios
+                        {isServiceProposal ? 'Contrato de Servicio SaaS' : 'Contrato de Servicios'}
                       </h1>
                       <div className="h-1 w-24 mt-8 rounded-full" style={{ background: gradientStyle }}></div>
                     </div>
@@ -1545,11 +1799,15 @@ const ProposalView: React.FC = () => {
                 {/* Modal Body */}
                 <div className="flex-1 p-6 md:p-10 text-slate-300 text-sm md:text-base leading-relaxed font-light space-y-6 text-center md:text-left">
                   <ContractRenderer
-                    template={proposal.contract_text || `En la localidad de {location}, a los {date} días del mes, se reúnen por una parte {client_name}, en adelante denominado "EL CLIENTE", representado por [input:Escriba su Nombre], con DNI/CUIT N° [input:Escriba su DNI/CUIT]; y por la otra parte Creapp, representada por Sebastián Maza, en adelante denominado "EL DESARROLLADOR".`}
+                    template={proposal.contract_text || (isServiceProposal ? STACKED_SERVICE_CONTRACT_TEMPLATE : `En la localidad de {location}, a los {date} días del mes, se reúnen por una parte {client_name}, en adelante denominado "EL CLIENTE", representado por [input:Escriba su Nombre], con DNI/CUIT N° [input:Escriba su DNI/CUIT]; y por la otra parte Creapp, representada por Sebastián Maza, en adelante denominado "EL DESARROLLADOR".`)}
                     variables={{
                       location: proposal.location,
                       date: proposal.date,
-                      client_name: proposal.client_name
+                      client_name: proposal.client_name,
+                      total_value: isServiceProposal ? (serviceDetails.recurring_fee || proposal.total_value) : proposal.total_value,
+                      recurring_fee: serviceDetails.recurring_fee || proposal.total_value,
+                      setup_fee: serviceDetails.setup_fee || '$0',
+                      plan_name: serviceDetails.plan_name || 'Stacked'
                     }}
                     onValidityChange={setIsContractTextValid}
                     brandPrimary={brandPrimary}
@@ -1698,9 +1956,41 @@ const ProposalView: React.FC = () => {
           
           {/* Contenido centrado vertical y horizontalmente */}
           <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', flexGrow: 1, gap: '65px', marginTop: '20px', textAlign: 'center' }}>
-            {/* Logo Creapp */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', alignItems: 'center' }}>
-              <img src={creappLogoOfficial} alt="CreAPP Logo" style={{ height: '105px', objectFit: 'contain' }} />
+            {/* Logo Creapp & Client Co-Branding or Single Product Logo */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '30px', justifyContent: 'center', minHeight: '110px' }}>
+              {isServiceProposal ? (
+                proposal.client_logo_url && (
+                  <img
+                    src={proposal.client_logo_url}
+                    alt={proposal.hero_title || "Logo Producto"}
+                    style={{
+                      height: `${125 * ((proposal.methodology?.client_logo_scale || 100) / 100)}px`,
+                      maxHeight: '170px',
+                      maxWidth: '320px',
+                      objectFit: 'contain'
+                    }}
+                  />
+                )
+              ) : (
+                <>
+                  <img src={creappLogoOfficial} alt="CreAPP Logo" style={{ height: '105px', objectFit: 'contain' }} />
+                  {proposal.client_logo_url && (
+                    <>
+                      <span style={{ fontSize: '24px', fontWeight: '900', color: '#cbd5e1' }}>✕</span>
+                      <img
+                        src={proposal.client_logo_url}
+                        alt="Logo Cliente"
+                        style={{
+                          height: `${105 * ((proposal.methodology?.client_logo_scale || 100) / 100)}px`,
+                          maxHeight: '160px',
+                          maxWidth: '260px',
+                          objectFit: 'contain'
+                        }}
+                      />
+                    </>
+                  )}
+                </>
+              )}
             </div>
 
             {/* Título y Descripción */}
@@ -1721,7 +2011,14 @@ const ProposalView: React.FC = () => {
             <div style={{ display: 'flex', gap: '60px', justifyContent: 'center', width: '100%' }}>
               <div style={{ textAlign: 'center' }}>
                 <p style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1.5px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '5px' }}>Preparado para</p>
-                <p style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>{proposal.client_name}</p>
+                <p style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>
+                  {proposal.methodology?.client_legal_data?.company_name || proposal.client_name}
+                </p>
+                {proposal.methodology?.client_legal_data?.tax_id && (
+                  <p style={{ fontSize: '10px', color: '#64748b', fontWeight: '600', marginTop: '2px' }}>
+                    CUIT: {proposal.methodology.client_legal_data.tax_id}
+                  </p>
+                )}
               </div>
               <div style={{ textAlign: 'center' }}>
                 <p style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1.5px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '5px' }}>Fecha</p>
@@ -1737,7 +2034,7 @@ const ProposalView: React.FC = () => {
           {/* Footer Fijo Portada */}
           <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #e2e8f0', paddingTop: '25px' }}>
             <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold' }}>CreAPP Software & Automation</span>
-            <span style={{ fontSize: '10px', color: '#94a3b8' }}>Dossier Oficial de Propuesta</span>
+            <span style={{ fontSize: '10px', color: '#94a3b8' }}>{isServiceProposal ? 'Contrato Oficial de Servicio' : 'Dossier Oficial de Propuesta'}</span>
           </div>
         </div>
         )}
@@ -1890,126 +2187,233 @@ const ProposalView: React.FC = () => {
         </div>
         )}
 
-        {/* PÁGINA 3: Cronograma de Fases & Entregas */}
+        {/* PÁGINA 3: Cronograma de Fases & Entregas / Acuerdo SLA */}
         {!hiddenPages.includes('hitos') && (
           <div id="page-hitos" style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
           {/* Header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '25px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
               <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
-              <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{proposal.hero_title ? proposal.hero_title.toUpperCase() : 'CBKR APP V2'}</span>
+              <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{proposal.hero_title ? proposal.hero_title.toUpperCase() : (isServiceProposal ? 'STACKED SAAS' : 'CBKR APP V2')}</span>
             </div>
-            <span style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>PROJECT_ROADMAP // 02</span>
+            <span style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>
+              {isServiceProposal ? 'SERVICE_PLAN_SLA // 02' : 'PROJECT_ROADMAP // 02'}
+            </span>
           </div>
 
           {/* Contenido */}
-          <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: (proposal.milestones && proposal.milestones.length >= 4) || (proposal.payments && proposal.payments.length >= 4) ? '10px' : '20px' }}>
-            <h1 style={{ fontSize: '28px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
-              CRONOGRAMA DE FASES & <span style={{ fontStyle: 'italic', color: brandPrimary }}>ENTREGAS</span>
-            </h1>
+          {isServiceProposal ? (
+            <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: '20px' }}>
+              <h1 style={{ fontSize: '28px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
+                PLAN DE SERVICIO & <span style={{ fontStyle: 'italic', color: brandPrimary }}>ACUERDO SLA</span>
+              </h1>
 
-            <p style={{ fontSize: '11px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
-              {(() => {
-                const meth = proposal.methodology || DEFAULT_METHODOLOGY;
-                const text = meth.phases_intro ?? DEFAULT_METHODOLOGY.phases_intro;
-                if (text === DEFAULT_METHODOLOGY.phases_intro) {
-                  return (
-                    <>
-                      El plan de esfuerzo comprende un periodo de <span style={{ fontWeight: 'bold', color: '#0f172a' }}>4 meses</span> (16 sprints semanales). Cada fase mensual concluye con un hito de control funcional y estético auditado antes de la liberación del siguiente incremento de software.
-                    </>
-                  );
-                }
-                return text;
-              })()}
-            </p>
+              <p style={{ fontSize: '11px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
+                Acuerdo de nivel de servicio (SLA), condiciones comerciales de suscripción y licenciamiento de software en la nube para la plataforma {serviceDetails.plan_name || 'Stacked'}.
+              </p>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: '5px', marginBottom: '2px' }}>
-              <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Estructura de Sprints Mensuales</span>
-              <div style={{ flexGrow: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
+              {/* Bloque Principal del Plan */}
+              <div style={{ border: '2px solid #0f172a', borderRadius: '16px', padding: '24px', backgroundColor: '#f8fafc', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <span style={{ fontSize: '9px', fontWeight: '900', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Plan Contratado</span>
+                  <h3 style={{ fontSize: '20px', fontWeight: '950', color: '#0f172a', margin: '0', textTransform: 'uppercase' }}>
+                    {serviceDetails.plan_name || 'Stacked Business Cloud'}
+                  </h3>
+                  <div style={{ display: 'flex', gap: '15px', marginTop: '4px', fontSize: '10px', color: '#475569' }}>
+                    <span>Plazo mínimo: <strong style={{ color: '#0f172a' }}>{serviceDetails.min_term_months || '6 meses'}</strong></span>
+                    <span>•</span>
+                    <span>Renovación: <strong style={{ color: '#0f172a' }}>{serviceDetails.auto_renew !== false ? 'Automática' : 'Manual'}</strong></span>
+                    {serviceDetails.setup_fee && (
+                      <>
+                        <span>•</span>
+                        <span>Setup: <strong style={{ color: '#0f172a' }}>{serviceDetails.setup_fee}</strong></span>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+                  <span style={{ fontSize: '8px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                    Abono {serviceDetails.billing_frequency === 'annual' ? 'Anual' : serviceDetails.billing_frequency === 'quarterly' ? 'Trimestral' : 'Mensual'}
+                  </span>
+                  <div style={{ fontSize: '28px', fontWeight: '950', color: '#0f172a' }}>
+                    {serviceDetails.recurring_fee || proposal.total_value}
+                  </div>
+                </div>
+              </div>
+
+              {/* Matriz de Niveles de Servicio SLA */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: '6px', marginBottom: '2px' }}>
+                <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Métricas y Garantías Operativas (SLA)</span>
+                <div style={{ flexGrow: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div style={{ padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0', backgroundColor: '#ffffff' }}>
+                  <span style={{ fontSize: '8px', fontWeight: '900', color: '#64748b', letterSpacing: '1px', textTransform: 'uppercase' }}>Disponibilidad Garantizada</span>
+                  <p style={{ fontSize: '24px', fontWeight: '950', color: '#059669', margin: '4px 0 2px 0' }}>{serviceDetails.sla_uptime || '99.5%'}</p>
+                  <p style={{ fontSize: '9.5px', color: '#64748b', margin: '0', lineHeight: '1.3' }}>Uptime medido mensualmente en clusters de base de datos y servidores cloud.</p>
+                </div>
+                <div style={{ padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0', backgroundColor: '#ffffff' }}>
+                  <span style={{ fontSize: '8px', fontWeight: '900', color: '#64748b', letterSpacing: '1px', textTransform: 'uppercase' }}>Canales de Atención</span>
+                  <p style={{ fontSize: '13px', fontWeight: '900', color: '#0f172a', margin: '8px 0 4px 0' }}>{serviceDetails.support_channels || 'WhatsApp Prioritario + Tickets'}</p>
+                  <p style={{ fontSize: '9.5px', color: '#64748b', margin: '0', lineHeight: '1.3' }}>Soporte técnico directo con el equipo de ingeniería de CreAPP.</p>
+                </div>
+                <div style={{ padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0', backgroundColor: '#ffffff' }}>
+                  <span style={{ fontSize: '8px', fontWeight: '900', color: '#64748b', letterSpacing: '1px', textTransform: 'uppercase' }}>Tiempo de Respuesta - Prioridad 1 (Crítico)</span>
+                  <p style={{ fontSize: '16px', fontWeight: '950', color: '#d97706', margin: '6px 0 2px 0' }}>{serviceDetails.response_time_critical || '< 2 horas'}</p>
+                  <p style={{ fontSize: '9.5px', color: '#64748b', margin: '0', lineHeight: '1.3' }}>Fallas completas de servicio o indisponibilidad que bloqueen la operación comercial.</p>
+                </div>
+                <div style={{ padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0', backgroundColor: '#ffffff' }}>
+                  <span style={{ fontSize: '8px', fontWeight: '900', color: '#64748b', letterSpacing: '1px', textTransform: 'uppercase' }}>Tiempo de Respuesta - Prioridad 2 (Normal)</span>
+                  <p style={{ fontSize: '16px', fontWeight: '950', color: '#2563eb', margin: '6px 0 2px 0' }}>{serviceDetails.response_time_normal || '< 12 horas hábiles'}</p>
+                  <p style={{ fontSize: '9.5px', color: '#64748b', margin: '0', lineHeight: '1.3' }}>Consultas de configuración, soporte operativo o incidentes no bloqueantes.</p>
+                </div>
+              </div>
+
+              {/* Límites de la suscripción */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: '6px', marginBottom: '2px' }}>
+                <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Límites y Capacidades Asignadas</span>
+                <div style={{ flexGrow: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                <div style={{ padding: '12px', borderRadius: '10px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                  <span style={{ fontSize: '8px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>Usuarios / Accesos</span>
+                  <p style={{ fontSize: '11px', fontWeight: '900', color: '#0f172a', margin: '3px 0 0 0' }}>{serviceDetails.limits?.users || 'Ilimitados'}</p>
+                </div>
+                <div style={{ padding: '12px', borderRadius: '10px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                  <span style={{ fontSize: '8px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>Sucursales / Salones</span>
+                  <p style={{ fontSize: '11px', fontWeight: '900', color: '#0f172a', margin: '3px 0 0 0' }}>{serviceDetails.limits?.branches || 'Hasta 3 sucursales'}</p>
+                </div>
+                <div style={{ padding: '12px', borderRadius: '10px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                  <span style={{ fontSize: '8px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>Almacenamiento Cloud</span>
+                  <p style={{ fontSize: '11px', fontWeight: '900', color: '#0f172a', margin: '3px 0 0 0' }}>{serviceDetails.limits?.storage || '50 GB'}</p>
+                </div>
+              </div>
+
+              {serviceDetails.limits?.custom_notes && (
+                <div style={{ padding: '10px 14px', borderRadius: '8px', backgroundColor: '#f1f5f9', fontSize: '9.5px', color: '#475569', lineHeight: '1.4' }}>
+                  <strong style={{ color: '#0f172a' }}>Nota adicional: </strong>{serviceDetails.limits.custom_notes}
+                </div>
+              )}
             </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: (proposal.milestones && proposal.milestones.length >= 4) || (proposal.payments && proposal.payments.length >= 4) ? '8px' : '20px' }}>
+              <h1 style={{ fontSize: (proposal.milestones && proposal.milestones.length >= 4) || (proposal.payments && proposal.payments.length >= 4) ? '24px' : '28px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
+                CRONOGRAMA DE FASES & <span style={{ fontStyle: 'italic', color: brandPrimary }}>ENTREGAS</span>
+              </h1>
 
-            {/* Listado de Fases (Fase 1 a 4) */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: proposal.milestones && proposal.milestones.length >= 4 ? '10px' : '15px' }}>
-              {proposal.milestones && proposal.milestones.map((m, i) => (
-                <div key={m.id || i} style={{ display: 'flex', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', minHeight: proposal.milestones && proposal.milestones.length >= 4 ? '76px' : '95px', boxSizing: 'border-box' }}>
-                  <div style={{ width: '80px', flexShrink: 0, flexGrow: 0, backgroundColor: '#000000', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: '#ffffff', gap: '4px', boxSizing: 'border-box' }}>
-                    <span style={{ fontSize: '9px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.8 }}>Fase</span>
-                    <span style={{ fontSize: '20px', fontWeight: '950' }}>{i + 1}</span>
-                  </div>
-                  <div style={{ flexGrow: 1, flexShrink: 1, minWidth: 0, padding: proposal.milestones && proposal.milestones.length >= 4 ? '10px 15px' : '15px 20px', display: 'flex', flexDirection: 'column', gap: '4px', justifyContent: 'center', boxSizing: 'border-box' }}>
-                    <h4 style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', margin: '0', textTransform: 'uppercase' }}>{m.title}</h4>
-                    <p style={{ fontSize: '10px', color: '#475569', lineHeight: '1.3', margin: '0', fontWeight: '300' }}>
-                      {m.description || 'Sin descripción de entregables.'}
-                    </p>
-                  </div>
-                  <div style={{ width: '120px', flexShrink: 0, flexGrow: 0, borderLeft: '1px solid #e2e8f0', padding: '10px 15px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '4px', backgroundColor: '#fafafa', boxSizing: 'border-box' }}>
-                    <span style={{ fontSize: '7px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Hito Control</span>
-                    <span style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', textAlign: 'center', lineHeight: '1.1' }}>
-                      {m.control_milestone || 'VERIFICACIÓN'}
-                    </span>
-                  </div>
-                  <div style={{ width: '120px', flexShrink: 0, flexGrow: 0, borderLeft: '1px solid #e2e8f0', padding: '10px 15px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '4px', backgroundColor: '#fafafa', boxSizing: 'border-box' }}>
-                    <span style={{ fontSize: '7px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Inversión</span>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}>
-                      <span style={{ fontSize: '14px', fontWeight: '950', color: '#000000', lineHeight: '1.1' }}>${m.price || '0'}</span>
-                      <span style={{ fontSize: '8px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', lineHeight: '1.1' }}>{getCurrencyFromTotal(proposal.total_value)}</span>
+              <p style={{ fontSize: (proposal.milestones && proposal.milestones.length >= 4) || (proposal.payments && proposal.payments.length >= 4) ? '10px' : '11px', color: '#475569', lineHeight: '1.35', fontWeight: '300', margin: '0' }}>
+                {(() => {
+                  const meth = proposal.methodology || DEFAULT_METHODOLOGY;
+                  const text = meth.phases_intro ?? DEFAULT_METHODOLOGY.phases_intro;
+                  if (text === DEFAULT_METHODOLOGY.phases_intro) {
+                    return (
+                      <>
+                        El plan de esfuerzo comprende un periodo de <span style={{ fontWeight: 'bold', color: '#0f172a' }}>4 meses</span> (16 sprints semanales). Cada fase mensual concluye con un hito de control funcional y estético auditado antes de la liberación del siguiente incremento de software.
+                      </>
+                    );
+                  }
+                  return text;
+                })()}
+              </p>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: '2px', marginBottom: '2px' }}>
+                <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Estructura de Sprints Mensuales</span>
+                <div style={{ flexGrow: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
+              </div>
+
+              {/* Listado de Fases (Fase 1 a 4) */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: (proposal.milestones && proposal.milestones.length >= 4) || (proposal.payments && proposal.payments.length >= 4) ? '6px' : '15px' }}>
+                {proposal.milestones && proposal.milestones.map((m, i) => (
+                  <div key={m.id || i} style={{ display: 'flex', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', minHeight: proposal.milestones && proposal.milestones.length >= 4 ? '68px' : '95px', boxSizing: 'border-box' }}>
+                    <div style={{ width: proposal.milestones && proposal.milestones.length >= 4 ? '65px' : '80px', flexShrink: 0, flexGrow: 0, backgroundColor: '#000000', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: '#ffffff', gap: '2px', boxSizing: 'border-box' }}>
+                      <span style={{ fontSize: '8px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.8 }}>Fase</span>
+                      <span style={{ fontSize: proposal.milestones && proposal.milestones.length >= 4 ? '16px' : '20px', fontWeight: '950' }}>{i + 1}</span>
                     </div>
+                    <div style={{ flexGrow: 1, flexShrink: 1, minWidth: 0, padding: proposal.milestones && proposal.milestones.length >= 4 ? '6px 12px' : '15px 20px', display: 'flex', flexDirection: 'column', gap: '3px', justifyContent: 'center', boxSizing: 'border-box' }}>
+                      <h4 style={{ fontSize: proposal.milestones && proposal.milestones.length >= 4 ? '11px' : '12px', fontWeight: '900', color: '#0f172a', margin: '0', textTransform: 'uppercase' }}>{m.title}</h4>
+                      <p style={{ fontSize: proposal.milestones && proposal.milestones.length >= 4 ? '9px' : '10px', color: '#475569', lineHeight: '1.2', margin: '0', fontWeight: '300' }}>
+                        {m.description || 'Sin descripción de entregables.'}
+                      </p>
+                    </div>
+                    <div style={{ width: proposal.milestones && proposal.milestones.length >= 4 ? '105px' : '120px', flexShrink: 0, flexGrow: 0, borderLeft: '1px solid #e2e8f0', padding: proposal.milestones && proposal.milestones.length >= 4 ? '6px 10px' : '15px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '2px', backgroundColor: '#fafafa', boxSizing: 'border-box' }}>
+                      <span style={{ fontSize: '7px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Hito Control</span>
+                      <span style={{ fontSize: proposal.milestones && proposal.milestones.length >= 4 ? '9px' : '10px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', textAlign: 'center', lineHeight: '1.1' }}>
+                        {m.control_milestone || 'VERIFICACIÓN'}
+                      </span>
+                    </div>
+                    {!proposal.methodology?.hide_milestone_prices && (
+                      <div style={{ width: proposal.milestones && proposal.milestones.length >= 4 ? '105px' : '120px', flexShrink: 0, flexGrow: 0, borderLeft: '1px solid #e2e8f0', padding: proposal.milestones && proposal.milestones.length >= 4 ? '6px 10px' : '15px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '2px', backgroundColor: '#fafafa', boxSizing: 'border-box' }}>
+                        <span style={{ fontSize: '7px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Inversión</span>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}>
+                          <span style={{ fontSize: proposal.milestones && proposal.milestones.length >= 4 ? '13px' : '14px', fontWeight: '950', color: '#000000', lineHeight: '1.1' }}>${m.price || '0'}</span>
+                          <span style={{ fontSize: '8px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', lineHeight: '1.1' }}>{getCurrencyFromTotal(proposal.total_value)}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Costos de Infraestructura (Mini-bloque compacto horizontal) */}
+              {proposal.infrastructure_costs && proposal.infrastructure_costs.length > 0 && (
+                <div style={{ marginTop: '2px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '4px' }}>
+                    <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Costos de Infraestructura Asociados</span>
+                    <div style={{ flexGrow: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {proposal.infrastructure_costs.map((infra, idx) => (
+                      <div key={idx} style={{ flex: '1 1 180px', padding: '5px 10px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '9px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                          <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{infra.provider}</span>
+                          {infra.is_optional && (
+                            <span style={{ fontSize: '7px', padding: '1px 4px', backgroundColor: '#fef3c7', color: '#d97706', borderRadius: '4px', fontWeight: '900', letterSpacing: '0.5px' }}>OPCIONAL</span>
+                          )}
+                          <span style={{ color: '#64748b' }}> — {infra.title}</span>
+                        </div>
+                        <span style={{ fontWeight: 'bold', color: brandPrimary, flexShrink: 0, marginLeft: '10px' }}>{infra.monthly_cost}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              ))}
-            </div>
+              )}
 
-            {/* Costos de Infraestructura (Mini-bloque compacto horizontal) */}
-            {proposal.infrastructure_costs && proposal.infrastructure_costs.length > 0 && (
-              <div style={{ marginTop: '2px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '6px' }}>
-                  <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Costos de Infraestructura Asociados</span>
-                  <div style={{ flexGrow: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
-                </div>
-                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                  {proposal.infrastructure_costs.map((infra, idx) => (
-                    <div key={idx} style={{ flex: '1 1 180px', padding: '6px 12px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '9px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                        <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{infra.provider}</span>
-                        {infra.is_optional && (
-                          <span style={{ fontSize: '7px', padding: '1px 4px', backgroundColor: '#fef3c7', color: '#d97706', borderRadius: '4px', fontWeight: '900', letterSpacing: '0.5px' }}>OPCIONAL</span>
+              {proposal.payments && proposal.payments.length > 0 && (
+                <div style={{ marginTop: '4px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '6px' }}>
+                    <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Esquema de Pagos / Hitos de Financiamiento</span>
+                    <div style={{ flexGrow: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: `repeat(${proposal.payments.length}, minmax(0, 1fr))`, gap: proposal.payments.length > 3 ? '8px' : '10px', width: '100%' }}>
+                    {proposal.payments.map((p, idx) => (
+                      <div key={idx} style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: proposal.payments.length > 3 ? '8px 10px' : '10px 12px', display: 'flex', flexDirection: 'column', gap: '4px', boxSizing: 'border-box' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '4px' }}>
+                          <span style={{ fontSize: proposal.payments.length > 3 ? '8.5px' : '9px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', lineHeight: '1.2' }}>{p.label}</span>
+                          <span style={{ fontSize: proposal.payments.length > 3 ? '11px' : '12px', fontWeight: '950', color: brandPrimary, flexShrink: 0 }}>{p.percentage}</span>
+                        </div>
+                        <span style={{ fontSize: proposal.payments.length > 3 ? '8px' : '9px', color: '#475569', fontWeight: '300', lineHeight: '1.3' }}>{p.description}</span>
+                        {p.tooltip && (
+                          <span style={{ fontSize: proposal.payments.length > 3 ? '7.5px' : '8px', color: '#94a3b8', fontStyle: 'italic', lineHeight: '1.3', marginTop: '2px' }}>{p.tooltip}</span>
                         )}
-                        <span style={{ color: '#64748b' }}> — {infra.title}</span>
                       </div>
-                      <span style={{ fontWeight: 'bold', color: brandPrimary, flexShrink: 0, marginLeft: '10px' }}>{infra.monthly_cost}</span>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
-
-            {proposal.payments && proposal.payments.length > 0 && (
-              <div style={{ marginTop: '4px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '6px' }}>
-                  <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Esquema de Pagos / Hitos de Financiamiento</span>
-                  <div style={{ flexGrow: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
-                </div>
-                <div style={{ display: 'flex', gap: proposal.payments.length > 3 ? '6px' : '10px', flexWrap: 'nowrap', width: '100%' }}>
-                  {proposal.payments.map((p, idx) => (
-                    <div key={idx} style={{ flex: '1 1 0px', minWidth: '0px', padding: proposal.payments.length > 3 ? '6px 8px' : '8px 12px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '3px', boxSizing: 'border-box' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '4px' }}>
-                        <span style={{ fontSize: proposal.payments.length > 3 ? '8.5px' : '9px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', lineHeight: '1.2' }}>{p.label}</span>
-                        <span style={{ fontSize: proposal.payments.length > 3 ? '11px' : '12px', fontWeight: '950', color: brandPrimary, flexShrink: 0 }}>{p.percentage}</span>
-                      </div>
-                      <span style={{ fontSize: proposal.payments.length > 3 ? '8px' : '9px', color: '#475569', fontWeight: '300', lineHeight: '1.25' }}>{p.description}</span>
-                      {p.tooltip && (
-                        <span style={{ fontSize: proposal.payments.length > 3 ? '7.5px' : '8px', color: '#94a3b8', fontStyle: 'italic', lineHeight: '1.2', marginTop: '1px' }}>{p.tooltip}</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
 
           {/* Footer Fijo */}
           <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
-            <span>Presupuesto Consolidado: <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{formatTotalValue(proposal.total_value)} TOTAL</span></span>
+            <span>
+              {isServiceProposal ? (
+                <>Abono de Servicio: <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{serviceDetails.recurring_fee || proposal.total_value}</span></>
+              ) : (
+                <>Presupuesto Consolidado: <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{formatTotalValue(proposal.total_value)} TOTAL</span></>
+              )}
+            </span>
             <span>Página {getPrintPageNumber('hitos')} de {totalPrintPages}</span>
           </div>
         </div>
@@ -2165,214 +2569,628 @@ const ProposalView: React.FC = () => {
               {(proposal.methodology || DEFAULT_METHODOLOGY).intro_text || DEFAULT_METHODOLOGY.intro_text}
             </p>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '5px' }}>
-              {/* Desarrollo Incremental */}
-              <div style={{ padding: '20px', borderRadius: '12px', backgroundColor: '#faf5ff', border: '1px solid #f3e8ff' }}>
-                <h4 style={{ fontSize: '10px', fontWeight: '900', color: brandPrimary, margin: '0 0 6px 0', letterSpacing: '1.5px', textTransform: 'uppercase' }}>
-                  {(() => {
-                    const meth = proposal.methodology || DEFAULT_METHODOLOGY;
-                    return meth.incremental_title || DEFAULT_METHODOLOGY.incremental_title;
-                  })()}
-                </h4>
-                <p style={{ fontSize: '11px', color: '#581c87', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
-                  {(() => {
-                    const meth = proposal.methodology || DEFAULT_METHODOLOGY;
-                    return (meth.incremental_text || DEFAULT_METHODOLOGY.incremental_text).replace('{client_name}', proposal.client_name || 'el cliente');
-                  })()}
-                </p>
-              </div>
-
-              {/* Planificación de Contenidos */}
-              <div style={{ padding: '20px', borderRadius: '12px', backgroundColor: '#fdf2f8', border: '1px solid #fce7f3' }}>
-                <h4 style={{ fontSize: '10px', fontWeight: '900', color: brandSecondary, margin: '0 0 6px 0', letterSpacing: '1.5px', textTransform: 'uppercase' }}>
-                  {(() => {
-                    const meth = proposal.methodology || DEFAULT_METHODOLOGY;
-                    return meth.planning_title || DEFAULT_METHODOLOGY.planning_title;
-                  })()}
-                </h4>
-                <p style={{ fontSize: '11px', color: '#9d174d', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
-                  {(() => {
-                    const meth = proposal.methodology || DEFAULT_METHODOLOGY;
-                    return (meth.planning_text || DEFAULT_METHODOLOGY.planning_text).replace('{client_name}', proposal.client_name || 'el cliente');
-                  })()}
-                </p>
-              </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: proposal.methodology?.hide_weekly_schedule ? '16px' : (getPillars(proposal.methodology, brandPrimary, brandSecondary).length >= 4 ? '10px' : '15px'), marginTop: '5px' }}>
+              {getPillars(proposal.methodology, brandPrimary, brandSecondary).map((pillar, idx) => {
+                const mainColor = pillar.color || (idx % 2 === 0 ? brandPrimary : brandSecondary);
+                const isCompact = !proposal.methodology?.hide_weekly_schedule && getPillars(proposal.methodology, brandPrimary, brandSecondary).length >= 4;
+                return (
+                  <div
+                    key={pillar.id || idx}
+                    style={{
+                      padding: proposal.methodology?.hide_weekly_schedule ? '18px 22px' : (isCompact ? '12px 16px' : '18px 20px'),
+                      borderRadius: '12px',
+                      backgroundColor: `${mainColor}0A`,
+                      border: `1px solid ${mainColor}33`,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '4px'
+                    }}
+                  >
+                    <h4 style={{ fontSize: '10px', fontWeight: '900', color: mainColor, margin: '0', letterSpacing: '1.5px', textTransform: 'uppercase' }}>
+                      {pillar.title}
+                    </h4>
+                    <p style={{ fontSize: proposal.methodology?.hide_weekly_schedule ? '11px' : (isCompact ? '10px' : '11px'), color: '#475569', lineHeight: '1.5', margin: '0', fontWeight: '300' }}>
+                      {(pillar.description || '').replace(/\{client_name\}/g, proposal.client_name || 'el cliente')}
+                    </p>
+                  </div>
+                );
+              })}
 
               {/* Agenda Semanal */}
-              <div style={{ padding: '20px', borderRadius: '12px', border: '1px solid #0f172a', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div>
-                  <h5 style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0', letterSpacing: '1px', textTransform: 'uppercase' }}>
-                    {(() => {
-                      const meth = proposal.methodology || DEFAULT_METHODOLOGY;
-                      return meth.schedule_monday_title || DEFAULT_METHODOLOGY.schedule_monday_title;
-                    })()}
-                  </h5>
-                  <h6 style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', margin: '0 0 2px 0', textTransform: 'uppercase' }}>
-                    {(() => {
-                      const meth = proposal.methodology || DEFAULT_METHODOLOGY;
-                      return meth.schedule_monday_subtitle || DEFAULT_METHODOLOGY.schedule_monday_subtitle;
-                    })()}
-                  </h6>
-                  <p style={{ fontSize: '10px', color: '#475569', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
-                    {(() => {
-                      const meth = proposal.methodology || DEFAULT_METHODOLOGY;
-                      return (meth.schedule_monday_text || DEFAULT_METHODOLOGY.schedule_monday_text).replace('{client_name}', proposal.client_name || 'el cliente');
-                    })()}
-                  </p>
+              {!proposal.methodology?.hide_weekly_schedule && (
+                <div style={{ padding: '20px', borderRadius: '12px', border: '1px solid #0f172a', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div>
+                    <h5 style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                      {(() => {
+                        const meth = proposal.methodology || DEFAULT_METHODOLOGY;
+                        return meth.schedule_monday_title || DEFAULT_METHODOLOGY.schedule_monday_title;
+                      })()}
+                    </h5>
+                    <h6 style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', margin: '0 0 2px 0', textTransform: 'uppercase' }}>
+                      {(() => {
+                        const meth = proposal.methodology || DEFAULT_METHODOLOGY;
+                        return meth.schedule_monday_subtitle || DEFAULT_METHODOLOGY.schedule_monday_subtitle;
+                      })()}
+                    </h6>
+                    <p style={{ fontSize: '10px', color: '#475569', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
+                      {(() => {
+                        const meth = proposal.methodology || DEFAULT_METHODOLOGY;
+                        return (meth.schedule_monday_text || DEFAULT_METHODOLOGY.schedule_monday_text).replace('{client_name}', proposal.client_name || 'el cliente');
+                      })()}
+                    </p>
+                  </div>
+                  
+                  <div style={{ height: '1px', backgroundColor: '#e2e8f0' }}></div>
+                  
+                  <div>
+                    <h5 style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                      {(() => {
+                        const meth = proposal.methodology || DEFAULT_METHODOLOGY;
+                        return meth.schedule_tuesday_title || DEFAULT_METHODOLOGY.schedule_tuesday_title;
+                      })()}
+                    </h5>
+                    <h6 style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', margin: '0 0 2px 0', textTransform: 'uppercase' }}>
+                      {(() => {
+                        const meth = proposal.methodology || DEFAULT_METHODOLOGY;
+                        return meth.schedule_tuesday_subtitle || DEFAULT_METHODOLOGY.schedule_tuesday_subtitle;
+                      })()}
+                    </h6>
+                    <p style={{ fontSize: '10px', color: '#475569', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
+                      {(() => {
+                        const meth = proposal.methodology || DEFAULT_METHODOLOGY;
+                        return (meth.schedule_tuesday_text || DEFAULT_METHODOLOGY.schedule_tuesday_text).replace('{client_name}', proposal.client_name || 'el cliente');
+                      })()}
+                    </p>
+                  </div>
+
+                  <div style={{ height: '1px', backgroundColor: '#e2e8f0' }}></div>
+
+                  <div>
+                    <h5 style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                      {(() => {
+                        const meth = proposal.methodology || DEFAULT_METHODOLOGY;
+                        return meth.schedule_friday_title || DEFAULT_METHODOLOGY.schedule_friday_title;
+                      })()}
+                    </h5>
+                    <h6 style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', margin: '0 0 2px 0', textTransform: 'uppercase' }}>
+                      {(() => {
+                        const meth = proposal.methodology || DEFAULT_METHODOLOGY;
+                        return meth.schedule_friday_subtitle || DEFAULT_METHODOLOGY.schedule_friday_subtitle;
+                      })()}
+                    </h6>
+                    <p style={{ fontSize: '10px', color: '#475569', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
+                      {(() => {
+                        const meth = proposal.methodology || DEFAULT_METHODOLOGY;
+                        return (meth.schedule_friday_text || DEFAULT_METHODOLOGY.schedule_friday_text).replace('{client_name}', proposal.client_name || 'el cliente');
+                      })()}
+                    </p>
+                  </div>
                 </div>
-                
-                <div style={{ height: '1px', backgroundColor: '#e2e8f0' }}></div>
-                
-                <div>
-                  <h5 style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0', letterSpacing: '1px', textTransform: 'uppercase' }}>
-                    {(() => {
-                      const meth = proposal.methodology || DEFAULT_METHODOLOGY;
-                      return meth.schedule_tuesday_title || DEFAULT_METHODOLOGY.schedule_tuesday_title;
-                    })()}
-                  </h5>
-                  <h6 style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', margin: '0 0 2px 0', textTransform: 'uppercase' }}>
-                    {(() => {
-                      const meth = proposal.methodology || DEFAULT_METHODOLOGY;
-                      return meth.schedule_tuesday_subtitle || DEFAULT_METHODOLOGY.schedule_tuesday_subtitle;
-                    })()}
-                  </h6>
-                  <p style={{ fontSize: '10px', color: '#475569', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
-                    {(() => {
-                      const meth = proposal.methodology || DEFAULT_METHODOLOGY;
-                      return (meth.schedule_tuesday_text || DEFAULT_METHODOLOGY.schedule_tuesday_text).replace('{client_name}', proposal.client_name || 'el cliente');
-                    })()}
-                  </p>
-                </div>
-
-                <div style={{ height: '1px', backgroundColor: '#e2e8f0' }}></div>
-
-                <div>
-                  <h5 style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0', letterSpacing: '1px', textTransform: 'uppercase' }}>
-                    {(() => {
-                      const meth = proposal.methodology || DEFAULT_METHODOLOGY;
-                      return meth.schedule_friday_title || DEFAULT_METHODOLOGY.schedule_friday_title;
-                    })()}
-                  </h5>
-                  <h6 style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', margin: '0 0 2px 0', textTransform: 'uppercase' }}>
-                    {(() => {
-                      const meth = proposal.methodology || DEFAULT_METHODOLOGY;
-                      return meth.schedule_friday_subtitle || DEFAULT_METHODOLOGY.schedule_friday_subtitle;
-                    })()}
-                  </h6>
-                  <p style={{ fontSize: '10px', color: '#475569', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
-                    {(() => {
-                      const meth = proposal.methodology || DEFAULT_METHODOLOGY;
-                      return (meth.schedule_friday_text || DEFAULT_METHODOLOGY.schedule_friday_text).replace('{client_name}', proposal.client_name || 'el cliente');
-                    })()}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Footer Fijo */}
-          <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
-            <span>Propuesta Comercial | {proposal.client_name}</span>
-            <span>Página {getPrintPageNumber('metodologia')} de {totalPrintPages}</span>
-          </div>
-        </div>
-        )}
-
-        {/* PÁGINA 7: Acuerdo de Servicios */}
-        {!hiddenPages.includes('legal') && (
-          <div id="page-legal" style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
-          {/* Header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '25px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
-              <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
-              <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{proposal.hero_title ? proposal.hero_title.toUpperCase() : 'CBKR APP V2'}</span>
-            </div>
-            <span style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>LEGAL_AGREEMENT // 05</span>
-          </div>
-
-          {/* Contenido */}
-          <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: '20px', marginBottom: '60px' }}>
-            <h1 style={{ fontSize: '28px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
-              CONTRATO Y <span style={{ fontStyle: 'italic', color: brandPrimary }}>FIRMAS</span>
-            </h1>
-
-            <p style={{ fontSize: '11px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
-              {proposal.contract_description || 'Acuerdo formal que establece las bases y condiciones legales para la ejecución del proyecto de desarrollo de software detallado en esta propuesta.'}
-            </p>
-
-            <div style={{ fontSize: '10px', color: '#334155', lineHeight: '1.6', whiteSpace: 'pre-wrap', fontFamily: 'system-ui, -apple-system, sans-serif', padding: '20px', backgroundColor: '#f8fafc', borderRadius: '20px', border: '1px solid #e2e8f0', maxHeight: '350px', overflow: 'hidden', marginTop: '5px' }}>
-              {proposal.contract_text ? (
-                proposal.contract_text
-                  .replace(/\{location\}/g, proposal.location)
-                  .replace(/\{date\}/g, proposal.date)
-                  .replace(/\{client_name\}/g, proposal.client_name)
-                  .replace(/\{total_value\}/g, proposal.total_value)
-                  .replace(/\[input:Representante Legal\]/g, clientRepName || '________________________')
-                  .replace(/\[input:DNI\]/g, clientDNI || '________________________')
-                  .replace(/\[input:Cargo del Firmante\]/g, clientRole || '________________________')
-                  .replace(/\[input:[^\]]+\]/g, '________________________')
-              ) : (
-                `CONTRATO DE DESARROLLO DE SOFTWARE
- 
-Entre Creapp Software Lab y ${proposal.client_name}, se acuerda el desarrollo integral del sistema conforme a los alcances y términos especificados en esta propuesta comercial por un valor total de ${proposal.total_value}.
- 
-Este contrato entra en vigencia a partir de la firma del presente documento el día ${proposal.date} en la localidad de ${proposal.location}.`
               )}
             </div>
+            </div>
 
-            {/* Firmas a tres columnas */}
-            <div style={{ display: 'flex', gap: '20px', marginTop: '20px' }}>
-              {/* Desarrollador 1 - Seba */}
-              <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '2px' }}>Por CreAPP Software Lab</p>
-                <div style={{ height: '60px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0', padding: '8px' }}>
-                  <img src="/firmaseba.png" alt="Firma Seba" style={{ height: '100%', objectFit: 'contain' }} />
-                </div>
-                <div style={{ fontSize: '10px' }}>
-                  <p style={{ fontWeight: '800', color: '#0f172a' }}>Sebastián Maza</p>
-                  <p style={{ color: '#64748b', fontSize: '9px' }}>Chief Technology Officer</p>
-                </div>
-              </div>
-
-              {/* Desarrollador 2 - Facundo Marceca */}
-              <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '2px' }}>Por CreAPP Software Lab</p>
-                <div style={{ height: '60px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1', padding: '8px' }}>
-                  {/* Vacío para firma manual */}
-                </div>
-                <div style={{ fontSize: '10px' }}>
-                  <p style={{ fontWeight: '800', color: '#0f172a' }}>Facundo Marceca</p>
-                  <p style={{ color: '#64748b', fontSize: '9px' }}>Project Manager</p>
-                </div>
-              </div>
-
-              {/* Cliente */}
-              <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '2px' }}>Por {proposal.client_name}</p>
-                {clientSignature ? (
-                  <div style={{ height: '60px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0', padding: '8px' }}>
-                    <img src={clientSignature} alt="Firma Cliente" style={{ height: '100%', objectFit: 'contain' }} />
-                  </div>
-                ) : (
-                  <div style={{ height: '60px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1', color: '#94a3b8', fontSize: '10px', textAlign: 'center' }}>
-                    Pendiente de Firma
-                  </div>
-                )}
-                <div style={{ fontSize: '10px' }}>
-                  <p style={{ fontWeight: '800', color: '#0f172a' }}>{clientRepName || '________________________'}</p>
-                  <p style={{ color: '#64748b', fontSize: '9px' }}>{clientRole || 'Representante Autorizado'}</p>
-                  {clientDNI && <p style={{ color: '#94a3b8', fontSize: '8px', marginTop: '1px' }}>DNI: {clientDNI}</p>}
-                </div>
-              </div>
+            {/* Footer Fijo */}
+            <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
+              <span>Propuesta Comercial | {proposal.client_name}</span>
+              <span>Página {getPrintPageNumber('metodologia')} de {totalPrintPages}</span>
             </div>
           </div>
+        )}
 
-          {/* Footer Fijo */}
-          <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
-            <span>Propuesta Comercial | {proposal.client_name}</span>
-            <span>Página {getPrintPageNumber('legal')} de {totalPrintPages}</span>
-          </div>
-        </div>
+        {/* PÁGINA LEGAL: Contrato y Firmas */}
+        {isServiceProposal ? (
+          <>
+            {/* PÁGINA LEGAL 1: Cláusulas 1 a 3 */}
+            {!hiddenPages.includes('legal') && (() => {
+              const legal = proposal.methodology?.client_legal_data;
+              const rep = clientRepName || legal?.representative_name || '';
+              const dni = clientDNI || legal?.representative_dni || legal?.tax_id || '';
+              const role = clientRole || legal?.representative_role || '';
+              const company = legal?.company_name || proposal.client_name;
+              const cuit = legal?.tax_id || '';
+              const address = legal?.legal_address || '';
+
+              let template = proposal.contract_text || STACKED_SERVICE_CONTRACT_TEMPLATE;
+              if (cuit || address) {
+                const extraLegalInfo = [
+                  cuit ? `CUIT N° ${cuit}` : '',
+                  address ? `con domicilio legal en ${address}` : ''
+                ].filter(Boolean).join(', ');
+
+                template = template.replace(
+                  /Por la otra parte,\s*\{client_name\}(?:,)?/i,
+                  `Por la otra parte, {client_name} (${extraLegalInfo}),`
+                );
+              }
+
+              const vigencia = (serviceDetails.min_term_months || serviceDetails.minimum_commitment || '6 Meses').trim();
+
+              const replacedText = template
+                .replace(/\{location\}/g, proposal.location)
+                .replace(/\{date\}/g, proposal.date)
+                .replace(/\{client_name\}/g, company)
+                .replace(/\{client_cuit\}/g, cuit)
+                .replace(/\{client_address\}/g, address)
+                .replace(/\{client_representative\}/g, rep || '________________________')
+                .replace(/\{client_representative_dni\}/g, dni || '________________________')
+                .replace(/\{client_representative_role\}/g, role || 'Representante Legal')
+                .replace(/\{total_value\}/g, serviceDetails.recurring_fee || proposal.total_value)
+                .replace(/\{recurring_fee\}/g, serviceDetails.recurring_fee || proposal.total_value)
+                .replace(/\{setup_fee\}/g, serviceDetails.setup_fee || '$0')
+                .replace(/\{plan_name\}/g, serviceDetails.plan_name || 'Stacked')
+                .replace(/\{min_term_months\}/g, vigencia)
+                .replace(/\{minimum_commitment\}/g, vigencia)
+                .replace(/\{contract_term\}/g, vigencia)
+                .replace(/\{vigencia\}/g, vigencia)
+                .replace(/vigencia mínima inicial de \d+ \([^\)]+\) meses/gi, `vigencia mínima inicial de ${vigencia}`)
+                .replace(/vigencia mínima inicial de 6 meses/gi, `vigencia mínima inicial de ${vigencia}`)
+                .replace(/plazo inicial de \d+ \([^\)]+\) meses/gi, `plazo inicial de ${vigencia}`)
+                .replace(/período inicial de \d+ \([^\)]+\) meses/gi, `período inicial de ${vigencia}`)
+                .replace(/\[input:Representante Legal\]/g, rep || '________________________')
+                .replace(/\[input:DNI\/CUIT\]/g, dni || '________________________')
+                .replace(/\[input:DNI\]/g, dni || '________________________')
+                .replace(/\[input:Cargo del Firmante\]/g, role || '________________________')
+                .replace(/\[input:[^\]]+\]/g, '________________________');
+
+              const clauseRegex = /\n\n(?=(?:PRIMERA|SEGUNDA|TERCERA|CUARTA|QUINTA|SEXTA|SÉPTIMA|OCTAVA|NOVENA|DÉCIMA):)/i;
+              const parts = replacedText.split(clauseRegex);
+              const header = parts[0]?.trim() || '';
+              const allClauses = parts.slice(1).map(raw => {
+                const trimmed = raw.trim();
+                const firstLineEnd = trimmed.indexOf('\n');
+                if (firstLineEnd !== -1) {
+                  return {
+                    title: trimmed.substring(0, firstLineEnd).trim(),
+                    content: trimmed.substring(firstLineEnd + 1).trim()
+                  };
+                }
+                return { title: trimmed, content: '' };
+              });
+              const part1Clauses = allClauses.slice(0, 3);
+
+              return (
+                <div id="page-legal" style={{
+                  width: '794px',
+                  height: '1123px',
+                  padding: '38px 65px 35px 65px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  boxSizing: 'border-box',
+                  backgroundColor: '#ffffff',
+                  position: 'relative'
+                }}>
+                  {/* Header */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '8px', marginBottom: '14px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', alignItems: 'flex-start' }}>
+                      <span style={{ fontSize: '11px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
+                      <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>
+                        {proposal.hero_title ? proposal.hero_title.toUpperCase() : 'PLATAFORMA SAAS'}
+                      </span>
+                    </div>
+                    <span style={{ fontSize: '8.5px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>
+                      SERVICE_AGREEMENT // PÁG. 1 DE 2
+                    </span>
+                  </div>
+
+                  {/* Title & Description */}
+                  <div style={{ marginBottom: '12px' }}>
+                    <h1 style={{ fontSize: '22px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
+                      CONTRATO DE SERVICIO & <span style={{ fontStyle: 'italic', color: brandPrimary }}>LICENCIA SAAS</span>
+                    </h1>
+                    <p style={{ fontSize: '9.5px', color: '#475569', lineHeight: '1.45', fontWeight: '300', margin: '4px 0 0 0' }}>
+                      {proposal.contract_description || STACKED_CONTRACT_DESCRIPTION}
+                    </p>
+                  </div>
+
+                  {/* Proemio */}
+                  {header ? (
+                    <div style={{
+                      fontSize: '9.5px',
+                      color: '#1e293b',
+                      lineHeight: '1.55',
+                      backgroundColor: '#f8fafc',
+                      borderRadius: '10px',
+                      border: '1px solid #e2e8f0',
+                      padding: '12px 16px',
+                      marginBottom: '14px',
+                      whiteSpace: 'pre-wrap',
+                      fontFamily: 'system-ui, -apple-system, sans-serif'
+                    }}>
+                      {header}
+                    </div>
+                  ) : null}
+
+                  {/* Cláusulas 1 a 3 */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    {part1Clauses.map((clause, idx) => (
+                      <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <div style={{
+                          fontSize: '10px',
+                          fontWeight: '900',
+                          color: '#0f172a',
+                          letterSpacing: '0.4px',
+                          textTransform: 'uppercase',
+                          display: 'flex',
+                          alignItems: 'baseline',
+                          gap: '6px'
+                        }}>
+                          <span style={{
+                            display: 'inline-block',
+                            width: '5px',
+                            height: '5px',
+                            borderRadius: '50%',
+                            backgroundColor: brandPrimary,
+                            verticalAlign: 'middle',
+                            flexShrink: 0
+                          }}></span>
+                          <span>{clause.title}</span>
+                        </div>
+                        <p style={{
+                          fontSize: '9.5px',
+                          color: '#334155',
+                          lineHeight: '1.6',
+                          margin: '0',
+                          fontFamily: 'system-ui, -apple-system, sans-serif',
+                          textAlign: 'justify'
+                        }}>
+                          {clause.content}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Footer */}
+                  <div style={{ position: 'absolute', bottom: '30px', left: '65px', right: '65px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '12px', fontSize: '9px', color: '#94a3b8' }}>
+                    <span>Contrato de Servicio | {company}</span>
+                    <span>Página {getPrintPageNumber('legal')} de {totalPrintPages}</span>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* PÁGINA LEGAL 2: Cláusulas 4 a 7, Resumen & Firmas */}
+            {!hiddenPages.includes('legal2') && (() => {
+              const legal = proposal.methodology?.client_legal_data;
+              const rep = clientRepName || legal?.representative_name || '';
+              const dni = clientDNI || legal?.representative_dni || legal?.tax_id || '';
+              const role = clientRole || legal?.representative_role || '';
+              const company = legal?.company_name || proposal.client_name;
+              const cuit = legal?.tax_id || '';
+              const address = legal?.legal_address || '';
+
+              let template = proposal.contract_text || STACKED_SERVICE_CONTRACT_TEMPLATE;
+              if (cuit || address) {
+                const extraLegalInfo = [
+                  cuit ? `CUIT N° ${cuit}` : '',
+                  address ? `con domicilio legal en ${address}` : ''
+                ].filter(Boolean).join(', ');
+
+                template = template.replace(
+                  /Por la otra parte,\s*\{client_name\}(?:,)?/i,
+                  `Por la otra parte, {client_name} (${extraLegalInfo}),`
+                );
+              }
+
+              const vigencia = (serviceDetails.min_term_months || serviceDetails.minimum_commitment || '6 Meses').trim();
+
+              const replacedText = template
+                .replace(/\{location\}/g, proposal.location)
+                .replace(/\{date\}/g, proposal.date)
+                .replace(/\{client_name\}/g, company)
+                .replace(/\{client_cuit\}/g, cuit)
+                .replace(/\{client_address\}/g, address)
+                .replace(/\{client_representative\}/g, rep || '________________________')
+                .replace(/\{client_representative_dni\}/g, dni || '________________________')
+                .replace(/\{client_representative_role\}/g, role || 'Representante Legal')
+                .replace(/\{total_value\}/g, serviceDetails.recurring_fee || proposal.total_value)
+                .replace(/\{recurring_fee\}/g, serviceDetails.recurring_fee || proposal.total_value)
+                .replace(/\{setup_fee\}/g, serviceDetails.setup_fee || '$0')
+                .replace(/\{plan_name\}/g, serviceDetails.plan_name || 'Stacked')
+                .replace(/\{min_term_months\}/g, vigencia)
+                .replace(/\{minimum_commitment\}/g, vigencia)
+                .replace(/\{contract_term\}/g, vigencia)
+                .replace(/\{vigencia\}/g, vigencia)
+                .replace(/vigencia mínima inicial de \d+ \([^\)]+\) meses/gi, `vigencia mínima inicial de ${vigencia}`)
+                .replace(/vigencia mínima inicial de 6 meses/gi, `vigencia mínima inicial de ${vigencia}`)
+                .replace(/plazo inicial de \d+ \([^\)]+\) meses/gi, `plazo inicial de ${vigencia}`)
+                .replace(/período inicial de \d+ \([^\)]+\) meses/gi, `período inicial de ${vigencia}`)
+                .replace(/\[input:Representante Legal\]/g, rep || '________________________')
+                .replace(/\[input:DNI\/CUIT\]/g, dni || '________________________')
+                .replace(/\[input:DNI\]/g, dni || '________________________')
+                .replace(/\[input:Cargo del Firmante\]/g, role || '________________________')
+                .replace(/\[input:[^\]]+\]/g, '________________________');
+
+              const clauseRegex = /\n\n(?=(?:PRIMERA|SEGUNDA|TERCERA|CUARTA|QUINTA|SEXTA|SÉPTIMA|OCTAVA|NOVENA|DÉCIMA):)/i;
+              const parts = replacedText.split(clauseRegex);
+              const allClauses = parts.slice(1).map(raw => {
+                const trimmed = raw.trim();
+                const firstLineEnd = trimmed.indexOf('\n');
+                if (firstLineEnd !== -1) {
+                  return {
+                    title: trimmed.substring(0, firstLineEnd).trim(),
+                    content: trimmed.substring(firstLineEnd + 1).trim()
+                  };
+                }
+                return { title: trimmed, content: '' };
+              });
+              const part2Clauses = allClauses.length > 3 ? allClauses.slice(3) : allClauses.slice(2);
+
+              return (
+                <div id="page-legal2" style={{
+                  width: '794px',
+                  height: '1123px',
+                  padding: '38px 65px 35px 65px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  boxSizing: 'border-box',
+                  backgroundColor: '#ffffff',
+                  position: 'relative'
+                }}>
+                  {/* Header */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '8px', marginBottom: '14px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', alignItems: 'flex-start' }}>
+                      <span style={{ fontSize: '11px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
+                      <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>
+                        {proposal.hero_title ? proposal.hero_title.toUpperCase() : 'STACKED PLATFORM'}
+                      </span>
+                    </div>
+                    <span style={{ fontSize: '8.5px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>
+                      SERVICE_AGREEMENT // PÁG. 2 DE 2
+                    </span>
+                  </div>
+
+                  {/* Title */}
+                  <div style={{ marginBottom: '12px' }}>
+                    <h1 style={{ fontSize: '22px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
+                      TÉRMINOS GENERALES & <span style={{ fontStyle: 'italic', color: brandPrimary }}>FIRMAS</span>
+                    </h1>
+                    <p style={{ fontSize: '9.5px', color: '#475569', lineHeight: '1.45', fontWeight: '300', margin: '4px 0 0 0' }}>
+                      Soporte técnico, confidencialidad de datos, vigencia contractual y suscripción fehaciente.
+                    </p>
+                  </div>
+
+                  {/* Cláusulas 4 a fin */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '11px' }}>
+                    {part2Clauses.map((clause, idx) => (
+                      <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                        <div style={{
+                          fontSize: '9.5px',
+                          fontWeight: '900',
+                          color: '#0f172a',
+                          letterSpacing: '0.4px',
+                          textTransform: 'uppercase',
+                          display: 'flex',
+                          alignItems: 'baseline',
+                          gap: '5px'
+                        }}>
+                          <span style={{ color: brandPrimary, fontWeight: '900', fontSize: '10.5px' }}>§</span>
+                          <span>{clause.title}</span>
+                        </div>
+                        <p style={{
+                          fontSize: '9px',
+                          color: '#334155',
+                          lineHeight: '1.55',
+                          textAlign: 'justify',
+                          margin: '0',
+                          fontFamily: 'system-ui, -apple-system, sans-serif',
+                          fontWeight: '400'
+                        }}>
+                          {clause.content}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Resumen Ejecutivo del Servicio */}
+                  <div style={{
+                    marginTop: '12px',
+                    padding: '10px 14px',
+                    backgroundColor: '#f8fafc',
+                    borderRadius: '10px',
+                    border: '1px solid #e2e8f0',
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(4, 1fr)',
+                    gap: '10px'
+                  }}>
+                    <div>
+                      <span style={{ fontSize: '7.5px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Tarifa Mensual</span>
+                      <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a' }}>{serviceDetails?.recurring_fee || proposal.total_value || '$350 USD / mes'}</span>
+                    </div>
+                    <div>
+                      <span style={{ fontSize: '7.5px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Disponibilidad SLA</span>
+                      <span style={{ fontSize: '12px', fontWeight: '900', color: '#059669' }}>{serviceDetails?.sla_uptime || '99.5% Uptime'}</span>
+                    </div>
+                    <div>
+                      <span style={{ fontSize: '7.5px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Vigencia Inicial</span>
+                      <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a' }}>{serviceDetails?.min_term_months || serviceDetails?.minimum_commitment || '6 Meses'}</span>
+                    </div>
+                    <div>
+                      <span style={{ fontSize: '7.5px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Jurisdicción</span>
+                      <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a' }}>{proposal.location || 'Buenos Aires, ARG'}</span>
+                    </div>
+                  </div>
+
+                  {/* Cierre Formal */}
+                  <div style={{
+                    fontSize: '8.5px',
+                    color: '#475569',
+                    fontStyle: 'italic',
+                    lineHeight: '1.45',
+                    marginTop: '10px',
+                    marginBottom: '12px',
+                    paddingTop: '8px',
+                    borderTop: '1px solid #e2e8f0'
+                  }}>
+                    En prueba de conformidad de todas las cláusulas precedentes, las partes suscriben digitalmente el presente contrato de servicios en la fecha y localidad consignadas al comienzo del documento.
+                  </div>
+
+                  {/* Firmas */}
+                  <div style={{ display: 'flex', gap: '16px' }}>
+                    <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                      <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '1px' }}>Por CreAPP Software Lab</p>
+                      <div style={{ height: '56px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0', padding: '5px' }}>
+                        <img src="/firmaseba.png" alt="Firma Seba" style={{ height: '100%', objectFit: 'contain' }} />
+                      </div>
+                      <div style={{ fontSize: '9px' }}>
+                        <p style={{ fontWeight: '800', color: '#0f172a' }}>Sebastián Maza</p>
+                        <p style={{ color: '#64748b', fontSize: '8px' }}>Chief Technology Officer</p>
+                      </div>
+                    </div>
+                    {(proposal.methodology?.show_facundo_signature ?? true) && (
+                      <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                        <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '1px' }}>Por CreAPP Software Lab</p>
+                        <div style={{ height: '56px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1', padding: '5px' }}>
+                        </div>
+                        <div style={{ fontSize: '9px' }}>
+                          <p style={{ fontWeight: '800', color: '#0f172a' }}>Facundo Marceca</p>
+                          <p style={{ color: '#64748b', fontSize: '8px' }}>Project Manager</p>
+                        </div>
+                      </div>
+                    )}
+                    <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                      <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '1px' }}>
+                        Por {legal?.company_name || proposal.client_name}
+                      </p>
+                      {clientSignature ? (
+                        <div style={{ height: '56px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0', padding: '5px' }}>
+                          <img src={clientSignature} alt="Firma Cliente" style={{ height: '100%', objectFit: 'contain' }} />
+                        </div>
+                      ) : (
+                        <div style={{ height: '56px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1', color: '#94a3b8', fontSize: '9px', textAlign: 'center' }}>
+                          Pendiente de Firma
+                        </div>
+                      )}
+                      <div style={{ fontSize: '9px' }}>
+                        <p style={{ fontWeight: '800', color: '#0f172a' }}>{clientRepName || legal?.representative_name || '________________________'}</p>
+                        <p style={{ color: '#64748b', fontSize: '8px' }}>{clientRole || legal?.representative_role || 'Representante Autorizado'}</p>
+                        {(clientDNI || legal?.representative_dni || legal?.tax_id) && (
+                          <p style={{ color: '#94a3b8', fontSize: '7.5px', marginTop: '1px' }}>
+                            {clientDNI ? `DNI: ${clientDNI}` : (legal?.representative_dni ? `DNI: ${legal.representative_dni}` : `CUIT: ${legal?.tax_id}`)}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Footer */}
+                  <div style={{ position: 'absolute', bottom: '30px', left: '65px', right: '65px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '12px', fontSize: '9px', color: '#94a3b8' }}>
+                    <span>Contrato de Servicio | {legal?.company_name || proposal.client_name}</span>
+                    <span>Página {getPrintPageNumber('legal2')} de {totalPrintPages}</span>
+                  </div>
+                </div>
+              );
+            })()}
+          </>
+        ) : (
+          !hiddenPages.includes('legal') && (() => {
+            const activeContractTemplate = proposal.contract_text || '';
+            return (
+              <div id="page-legal" style={{
+                width: '794px',
+                height: '1123px',
+                padding: '80px',
+                display: 'flex',
+                flexDirection: 'column',
+                boxSizing: 'border-box',
+                backgroundColor: '#ffffff',
+                position: 'relative'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '25px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
+                    <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
+                    <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{proposal.hero_title ? proposal.hero_title.toUpperCase() : 'CBKR APP V2'}</span>
+                  </div>
+                  <span style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>
+                    LEGAL_AGREEMENT // 05
+                  </span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: '20px', marginBottom: '60px' }}>
+                  <div>
+                    <h1 style={{ fontSize: '28px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
+                      CONTRATO Y <span style={{ fontStyle: 'italic', color: brandPrimary }}>FIRMAS</span>
+                    </h1>
+                    <p style={{ fontSize: '11px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '4px 0 0 0' }}>
+                      {proposal.contract_description || 'Acuerdo formal que establece las bases y condiciones legales para la ejecución del proyecto de desarrollo de software detallado en esta propuesta.'}
+                    </p>
+                  </div>
+                  <div style={{
+                    fontSize: '10px',
+                    color: '#334155',
+                    lineHeight: '1.6',
+                    whiteSpace: 'pre-wrap',
+                    fontFamily: 'system-ui, -apple-system, sans-serif',
+                    padding: '20px',
+                    backgroundColor: '#f8fafc',
+                    borderRadius: '12px',
+                    border: '1px solid #e2e8f0',
+                    maxHeight: '350px',
+                    overflowY: 'hidden',
+                    marginTop: '2px'
+                  }}>
+                    {proposal.contract_text ? (
+                      proposal.contract_text
+                        .replace(/\{location\}/g, proposal.location)
+                        .replace(/\{date\}/g, proposal.date)
+                        .replace(/\{client_name\}/g, proposal.client_name)
+                        .replace(/\{total_value\}/g, proposal.total_value)
+                        .replace(/\[input:[^\]]+\]/g, '________________________')
+                    ) : (
+                      `CONTRATO DE DESARROLLO DE SOFTWARE
+        
+Entre Creapp Software Lab y ${proposal.client_name}, se acuerda el desarrollo integral del sistema conforme a los alcances y términos especificados en esta propuesta comercial por un valor total de ${proposal.total_value}.
+        
+Este contrato entra en vigencia a partir de la firma del presente documento el día ${proposal.date} en la localidad de ${proposal.location}.`
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', gap: '20px', marginTop: '20px' }}>
+                    <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '2px' }}>Por CreAPP Software Lab</p>
+                      <div style={{ height: '60px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0', padding: '6px' }}>
+                        <img src="/firmaseba.png" alt="Firma Seba" style={{ height: '100%', objectFit: 'contain' }} />
+                      </div>
+                      <div style={{ fontSize: '10px' }}>
+                        <p style={{ fontWeight: '800', color: '#0f172a' }}>Sebastián Maza</p>
+                        <p style={{ color: '#64748b', fontSize: '8px' }}>Chief Technology Officer</p>
+                      </div>
+                    </div>
+                    {(proposal.methodology?.show_facundo_signature ?? true) && (
+                      <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '2px' }}>Por CreAPP Software Lab</p>
+                        <div style={{ height: '60px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1', padding: '6px' }}>
+                        </div>
+                        <div style={{ fontSize: '10px' }}>
+                          <p style={{ fontWeight: '800', color: '#0f172a' }}>Facundo Marceca</p>
+                          <p style={{ color: '#64748b', fontSize: '8px' }}>Project Manager</p>
+                        </div>
+                      </div>
+                    )}
+                    <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '2px' }}>Por {proposal.client_name}</p>
+                      {clientSignature ? (
+                        <div style={{ height: '60px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0', padding: '6px' }}>
+                          <img src={clientSignature} alt="Firma Cliente" style={{ height: '100%', objectFit: 'contain' }} />
+                        </div>
+                      ) : (
+                        <div style={{ height: '60px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1', color: '#94a3b8', fontSize: '9px', textAlign: 'center' }}>
+                          Pendiente de Firma
+                        </div>
+                      )}
+                      <div style={{ fontSize: '10px' }}>
+                        <p style={{ fontWeight: '800', color: '#0f172a' }}>{clientRepName || '________________________'}</p>
+                        <p style={{ color: '#64748b', fontSize: '8px' }}>{clientRole || 'Representante Autorizado'}</p>
+                        {clientDNI && <p style={{ color: '#94a3b8', fontSize: '7.5px', marginTop: '1px' }}>DNI: {clientDNI}</p>}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '15px', fontSize: '9px', color: '#94a3b8' }}>
+                  <span>Propuesta Comercial | {proposal.client_name}</span>
+                  <span>Página {getPrintPageNumber('legal')} de {totalPrintPages}</span>
+                </div>
+              </div>
+            );
+          })()
         )}
       </div>
     </div>

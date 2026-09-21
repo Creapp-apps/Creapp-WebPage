@@ -148,5 +148,5 @@
   ],
   "methodologyIntro": "Implementamos un proceso de desarrollo ágil e iterativo por sprints para asegurar lanzamientos predecibles, pruebas continuas en salones piloto y la validación directa de la interfaz por parte del staff gerencial y técnico.",
   "hideWeeklySchedule": true,
-  "aspectRatio": "9:16"
+  "aspectRatio": "16:9"
 }

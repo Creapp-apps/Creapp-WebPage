@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft,
+  ArrowRight,
   Save,
   Eye,
   EyeOff,
@@ -27,6 +28,26 @@ import {
   ZoomOut,
   Upload,
   Sparkles,
+  Minus,
+  Maximize2,
+  Briefcase,
+  Zap,
+  Server,
+  RefreshCw,
+  Building2,
+  DollarSign,
+  MapPin,
+  Copy,
+  Check,
+  Info,
+  Layers,
+  ChevronDown,
+  ChevronUp,
+  FileCheck,
+  PenTool,
+  Mail,
+  Phone,
+  UserCheck,
 } from 'lucide-react';
 import { ProposalVideoPlayer } from '@/components/video/ProposalVideoPlayer';
 import { supabase } from '@/lib/supabaseClient';
@@ -35,19 +56,57 @@ import {
   updateProposal,
   upsertChildItems,
 } from '@/lib/proposalService';
-import type {
-  Proposal,
-  ProposalInclusion,
-  ProposalExclusion,
-  ProposalMilestone,
-  ProposalPayment,
-  ProposalProjectOption,
-  ProposalInfrastructureCost,
+import {
+  getPillars,
+  type Proposal,
+  type ProposalInclusion,
+  type ProposalExclusion,
+  type ProposalMilestone,
+  type ProposalPayment,
+  type ProposalProjectOption,
+  type ProposalInfrastructureCost,
+  type MethodologyPillar,
+  type ServiceDetails,
 } from '@/lib/proposalTypes';
+import {
+  DEFAULT_SERVICE_DETAILS,
+  STACKED_CONTRACT_DESCRIPTION,
+  STACKED_SERVICE_CONTRACT_TEMPLATE,
+  DEVELOPMENT_CONTRACT_DESCRIPTION,
+  DEVELOPMENT_CONTRACT_TEMPLATE,
+  CREAPP_PRODUCTS,
+  getCreappProductPreset,
+  STACKED_PRESET,
+  TRAZAPP_PRESET,
+  DENTALIA_PRESET,
+  type CreappProductId,
+} from '@/lib/serviceContractTemplates';
 import { generateFullProposalPDF } from '@/lib/pdfService';
 import IconResolver from '@/components/ui/IconResolver';
 import creappLogoOfficial from '@/assets/CREAPP LOGO VECTOR.png';
 import { importProposalFromDocument, optimizeText } from '@/lib/geminiService';
+
+export interface ClientLegalData {
+  company_name?: string;
+  tax_id?: string;
+  legal_address?: string;
+  representative_name?: string;
+  representative_dni?: string;
+  representative_role?: string;
+  contact_email?: string;
+  contact_phone?: string;
+}
+
+export const DEFAULT_CLIENT_LEGAL_DATA: ClientLegalData = {
+  company_name: '',
+  tax_id: '',
+  legal_address: '',
+  representative_name: '',
+  representative_dni: '',
+  representative_role: '',
+  contact_email: '',
+  contact_phone: '',
+};
 
 const getCurrencyFromTotal = (valString: string) => {
   const clean = (valString || '').trim().toUpperCase();
@@ -304,7 +363,10 @@ const ProposalEditor: React.FC = () => {
   const handleApplyImport = () => {
     if (!extractedData) return;
 
-    if (extractedData.client_name) setClientName(extractedData.client_name);
+    if (extractedData.client_name) {
+      setClientName(extractedData.client_name);
+      setClientLegalData(prev => ({ ...prev, company_name: extractedData.client_name }));
+    }
     if (extractedData.hero_title) setHeroTitle(extractedData.hero_title);
     if (extractedData.hero_badge) setHeroBadge(extractedData.hero_badge);
     if (extractedData.description) setDescription(extractedData.description);
@@ -343,6 +405,16 @@ const ProposalEditor: React.FC = () => {
   // Main proposal fields
   const [slug, setSlug] = useState('');
   const [clientName, setClientName] = useState('');
+  const [clientLegalData, setClientLegalData] = useState<ClientLegalData>(DEFAULT_CLIENT_LEGAL_DATA);
+
+  const updateClientLegalData = (field: keyof ClientLegalData, value: string) => {
+    setClientLegalData((prev) => ({ ...prev, [field]: value }));
+    if (field === 'company_name') {
+      setClientName(value);
+      if (isNew) setSlug(generateSlug(value));
+    }
+  };
+
   const [date, setDate] = useState('Marzo 2026');
   const [location, setLocation] = useState('Buenos Aires, Argentina');
   const [description, setDescription] = useState('');
@@ -350,7 +422,17 @@ const ProposalEditor: React.FC = () => {
   const [brandPrimary, setBrandPrimary] = useState('#ff007f');
   const [brandSecondary, setBrandSecondary] = useState('#9d00ff');
   const [clientLogoUrl, setClientLogoUrl] = useState('');
+  const [clientLogoScale, setClientLogoScale] = useState<number>(100);
   const [status, setStatus] = useState<'draft' | 'published' | 'signed'>('draft');
+
+  const updateLogoScale = (newScale: number) => {
+    const scale = Math.min(250, Math.max(30, newScale));
+    setClientLogoScale(scale);
+    setMethodology((prev: any) => ({
+      ...(prev || DEFAULT_METHODOLOGY),
+      client_logo_scale: scale,
+    }));
+  };
   const [contractText, setContractText] = useState('');
   const [contractDescription, setContractDescription] = useState('Acuerdo formal que establece las bases y condiciones legales para la ejecución del proyecto de desarrollo de software detallado en esta propuesta.');
   const [heroBadge, setHeroBadge] = useState('');
@@ -366,7 +448,7 @@ const ProposalEditor: React.FC = () => {
   const [weeklyBreakdown, setWeeklyBreakdown] = useState<any[]>(DEFAULT_WEEKLY_BREAKDOWN);
   const [methodology, setMethodology] = useState<any>(DEFAULT_METHODOLOGY);
 
-  const updateMethodologyField = (key: string, value: string) => {
+  const updateMethodologyField = (key: string, value: any) => {
     setMethodology((prev: any) => ({
       ...(prev || DEFAULT_METHODOLOGY),
       [key]: value
@@ -397,10 +479,253 @@ const ProposalEditor: React.FC = () => {
   };
 
 
+  // Proposal Type and Service Contract state
+  const [searchParams] = useSearchParams();
+  const initialTypeFromUrl = searchParams.get('type') === 'service' ? 'service' : 'project';
+  const initialProductFromUrl = (searchParams.get('product') as CreappProductId) || 'stacked';
+  const [proposalType, setProposalType] = useState<'project' | 'service'>(initialTypeFromUrl);
+  const [selectedProductId, setSelectedProductId] = useState<CreappProductId>(initialProductFromUrl);
+  const [serviceDetails, setServiceDetails] = useState<ServiceDetails>(() => {
+    const p = getCreappProductPreset(initialProductFromUrl);
+    return p.default_service_details;
+  });
+
+  const updateServiceDetailField = (key: keyof ServiceDetails, value: any) => {
+    setServiceDetails((prev) => ({
+      ...prev,
+      [key]: value,
+      ...(key === 'min_term_months' ? { minimum_commitment: value } : {}),
+      ...(key === 'minimum_commitment' as any ? { min_term_months: value } : {}),
+    }));
+    if (key === 'recurring_fee') {
+      setTotalValue(value);
+    }
+  };
+
+  const handleUpdateTotalValue = (value: string) => {
+    setTotalValue(value);
+    if (proposalType === 'service') {
+      setServiceDetails((prev) => ({
+        ...prev,
+        recurring_fee: value,
+      }));
+    }
+  };
+
+  const updateServiceLimitField = (limitKey: string, value: string) => {
+    setServiceDetails((prev) => ({
+      ...prev,
+      limits: {
+        ...(prev.limits || {}),
+        [limitKey]: value,
+      },
+    }));
+  };
+
+  // Enhanced Contract Editor state and helpers
+  const [contractViewMode, setContractViewMode] = useState<'clauses' | 'full' | 'preview'>('clauses');
+  const [expandedClauseId, setExpandedClauseId] = useState<number | null>(null);
+  const [copiedVar, setCopiedVar] = useState<string | null>(null);
+  const contractTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Helper to split contract into parsed clauses
+  const parsedContract = React.useMemo(() => {
+    if (!contractText) return null;
+    const clauseRegex = /\n\n(?=(?:PRIMERA|SEGUNDA|TERCERA|CUARTA|QUINTA|SEXTA|SÉPTIMA|OCTAVA|NOVENA|DÉCIMA):)/i;
+    const parts = contractText.split(clauseRegex);
+    if (parts.length <= 1) return null;
+
+    const header = parts[0].trim();
+    const clauses = parts.slice(1).map((raw, idx) => {
+      const trimmed = raw.trim();
+      const firstLineEnd = trimmed.indexOf('\n');
+      let titleLine = '';
+      let content = '';
+
+      if (firstLineEnd !== -1) {
+        titleLine = trimmed.substring(0, firstLineEnd).trim();
+        content = trimmed.substring(firstLineEnd + 1).trim();
+      } else {
+        titleLine = trimmed;
+        content = '';
+      }
+
+      // Detect clause type
+      const upper = titleLine.toUpperCase();
+      let icon = '📜';
+      let tag = 'General';
+      if (upper.includes('OBJETO') || upper.includes('LICENCIA')) {
+        icon = '💻';
+        tag = 'Objeto & Licencia';
+      } else if (upper.includes('ECONÓMICA') || upper.includes('PAGO') || upper.includes('CONDICIONES')) {
+        icon = '💳';
+        tag = 'Precio & Pagos';
+      } else if (upper.includes('SLA') || upper.includes('DISPONIBILIDAD') || upper.includes('TELEMETRÍA')) {
+        icon = '⚡';
+        tag = 'SLA & Uptime';
+      } else if (upper.includes('SOPORTE') || upper.includes('INCIDENCIAS')) {
+        icon = '🛠️';
+        tag = 'Soporte Técnico';
+      } else if (upper.includes('CONFIDENCIAL') || upper.includes('DATOS') || upper.includes('SALUD') || upper.includes('CUSTODIA')) {
+        icon = '🔒';
+        tag = 'Privacidad & Datos';
+      } else if (upper.includes('VIGENCIA') || upper.includes('RESCISIÓN') || upper.includes('PLAZO')) {
+        icon = '⏳';
+        tag = 'Vigencia & Baja';
+      } else if (upper.includes('RESPONSABILIDAD') || upper.includes('JURISDICCIÓN') || upper.includes('REGULATORIA')) {
+        icon = '⚖️';
+        tag = 'Legal & Fuero';
+      } else if (upper.includes('INTEGRACIONES') || upper.includes('META') || upper.includes('MERCADO PAGO')) {
+        icon = '🔌';
+        tag = 'Integraciones';
+      }
+
+      return {
+        id: idx,
+        title: titleLine,
+        content,
+        icon,
+        tag
+      };
+    });
+
+    return { header, clauses };
+  }, [contractText]);
+
+  const handleUpdateClause = (clauseIndex: number, newContent: string) => {
+    if (!parsedContract) return;
+    const updatedClauses = [...parsedContract.clauses];
+    updatedClauses[clauseIndex] = {
+      ...updatedClauses[clauseIndex],
+      content: newContent
+    };
+    const newContractText = `${parsedContract.header}\n\n` + 
+      updatedClauses.map(c => `${c.title}\n${c.content}`).join('\n\n');
+    setContractText(newContractText);
+  };
+
+  const handleUpdateContractHeader = (newHeader: string) => {
+    if (!parsedContract) {
+      setContractText(newHeader);
+      return;
+    }
+    const newContractText = `${newHeader.trim()}\n\n` + 
+      parsedContract.clauses.map(c => `${c.title}\n${c.content}`).join('\n\n');
+    setContractText(newContractText);
+  };
+
+  const insertVariableIntoContract = (varTag: string) => {
+    const el = contractTextareaRef.current;
+    if (!el) {
+      setContractText(prev => (prev ? `${prev} ${varTag}` : varTag));
+      setCopiedVar(varTag);
+      setTimeout(() => setCopiedVar(null), 1500);
+      return;
+    }
+    const start = el.selectionStart ?? el.value.length;
+    const end = el.selectionEnd ?? el.value.length;
+    const val = el.value;
+    const updated = val.substring(0, start) + varTag + val.substring(end);
+    setContractText(updated);
+    setCopiedVar(varTag);
+    setTimeout(() => {
+      setCopiedVar(null);
+      el.focus();
+      el.setSelectionRange(start + varTag.length, start + varTag.length);
+    }, 20);
+  };
+
+  const handleApplyProductPreset = (productId: CreappProductId) => {
+    const preset = getCreappProductPreset(productId);
+    setSelectedProductId(productId);
+    setProposalType('service');
+    setBrandPrimary(preset.brand_color_primary);
+    setBrandSecondary(preset.brand_color_secondary);
+    setHeroBadge(preset.hero_badge);
+    setHeroTitle(preset.hero_title);
+    setContractDescription(preset.contract_description);
+    setContractText(preset.contract_template);
+    setClientLogoUrl(preset.logo_url);
+    setServiceDetails(preset.default_service_details);
+    if (preset.default_service_details.recurring_fee) {
+      setTotalValue(preset.default_service_details.recurring_fee);
+    }
+    setDescription(preset.contract_description);
+
+    setMethodology((prev: any) => ({
+      ...(prev || DEFAULT_METHODOLOGY),
+      proposal_type: 'service',
+      product_id: productId,
+      hidden_pages: ['alcance', 'hitos', 'sem1-6', 'sem9-16', 'metodologia'],
+    }));
+
+    if (productId === 'stacked') {
+      setInclusions([
+        { title: 'Licencia SaaS Stacked', description: 'Acceso a la plataforma cloud 24/7.', tooltip: 'Licencia multiusuario para gestión gastronómica integral.', icon_name: 'Box' },
+        { title: 'KDS & Comanderas en Vivo', description: 'Gestión de cocina y salón sincronizados.', tooltip: 'Control en tiempo real de estados de preparación y despacho.', icon_name: 'Layers' },
+        { title: 'SLA Uptime 99.5%', description: 'Alta disponibilidad garantizada.', tooltip: 'Infraestructura redundante con monitorización continua.', icon_name: 'ShieldCheck' },
+        { title: 'Soporte WhatsApp Prioritario', description: 'Canal directo para incidentes en servicio.', tooltip: 'Respuesta P1 en menos de 2 horas para incidencias operativas.', icon_name: 'MessageSquare' }
+      ]);
+      setExclusions([
+        { title: 'Hardware físico en comodato', tooltip: 'Tablets, impresoras térmicas y dispositivos de red son provistos o adquiridos por el cliente.' },
+        { title: 'Desarrollos fuera de roadmap', tooltip: 'Nuevas funcionalidades complejas o custom se cotizan por separado vía Change Requests.' }
+      ]);
+    } else if (productId === 'trazapp') {
+      setInclusions([
+        { title: 'Licencia SaaS Trazapp', description: 'Acceso cloud para gestión agronómica.', tooltip: 'Trazabilidad genealógica, lotes, fenotipos y plantas.', icon_name: 'Box' },
+        { title: 'Telemetría IoT & Sensores', description: 'Monitoreo ambiental de salas 24/7.', tooltip: 'Registro de temperatura, humedad, VPD y fotoperiodo en tiempo real.', icon_name: 'Activity' },
+        { title: 'Dispensario & Reprocann', description: 'Control de socios y pesajes auditables.', tooltip: 'Cumplimiento normativo y resguardo histórico de movimientos.', icon_name: 'ShieldCheck' },
+        { title: 'SLA & Soporte Agrotech', description: 'Guardias de respuesta rápida P1 < 2hs.', tooltip: 'Atención directa con ingenieros de CreAPP Software Lab.', icon_name: 'MessageSquare' }
+      ]);
+      setExclusions([
+        { title: 'Sensores y hardware IoT en campo', tooltip: 'Los sensores físicos y microcontroladores se adquieren e instalan según las dimensiones del predio.' },
+        { title: 'Asesoría legal/médica externa', tooltip: 'CreAPP provee la plataforma tecnológica; la responsabilidad legal de la actividad recae en el club/titular.' }
+      ]);
+    } else if (productId === 'dental-ia') {
+      setInclusions([
+        { title: 'Licencia SaaS Dental-IA', description: 'Sistema operativo clínico y agenda.', tooltip: 'Turnero público online con cobro de señas Mercado Pago 0% comisión Dental-IA.', icon_name: 'Box' },
+        { title: 'Agente IA WhatsApp 24/7', description: 'Atención oficial en Meta Cloud API.', tooltip: 'Responde preguntas, agenda turnos y envía recordatorios automáticos sin intervención humana.', icon_name: 'Bot' },
+        { title: 'Odontograma FDI 32 Piezas', description: 'Odontograma multicapa de alta precisión.', tooltip: '5 caras por diente, catálogo de tratamientos codificados y presupuestos instantáneos.', icon_name: 'Layers' },
+        { title: 'Historia Clínica & Radiografías', description: 'Almacenamiento cloud encriptado.', tooltip: 'Guarda tomografías, fotografías intraorales y consentimientos digitales seguros.', icon_name: 'Database' }
+      ]);
+      setExclusions([
+        { title: 'Consumos de WhatsApp Meta Cloud API', tooltip: 'Las tarifas por conversación de Meta se liquidan directo entre Meta y la clínica sin intermediación.' },
+        { title: 'Equipamiento odontológico físico', tooltip: 'Sillones, compresores y radiovisiógrafos físicos son provistos por la clínica.' }
+      ]);
+    }
+  };
+
+  const handleSelectProposalType = (type: 'project' | 'service') => {
+    setProposalType(type);
+    if (type === 'service') {
+      handleApplyProductPreset(selectedProductId || 'stacked');
+      if (activeEditorTab !== 'config' && activeEditorTab !== 'portada' && activeEditorTab !== 'legal') {
+        setActiveEditorTab('legal');
+      }
+    } else {
+      setMethodology((prev: any) => ({
+        ...(prev || DEFAULT_METHODOLOGY),
+        proposal_type: 'project',
+        hidden_pages: [],
+      }));
+      if (!contractText || contractText.includes('PLATAFORMA STACKED') || contractText.includes('PLATAFORMA TRAZAPP') || contractText.includes('PLATAFORMA DENTAL-IA')) {
+        setContractText(DEVELOPMENT_CONTRACT_TEMPLATE);
+        setContractDescription(DEVELOPMENT_CONTRACT_DESCRIPTION);
+      }
+    }
+  };
+
   // Tab navigation state
-  type EditorTab = 'config' | 'portada' | 'alcance' | 'hitos' | 'sem1-6' | 'sem9-16' | 'metodologia' | 'legal' | 'video';
+  type EditorTab = 'config' | 'portada' | 'alcance' | 'hitos' | 'sem1-6' | 'sem9-16' | 'metodologia' | 'legal' | 'legal2' | 'video';
   const [activeEditorTab, setActiveEditorTab] = useState<EditorTab>('config');
   const [zoom, setZoom] = useState<number>(0.6);
+
+  // Initialize service defaults if creating a new service contract
+  useEffect(() => {
+    if (isNew && searchParams.get('type') === 'service') {
+      handleApplyProductPreset(initialProductFromUrl);
+    }
+  }, [isNew, searchParams]);
 
   useEffect(() => {
     if (showToast) {
@@ -450,8 +775,48 @@ const ProposalEditor: React.FC = () => {
       }
       if (proposal.methodology) {
         setMethodology(proposal.methodology);
+        if (proposal.methodology.client_logo_scale !== undefined) {
+          setClientLogoScale(Number(proposal.methodology.client_logo_scale) || 100);
+        }
+        if (proposal.methodology.client_legal_data) {
+          setClientLegalData({
+            ...DEFAULT_CLIENT_LEGAL_DATA,
+            ...proposal.methodology.client_legal_data,
+            company_name: proposal.methodology.client_legal_data.company_name || proposal.client_name || '',
+          });
+        } else {
+          setClientLegalData({
+            ...DEFAULT_CLIENT_LEGAL_DATA,
+            company_name: proposal.client_name || '',
+          });
+        }
       } else {
         setMethodology(DEFAULT_METHODOLOGY);
+        setClientLogoScale(100);
+        setClientLegalData({
+          ...DEFAULT_CLIENT_LEGAL_DATA,
+          company_name: proposal.client_name || '',
+        });
+      }
+
+      const loadedType = (proposal.proposal_type || proposal.methodology?.proposal_type || 'project') as 'project' | 'service';
+      setProposalType(loadedType);
+      if (proposal.methodology?.service_details) {
+        const rawSD = proposal.methodology.service_details;
+        const fee = (proposal.total_value && proposal.total_value !== '$350 USD / mes')
+          ? proposal.total_value
+          : (rawSD.recurring_fee || proposal.total_value || '');
+        setServiceDetails({
+          ...rawSD,
+          recurring_fee: fee,
+        });
+        if (fee) setTotalValue(fee);
+      } else {
+        setServiceDetails(DEFAULT_SERVICE_DETAILS);
+        if (proposal.total_value) setTotalValue(proposal.total_value);
+      }
+      if (proposal.methodology?.product_id) {
+        setSelectedProductId(proposal.methodology.product_id);
       }
 
       const [inc, exc, mil, pay, opt, infra] = await Promise.all([
@@ -539,6 +904,11 @@ const ProposalEditor: React.FC = () => {
           payments,
           totalValue: parseFloat(totalValue.replace(/[^0-9.]/g, '')) || 0,
           clientLogoUrl,
+          clientLogoScale,
+          currency: getCurrencyFromTotal(totalValue),
+          pillars: getPillars(methodology, brandPrimary, brandSecondary),
+          methodologyIntro: methodology?.intro_text,
+          hideWeeklySchedule: methodology?.hide_weekly_schedule,
           aspectRatio: ratio,
         }),
       });
@@ -547,7 +917,7 @@ const ProposalEditor: React.FC = () => {
 
       if (!response.ok) {
         const errData = await response.json();
-        throw new Error(errData.error || 'Fallo en la compilación del video.');
+        throw new Error(errData.details ? `${errData.error}: ${errData.details}` : (errData.error || 'Fallo en la compilación del video.'));
       }
 
       const data = await response.json();
@@ -555,8 +925,6 @@ const ProposalEditor: React.FC = () => {
 
       const link = document.createElement('a');
       link.href = data.videoUrl;
-      const suffix = isVertical ? 'vertical' : 'horizontal';
-      link.setAttribute('download', `propuesta-${suffix}-${clientName.toLowerCase().replace(/\s+/g, '-')}.mp4`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -603,13 +971,20 @@ const ProposalEditor: React.FC = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
+      const finalClientName = clientLegalData.company_name?.trim() || clientName;
+      const finalFee = (totalValue || serviceDetails?.recurring_fee || '').trim();
+      const finalServiceDetails = proposalType === 'service' ? {
+        ...serviceDetails,
+        recurring_fee: finalFee || serviceDetails?.recurring_fee,
+      } : serviceDetails;
+
       const proposalData = {
-        slug: slug || generateSlug(clientName),
-        client_name: clientName,
+        slug: slug || generateSlug(finalClientName),
+        client_name: finalClientName,
         date,
         location,
         description,
-        total_value: totalValue,
+        total_value: proposalType === 'service' ? (finalFee || totalValue) : totalValue,
         brand_color_primary: brandPrimary,
         brand_color_secondary: brandSecondary,
         client_logo_url: clientLogoUrl || null,
@@ -620,7 +995,14 @@ const ProposalEditor: React.FC = () => {
         hero_badge: heroBadge || null,
         hero_title: heroTitle || null,
         weekly_breakdown: weeklyBreakdown.length > 0 ? weeklyBreakdown : null,
-        methodology: methodology || null,
+        methodology: {
+          ...(methodology || DEFAULT_METHODOLOGY),
+          client_logo_scale: clientLogoScale,
+          proposal_type: proposalType,
+          service_details: finalServiceDetails,
+          product_id: selectedProductId,
+          client_legal_data: clientLegalData,
+        },
       };
 
       let proposalId = id;
@@ -678,8 +1060,40 @@ const ProposalEditor: React.FC = () => {
     <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
       <div style={{ position: 'absolute', top: '0', left: '0', right: '0', height: '8px', background: `linear-gradient(to right, ${brandPrimary}, ${brandSecondary})` }}></div>
       <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', flexGrow: 1, gap: '65px', marginTop: '20px', textAlign: 'center' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', alignItems: 'center' }}>
-          <img src={creappLogoOfficial} alt="CreAPP Logo" style={{ height: '105px', objectFit: 'contain' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '30px', justifyContent: 'center', minHeight: '110px' }}>
+          {proposalType === 'service' ? (
+            clientLogoUrl && (
+              <img
+                src={clientLogoUrl}
+                alt={heroTitle || "Logo Producto"}
+                style={{
+                  height: `${125 * (clientLogoScale / 100)}px`,
+                  maxHeight: '170px',
+                  maxWidth: '320px',
+                  objectFit: 'contain'
+                }}
+              />
+            )
+          ) : (
+            <>
+              <img src={creappLogoOfficial} alt="CreAPP Logo" style={{ height: '105px', objectFit: 'contain' }} />
+              {clientLogoUrl && (
+                <>
+                  <span style={{ fontSize: '24px', fontWeight: '900', color: '#cbd5e1' }}>✕</span>
+                  <img
+                    src={clientLogoUrl}
+                    alt="Logo Cliente"
+                    style={{
+                      height: `${105 * (clientLogoScale / 100)}px`,
+                      maxHeight: '160px',
+                      maxWidth: '260px',
+                      objectFit: 'contain'
+                    }}
+                  />
+                </>
+              )}
+            </>
+          )}
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <span style={{ fontSize: '12px', fontWeight: '800', color: brandPrimary, letterSpacing: '3px', textTransform: 'uppercase' }}>
@@ -696,7 +1110,10 @@ const ProposalEditor: React.FC = () => {
         <div style={{ display: 'flex', gap: '60px', justifyContent: 'center', width: '100%' }}>
           <div style={{ textAlign: 'center' }}>
             <p style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1.5px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '5px' }}>Preparado para</p>
-            <p style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>{clientName}</p>
+            <p style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>{clientLegalData.company_name || clientName}</p>
+            {clientLegalData.tax_id && (
+              <p style={{ fontSize: '10px', color: '#64748b', fontWeight: '600', marginTop: '2px' }}>CUIT: {clientLegalData.tax_id}</p>
+            )}
           </div>
           <div style={{ textAlign: 'center' }}>
             <p style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1.5px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '5px' }}>Fecha</p>
@@ -852,20 +1269,21 @@ const ProposalEditor: React.FC = () => {
 
   const renderPage3 = () => {
     const currency = getCurrencyFromTotal(totalValue);
+    const isCompact = (milestones && milestones.length >= 4) || (payments && payments.length >= 4);
     return (
       <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '25px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: isCompact ? '15px' : '25px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
             <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
             <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{heroTitle ? heroTitle.toUpperCase() : 'CBKR APP V2'}</span>
           </div>
           <span style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>PROJECT_ROADMAP // 02</span>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: (milestones && milestones.length >= 4) || (payments && payments.length >= 4) ? '10px' : '20px' }}>
-          <h1 style={{ fontSize: '28px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: isCompact ? '8px' : '20px' }}>
+          <h1 style={{ fontSize: isCompact ? '24px' : '28px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
             CRONOGRAMA DE FASES & <span style={{ fontStyle: 'italic', color: brandPrimary }}>ENTREGAS</span>
           </h1>
-          <p style={{ fontSize: '11px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
+          <p style={{ fontSize: isCompact ? '10px' : '11px', color: '#475569', lineHeight: '1.35', fontWeight: '300', margin: '0' }}>
             {(() => {
               const meth = methodology || DEFAULT_METHODOLOGY;
               const text = meth.phases_intro ?? DEFAULT_METHODOLOGY.phases_intro;
@@ -879,50 +1297,52 @@ const ProposalEditor: React.FC = () => {
               return text;
             })()}
           </p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: '5px', marginBottom: '2px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: '2px', marginBottom: '2px' }}>
             <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Estructura de Sprints Mensuales</span>
             <div style={{ flexGrow: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: milestones && milestones.length >= 4 ? '10px' : '15px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: isCompact ? '6px' : '15px' }}>
             {milestones && milestones.map((m, i) => (
-              <div key={m.id || i} style={{ display: 'flex', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', minHeight: milestones && milestones.length >= 4 ? '76px' : '95px', boxSizing: 'border-box' }}>
-                <div style={{ width: '80px', flexShrink: 0, flexGrow: 0, backgroundColor: '#000000', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: '#ffffff', gap: '4px', boxSizing: 'border-box' }}>
-                  <span style={{ fontSize: '9px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.8 }}>Fase</span>
-                  <span style={{ fontSize: '20px', fontWeight: '950' }}>{i + 1}</span>
+              <div key={m.id || i} style={{ display: 'flex', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', minHeight: isCompact ? '68px' : '95px', boxSizing: 'border-box' }}>
+                <div style={{ width: isCompact ? '65px' : '80px', flexShrink: 0, flexGrow: 0, backgroundColor: '#000000', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: '#ffffff', gap: '2px', boxSizing: 'border-box' }}>
+                  <span style={{ fontSize: '8px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.8 }}>Fase</span>
+                  <span style={{ fontSize: isCompact ? '16px' : '20px', fontWeight: '950' }}>{i + 1}</span>
                 </div>
-                <div style={{ flexGrow: 1, flexShrink: 1, minWidth: 0, padding: milestones && milestones.length >= 4 ? '10px 15px' : '15px 20px', display: 'flex', flexDirection: 'column', gap: '4px', justifyContent: 'center', boxSizing: 'border-box' }}>
-                  <h4 style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', margin: '0', textTransform: 'uppercase' }}>{m.title}</h4>
-                  <p style={{ fontSize: '10px', color: '#475569', lineHeight: '1.3', margin: '0', fontWeight: '300' }}>
+                <div style={{ flexGrow: 1, flexShrink: 1, minWidth: 0, padding: isCompact ? '6px 12px' : '15px 20px', display: 'flex', flexDirection: 'column', gap: '3px', justifyContent: 'center', boxSizing: 'border-box' }}>
+                  <h4 style={{ fontSize: isCompact ? '11px' : '12px', fontWeight: '900', color: '#0f172a', margin: '0', textTransform: 'uppercase' }}>{m.title}</h4>
+                  <p style={{ fontSize: isCompact ? '9px' : '10px', color: '#475569', lineHeight: '1.2', margin: '0', fontWeight: '300' }}>
                     {m.description || 'Sin descripción de entregables.'}
                   </p>
                 </div>
-                <div style={{ width: '120px', flexShrink: 0, flexGrow: 0, borderLeft: '1px solid #e2e8f0', padding: '10px 15px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '4px', backgroundColor: '#fafafa', boxSizing: 'border-box' }}>
+                <div style={{ width: isCompact ? '105px' : '120px', flexShrink: 0, flexGrow: 0, borderLeft: '1px solid #e2e8f0', padding: isCompact ? '6px 10px' : '15px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '2px', backgroundColor: '#fafafa', boxSizing: 'border-box' }}>
                   <span style={{ fontSize: '7px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Hito Control</span>
-                  <span style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', textAlign: 'center', lineHeight: '1.1' }}>
+                  <span style={{ fontSize: isCompact ? '9px' : '10px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', textAlign: 'center', lineHeight: '1.1' }}>
                     {m.control_milestone || 'VERIFICACIÓN'}
                   </span>
                 </div>
-                <div style={{ width: '120px', flexShrink: 0, flexGrow: 0, borderLeft: '1px solid #e2e8f0', padding: '10px 15px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '4px', backgroundColor: '#fafafa', boxSizing: 'border-box' }}>
-                  <span style={{ fontSize: '7px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Inversión</span>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}>
-                    <span style={{ fontSize: '14px', fontWeight: '950', color: '#000000', lineHeight: '1.1' }}>${m.price || '0'}</span>
-                    <span style={{ fontSize: '8px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', lineHeight: '1.1' }}>{currency}</span>
+                {!methodology?.hide_milestone_prices && (
+                  <div style={{ width: isCompact ? '105px' : '120px', flexShrink: 0, flexGrow: 0, borderLeft: '1px solid #e2e8f0', padding: isCompact ? '6px 10px' : '15px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '2px', backgroundColor: '#fafafa', boxSizing: 'border-box' }}>
+                    <span style={{ fontSize: '7px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Inversión</span>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}>
+                      <span style={{ fontSize: isCompact ? '13px' : '14px', fontWeight: '950', color: '#000000', lineHeight: '1.1' }}>${m.price || '0'}</span>
+                      <span style={{ fontSize: '8px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', lineHeight: '1.1' }}>{currency}</span>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             ))}
           </div>
 
           {infrastructureCosts && infrastructureCosts.length > 0 && (
             <div style={{ marginTop: '2px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '6px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '4px' }}>
                 <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Costos de Infraestructura Asociados</span>
                 <div style={{ flexGrow: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
               </div>
-              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 {infrastructureCosts.map((infra, idx) => (
-                  <div key={idx} style={{ flex: '1 1 180px', padding: '6px 12px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '9px' }}>
+                  <div key={idx} style={{ flex: '1 1 180px', padding: '5px 10px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '9px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                       <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{infra.provider}</span>
                       {infra.is_optional && (
@@ -943,16 +1363,16 @@ const ProposalEditor: React.FC = () => {
                 <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Esquema de Pagos / Hitos de Financiamiento</span>
                 <div style={{ flexGrow: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
               </div>
-              <div style={{ display: 'flex', gap: payments.length > 3 ? '6px' : '10px', flexWrap: 'nowrap', width: '100%' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${payments.length}, minmax(0, 1fr))`, gap: payments.length > 3 ? '8px' : '10px', width: '100%' }}>
                 {payments.map((p, idx) => (
-                  <div key={idx} style={{ flex: '1 1 0px', minWidth: '0px', padding: payments.length > 3 ? '6px 8px' : '8px 12px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '3px', boxSizing: 'border-box' }}>
+                  <div key={idx} style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: payments.length > 3 ? '8px 10px' : '10px 12px', display: 'flex', flexDirection: 'column', gap: '4px', boxSizing: 'border-box' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '4px' }}>
                       <span style={{ fontSize: payments.length > 3 ? '8.5px' : '9px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', lineHeight: '1.2' }}>{p.label}</span>
                       <span style={{ fontSize: payments.length > 3 ? '11px' : '12px', fontWeight: '950', color: brandPrimary, flexShrink: 0 }}>{p.percentage}</span>
                     </div>
-                    <span style={{ fontSize: payments.length > 3 ? '8px' : '9px', color: '#475569', fontWeight: '300', lineHeight: '1.25' }}>{p.description}</span>
+                    <span style={{ fontSize: payments.length > 3 ? '8px' : '9px', color: '#475569', fontWeight: '300', lineHeight: '1.3' }}>{p.description}</span>
                     {p.tooltip && (
-                      <span style={{ fontSize: payments.length > 3 ? '7.5px' : '8px', color: '#94a3b8', fontStyle: 'italic', lineHeight: '1.2', marginTop: '1px' }}>{p.tooltip}</span>
+                      <span style={{ fontSize: payments.length > 3 ? '7.5px' : '8px', color: '#94a3b8', fontStyle: 'italic', lineHeight: '1.3', marginTop: '2px' }}>{p.tooltip}</span>
                     )}
                   </div>
                 ))}
@@ -1104,60 +1524,72 @@ const ProposalEditor: React.FC = () => {
           <p style={{ fontSize: '11px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
             {meth.intro_text || DEFAULT_METHODOLOGY.intro_text}
           </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '5px' }}>
-            <div style={{ padding: '20px', borderRadius: '12px', backgroundColor: '#faf5ff', border: '1px solid #f3e8ff' }}>
-              <h4 style={{ fontSize: '10px', fontWeight: '900', color: brandPrimary, margin: '0 0 6px 0', letterSpacing: '1.5px', textTransform: 'uppercase' }}>
-                {meth.incremental_title || DEFAULT_METHODOLOGY.incremental_title}
-              </h4>
-              <p style={{ fontSize: '11px', color: '#581c87', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
-                {clientNameReplacer(meth.incremental_text || DEFAULT_METHODOLOGY.incremental_text)}
-              </p>
-            </div>
-            <div style={{ padding: '20px', borderRadius: '12px', backgroundColor: '#fdf2f8', border: '1px solid #fce7f3' }}>
-              <h4 style={{ fontSize: '10px', fontWeight: '900', color: brandSecondary, margin: '0 0 6px 0', letterSpacing: '1.5px', textTransform: 'uppercase' }}>
-                {meth.planning_title || DEFAULT_METHODOLOGY.planning_title}
-              </h4>
-              <p style={{ fontSize: '11px', color: '#9d174d', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
-                {clientNameReplacer(meth.planning_text || DEFAULT_METHODOLOGY.planning_text)}
-              </p>
-            </div>
-            <div style={{ padding: '20px', borderRadius: '12px', border: '1px solid #0f172a', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div>
-                <h5 style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0', letterSpacing: '1px', textTransform: 'uppercase' }}>
-                  {meth.schedule_monday_title || DEFAULT_METHODOLOGY.schedule_monday_title}
-                </h5>
-                <h6 style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', margin: '0 0 2px 0', textTransform: 'uppercase' }}>
-                  {meth.schedule_monday_subtitle || DEFAULT_METHODOLOGY.schedule_monday_subtitle}
-                </h6>
-                <p style={{ fontSize: '10px', color: '#475569', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
-                  {clientNameReplacer(meth.schedule_monday_text || DEFAULT_METHODOLOGY.schedule_monday_text)}
-                </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: meth.hide_weekly_schedule ? '16px' : (getPillars(meth, brandPrimary, brandSecondary).length >= 4 ? '10px' : '15px'), marginTop: '5px' }}>
+            {getPillars(meth, brandPrimary, brandSecondary).map((pillar, idx) => {
+              const mainColor = pillar.color || (idx % 2 === 0 ? brandPrimary : brandSecondary);
+              const isCompact = !meth.hide_weekly_schedule && getPillars(meth, brandPrimary, brandSecondary).length >= 4;
+              return (
+                <div
+                  key={pillar.id || idx}
+                  style={{
+                    padding: meth.hide_weekly_schedule ? '18px 22px' : (isCompact ? '12px 16px' : '18px 20px'),
+                    borderRadius: '12px',
+                    backgroundColor: `${mainColor}0A`,
+                    border: `1px solid ${mainColor}33`,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px'
+                  }}
+                >
+                  <h4 style={{ fontSize: '10px', fontWeight: '900', color: mainColor, margin: '0', letterSpacing: '1.5px', textTransform: 'uppercase' }}>
+                    {pillar.title}
+                  </h4>
+                  <p style={{ fontSize: meth.hide_weekly_schedule ? '11px' : (isCompact ? '10px' : '11px'), color: '#475569', lineHeight: '1.5', margin: '0', fontWeight: '300' }}>
+                    {clientNameReplacer(pillar.description)}
+                  </p>
+                </div>
+              );
+            })}
+
+            {!meth.hide_weekly_schedule && (
+              <div style={{ padding: '20px', borderRadius: '12px', border: '1px solid #0f172a', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div>
+                  <h5 style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                    {meth.schedule_monday_title || DEFAULT_METHODOLOGY.schedule_monday_title}
+                  </h5>
+                  <h6 style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', margin: '0 0 2px 0', textTransform: 'uppercase' }}>
+                    {meth.schedule_monday_subtitle || DEFAULT_METHODOLOGY.schedule_monday_subtitle}
+                  </h6>
+                  <p style={{ fontSize: '10px', color: '#475569', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
+                    {clientNameReplacer(meth.schedule_monday_text || DEFAULT_METHODOLOGY.schedule_monday_text)}
+                  </p>
+                </div>
+                <div style={{ height: '1px', backgroundColor: '#e2e8f0' }}></div>
+                <div>
+                  <h5 style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                    {meth.schedule_tuesday_title || DEFAULT_METHODOLOGY.schedule_tuesday_title}
+                  </h5>
+                  <h6 style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', margin: '0 0 2px 0', textTransform: 'uppercase' }}>
+                    {meth.schedule_tuesday_subtitle || DEFAULT_METHODOLOGY.schedule_tuesday_subtitle}
+                  </h6>
+                  <p style={{ fontSize: '10px', color: '#475569', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
+                    {clientNameReplacer(meth.schedule_tuesday_text || DEFAULT_METHODOLOGY.schedule_tuesday_text)}
+                  </p>
+                </div>
+                <div style={{ height: '1px', backgroundColor: '#e2e8f0' }}></div>
+                <div>
+                  <h5 style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                    {meth.schedule_friday_title || DEFAULT_METHODOLOGY.schedule_friday_title}
+                  </h5>
+                  <h6 style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', margin: '0 0 2px 0', textTransform: 'uppercase' }}>
+                    {meth.schedule_friday_subtitle || DEFAULT_METHODOLOGY.schedule_friday_subtitle}
+                  </h6>
+                  <p style={{ fontSize: '10px', color: '#475569', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
+                    {clientNameReplacer(meth.schedule_friday_text || DEFAULT_METHODOLOGY.schedule_friday_text)}
+                  </p>
+                </div>
               </div>
-              <div style={{ height: '1px', backgroundColor: '#e2e8f0' }}></div>
-              <div>
-                <h5 style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0', letterSpacing: '1px', textTransform: 'uppercase' }}>
-                  {meth.schedule_tuesday_title || DEFAULT_METHODOLOGY.schedule_tuesday_title}
-                </h5>
-                <h6 style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', margin: '0 0 2px 0', textTransform: 'uppercase' }}>
-                  {meth.schedule_tuesday_subtitle || DEFAULT_METHODOLOGY.schedule_tuesday_subtitle}
-                </h6>
-                <p style={{ fontSize: '10px', color: '#475569', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
-                  {clientNameReplacer(meth.schedule_tuesday_text || DEFAULT_METHODOLOGY.schedule_tuesday_text)}
-                </p>
-              </div>
-              <div style={{ height: '1px', backgroundColor: '#e2e8f0' }}></div>
-              <div>
-                <h5 style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0', letterSpacing: '1px', textTransform: 'uppercase' }}>
-                  {meth.schedule_friday_title || DEFAULT_METHODOLOGY.schedule_friday_title}
-                </h5>
-                <h6 style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', margin: '0 0 2px 0', textTransform: 'uppercase' }}>
-                  {meth.schedule_friday_subtitle || DEFAULT_METHODOLOGY.schedule_friday_subtitle}
-                </h6>
-                <p style={{ fontSize: '10px', color: '#475569', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
-                  {clientNameReplacer(meth.schedule_friday_text || DEFAULT_METHODOLOGY.schedule_friday_text)}
-                </p>
-              </div>
-            </div>
+            )}
           </div>
         </div>
         <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
@@ -1168,6 +1600,375 @@ const ProposalEditor: React.FC = () => {
     );
   };
 
+  // =========================================================
+  // HELPER: PROCESAMIENTO INTELIGENTE DEL TEXTO DEL CONTRATO
+  // =========================================================
+  const getProcessedContractText = (rawTemplate: string) => {
+    const isService = proposalType === 'service';
+    const repName = clientLegalData.representative_name?.trim() || '';
+    const repDni = clientLegalData.representative_dni?.trim() || clientLegalData.tax_id?.trim() || '';
+    const repRole = clientLegalData.representative_role?.trim() || '';
+    const company = clientLegalData.company_name?.trim() || clientName || 'EL CLIENTE';
+    const cuit = clientLegalData.tax_id?.trim() || '';
+    const address = clientLegalData.legal_address?.trim() || '';
+    const vigencia = (serviceDetails?.min_term_months || serviceDetails?.minimum_commitment || '6 Meses').trim();
+
+    let template = rawTemplate || '';
+    if (cuit || address) {
+      const extraLegalInfo = [
+        cuit ? `CUIT N° ${cuit}` : '',
+        address ? `con domicilio legal en ${address}` : ''
+      ].filter(Boolean).join(', ');
+
+      template = template.replace(
+        /Por la otra parte,\s*\{client_name\}(?:,)?/i,
+        `Por la otra parte, {client_name} (${extraLegalInfo}),`
+      );
+    }
+
+    return template
+      .replace(/\{location\}/g, location || 'Buenos Aires, Argentina')
+      .replace(/\{date\}/g, date || 'Fecha')
+      .replace(/\{client_name\}/g, company)
+      .replace(/\{client_cuit\}/g, cuit)
+      .replace(/\{client_address\}/g, address)
+      .replace(/\{client_representative\}/g, repName || '________________________')
+      .replace(/\{client_representative_dni\}/g, repDni || '________________________')
+      .replace(/\{client_representative_role\}/g, repRole || 'Representante Legal')
+      .replace(/\{total_value\}/g, totalValue || serviceDetails?.recurring_fee || '$350 USD / mes')
+      .replace(/\{recurring_fee\}/g, totalValue || serviceDetails?.recurring_fee || '$350 USD / mes')
+      .replace(/\{setup_fee\}/g, serviceDetails?.setup_fee || '$0')
+      .replace(/\{plan_name\}/g, serviceDetails?.plan_name || (selectedProductId ? selectedProductId.toUpperCase() : 'Stacked'))
+      .replace(/\{min_term_months\}/g, vigencia)
+      .replace(/\{minimum_commitment\}/g, vigencia)
+      .replace(/\{contract_term\}/g, vigencia)
+      .replace(/\{vigencia\}/g, vigencia)
+      .replace(/vigencia mínima inicial de \d+ \([^\)]+\) meses/gi, `vigencia mínima inicial de ${vigencia}`)
+      .replace(/vigencia mínima inicial de 6 meses/gi, `vigencia mínima inicial de ${vigencia}`)
+      .replace(/plazo inicial de \d+ \([^\)]+\) meses/gi, `plazo inicial de ${vigencia}`)
+      .replace(/período inicial de \d+ \([^\)]+\) meses/gi, `período inicial de ${vigencia}`)
+      .replace(/\[input:Representante Legal\]/g, repName || '________________________')
+      .replace(/\[input:DNI\/CUIT\]/g, repDni || '________________________')
+      .replace(/\[input:DNI\]/g, repDni || '________________________')
+      .replace(/\[input:Cargo del Firmante\]/g, repRole || '________________________')
+      .replace(/\[input:[^\]]+\]/g, '________________________');
+  };
+
+  // =========================================================
+  // RENDER PÁGINA LEGAL 1 (Contrato de Servicios - Cláusulas 1 a 3)
+  // =========================================================
+  const renderPageLegalPart1 = () => {
+    const isService = proposalType === 'service';
+    const activeContractTemplate = contractText || (isService ? getCreappProductPreset(selectedProductId).contract_template : '');
+    const replacedText = getProcessedContractText(activeContractTemplate);
+
+    // Separar proemio y cláusulas
+    const clauseRegex = /\n\n(?=(?:PRIMERA|SEGUNDA|TERCERA|CUARTA|QUINTA|SEXTA|SÉPTIMA|OCTAVA|NOVENA|DÉCIMA):)/i;
+    const parts = replacedText.split(clauseRegex);
+    const header = parts.length > 1 ? parts[0].trim() : '';
+    const allClauses = parts.slice(1).map(raw => {
+      const trimmed = raw.trim();
+      const firstLineEnd = trimmed.indexOf('\n');
+      if (firstLineEnd !== -1) {
+        return {
+          title: trimmed.substring(0, firstLineEnd).trim(),
+          content: trimmed.substring(firstLineEnd + 1).trim()
+        };
+      }
+      return { title: trimmed, content: '' };
+    });
+
+    // Balanceo equilibrado de 2 páginas:
+    // Pág 1: Cláusulas 1 a 3 (Objeto SaaS, Condiciones Económicas, SLA y Disponibilidad)
+    // Pág 2: Cláusulas 4 a 7 (Soporte Técnico, Confidencialidad, Vigencia y Rescisión, Jurisdicción) + Cuadro de Resumen Ejecutivo + Cierre + Firmas
+    const part1Clauses = allClauses.length > 0 ? allClauses.slice(0, 3) : [];
+
+    return (
+      <div style={{
+        width: '794px',
+        height: '1123px',
+        padding: '38px 65px 35px 65px',
+        display: 'flex',
+        flexDirection: 'column',
+        boxSizing: 'border-box',
+        backgroundColor: '#ffffff',
+        position: 'relative'
+      }}>
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '8px', marginBottom: '14px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', alignItems: 'flex-start' }}>
+            <span style={{ fontSize: '11px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
+            <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>
+              {heroTitle ? heroTitle.toUpperCase() : (selectedProductId ? selectedProductId.toUpperCase() + ' PLATFORM' : 'SOFTWARE LAB')}
+            </span>
+          </div>
+          <span style={{ fontSize: '8.5px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>
+            SERVICE_AGREEMENT // PÁG. 1 DE 2
+          </span>
+        </div>
+
+        {/* Title & Description */}
+        <div style={{ marginBottom: '12px' }}>
+          <h1 style={{ fontSize: '22px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
+            CONTRATO DE SERVICIO & <span style={{ fontStyle: 'italic', color: brandPrimary }}>LICENCIA SAAS</span>
+          </h1>
+          <p style={{ fontSize: '9.5px', color: '#475569', lineHeight: '1.45', fontWeight: '300', margin: '4px 0 0 0' }}>
+            {contractDescription || getCreappProductPreset(selectedProductId).contract_description}
+          </p>
+        </div>
+
+        {/* Proemio / Comparecencia */}
+        {header ? (
+          <div style={{
+            fontSize: '9.5px',
+            color: '#1e293b',
+            lineHeight: '1.55',
+            backgroundColor: '#f8fafc',
+            borderRadius: '10px',
+            border: '1px solid #e2e8f0',
+            padding: '12px 16px',
+            marginBottom: '14px',
+            whiteSpace: 'pre-wrap',
+            fontFamily: 'system-ui, -apple-system, sans-serif'
+          }}>
+            {header}
+          </div>
+        ) : null}
+
+        {/* Cláusulas 1 a 3 */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          {part1Clauses.map((clause, idx) => (
+            <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div style={{
+                fontSize: '10px',
+                fontWeight: '900',
+                color: '#0f172a',
+                letterSpacing: '0.4px',
+                textTransform: 'uppercase',
+                display: 'flex',
+                alignItems: 'baseline',
+                gap: '6px'
+              }}>
+                <span style={{ color: brandPrimary, fontWeight: '900', fontSize: '11px' }}>§</span>
+                <span>{clause.title}</span>
+              </div>
+              <p style={{
+                fontSize: '9.5px',
+                color: '#334155',
+                lineHeight: '1.6',
+                textAlign: 'justify',
+                margin: '0',
+                fontFamily: 'system-ui, -apple-system, sans-serif',
+                fontWeight: '400'
+              }}>
+                {clause.content}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* Footer */}
+        <div style={{ position: 'absolute', bottom: '30px', left: '65px', right: '65px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '12px', fontSize: '9px', color: '#94a3b8' }}>
+          <span>Contrato de Servicio | {clientName}</span>
+          <span>{getPageFooter('legal')}</span>
+        </div>
+      </div>
+    );
+  };
+
+  // =========================================================
+  // RENDER PÁGINA LEGAL 2 (Contrato de Servicios - Cláusulas 4 a 7, Resumen y Firmas)
+  // =========================================================
+  const renderPageLegalPart2 = () => {
+    const isService = proposalType === 'service';
+    const activeContractTemplate = contractText || (isService ? getCreappProductPreset(selectedProductId).contract_template : '');
+    const replacedText = getProcessedContractText(activeContractTemplate);
+
+    // Separar proemio y cláusulas
+    const clauseRegex = /\n\n(?=(?:PRIMERA|SEGUNDA|TERCERA|CUARTA|QUINTA|SEXTA|SÉPTIMA|OCTAVA|NOVENA|DÉCIMA):)/i;
+    const parts = replacedText.split(clauseRegex);
+    const allClauses = parts.slice(1).map(raw => {
+      const trimmed = raw.trim();
+      const firstLineEnd = trimmed.indexOf('\n');
+      if (firstLineEnd !== -1) {
+        return {
+          title: trimmed.substring(0, firstLineEnd).trim(),
+          content: trimmed.substring(firstLineEnd + 1).trim()
+        };
+      }
+      return { title: trimmed, content: '' };
+    });
+
+    // Parte 2 toma a partir de la cláusula 4 (índice 3) en adelante
+    const part2Clauses = allClauses.length > 3 ? allClauses.slice(3) : allClauses.slice(2);
+
+    return (
+      <div style={{
+        width: '794px',
+        height: '1123px',
+        padding: '38px 65px 35px 65px',
+        display: 'flex',
+        flexDirection: 'column',
+        boxSizing: 'border-box',
+        backgroundColor: '#ffffff',
+        position: 'relative'
+      }}>
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '8px', marginBottom: '14px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', alignItems: 'flex-start' }}>
+            <span style={{ fontSize: '11px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
+            <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>
+              {heroTitle ? heroTitle.toUpperCase() : (selectedProductId ? selectedProductId.toUpperCase() + ' PLATFORM' : 'SOFTWARE LAB')}
+            </span>
+          </div>
+          <span style={{ fontSize: '8.5px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>
+            SERVICE_AGREEMENT // PÁG. 2 DE 2
+          </span>
+        </div>
+
+        {/* Title */}
+        <div style={{ marginBottom: '12px' }}>
+          <h1 style={{ fontSize: '22px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
+            TÉRMINOS GENERALES & <span style={{ fontStyle: 'italic', color: brandPrimary }}>FIRMAS</span>
+          </h1>
+          <p style={{ fontSize: '9.5px', color: '#475569', lineHeight: '1.45', fontWeight: '300', margin: '4px 0 0 0' }}>
+            Soporte técnico, confidencialidad de datos, vigencia contractual y suscripción fehaciente.
+          </p>
+        </div>
+
+        {/* Cláusulas 4 a fin */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '11px' }}>
+          {part2Clauses.map((clause, idx) => (
+            <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+              <div style={{
+                fontSize: '9.5px',
+                fontWeight: '900',
+                color: '#0f172a',
+                letterSpacing: '0.4px',
+                textTransform: 'uppercase',
+                display: 'flex',
+                alignItems: 'baseline',
+                gap: '5px'
+              }}>
+                <span style={{ color: brandPrimary, fontWeight: '900', fontSize: '10.5px' }}>§</span>
+                <span>{clause.title}</span>
+              </div>
+              <p style={{
+                fontSize: '9px',
+                color: '#334155',
+                lineHeight: '1.55',
+                textAlign: 'justify',
+                margin: '0',
+                fontFamily: 'system-ui, -apple-system, sans-serif',
+                fontWeight: '400'
+              }}>
+                {clause.content}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* Resumen Ejecutivo del Servicio (Llena de manera profesional y útil el espacio) */}
+        <div style={{
+          marginTop: '12px',
+          padding: '10px 14px',
+          backgroundColor: '#f8fafc',
+          borderRadius: '10px',
+          border: '1px solid #e2e8f0',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: '10px'
+        }}>
+          <div>
+            <span style={{ fontSize: '7.5px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Tarifa Mensual</span>
+            <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a' }}>{totalValue || serviceDetails?.recurring_fee || '$350 USD / mes'}</span>
+          </div>
+          <div>
+            <span style={{ fontSize: '7.5px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Disponibilidad SLA</span>
+            <span style={{ fontSize: '12px', fontWeight: '900', color: '#059669' }}>{serviceDetails?.sla_uptime || '99.5% Uptime'}</span>
+          </div>
+          <div>
+            <span style={{ fontSize: '7.5px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Vigencia Inicial</span>
+            <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a' }}>{serviceDetails?.min_term_months || serviceDetails?.minimum_commitment || '6 Meses'}</span>
+          </div>
+          <div>
+            <span style={{ fontSize: '7.5px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Jurisdicción</span>
+            <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a' }}>{location || 'Buenos Aires, ARG'}</span>
+          </div>
+        </div>
+
+        {/* Cierre Formal */}
+        <div style={{
+          fontSize: '8.5px',
+          color: '#475569',
+          fontStyle: 'italic',
+          lineHeight: '1.45',
+          marginTop: '10px',
+          marginBottom: '12px',
+          paddingTop: '8px',
+          borderTop: '1px solid #e2e8f0'
+        }}>
+          En prueba de conformidad de todas las cláusulas precedentes, las partes suscriben digitalmente el presente contrato de servicios en la fecha y localidad consignadas al comienzo del documento.
+        </div>
+
+        {/* Firmas a 3 columnas */}
+        <div style={{ display: 'flex', gap: '16px' }}>
+          <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+            <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '1px' }}>Por CreAPP Software Lab</p>
+            <div style={{ height: '56px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0', padding: '5px' }}>
+              <img src="/firmaseba.png" alt="Firma Seba" style={{ height: '100%', objectFit: 'contain' }} />
+            </div>
+            <div style={{ fontSize: '9px' }}>
+              <p style={{ fontWeight: '800', color: '#0f172a' }}>Sebastián Maza</p>
+              <p style={{ color: '#64748b', fontSize: '8px' }}>Chief Technology Officer</p>
+            </div>
+          </div>
+          {(methodology?.show_facundo_signature ?? true) && (
+            <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+              <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '1px' }}>Por CreAPP Software Lab</p>
+              <div style={{ height: '56px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1', padding: '5px' }}>
+              </div>
+              <div style={{ fontSize: '9px' }}>
+                <p style={{ fontWeight: '800', color: '#0f172a' }}>Facundo Marceca</p>
+                <p style={{ color: '#64748b', fontSize: '8px' }}>Project Manager</p>
+              </div>
+            </div>
+          )}
+          <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+            <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '1px' }}>
+              Por {clientLegalData.company_name || clientName || 'EL CLIENTE'}
+            </p>
+            <div style={{ height: '56px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1', color: '#94a3b8', fontSize: '9px', textAlign: 'center' }}>
+              Pendiente de Firma
+            </div>
+            <div style={{ fontSize: '9px' }}>
+              <p style={{ fontWeight: '800', color: '#0f172a' }}>
+                {clientLegalData.representative_name || '________________________'}
+              </p>
+              <p style={{ color: '#64748b', fontSize: '8px' }}>
+                {clientLegalData.representative_role || 'Representante Autorizado'}
+              </p>
+              {(clientLegalData.representative_dni || clientLegalData.tax_id) && (
+                <p style={{ color: '#94a3b8', fontSize: '7.5px', marginTop: '1px' }}>
+                  {clientLegalData.representative_dni ? `DNI: ${clientLegalData.representative_dni}` : `CUIT: ${clientLegalData.tax_id}`}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div style={{ position: 'absolute', bottom: '30px', left: '65px', right: '65px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '12px', fontSize: '9px', color: '#94a3b8' }}>
+          <span>Contrato de Servicio | {clientLegalData.company_name || clientName}</span>
+          <span>{getPageFooter('legal2')}</span>
+        </div>
+      </div>
+    );
+  };
+
+  // =========================================================
+  // RENDER PÁGINA 7 (Contrato de Proyectos de Desarrollo a Medida)
+  // =========================================================
   const renderPage7 = () => (
     <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '25px' }}>
@@ -1175,7 +1976,9 @@ const ProposalEditor: React.FC = () => {
           <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
           <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{heroTitle ? heroTitle.toUpperCase() : 'CBKR APP V2'}</span>
         </div>
-        <span style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>LEGAL_AGREEMENT // 05</span>
+        <span style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>
+          LEGAL_AGREEMENT // 05
+        </span>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: '20px', marginBottom: '60px' }}>
         <h1 style={{ fontSize: '28px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
@@ -1185,20 +1988,7 @@ const ProposalEditor: React.FC = () => {
           {contractDescription || 'Acuerdo formal que establece las bases y condiciones legales para la ejecución del proyecto de desarrollo de software detallado en esta propuesta.'}
         </p>
         <div style={{ fontSize: '10px', color: '#334155', lineHeight: '1.6', whiteSpace: 'pre-wrap', fontFamily: 'system-ui, -apple-system, sans-serif', padding: '20px', backgroundColor: '#f8fafc', borderRadius: '20px', border: '1px solid #e2e8f0', maxHeight: '350px', overflow: 'hidden', marginTop: '5px' }}>
-          {contractText ? (
-            contractText
-              .replace(/\{location\}/g, location)
-              .replace(/\{date\}/g, date)
-              .replace(/\{client_name\}/g, clientName)
-              .replace(/\{total_value\}/g, totalValue)
-              .replace(/\[input:[^\]]+\]/g, '________________________')
-          ) : (
-            `CONTRATO DE DESARROLLO DE SOFTWARE
- 
-Entre Creapp Software Lab y ${clientName}, se acuerda el desarrollo integral del sistema conforme a los alcances y términos especificados en esta propuesta comercial por un valor total de ${totalValue}.
- 
-Este contrato entra en vigencia a partir de la firma del presente documento el día ${date} en la localidad de ${location}.`
-          )}
+          {getProcessedContractText(contractText || DEVELOPMENT_CONTRACT_TEMPLATE)}
         </div>
         <div style={{ display: 'flex', gap: '20px', marginTop: '20px' }}>
           <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -1211,35 +2001,223 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
               <p style={{ color: '#64748b', fontSize: '9px' }}>Chief Technology Officer</p>
             </div>
           </div>
-          <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '2px' }}>Por CreAPP Software Lab</p>
-            <div style={{ height: '60px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1', padding: '8px' }}>
+          {(methodology?.show_facundo_signature ?? true) && (
+            <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '2px' }}>Por CreAPP Software Lab</p>
+              <div style={{ height: '60px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1', padding: '8px' }}>
+              </div>
+              <div style={{ fontSize: '10px' }}>
+                <p style={{ fontWeight: '800', color: '#0f172a' }}>Facundo Marceca</p>
+                <p style={{ color: '#64748b', fontSize: '9px' }}>Project Manager</p>
+              </div>
             </div>
-            <div style={{ fontSize: '10px' }}>
-              <p style={{ fontWeight: '800', color: '#0f172a' }}>Facundo Marceca</p>
-              <p style={{ color: '#64748b', fontSize: '9px' }}>Project Manager</p>
-            </div>
-          </div>
+          )}
           <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '2px' }}>Por {clientName}</p>
+            <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '2px' }}>
+              Por {clientLegalData.company_name || clientName || 'EL CLIENTE'}
+            </p>
             <div style={{ height: '60px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1', color: '#94a3b8', fontSize: '10px', textAlign: 'center' }}>
               Pendiente de Firma
             </div>
             <div style={{ fontSize: '10px' }}>
-              <p style={{ fontWeight: '800', color: '#0f172a' }}>________________________</p>
-              <p style={{ color: '#64748b', fontSize: '9px' }}>Representante Autorizado</p>
+              <p style={{ fontWeight: '800', color: '#0f172a' }}>
+                {clientLegalData.representative_name || '________________________'}
+              </p>
+              <p style={{ color: '#64748b', fontSize: '9px' }}>
+                {clientLegalData.representative_role || 'Representante Autorizado'}
+              </p>
+              {(clientLegalData.representative_dni || clientLegalData.tax_id) && (
+                <p style={{ color: '#94a3b8', fontSize: '8px', marginTop: '1px' }}>
+                  {clientLegalData.representative_dni ? `DNI: ${clientLegalData.representative_dni}` : `CUIT: ${clientLegalData.tax_id}`}
+                </p>
+              )}
             </div>
           </div>
         </div>
       </div>
       <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
-        <span>Propuesta Comercial | {clientName}</span>
+        <span>Propuesta Comercial | {clientLegalData.company_name || clientName}</span>
         <span>{getPageFooter('legal')}</span>
       </div>
     </div>
   );
 
-  const ALL_PAGES = [
+  const renderClientLegalCard = () => (
+    <div className="glass rounded-2xl p-6 border border-white/10 space-y-6 relative overflow-hidden bg-gradient-to-b from-slate-900/60 to-slate-950/60 shadow-xl">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/25 flex items-center justify-center text-primary shrink-0 shadow-inner">
+            <Building2 size={20} />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-black text-white uppercase tracking-wider">
+                Ficha Legal y Fiscal del Cliente
+              </h3>
+              <span className="text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                Auto-Sync Contrato
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              Datos de la empresa y del firmante que se inyectan automáticamente en la Portada, el Proemio Legal y el Cuadro de Firmas.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Bloque 1: Empresa / Razón Social */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400">
+          <Building2 size={13} className="text-primary" />
+          <span>1. Datos de la Empresa o Comercio</span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+          {/* Razón Social / Nombre Comercial */}
+          <div className="space-y-1.5 md:col-span-2">
+            <label className="text-[9px] text-slate-400 uppercase tracking-widest font-black flex items-center justify-between">
+              <span>Razón Social o Nombre Comercial *</span>
+              <span className="text-[9px] text-primary/70 lowercase font-normal">(visible en portada y contratos)</span>
+            </label>
+            <input
+              type="text"
+              value={clientLegalData.company_name || clientName}
+              onChange={(e) => updateClientLegalData('company_name', e.target.value)}
+              placeholder="Ej. La Trattoria Gourmet S.R.L. / CannaBunker Club"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-white placeholder-slate-600 focus:outline-none focus:border-primary/50 text-xs font-bold transition-all"
+            />
+          </div>
+
+          {/* CUIT / Identificación Fiscal */}
+          <div className="space-y-1.5">
+            <label className="text-[9px] text-slate-400 uppercase tracking-widest font-black">
+              CUIT / N° Identificación Tributaria
+            </label>
+            <input
+              type="text"
+              value={clientLegalData.tax_id || ''}
+              onChange={(e) => updateClientLegalData('tax_id', e.target.value)}
+              placeholder="Ej. 30-71829384-9"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-white placeholder-slate-600 focus:outline-none focus:border-primary/50 text-xs font-mono transition-all"
+            />
+          </div>
+
+          {/* Domicilio Legal / Fiscal */}
+          <div className="space-y-1.5">
+            <label className="text-[9px] text-slate-400 uppercase tracking-widest font-black">
+              Domicilio Legal / Fiscal
+            </label>
+            <input
+              type="text"
+              value={clientLegalData.legal_address || ''}
+              onChange={(e) => updateClientLegalData('legal_address', e.target.value)}
+              placeholder="Ej. Av. Corrientes 1450, Piso 3, CABA"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-white placeholder-slate-600 focus:outline-none focus:border-primary/50 text-xs transition-all"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Bloque 2: Representante Legal / Firmante */}
+      <div className="space-y-3 pt-2 border-t border-white/5">
+        <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400">
+          <FileSignature size={13} className="text-primary" />
+          <span>2. Representante Legal & Firmante del Contrato</span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+          {/* Nombre y Apellido */}
+          <div className="space-y-1.5">
+            <label className="text-[9px] text-slate-400 uppercase tracking-widest font-black">
+              Nombre y Apellido
+            </label>
+            <input
+              type="text"
+              value={clientLegalData.representative_name || ''}
+              onChange={(e) => updateClientLegalData('representative_name', e.target.value)}
+              placeholder="Ej. Carlos Eduardo Gómez"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-white placeholder-slate-600 focus:outline-none focus:border-primary/50 text-xs font-bold transition-all"
+            />
+          </div>
+
+          {/* DNI del Firmante */}
+          <div className="space-y-1.5">
+            <label className="text-[9px] text-slate-400 uppercase tracking-widest font-black">
+              DNI / CUIT Personal
+            </label>
+            <input
+              type="text"
+              value={clientLegalData.representative_dni || ''}
+              onChange={(e) => updateClientLegalData('representative_dni', e.target.value)}
+              placeholder="Ej. 34.567.890"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-white placeholder-slate-600 focus:outline-none focus:border-primary/50 text-xs font-mono transition-all"
+            />
+          </div>
+
+          {/* Cargo / Rol */}
+          <div className="space-y-1.5">
+            <label className="text-[9px] text-slate-400 uppercase tracking-widest font-black">
+              Cargo o Carácter
+            </label>
+            <input
+              type="text"
+              value={clientLegalData.representative_role || ''}
+              onChange={(e) => updateClientLegalData('representative_role', e.target.value)}
+              placeholder="Ej. Socio Gerente / Titular"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-white placeholder-slate-600 focus:outline-none focus:border-primary/50 text-xs transition-all"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Bloque 3: Contacto & Notificaciones */}
+      <div className="space-y-3 pt-2 border-t border-white/5">
+        <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400">
+          <ShieldCheck size={13} className="text-primary" />
+          <span>3. Notificaciones & Contacto Operativo</span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+          {/* Email */}
+          <div className="space-y-1.5">
+            <label className="text-[9px] text-slate-400 uppercase tracking-widest font-black flex items-center gap-1.5">
+              <Mail size={11} className="text-slate-500" />
+              <span>Email de Notificaciones Oficiales</span>
+            </label>
+            <input
+              type="email"
+              value={clientLegalData.contact_email || ''}
+              onChange={(e) => updateClientLegalData('contact_email', e.target.value)}
+              placeholder="administracion@cliente.com"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-white placeholder-slate-600 focus:outline-none focus:border-primary/50 text-xs transition-all"
+            />
+          </div>
+
+          {/* Teléfono / WhatsApp */}
+          <div className="space-y-1.5">
+            <label className="text-[9px] text-slate-400 uppercase tracking-widest font-black flex items-center gap-1.5">
+              <Phone size={11} className="text-slate-500" />
+              <span>WhatsApp / Teléfono de Guardia</span>
+            </label>
+            <input
+              type="text"
+              value={clientLegalData.contact_phone || ''}
+              onChange={(e) => updateClientLegalData('contact_phone', e.target.value)}
+              placeholder="+54 9 11 4567-8900"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-white placeholder-slate-600 focus:outline-none focus:border-primary/50 text-xs transition-all"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const ALL_PAGES = proposalType === 'service' ? [
+    { id: 'portada', name: 'Portada' },
+    { id: 'legal', name: 'Cláusulas 1 a 3' },
+    { id: 'legal2', name: 'Cláusulas 4 a 7 & Firmas' }
+  ] : [
     { id: 'portada', name: 'Portada' },
     { id: 'alcance', name: 'Alcance & Entregables' },
     { id: 'hitos', name: 'Cronograma & Pagos' },
@@ -1347,7 +2325,9 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
       case 'metodologia':
         return renderPage6();
       case 'legal':
-        return renderPage7();
+        return proposalType === 'service' ? renderPageLegalPart1() : renderPage7();
+      case 'legal2':
+        return renderPageLegalPart2();
       default:
         return renderPage1();
     }
@@ -1459,7 +2439,12 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
       <main className="max-w-[1600px] mx-auto px-6 py-6">
         {/* Tab Navigation */}
         <div className="flex items-center gap-1 mb-6 overflow-x-auto pb-2 scrollbar-hide">
-          {([
+          {(proposalType === 'service' ? [
+            { id: 'config' as EditorTab, label: 'Config', icon: Settings, pageId: null },
+            { id: 'portada' as EditorTab, label: 'Portada (P1)', icon: BookOpen, pageId: 'portada' },
+            { id: 'legal' as EditorTab, label: 'Cláusulas 1-4 (P2)', icon: FileSignature, pageId: 'legal' },
+            { id: 'legal2' as EditorTab, label: 'Cláusulas 5-8 & Firmas (P3)', icon: FileCheck, pageId: 'legal2' },
+          ] : [
             { id: 'config' as EditorTab, label: 'Config', icon: Settings, pageId: null },
             { id: 'portada' as EditorTab, label: 'Portada (P1)', icon: BookOpen, pageId: 'portada' },
             { id: 'alcance' as EditorTab, label: 'Alcance (P2)', icon: CheckCircle2, pageId: 'alcance' },
@@ -1487,17 +2472,19 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
               </button>
             );
           })}
-          <button
-            onClick={() => setActiveEditorTab('video')}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all duration-300 border ${
-              activeEditorTab === 'video'
-                ? 'bg-primary text-white border-primary/30 shadow-lg shadow-primary/20'
-                : 'bg-primary/10 text-primary hover:bg-primary/20 border-primary/20'
-            }`}
-          >
-            <Film size={14} />
-            Video
-          </button>
+          {proposalType !== 'service' && (
+            <button
+              onClick={() => setActiveEditorTab('video')}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all duration-300 border ${
+                activeEditorTab === 'video'
+                  ? 'bg-primary text-white border-primary/30 shadow-lg shadow-primary/20'
+                  : 'bg-primary/10 text-primary hover:bg-primary/20 border-primary/20'
+              }`}
+            >
+              <Film size={14} />
+              Video
+            </button>
+          )}
         </div>
 
         {/* Split Layout: Left (Tab Content) + Right (Video / PDF Real-time Previews) */}
@@ -1513,6 +2500,201 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
             </h2>
 
             <div className="glass rounded-2xl p-6 border border-white/5 space-y-6">
+              {/* Modalidad / Tipo de Documento */}
+              <div className="space-y-2">
+                <label className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">
+                  Tipo de Documento Comercial
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handleSelectProposalType('project')}
+                    className={`p-4 rounded-xl border text-left transition-all cursor-pointer ${
+                      proposalType === 'project'
+                        ? 'border-primary bg-primary/15 text-white shadow-lg shadow-primary/10'
+                        : 'border-white/10 bg-white/[0.02] text-slate-400 hover:border-white/20 hover:text-white'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 font-bold text-sm text-white mb-1">
+                      <Briefcase size={16} className={proposalType === 'project' ? 'text-primary' : 'text-slate-400'} />
+                      Proyecto de Desarrollo
+                    </div>
+                    <p className="text-[11px] text-slate-400 leading-relaxed">
+                      Desarrollo de software a medida por hitos, semanas de desarrollo y cronograma de sprints.
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleSelectProposalType('service')}
+                    className={`p-4 rounded-xl border text-left transition-all cursor-pointer ${
+                      proposalType === 'service'
+                        ? 'border-purple-500 bg-purple-500/20 text-white shadow-lg shadow-purple-500/15'
+                        : 'border-white/10 bg-white/[0.02] text-slate-400 hover:border-white/20 hover:text-white'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 font-bold text-sm text-white mb-1">
+                      <Zap size={16} className={proposalType === 'service' ? 'text-purple-400' : 'text-slate-400'} />
+                      Contrato de Servicio
+                    </div>
+                    <p className="text-[11px] text-slate-400 leading-relaxed">
+                      Suscripción a plataforma, licencia de uso mensual recurrente y SLA de soporte técnico.
+                    </p>
+                  </button>
+                </div>
+              </div>
+
+              {/* Selector de Producto CreAPP cuando es modo Servicio */}
+              {proposalType === 'service' && (
+                <div className="space-y-4 p-5 rounded-2xl bg-white/[0.02] border border-white/10">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-widest text-white flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                        ¿Para qué producto es el contrato de servicio?
+                      </p>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        Seleccioná la plataforma para aplicar automáticamente su paleta de colores, logotipo y contrato específico:
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.04] border border-white/10 shrink-0 shadow-sm self-start sm:self-auto">
+                      <img src={creappLogoOfficial} alt="CreAPP" className="h-4.5 w-auto object-contain drop-shadow-[0_0_8px_rgba(255,45,120,0.4)]" />
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-200 whitespace-nowrap">
+                        CreAPP <span className="text-primary font-bold">Software Lab</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 pt-1">
+                    {CREAPP_PRODUCTS.map((prod) => {
+                      const isSelected = selectedProductId === prod.id;
+                      return (
+                        <button
+                          key={prod.id}
+                          type="button"
+                          onClick={() => handleApplyProductPreset(prod.id)}
+                          className={`w-full p-4 rounded-2xl border text-left transition-all duration-300 cursor-pointer relative overflow-hidden group ${
+                            isSelected
+                              ? 'bg-gradient-to-r from-white/[0.09] to-white/[0.03] border-white/40 shadow-2xl ring-1'
+                              : 'bg-white/[0.02] border-white/10 hover:border-white/25 hover:bg-white/[0.05]'
+                          }`}
+                          style={isSelected ? { borderColor: `${prod.brand_color_primary}aa`, boxShadow: `0 10px 30px -10px ${prod.brand_color_primary}33` } : {}}
+                        >
+                          {/* Accent top gradient line */}
+                          <div
+                            className="absolute top-0 left-0 right-0 h-[2px] transition-all duration-300"
+                            style={{
+                              background: `linear-gradient(90deg, ${prod.brand_color_primary}, ${prod.brand_color_secondary})`,
+                              opacity: isSelected ? 1 : 0.45,
+                            }}
+                          />
+
+                          <div className="flex items-start justify-between gap-3.5">
+                            {/* Logo + Titles */}
+                            <div className="flex items-start gap-3.5 min-w-0 flex-1">
+                              <div
+                                className="w-12 h-12 rounded-xl bg-black/60 border border-white/10 p-2 flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-105 shadow-inner"
+                                style={{
+                                  borderColor: isSelected ? `${prod.brand_color_primary}66` : 'rgba(255,255,255,0.1)',
+                                  boxShadow: isSelected ? `0 0 15px ${prod.brand_color_primary}22` : undefined,
+                                }}
+                              >
+                                <img
+                                  src={prod.logo_url}
+                                  alt={prod.name}
+                                  className="w-full h-full object-contain"
+                                />
+                              </div>
+
+                              <div className="min-w-0 flex-1">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <h4 className="text-sm font-black text-white tracking-tight whitespace-nowrap">
+                                    {prod.name}
+                                  </h4>
+                                  <span
+                                    className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border whitespace-nowrap"
+                                    style={{
+                                      backgroundColor: `${prod.brand_color_primary}18`,
+                                      color: prod.brand_color_primary,
+                                      borderColor: `${prod.brand_color_primary}33`,
+                                    }}
+                                  >
+                                    {prod.category}
+                                  </span>
+                                </div>
+                                <p className="text-[11.5px] text-slate-300 mt-1 leading-relaxed">
+                                  {prod.tagline}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Color swatches */}
+                            <div className="flex gap-1.5 items-center shrink-0 pt-0.5">
+                              <span
+                                className="w-3 h-3 rounded-full border border-black/60 shadow-sm"
+                                style={{ backgroundColor: prod.brand_color_primary }}
+                                title={`Primario: ${prod.brand_color_primary}`}
+                              />
+                              <span
+                                className="w-3 h-3 rounded-full border border-black/60 shadow-sm"
+                                style={{ backgroundColor: prod.brand_color_secondary }}
+                                title={`Secundario: ${prod.brand_color_secondary}`}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Footer with feature chips & selection action */}
+                          <div className="mt-3.5 pt-2.5 border-t border-white/5 flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              {prod.id === 'stacked' && (
+                                <>
+                                  <span className="text-[9px] font-semibold text-slate-400 bg-white/[0.04] px-2 py-0.5 rounded border border-white/5">🍔 Comandas & KDS</span>
+                                  <span className="text-[9px] font-semibold text-slate-400 bg-white/[0.04] px-2 py-0.5 rounded border border-white/5">📱 Carta Digital QR</span>
+                                  <span className="text-[9px] font-semibold text-slate-400 bg-white/[0.04] px-2 py-0.5 rounded border border-white/5">🛵 Delivery Propio</span>
+                                </>
+                              )}
+                              {prod.id === 'trazapp' && (
+                                <>
+                                  <span className="text-[9px] font-semibold text-slate-400 bg-white/[0.04] px-2 py-0.5 rounded border border-white/5">🌿 Trazabilidad Reprocann</span>
+                                  <span className="text-[9px] font-semibold text-slate-400 bg-white/[0.04] px-2 py-0.5 rounded border border-white/5">📡 Telemetría IoT</span>
+                                  <span className="text-[9px] font-semibold text-slate-400 bg-white/[0.04] px-2 py-0.5 rounded border border-white/5">🏷️ Lotes & QR</span>
+                                </>
+                              )}
+                              {prod.id === 'dental-ia' && (
+                                <>
+                                  <span className="text-[9px] font-semibold text-slate-400 bg-white/[0.04] px-2 py-0.5 rounded border border-white/5">🤖 WhatsApp IA 24/7</span>
+                                  <span className="text-[9px] font-semibold text-slate-400 bg-white/[0.04] px-2 py-0.5 rounded border border-white/5">🦷 Odontograma FDI</span>
+                                  <span className="text-[9px] font-semibold text-slate-400 bg-white/[0.04] px-2 py-0.5 rounded border border-white/5">📅 Turnero Clínico</span>
+                                </>
+                              )}
+                            </div>
+
+                            <div className="shrink-0 ml-auto">
+                              {isSelected ? (
+                                <span
+                                  className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-xl border shadow-md whitespace-nowrap"
+                                  style={{
+                                    backgroundColor: `${prod.brand_color_primary}25`,
+                                    color: prod.brand_color_primary,
+                                    borderColor: `${prod.brand_color_primary}66`,
+                                  }}
+                                >
+                                  ✓ Seleccionado
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 group-hover:text-white px-2.5 py-1 rounded-xl bg-white/5 group-hover:bg-white/10 border border-white/10 transition-all whitespace-nowrap">
+                                  Aplicar preset <ArrowRight size={11} className="group-hover:translate-x-1 transition-transform" />
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               <div className="grid md:grid-cols-2 gap-6">
                 {/* Slug */}
                 <div className="space-y-2">
@@ -1548,25 +2730,92 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
               {/* Logo Uploader */}
               <div className="space-y-2 pt-2">
                 <label className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">
-                  Logo del Cliente
+                  {proposalType === 'service' ? 'Logo Oficial del Producto (SaaS)' : 'Logo del Cliente'}
                 </label>
                 
                 {clientLogoUrl ? (
-                  <div className="flex items-center gap-4 p-4 rounded-xl bg-white/[0.02] border border-white/10">
-                    <div className="w-16 h-16 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center p-2 overflow-hidden shrink-0">
-                      <img src={clientLogoUrl} alt="Logo Cliente" className="max-w-full max-h-full object-contain" />
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-4 p-4 rounded-xl bg-white/[0.02] border border-white/10">
+                      <div className="w-16 h-16 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center p-2 overflow-hidden shrink-0">
+                        <img
+                          src={clientLogoUrl}
+                          alt="Logo Cliente"
+                          className="max-w-full max-h-full object-contain transition-transform"
+                          style={{ transform: `scale(${clientLogoScale / 100})` }}
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-white font-medium truncate">{clientLogoUrl.split('/').pop()}</p>
+                        <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">URL del Logo Cargada</p>
+                      </div>
+                      <button
+                        onClick={() => setClientLogoUrl('')}
+                        className="p-2 hover:bg-red-500/10 text-slate-500 hover:text-red-400 rounded-lg transition-colors cursor-pointer"
+                        title="Eliminar logo"
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-white font-medium truncate">{clientLogoUrl.split('/').pop()}</p>
-                      <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">URL del Logo Cargada</p>
+
+                    {/* Controlador de Escala del Logo */}
+                    <div className="p-4 rounded-xl bg-white/[0.02] border border-white/10 space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold flex items-center gap-1.5">
+                          <Maximize2 size={12} className="text-primary" /> Tamaño / Escala del Logo
+                        </span>
+                        <span className="text-xs font-mono font-bold text-primary bg-primary/10 px-2.5 py-0.5 rounded-md border border-primary/20">
+                          {clientLogoScale}%
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => updateLogoScale(clientLogoScale - 10)}
+                          className="p-1.5 bg-white/5 border border-white/10 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                          title="Reducir"
+                        >
+                          <Minus size={12} />
+                        </button>
+
+                        <input
+                          type="range"
+                          min="30"
+                          max="250"
+                          step="5"
+                          value={clientLogoScale}
+                          onChange={(e) => updateLogoScale(Number(e.target.value))}
+                          className="w-full accent-primary bg-white/10 h-1.5 rounded-lg appearance-none cursor-pointer"
+                        />
+
+                        <button
+                          type="button"
+                          onClick={() => updateLogoScale(clientLogoScale + 10)}
+                          className="p-1.5 bg-white/5 border border-white/10 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                          title="Aumentar"
+                        >
+                          <Plus size={12} />
+                        </button>
+                      </div>
+
+                      {/* Botones de Presets Rápido */}
+                      <div className="flex gap-1.5 pt-1">
+                        {[50, 75, 100, 125, 150, 200].map((s) => (
+                          <button
+                            key={s}
+                            type="button"
+                            onClick={() => updateLogoScale(s)}
+                            className={`flex-1 py-1 rounded text-[10px] font-mono font-bold transition-all cursor-pointer ${
+                              clientLogoScale === s
+                                ? 'bg-primary text-white shadow-md'
+                                : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white'
+                            }`}
+                          >
+                            {s}%
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                    <button
-                      onClick={() => setClientLogoUrl('')}
-                      className="p-2 hover:bg-red-500/10 text-slate-500 hover:text-red-400 rounded-lg transition-colors"
-                      title="Eliminar logo"
-                    >
-                      <Trash2 size={16} />
-                    </button>
                   </div>
                 ) : (
                   <div className="relative group">
@@ -1599,6 +2848,9 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
                 )}
               </div>
             </div>
+
+            {/* Ficha Legal y Fiscal del Cliente */}
+            {renderClientLegalCard()}
           </div>
         )}
 
@@ -1617,10 +2869,20 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
               {/* Cover Page Input Mockup */}
               <div className="flex flex-col items-center text-center gap-6 mt-4 p-6 rounded-2xl bg-slate-950/40 border border-white/5 shadow-inner">
                 {/* Visual Header Logo */}
-                <div className="opacity-80 flex flex-col items-center">
-                  <div className="h-10 text-[10px] text-slate-600 uppercase tracking-[0.2em] font-black border border-white/5 px-3 py-1.5 rounded bg-white/[0.02]">
-                    [ LOGO CREAPP ]
-                  </div>
+                <div className="flex flex-col items-center">
+                  {proposalType === 'service' ? (
+                    clientLogoUrl ? (
+                      <div className="h-14 flex items-center justify-center p-2 rounded-xl bg-white/[0.03] border border-white/10">
+                        <img src={clientLogoUrl} alt="Logo Producto" className="h-10 object-contain" />
+                      </div>
+                    ) : (
+                      <div className="text-[10px] text-primary uppercase tracking-[0.2em] font-black border border-primary/20 px-3 py-1.5 rounded-lg bg-primary/5">
+                        [ LOGO PRODUCTO: {heroTitle || 'SAAS'} ]
+                      </div>
+                    )
+                  ) : (
+                    <img src={creappLogoOfficial} alt="CreAPP Logo" className="h-8 object-contain opacity-80" />
+                  )}
                 </div>
 
                 {/* Subtitle Badge Input */}
@@ -1678,27 +2940,26 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
                   <textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
+                    onWheel={(e) => e.stopPropagation()}
                     rows={4}
                     placeholder="Desarrollo e integración de cbkr App v2, una solución móvil..."
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-center text-slate-300 placeholder-slate-600 focus:outline-none focus:border-primary/50 text-xs leading-relaxed resize-none transition-all font-light"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-center text-slate-300 placeholder-slate-600 focus:outline-none focus:border-primary/50 text-xs leading-relaxed resize-y min-h-[96px] overscroll-contain transition-all font-light"
+                    style={{ overscrollBehavior: 'contain' }}
                   />
                 </div>
 
                 {/* Bottom details block mimicking cover page columns */}
                 <div className="w-full grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-white/5 text-left">
-                  {/* Nombre del Cliente */}
+                  {/* Nombre del Cliente / Razón Social */}
                   <div className="space-y-1.5 col-span-2">
                     <label className="text-[9px] text-slate-500 uppercase tracking-widest font-black block">
-                      Nombre del Cliente
+                      Nombre del Cliente / Razón Social
                     </label>
                     <input
                       type="text"
-                      value={clientName}
-                      onChange={(e) => {
-                        setClientName(e.target.value);
-                        if (isNew) setSlug(generateSlug(e.target.value));
-                      }}
-                      placeholder="Ej. Astillero Vision"
+                      value={clientLegalData.company_name || clientName}
+                      onChange={(e) => updateClientLegalData('company_name', e.target.value)}
+                      placeholder="Ej. Astillero Vision / La Trattoria S.R.L."
                       className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white placeholder-slate-600 focus:outline-none focus:border-primary/50 text-xs font-bold transition-all"
                     />
                   </div>
@@ -1756,6 +3017,9 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
                 </div>
               </div>
             </div>
+
+            {/* Ficha Legal y Fiscal del Cliente */}
+            {renderClientLegalCard()}
           </div>
         )}
 
@@ -2038,10 +3302,10 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
         {/* HITOS TAB */}
         {activeEditorTab === 'hitos' && (
           <div className="space-y-8">
-            {renderVisibilityCard('hitos', 'Cronograma & Pagos')}
+            {renderVisibilityCard('hitos', proposalType === 'service' ? 'Plan & SLA' : 'Cronograma & Pagos')}
             <div className="flex justify-between items-center border-b border-white/5 pb-4">
               <h2 className="text-xl font-display font-black text-white">
-                Finanzas & Cronograma (P3 / P7)
+                {proposalType === 'service' ? 'Plan de Servicio, Tarifas Recurrentes & SLA' : 'Finanzas & Cronograma (P3 / P7)'}
               </h2>
               {/* Presupuesto Consolidado & Divisa */}
               <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-xl border border-white/10">
@@ -2053,7 +3317,7 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
                     onChange={(e) => {
                       const newCurrency = e.target.value.toUpperCase().replace(/[^A-Z\$]/g, '').slice(0, 5);
                       const amount = getValueFromTotal(totalValue);
-                      setTotalValue(`${newCurrency} ${amount}`);
+                      handleUpdateTotalValue(`${newCurrency} ${amount}`);
                     }}
                     placeholder="USD"
                     className="bg-transparent text-primary text-sm font-black w-14 focus:outline-none text-center font-mono border-b border-white/10 focus:border-primary pb-0.5"
@@ -2066,7 +3330,7 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
                     value={getValueFromTotal(totalValue)}
                     onChange={(e) => {
                       const currency = getCurrencyFromTotal(totalValue);
-                      setTotalValue(`${currency} ${e.target.value}`);
+                      handleUpdateTotalValue(`${currency} ${e.target.value}`);
                     }}
                     placeholder="2.200"
                     className="bg-transparent text-primary text-sm font-black w-24 focus:outline-none text-right font-mono border-b border-white/10 focus:border-primary pb-0.5"
@@ -2075,6 +3339,208 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
               </div>
             </div>
 
+            {proposalType === 'service' ? (
+              <div className="space-y-6">
+                <Section title="Configuración del Plan de Servicio & Recurrencia">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">
+                        Nombre del Plan / Servicio
+                      </label>
+                      <input
+                        type="text"
+                        value={serviceDetails.plan_name || ''}
+                        onChange={(e) => updateServiceDetailField('plan_name', e.target.value)}
+                        placeholder="Stacked Business Cloud"
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-purple-500/50"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">
+                        Periodicidad de Facturación
+                      </label>
+                      <select
+                        value={serviceDetails.billing_frequency || 'monthly'}
+                        onChange={(e) => updateServiceDetailField('billing_frequency', e.target.value as any)}
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-purple-500/50"
+                      >
+                        <option value="monthly" className="bg-slate-950 text-white">Mensual (Mes adelantado)</option>
+                        <option value="quarterly" className="bg-slate-950 text-white">Trimestral</option>
+                        <option value="annual" className="bg-slate-950 text-white">Anual</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">
+                        Tarifa Recurrente (Fee)
+                      </label>
+                      <input
+                        type="text"
+                        value={serviceDetails.recurring_fee || totalValue}
+                        onChange={(e) => {
+                          updateServiceDetailField('recurring_fee', e.target.value);
+                          setTotalValue(e.target.value);
+                        }}
+                        placeholder="$350 USD / mes"
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-purple-500/50 font-mono text-purple-300 font-bold"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">
+                        Costo de Setup / Onboarding
+                      </label>
+                      <input
+                        type="text"
+                        value={serviceDetails.setup_fee || ''}
+                        onChange={(e) => updateServiceDetailField('setup_fee', e.target.value)}
+                        placeholder="Bonificado (o $150 USD)"
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-purple-500/50"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">
+                        Plazo Mínimo de Permanencia
+                      </label>
+                      <input
+                        type="text"
+                        value={serviceDetails.min_term_months || ''}
+                        onChange={(e) => updateServiceDetailField('min_term_months', e.target.value)}
+                        placeholder="6 meses"
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-purple-500/50"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5 flex flex-col justify-end pb-1">
+                      <label className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={serviceDetails.auto_renew ?? true}
+                          onChange={(e) => updateServiceDetailField('auto_renew', e.target.checked)}
+                          className="rounded border-white/20 text-purple-500 focus:ring-0"
+                        />
+                        <span className="text-xs text-slate-300 font-medium">Renovación automática con preaviso de 30 días</span>
+                      </label>
+                    </div>
+                  </div>
+                </Section>
+
+                <Section title="Acuerdo de Nivel de Servicio (SLA) & Soporte">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">
+                        Disponibilidad Uptime Garantizada
+                      </label>
+                      <input
+                        type="text"
+                        value={serviceDetails.sla_uptime || ''}
+                        onChange={(e) => updateServiceDetailField('sla_uptime', e.target.value)}
+                        placeholder="99.5%"
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-purple-500/50"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">
+                        Canales Oficiales de Soporte
+                      </label>
+                      <input
+                        type="text"
+                        value={serviceDetails.support_channels || ''}
+                        onChange={(e) => updateServiceDetailField('support_channels', e.target.value)}
+                        placeholder="WhatsApp Prioritario + Tickets/Email"
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-purple-500/50"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">
+                        Tiempo de Respuesta Crítico (P1 - Interrupción)
+                      </label>
+                      <input
+                        type="text"
+                        value={serviceDetails.response_time_critical || ''}
+                        onChange={(e) => updateServiceDetailField('response_time_critical', e.target.value)}
+                        placeholder="< 2 horas"
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-purple-500/50"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">
+                        Tiempo de Respuesta Normal (P2 - Consultas)
+                      </label>
+                      <input
+                        type="text"
+                        value={serviceDetails.response_time_normal || ''}
+                        onChange={(e) => updateServiceDetailField('response_time_normal', e.target.value)}
+                        placeholder="< 12 horas hábiles"
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-purple-500/50"
+                      />
+                    </div>
+                  </div>
+                </Section>
+
+                <Section title="Capacidades & Límites del Plan">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">
+                        Usuarios Concurrentes / Cuentas
+                      </label>
+                      <input
+                        type="text"
+                        value={serviceDetails.limits?.users || ''}
+                        onChange={(e) => updateServiceLimitField('users', e.target.value)}
+                        placeholder="Ilimitados"
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-purple-500/50"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">
+                        Sucursales / Locales
+                      </label>
+                      <input
+                        type="text"
+                        value={serviceDetails.limits?.branches || ''}
+                        onChange={(e) => updateServiceLimitField('branches', e.target.value)}
+                        placeholder="Hasta 3 sucursales"
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-purple-500/50"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">
+                        Almacenamiento Cloud
+                      </label>
+                      <input
+                        type="text"
+                        value={serviceDetails.limits?.storage || ''}
+                        onChange={(e) => updateServiceLimitField('storage', e.target.value)}
+                        placeholder="50 GB Cloud Storage"
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-purple-500/50"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">
+                        Seguridad & Backups
+                      </label>
+                      <input
+                        type="text"
+                        value={serviceDetails.limits?.custom_notes || ''}
+                        onChange={(e) => updateServiceLimitField('custom_notes', e.target.value)}
+                        placeholder="Backups automáticos diarios y cifrado SSL"
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-purple-500/50"
+                      />
+                    </div>
+                  </div>
+                </Section>
+              </div>
+            ) : (
+              <>
             <Section title="Introducción de Cronograma">
               <div className="p-4 rounded-xl bg-[#090d16] border border-white/5 shadow-lg space-y-3">
                 <div>
@@ -2103,6 +3569,23 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
                 </div>
               </div>
             </Section>
+
+            {/* Toggle para Ocultar Columna Inversión */}
+            <div className="p-4 rounded-xl bg-[#090d16] border border-white/5 shadow-lg flex items-center justify-between gap-4">
+              <div>
+                <span className="text-xs font-bold text-white uppercase tracking-wider block">Ocultar columna "Inversión" en las Fases</span>
+                <span className="text-[11px] text-slate-400">Recomendado cuando el desglose financiero se rige exclusivamente por el Esquema de Pagos / Hitos al pie de la página.</span>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                <input
+                  type="checkbox"
+                  checked={methodology?.hide_milestone_prices ?? false}
+                  onChange={(e) => updateMethodologyField('hide_milestone_prices', e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+              </label>
+            </div>
 
             {/* CRONOGRAMA DE FASES */}
             <Section 
@@ -2212,7 +3695,7 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
                           </div>
 
                           {/* Row 3: Control Milestone + Price */}
-                          <div className="grid grid-cols-2 gap-3">
+                          <div className={methodology?.hide_milestone_prices ? "block" : "grid grid-cols-2 gap-3"}>
                             <div className="relative">
                               <input 
                                 type="text" 
@@ -2228,20 +3711,22 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
                               </span>
                             </div>
 
-                            <div className="relative">
-                              <input 
-                                type="text" 
-                                value={item.price || ''} 
-                                onChange={(e) => updateItem(milestones, setMilestones, i, 'price', e.target.value)} 
-                                placeholder="Precio/Costo de Fase (ej: 550)" 
-                                className="w-full bg-white/5 border border-white/10 hover:border-white/20 rounded-lg pl-3 pr-14 py-2 text-white text-sm focus:outline-none focus:border-primary/50 placeholder-slate-600 font-medium transition-all" 
-                              />
-                              <span className={`absolute right-3 top-2.5 text-[9px] font-mono font-bold select-none ${
-                                priceLen > 10 ? 'text-red-400' : 'text-slate-500'
-                              }`}>
-                                {priceLen}/10
-                              </span>
-                            </div>
+                            {!methodology?.hide_milestone_prices && (
+                              <div className="relative">
+                                <input 
+                                  type="text" 
+                                  value={item.price || ''} 
+                                  onChange={(e) => updateItem(milestones, setMilestones, i, 'price', e.target.value)} 
+                                  placeholder="Precio/Costo de Fase (ej: 550)" 
+                                  className="w-full bg-white/5 border border-white/10 hover:border-white/20 rounded-lg pl-3 pr-14 py-2 text-white text-sm focus:outline-none focus:border-primary/50 placeholder-slate-600 font-medium transition-all" 
+                                />
+                                <span className={`absolute right-3 top-2.5 text-[9px] font-mono font-bold select-none ${
+                                  priceLen > 10 ? 'text-red-400' : 'text-slate-500'
+                                }`}>
+                                  {priceLen}/10
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -2412,6 +3897,8 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
                 ))}
               </div>
             </Section>
+            </>
+            )}
           </div>
         )}
 
@@ -2756,89 +4243,182 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
 
             <Section title="Pilares de Metodología">
               <div className="space-y-4">
-                <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-3">
-                  <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider">
-                    <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                    Pilar 1 (Morado)
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Título</label>
-                    <input
-                      type="text"
-                      value={methodology?.incremental_title ?? DEFAULT_METHODOLOGY.incremental_title}
-                      onChange={(e) => updateMethodologyField('incremental_title', e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-primary/50"
-                    />
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Descripción</label>
-                      <button
-                        type="button"
-                        onClick={() => handleOptimizeField('incremental_text', methodology?.incremental_text ?? '', (newVal) => updateMethodologyField('incremental_text', newVal))}
-                        disabled={optimizingFieldId === 'incremental_text' || !(methodology?.incremental_text ?? '').trim()}
-                        className="flex items-center gap-1 text-[9px] font-bold text-primary hover:text-primary-hover disabled:opacity-30 disabled:hover:text-primary transition-all cursor-pointer bg-white/5 hover:bg-white/10 px-2 py-0.5 rounded-full border border-white/5"
-                      >
-                        {optimizingFieldId === 'incremental_text' ? (
-                          <Loader2 className="w-2.5 h-2.5 animate-spin" />
-                        ) : (
-                          <Sparkles className="w-2.5 h-2.5 text-primary animate-pulse" />
-                        )}
-                        <span>Gemini AI</span>
-                      </button>
-                    </div>
-                    <textarea
-                      value={methodology?.incremental_text ?? DEFAULT_METHODOLOGY.incremental_text}
-                      onChange={(e) => updateMethodologyField('incremental_text', e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-primary/50 min-h-[60px]"
-                    />
-                  </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] text-slate-400">
+                    Agrega, edita o elimina los pilares de tu metodología de trabajo.
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const PRESET_COLORS = ['#a855f7', '#ec4899', '#3b82f6', '#10b981', '#f59e0b', '#06b6d4', '#ef4444', '#6366f1'];
+                      const current = getPillars(methodology, brandPrimary, brandSecondary);
+                      const nextColor = PRESET_COLORS[current.length % PRESET_COLORS.length];
+                      const updated: MethodologyPillar[] = [
+                        ...current,
+                        {
+                          title: `PILAR ${current.length + 1}`,
+                          description: 'Trabajo coordinado e intensivo para asegurar el avance predecible y la usabilidad de la solución.',
+                          color: nextColor
+                        }
+                      ];
+                      updateMethodologyField('pillars', updated);
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 rounded-lg text-xs font-bold transition-all cursor-pointer shrink-0"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Agregar Pilar</span>
+                  </button>
                 </div>
 
-                <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-3">
-                  <div className="flex items-center gap-2 text-secondary font-bold text-xs uppercase tracking-wider">
-                    <div className="w-1.5 h-1.5 rounded-full bg-secondary" />
-                    Pilar 2 (Rosa)
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Título</label>
-                    <input
-                      type="text"
-                      value={methodology?.planning_title ?? DEFAULT_METHODOLOGY.planning_title}
-                      onChange={(e) => updateMethodologyField('planning_title', e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-primary/50"
-                    />
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Descripción</label>
-                      <button
-                        type="button"
-                        onClick={() => handleOptimizeField('planning_text', methodology?.planning_text ?? '', (newVal) => updateMethodologyField('planning_text', newVal))}
-                        disabled={optimizingFieldId === 'planning_text' || !(methodology?.planning_text ?? '').trim()}
-                        className="flex items-center gap-1 text-[9px] font-bold text-primary hover:text-primary-hover disabled:opacity-30 disabled:hover:text-primary transition-all cursor-pointer bg-white/5 hover:bg-white/10 px-2 py-0.5 rounded-full border border-white/5"
-                      >
-                        {optimizingFieldId === 'planning_text' ? (
-                          <Loader2 className="w-2.5 h-2.5 animate-spin" />
-                        ) : (
-                          <Sparkles className="w-2.5 h-2.5 text-primary animate-pulse" />
-                        )}
-                        <span>Gemini AI</span>
-                      </button>
-                    </div>
-                    <textarea
-                      value={methodology?.planning_text ?? DEFAULT_METHODOLOGY.planning_text}
-                      onChange={(e) => updateMethodologyField('planning_text', e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-primary/50 min-h-[60px]"
-                    />
-                    <span className="text-[9px] text-slate-500 block mt-1">Usa <code>{"{client_name}"}</code> para insertar el nombre del cliente automáticamente.</span>
-                  </div>
+                <div className="space-y-4">
+                  {getPillars(methodology, brandPrimary, brandSecondary).map((pilar, index) => {
+                    const currentPillars = getPillars(methodology, brandPrimary, brandSecondary);
+                    const PRESET_COLOR_SWATCHES = [
+                      { name: 'Morado', hex: '#a855f7' },
+                      { name: 'Rosa', hex: '#ec4899' },
+                      { name: 'Azul', hex: '#3b82f6' },
+                      { name: 'Esmeralda', hex: '#10b981' },
+                      { name: 'Ámbar', hex: '#f59e0b' },
+                      { name: 'Celeste', hex: '#06b6d4' },
+                      { name: 'Rojo', hex: '#ef4444' },
+                    ];
+
+                    const handleUpdatePillar = (updates: Partial<MethodologyPillar>) => {
+                      const updated = currentPillars.map((p, i) => i === index ? { ...p, ...updates } : p);
+                      updateMethodologyField('pillars', updated);
+                    };
+
+                    const handleRemovePillar = () => {
+                      if (currentPillars.length <= 1) return;
+                      const updated = currentPillars.filter((_, i) => i !== index);
+                      updateMethodologyField('pillars', updated);
+                    };
+
+                    const pColor = pilar.color || (index % 2 === 0 ? brandPrimary : brandSecondary);
+
+                    return (
+                      <div key={index} className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-3 relative">
+                        <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-3 h-3 rounded-full shrink-0 border border-white/20 shadow-sm"
+                              style={{ backgroundColor: pColor }}
+                            />
+                            <span className="font-bold text-xs uppercase tracking-wider text-white">
+                              Pilar {index + 1}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-3">
+                            {/* Color Selector */}
+                            <div className="flex items-center gap-1 bg-white/5 p-1 rounded-lg border border-white/10">
+                              {PRESET_COLOR_SWATCHES.map((c) => (
+                                <button
+                                  key={c.hex}
+                                  type="button"
+                                  title={c.name}
+                                  onClick={() => handleUpdatePillar({ color: c.hex })}
+                                  className={`w-3.5 h-3.5 rounded-full transition-transform ${
+                                    (pColor).toLowerCase() === c.hex.toLowerCase()
+                                      ? 'scale-125 ring-2 ring-white'
+                                      : 'opacity-70 hover:opacity-100 hover:scale-110'
+                                  }`}
+                                  style={{ backgroundColor: c.hex }}
+                                />
+                              ))}
+                              <label className="relative flex items-center justify-center cursor-pointer ml-0.5">
+                                <input
+                                  type="color"
+                                  value={pColor}
+                                  onChange={(e) => handleUpdatePillar({ color: e.target.value })}
+                                  className="sr-only"
+                                />
+                                <div
+                                  className="w-3.5 h-3.5 rounded-full border border-white/40 flex items-center justify-center text-[7px] text-white font-black"
+                                  title="Color personalizado"
+                                  style={{ backgroundColor: pColor }}
+                                >
+                                  +
+                                </div>
+                              </label>
+                            </div>
+
+                            {currentPillars.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={handleRemovePillar}
+                                className="text-slate-400 hover:text-red-400 transition-colors p-1"
+                                title="Eliminar pilar"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Título</label>
+                          <input
+                            type="text"
+                            value={pilar.title}
+                            onChange={(e) => handleUpdatePillar({ title: e.target.value })}
+                            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-primary/50"
+                            placeholder="Título del pilar..."
+                          />
+                        </div>
+
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Descripción</label>
+                            <button
+                              type="button"
+                              onClick={() => handleOptimizeField(`pillar_${index}_text`, pilar.description, (newVal) => handleUpdatePillar({ description: newVal }))}
+                              disabled={optimizingFieldId === `pillar_${index}_text` || !pilar.description.trim()}
+                              className="flex items-center gap-1 text-[9px] font-bold text-primary hover:text-primary-hover disabled:opacity-30 disabled:hover:text-primary transition-all cursor-pointer bg-white/5 hover:bg-white/10 px-2 py-0.5 rounded-full border border-white/5"
+                            >
+                              {optimizingFieldId === `pillar_${index}_text` ? (
+                                <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                              ) : (
+                                <Sparkles className="w-2.5 h-2.5 text-primary animate-pulse" />
+                              )}
+                              <span>Gemini AI</span>
+                            </button>
+                          </div>
+                          <textarea
+                            value={pilar.description}
+                            onChange={(e) => handleUpdatePillar({ description: e.target.value })}
+                            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-primary/50 min-h-[60px]"
+                            placeholder="Descripción detallada del pilar..."
+                          />
+                          <span className="text-[9px] text-slate-500 block mt-1">Usa <code>{"{client_name}"}</code> para insertar el nombre del cliente automáticamente.</span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </Section>
 
             <Section title="Agenda Semanal (Lun - Vie)">
               <div className="space-y-4">
+                <div className="flex items-center justify-between p-3.5 rounded-xl bg-white/5 border border-white/10">
+                  <div className="space-y-0.5">
+                    <div className="text-xs font-bold text-white">Ocultar sección "Agenda Semanal"</div>
+                    <div className="text-[11px] text-slate-400">Recomendado si el proyecto no requiere detallar la rutina semanal (Lun - Vie).</div>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                    <input
+                      type="checkbox"
+                      checked={methodology?.hide_weekly_schedule ?? false}
+                      onChange={(e) => updateMethodologyField('hide_weekly_schedule', e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                  </label>
+                </div>
+
+                {!methodology?.hide_weekly_schedule && (
+                  <div className="space-y-4">
                 {/* Lunes */}
                 <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-3">
                   <div className="text-white font-bold text-xs uppercase tracking-wider">Día 1</div>
@@ -2983,35 +4563,759 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
                   </div>
                 </div>
               </div>
+            )}
+              </div>
             </Section>
           </div>
         )}
 
         {/* LEGAL TAB */}
-        {activeEditorTab === 'legal' && (
+        {(activeEditorTab === 'legal' || activeEditorTab === 'legal2') && (
           <div className="space-y-6">
-            {renderVisibilityCard('legal', 'Legal')}
-            <Section title="Plantilla de Contrato Dinámico">
-              <div className="flex flex-col gap-2 mb-6">
-                <label className="text-slate-300 text-xs font-bold uppercase tracking-wider">Texto Descriptivo / Introducción</label>
-                <textarea
-                  value={contractDescription}
-                  onChange={(e) => setContractDescription(e.target.value)}
-                  placeholder="Acuerdo formal que establece las bases y condiciones legales para la ejecución del proyecto..."
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-primary/50 min-h-[80px] text-sm leading-relaxed"
-                />
+            {renderVisibilityCard(activeEditorTab, proposalType === 'service' ? (activeEditorTab === 'legal' ? 'Contrato de Servicio — Pág. 1 (Cláusulas 1 a 4)' : 'Contrato de Servicio — Pág. 2 (Cláusulas 5 a 8 & Firmas)') : 'Legal')}
+
+            {proposalType === 'service' && (
+              <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-between gap-3">
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Página Visualizada:</span>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setActiveEditorTab('legal')}
+                    className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                      activeEditorTab === 'legal'
+                        ? 'bg-primary text-white shadow-md'
+                        : 'text-slate-400 hover:text-white bg-white/5 hover:bg-white/10'
+                    }`}
+                  >
+                    Pág. 2: Cláusulas 1 a 4
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveEditorTab('legal2')}
+                    className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                      activeEditorTab === 'legal2'
+                        ? 'bg-primary text-white shadow-md'
+                        : 'text-slate-400 hover:text-white bg-white/5 hover:bg-white/10'
+                    }`}
+                  >
+                    Pág. 3: Cláusulas 5 a 8 & Firmas
+                  </button>
+                </div>
               </div>
-              <div className="flex flex-col gap-2">
-                <label className="text-slate-300 text-xs font-bold uppercase tracking-wider">Cuerpo del Contrato</label>
-                <p className="text-slate-400 text-xs mb-2">
-                  Puede usar variables como <code>{'{client_name}'}</code>, <code>{'{date}'}</code>, <code>{'{location}'}</code> y definir campos interactivos usando <code>{'[input:Etiqueta del Campo]'}</code>.
-                </p>
-                <textarea
-                  value={contractText}
-                  onChange={(e) => setContractText(e.target.value)}
-                  placeholder={`Si se deja vacío, se utilizará la plantilla genérica por defecto:\nEn la localidad de {location}, a los {date}... [input:Nombre]...`}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white placeholder-slate-600 focus:outline-none focus:border-primary/50 min-h-[300px] font-mono text-sm leading-relaxed"
-                />
+            )}
+
+            {/* Quick Contract Presets Toolbar */}
+            <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 shadow-lg space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-slate-300 text-xs font-black uppercase tracking-wider">
+                  <Zap size={15} className="text-amber-400" />
+                  <span>Plantillas Oficiales de Contrato CreAPP</span>
+                </div>
+                <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">1-Click Preset</span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setContractText(STACKED_PRESET.contract_template);
+                    setContractDescription(STACKED_PRESET.contract_description);
+                    if (STACKED_PRESET.default_service_details.recurring_fee) {
+                      setTotalValue(STACKED_PRESET.default_service_details.recurring_fee);
+                    }
+                    setShowToast(true);
+                  }}
+                  className={`px-3 py-2 rounded-xl text-left border transition-all flex items-center gap-2 cursor-pointer active:scale-95 ${
+                    contractText.includes('STACKED')
+                      ? 'bg-[#FF6B2C]/20 border-[#FF6B2C]/60 text-white shadow-md shadow-[#FF6B2C]/10'
+                      : 'bg-white/5 border-white/10 text-slate-400 hover:text-white hover:bg-white/10'
+                  }`}
+                  title="Cargar contrato de licenciamiento Stacked SaaS"
+                >
+                  <span className="text-base">🍔</span>
+                  <div className="min-w-0">
+                    <div className="text-[11px] font-black uppercase tracking-wider truncate">Stacked</div>
+                    <div className="text-[9px] text-slate-400 truncate">SaaS Gastronomía</div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setContractText(TRAZAPP_PRESET.contract_template);
+                    setContractDescription(TRAZAPP_PRESET.contract_description);
+                    if (TRAZAPP_PRESET.default_service_details.recurring_fee) {
+                      setTotalValue(TRAZAPP_PRESET.default_service_details.recurring_fee);
+                    }
+                    setShowToast(true);
+                  }}
+                  className={`px-3 py-2 rounded-xl text-left border transition-all flex items-center gap-2 cursor-pointer active:scale-95 ${
+                    contractText.includes('TRAZAPP')
+                      ? 'bg-emerald-600/20 border-emerald-500/60 text-white shadow-md shadow-emerald-500/10'
+                      : 'bg-white/5 border-white/10 text-slate-400 hover:text-white hover:bg-white/10'
+                  }`}
+                  title="Cargar contrato de licenciamiento Trazapp SaaS"
+                >
+                  <span className="text-base">🌿</span>
+                  <div className="min-w-0">
+                    <div className="text-[11px] font-black uppercase tracking-wider truncate">Trazapp</div>
+                    <div className="text-[9px] text-slate-400 truncate">Agrotech & Club</div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setContractText(DENTALIA_PRESET.contract_template);
+                    setContractDescription(DENTALIA_PRESET.contract_description);
+                    if (DENTALIA_PRESET.default_service_details.recurring_fee) {
+                      setTotalValue(DENTALIA_PRESET.default_service_details.recurring_fee);
+                    }
+                    setShowToast(true);
+                  }}
+                  className={`px-3 py-2 rounded-xl text-left border transition-all flex items-center gap-2 cursor-pointer active:scale-95 ${
+                    contractText.includes('DENTAL-IA')
+                      ? 'bg-blue-600/20 border-blue-500/60 text-white shadow-md shadow-blue-500/10'
+                      : 'bg-white/5 border-white/10 text-slate-400 hover:text-white hover:bg-white/10'
+                  }`}
+                  title="Cargar contrato de licenciamiento Dental-IA SaaS"
+                >
+                  <span className="text-base">🦷</span>
+                  <div className="min-w-0">
+                    <div className="text-[11px] font-black uppercase tracking-wider truncate">Dental-IA</div>
+                    <div className="text-[9px] text-slate-400 truncate">Clínicas con IA</div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setContractText(DEVELOPMENT_CONTRACT_TEMPLATE);
+                    setContractDescription(DEVELOPMENT_CONTRACT_DESCRIPTION);
+                    setShowToast(true);
+                  }}
+                  className={`px-3 py-2 rounded-xl text-left border transition-all flex items-center gap-2 cursor-pointer active:scale-95 ${
+                    !contractText.includes('STACKED') && !contractText.includes('TRAZAPP') && !contractText.includes('DENTAL-IA')
+                      ? 'bg-purple-600/20 border-purple-500/60 text-white shadow-md shadow-purple-500/10'
+                      : 'bg-white/5 border-white/10 text-slate-400 hover:text-white hover:bg-white/10'
+                  }`}
+                  title="Cargar contrato tradicional de desarrollo a medida"
+                >
+                  <Briefcase size={16} className="text-purple-400 shrink-0" />
+                  <div className="min-w-0">
+                    <div className="text-[11px] font-black uppercase tracking-wider truncate">Desarrollo</div>
+                    <div className="text-[9px] text-slate-400 truncate">A Medida</div>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* CARD 1: TÉRMINOS CLAVE DEL CONTRATO (Campos estructurados e intuitivos) */}
+            <div className="p-5 rounded-2xl bg-white/[0.03] border border-white/10 space-y-4 shadow-xl">
+              <div className="flex items-center justify-between pb-3 border-b border-white/5">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center text-primary shadow-sm">
+                    <FileSignature size={16} />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black text-white uppercase tracking-wider">Parámetros Principales del Contrato</h4>
+                    <p className="text-[11px] text-slate-400">Modifica los datos clave sin necesidad de buscar dentro del texto legal.</p>
+                  </div>
+                </div>
+                <span className="text-[9px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full uppercase tracking-wider">
+                  Sincronizado
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                {/* Cliente / Razón Social */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-300 uppercase tracking-widest flex items-center gap-1.5">
+                    <Building2 size={12} className="text-primary" />
+                    Cliente / Razón Social
+                  </label>
+                  <input
+                    type="text"
+                    value={clientName}
+                    onChange={(e) => setClientName(e.target.value)}
+                    placeholder="Ej: CBKR Burgers S.R.L."
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-primary/50 transition-all font-medium"
+                  />
+                  <span className="text-[9px] text-slate-500 block">Reemplaza automáticamente a <code className="text-primary/80 font-mono">{'{client_name}'}</code></span>
+                </div>
+
+                {/* Canon Mensual / Tarifa */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-300 uppercase tracking-widest flex items-center gap-1.5">
+                    <DollarSign size={12} className="text-emerald-400" />
+                    Canon Mensual / Abono
+                  </label>
+                  <input
+                    type="text"
+                    value={proposalType === 'service' ? (totalValue || serviceDetails.recurring_fee) : totalValue}
+                    onChange={(e) => handleUpdateTotalValue(e.target.value)}
+                    placeholder="Ej: $350 USD / mes ó $150.000 ARS"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-emerald-300 font-bold placeholder-slate-600 focus:outline-none focus:border-emerald-500/50 transition-all"
+                  />
+                  <span className="text-[9px] text-slate-500 block">Reemplaza automáticamente a <code className="text-emerald-400/80 font-mono">{'{total_value}'}</code></span>
+                </div>
+
+                {/* Vigencia Inicial */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-300 uppercase tracking-widest flex items-center gap-1.5">
+                    <Clock size={12} className="text-purple-400" />
+                    Vigencia Inicial / Plazo
+                  </label>
+                  <input
+                    type="text"
+                    value={serviceDetails.min_term_months || serviceDetails.minimum_commitment || '6 Meses'}
+                    onChange={(e) => updateServiceDetailField('min_term_months', e.target.value)}
+                    placeholder="Ej: 6 Meses ó 12 Meses"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-purple-300 font-bold placeholder-slate-600 focus:outline-none focus:border-purple-500/50 transition-all"
+                  />
+                  <span className="text-[9px] text-slate-500 block">Reemplaza automáticamente a <code className="text-purple-400/80 font-mono">{'{min_term_months}'}</code></span>
+                </div>
+
+                {/* Fecha del Contrato */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-300 uppercase tracking-widest flex items-center gap-1.5">
+                    <Calendar size={12} className="text-blue-400" />
+                    Fecha del Contrato
+                  </label>
+                  <input
+                    type="text"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    placeholder="Ej: 21 de Marzo, 2026"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-primary/50 transition-all"
+                  />
+                  <span className="text-[9px] text-slate-500 block">Reemplaza automáticamente a <code className="text-blue-400/80 font-mono">{'{date}'}</code></span>
+                </div>
+
+                {/* Localidad / Jurisdicción */}
+                <div className="space-y-1.5 sm:col-span-2">
+                  <label className="text-[10px] font-black text-slate-300 uppercase tracking-widest flex items-center gap-1.5">
+                    <MapPin size={12} className="text-amber-400" />
+                    Localidad / Jurisdicción
+                  </label>
+                  <input
+                    type="text"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    placeholder="Ej: Buenos Aires, Argentina"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-primary/50 transition-all"
+                  />
+                  <span className="text-[9px] text-slate-500 block">Reemplaza automáticamente a <code className="text-amber-400/80 font-mono">{'{location}'}</code></span>
+                </div>
+              </div>
+
+              {/* Resumen / Encabezado */}
+              <div className="space-y-2 pt-3 border-t border-white/5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <FileText size={12} className="text-primary" />
+                    <label className="text-[10px] font-black text-slate-300 uppercase tracking-widest">
+                      Texto Descriptivo / Resumen del Servicio
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleOptimizeField('contract_description', contractDescription, setContractDescription)}
+                      disabled={optimizingFieldId === 'contract_description' || !contractDescription || !contractDescription.trim()}
+                      className="flex items-center gap-1 text-[9px] font-bold text-primary hover:text-primary-hover disabled:opacity-30 disabled:hover:text-primary transition-all cursor-pointer bg-primary/10 hover:bg-primary/20 px-2 py-0.5 rounded-full border border-primary/20"
+                      title="Optimizar redacción con Gemini AI"
+                    >
+                      {optimizingFieldId === 'contract_description' ? (
+                        <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-2.5 h-2.5 text-primary animate-pulse" />
+                      )}
+                      <span>Gemini AI</span>
+                    </button>
+                    <span className="text-[9px] text-slate-500 hidden sm:inline">Párrafo de introducción en el PDF</span>
+                  </div>
+                </div>
+
+                <div className="rounded-xl bg-black/40 border border-white/10 focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/30 transition-all overflow-hidden">
+                  <textarea
+                    value={contractDescription}
+                    onChange={(e) => setContractDescription(e.target.value)}
+                    onWheel={(e) => e.stopPropagation()}
+                    rows={4}
+                    placeholder="Acuerdo formal que establece las bases y condiciones legales para la ejecución del servicio..."
+                    className="w-full bg-transparent px-3.5 py-3 text-xs text-slate-100 placeholder-slate-600 focus:outline-none leading-relaxed resize-y min-h-[96px] overscroll-contain block font-sans"
+                    style={{ overscrollBehavior: 'contain' }}
+                  />
+                  <div className="flex items-center justify-between px-3 py-1.5 border-t border-white/5 bg-white/[0.02] text-[10px] text-slate-400">
+                    <span className="font-mono text-[9px] text-slate-500">
+                      {contractDescription ? `${contractDescription.length} caracteres • ${contractDescription.trim().split(/\s+/).filter(Boolean).length} palabras` : '0 caracteres'}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      {contractDescription && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(contractDescription);
+                            setCopiedVar('contract_desc');
+                            setTimeout(() => setCopiedVar(null), 2000);
+                          }}
+                          className="text-[9px] text-slate-400 hover:text-white transition-colors flex items-center gap-1 cursor-pointer bg-white/5 hover:bg-white/10 px-2 py-0.5 rounded"
+                        >
+                          <Copy size={10} />
+                          <span>{copiedVar === 'contract_desc' ? 'Copiado' : 'Copiar'}</span>
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const preset = getCreappProductPreset(selectedProductId);
+                          setContractDescription(proposalType === 'service' ? preset.contract_description : DEVELOPMENT_CONTRACT_DESCRIPTION);
+                        }}
+                        className="text-[9px] text-slate-400 hover:text-amber-300 transition-colors flex items-center gap-1 cursor-pointer bg-white/5 hover:bg-white/10 px-2 py-0.5 rounded"
+                        title="Restaurar texto predeterminado del preset"
+                      >
+                        <RefreshCw size={10} />
+                        <span>Restaurar preset</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* CARD 2: BARRA DE INSERCIÓN DE VARIABLES (Click para insertar en cursor) */}
+            <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/10 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-slate-300 text-xs font-black uppercase tracking-wider">
+                  <Sparkles size={14} className="text-primary" />
+                  <span>Variables Dinámicas & Campos de Firma</span>
+                </div>
+                {copiedVar && (
+                  <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full flex items-center gap-1 animate-pulse">
+                    <Check size={11} /> ¡Insertado en cursor!
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-slate-400 leading-normal">
+                Haz clic en cualquier variable para insertarla directamente en el texto del contrato:
+              </p>
+
+              <div className="space-y-2">
+                <div>
+                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 block mb-1.5">
+                    Variables automáticas de CreAPP:
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => insertVariableIntoContract('{client_name}')}
+                      className="px-2.5 py-1 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 text-[11px] font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
+                      title={`Inserta {client_name} (Valor actual: "${clientName || 'Sin definir'}")`}
+                    >
+                      <span>+</span>
+                      <span>{'{client_name}'}</span>
+                      <span className="text-[9px] opacity-70 font-sans font-normal border-l border-primary/30 pl-1.5 text-slate-300">
+                        {clientName ? `"${clientName.slice(0, 14)}${clientName.length > 14 ? '...' : ''}"` : 'Cliente'}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => insertVariableIntoContract('{total_value}')}
+                      className="px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[11px] font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
+                      title={`Inserta {total_value} (Valor actual: "${totalValue || '$0'}")`}
+                    >
+                      <span>+</span>
+                      <span>{'{total_value}'}</span>
+                      <span className="text-[9px] opacity-70 font-sans font-normal border-l border-emerald-500/30 pl-1.5 text-emerald-200">
+                        {totalValue ? `${totalValue.slice(0, 14)}` : '$0'}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => insertVariableIntoContract('{date}')}
+                      className="px-2.5 py-1 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[11px] font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
+                      title={`Inserta {date} (Valor actual: "${date || 'Fecha'}")`}
+                    >
+                      <span>+</span>
+                      <span>{'{date}'}</span>
+                      <span className="text-[9px] opacity-70 font-sans font-normal border-l border-blue-500/30 pl-1.5 text-blue-200">
+                        {date ? `${date.slice(0, 12)}` : 'Fecha'}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => insertVariableIntoContract('{location}')}
+                      className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[11px] font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
+                      title={`Inserta {location} (Valor actual: "${location || 'Ubicación'}")`}
+                    >
+                      <span>+</span>
+                      <span>{'{location}'}</span>
+                      <span className="text-[9px] opacity-70 font-sans font-normal border-l border-amber-500/30 pl-1.5 text-amber-200">
+                        {location ? `${location.slice(0, 12)}` : 'Ubicación'}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="pt-1.5">
+                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 block mb-1.5">
+                    Campos que el cliente completará al firmar en pantalla:
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => insertVariableIntoContract('[input:Representante Legal]')}
+                      className="px-2.5 py-1 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[11px] font-mono flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
+                      title="Campo interactivo para que el cliente ingrese su Nombre y Apellido"
+                    >
+                      <span>+</span>
+                      <span className="font-bold">[input:Representante Legal]</span>
+                      <span className="text-[9px] text-slate-400 font-sans">Nombre Firmante</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => insertVariableIntoContract('[input:DNI/CUIT]')}
+                      className="px-2.5 py-1 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[11px] font-mono flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
+                      title="Campo interactivo para que el cliente ingrese su DNI o CUIT"
+                    >
+                      <span>+</span>
+                      <span className="font-bold">[input:DNI/CUIT]</span>
+                      <span className="text-[9px] text-slate-400 font-sans">Documento</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => insertVariableIntoContract('[input:Cargo del Firmante]')}
+                      className="px-2.5 py-1 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[11px] font-mono flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
+                      title="Campo interactivo para que el cliente ingrese su Cargo o Poder"
+                    >
+                      <span>+</span>
+                      <span className="font-bold">[input:Cargo del Firmante]</span>
+                      <span className="text-[9px] text-slate-400 font-sans">Cargo / Rol</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* CARD 3: EDITOR DE CONTRATO CON SELECTOR DE MODO */}
+            <div className="p-5 rounded-2xl bg-white/[0.03] border border-white/10 space-y-4 shadow-xl">
+              {/* Header con tabs de modo */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/5">
+                <div>
+                  <h4 className="text-xs font-black text-white uppercase tracking-wider">Cuerpo del Contrato</h4>
+                  <p className="text-[11px] text-slate-400">Edita el clausulado legal de manera modular o en texto continuo.</p>
+                </div>
+
+                {/* Switcher de Modos */}
+                <div className="flex items-center gap-1 p-1 bg-black/40 border border-white/10 rounded-xl self-start sm:self-auto">
+                  <button
+                    type="button"
+                    onClick={() => setContractViewMode('clauses')}
+                    className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${
+                      contractViewMode === 'clauses'
+                        ? 'bg-primary text-white shadow-md'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <Layers size={12} />
+                    Cláusulas
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setContractViewMode('full')}
+                    className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${
+                      contractViewMode === 'full'
+                        ? 'bg-primary text-white shadow-md'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <FileText size={12} />
+                    Texto Completo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setContractViewMode('preview')}
+                    className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${
+                      contractViewMode === 'preview'
+                        ? 'bg-primary text-white shadow-md'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <Eye size={12} />
+                    Lectura Real
+                  </button>
+                </div>
+              </div>
+
+              {/* MODO 1: CLÁUSULAS GUIADAS */}
+              {contractViewMode === 'clauses' && (
+                <div className="space-y-3">
+                  {parsedContract ? (
+                    <>
+                      {/* Comparecencia de las partes */}
+                      <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm">🏛️</span>
+                            <span className="text-[11px] font-black text-white uppercase tracking-wider">
+                              Encabezado & Comparecencia de las Partes
+                            </span>
+                          </div>
+                          <span className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Identificación</span>
+                        </div>
+                        <textarea
+                          value={parsedContract.header}
+                          onChange={(e) => handleUpdateContractHeader(e.target.value)}
+                          onWheel={(e) => e.stopPropagation()}
+                          rows={4}
+                          className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-primary/50 leading-relaxed font-sans overscroll-contain resize-y"
+                          style={{ overscrollBehavior: 'contain' }}
+                        />
+                      </div>
+
+                      {/* Lista de Cláusulas */}
+                      <div className="space-y-2.5">
+                        {parsedContract.clauses.map((clause, idx) => {
+                          const isExpanded = expandedClauseId === null || expandedClauseId === idx;
+                          const hasTotalValue = clause.content.includes('{total_value}');
+                          const hasClient = clause.content.includes('{client_name}');
+
+                          return (
+                            <div
+                              key={idx}
+                              className="rounded-xl bg-white/[0.02] border border-white/5 overflow-hidden transition-all hover:border-white/10"
+                            >
+                              <div
+                                onClick={() => setExpandedClauseId(expandedClauseId === idx ? -1 : idx)}
+                                className="p-3.5 flex items-center justify-between gap-3 cursor-pointer select-none bg-white/[0.01] hover:bg-white/[0.03] transition-colors"
+                              >
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                  <span className="text-base shrink-0">{clause.icon}</span>
+                                  <div className="min-w-0">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/5 text-slate-400 border border-white/5">
+                                        {clause.tag}
+                                      </span>
+                                      {hasTotalValue && (
+                                        <span className="text-[9px] font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                                          {'{total_value}'}
+                                        </span>
+                                      )}
+                                      {hasClient && (
+                                        <span className="text-[9px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20">
+                                          {'{client_name}'}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <h5 className="text-xs font-bold text-white tracking-wide truncate mt-0.5">
+                                      {clause.title}
+                                    </h5>
+                                  </div>
+                                </div>
+
+                                <div className="text-slate-400 shrink-0">
+                                  {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                                </div>
+                              </div>
+
+                              {isExpanded && (
+                                <div className="p-3.5 pt-0 border-t border-white/5 space-y-2">
+                                  <textarea
+                                    value={clause.content}
+                                    onChange={(e) => handleUpdateClause(idx, e.target.value)}
+                                    onWheel={(e) => e.stopPropagation()}
+                                    rows={Math.max(3, Math.min(8, Math.ceil(clause.content.length / 75)))}
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-primary/50 leading-relaxed font-sans overscroll-contain resize-y"
+                                    style={{ overscrollBehavior: 'contain' }}
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="p-5 rounded-xl bg-white/[0.02] border border-dashed border-white/10 text-center space-y-2">
+                      <p className="text-xs text-slate-400">
+                        El texto actual tiene formato libre y no utiliza cláusulas estándar numeradas (PRIMERA:, SEGUNDA:).
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setContractViewMode('full')}
+                        className="px-4 py-2 rounded-xl bg-primary text-white text-xs font-bold uppercase tracking-wider"
+                      >
+                        Abrir en Modo Texto Completo
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* MODO 2: TEXTO COMPLETO */}
+              {contractViewMode === 'full' && (
+                <div className="space-y-3">
+                  <div className="relative">
+                    <textarea
+                      ref={contractTextareaRef}
+                      value={contractText}
+                      onChange={(e) => setContractText(e.target.value)}
+                      onWheel={(e) => e.stopPropagation()}
+                      placeholder={`Si se deja vacío, se utilizará la plantilla genérica por defecto:\nEn la localidad de {location}, a los {date}... [input:Nombre]...`}
+                      className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-slate-200 placeholder-slate-600 focus:outline-none focus:border-primary/50 min-h-[360px] font-sans text-xs leading-relaxed overscroll-contain resize-y"
+                      style={{ overscrollBehavior: 'contain' }}
+                    />
+                  </div>
+
+                  {/* Barra de estado inferior */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-white/[0.02] border border-white/5 text-[10px] text-slate-400">
+                    <div className="flex items-center gap-3">
+                      <span>{contractText.length} caracteres</span>
+                      <span>•</span>
+                      <span>{contractText.split(/\s+/).filter(Boolean).length} palabras</span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(contractText);
+                          setShowToast(true);
+                        }}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 transition-colors cursor-pointer"
+                      >
+                        <Copy size={11} /> Copiar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const preset = getCreappProductPreset(selectedProductId);
+                          setContractText(preset.contract_template);
+                          setContractDescription(preset.contract_description);
+                          setShowToast(true);
+                        }}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-amber-400 transition-colors cursor-pointer"
+                      >
+                        <RefreshCw size={11} /> Restaurar Plantilla
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* MODO 3: VISTA DE LECTURA REAL */}
+              {contractViewMode === 'preview' && (
+                <div className="space-y-3">
+                  <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center gap-2.5 text-blue-300 text-xs">
+                    <Info size={16} className="shrink-0" />
+                    <span>
+                      Visualización del contrato con todas las variables inyectadas y los campos que completará el cliente.
+                    </span>
+                  </div>
+
+                  <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/10 space-y-4 max-h-[460px] overflow-y-auto">
+                    <div className="text-xs text-slate-300 leading-relaxed font-sans whitespace-pre-wrap select-text space-y-2">
+                      {(() => {
+                        if (!contractText) {
+                          return <p className="text-slate-500 italic">No hay contenido de contrato definido.</p>;
+                        }
+                        const regex = /(\{(?:client_name|total_value|date|location)\}|\[input:[^\]]+\])/g;
+                        const parts = contractText.split(regex);
+                        return parts.map((part, idx) => {
+                          if (part === '{client_name}') {
+                            return (
+                              <span key={idx} className="inline-flex items-center px-2 py-0.5 rounded-md bg-primary/20 text-white font-bold border border-primary/40 mx-0.5 shadow-sm" title="Variable {client_name}">
+                                {clientName || '{Nombre del Cliente}'}
+                              </span>
+                            );
+                          }
+                          if (part === '{total_value}') {
+                            return (
+                              <span key={idx} className="inline-flex items-center px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40 mx-0.5 shadow-sm" title="Variable {total_value}">
+                                {totalValue || '{Tarifa/Abono}'}
+                              </span>
+                            );
+                          }
+                          if (part === '{date}') {
+                            return (
+                              <span key={idx} className="inline-flex items-center px-2 py-0.5 rounded-md bg-blue-500/20 text-blue-300 font-bold border border-blue-500/40 mx-0.5 shadow-sm" title="Variable {date}">
+                                {date || '{Fecha}'}
+                              </span>
+                            );
+                          }
+                          if (part === '{location}') {
+                            return (
+                              <span key={idx} className="inline-flex items-center px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40 mx-0.5 shadow-sm" title="Variable {location}">
+                                {location || '{Ubicación}'}
+                              </span>
+                            );
+                          }
+                          if (part.startsWith('[input:') && part.endsWith(']')) {
+                            const label = part.slice(7, -1);
+                            return (
+                              <span key={idx} className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-purple-500/20 text-purple-200 border border-purple-500/40 mx-0.5 font-medium text-[11px]" title="Campo interactivo para el firmante">
+                                <span className="text-[9px] uppercase tracking-wider text-purple-400 font-bold">✍️ Firmante:</span>
+                                <span className="underline decoration-dotted decoration-purple-400">{label}</span>
+                              </span>
+                            );
+                          }
+                          return <span key={idx}>{part}</span>;
+                        });
+                      })()}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* CARD 4: FIRMANTES DE LA PROPUESTA / CONTRATO */}
+            <Section title="Firmantes Oficiales de CreAPP Software Lab">
+              <div className="space-y-3">
+                {/* Sebastián Maza */}
+                <div className="flex items-center justify-between p-3.5 rounded-xl bg-white/5 border border-white/10">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 font-black text-xs">
+                      SM
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-white flex items-center gap-2">
+                        <span>Sebastián Maza</span>
+                        <span className="text-[9px] font-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/20">Firmante Titular</span>
+                      </div>
+                      <div className="text-[11px] text-slate-400">Chief Technology Officer (CTO) — Firma digital oficial CreAPP incluida</div>
+                    </div>
+                  </div>
+                  <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-slate-400">
+                    <CheckCircle2 size={16} className="text-emerald-400" />
+                  </div>
+                </div>
+
+                {/* Facundo Marceca */}
+                <div className="flex items-center justify-between p-3.5 rounded-xl bg-white/5 border border-white/10">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-black text-xs">
+                      FM
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-white">Facundo Marceca</div>
+                      <div className="text-[11px] text-slate-400">Project Manager (PM) — Incluir firma conjunta en el contrato</div>
+                    </div>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                    <input
+                      type="checkbox"
+                      checked={methodology?.show_facundo_signature ?? true}
+                      onChange={(e) => updateMethodologyField('show_facundo_signature', e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                  </label>
+                </div>
               </div>
             </Section>
           </div>
@@ -3066,7 +5370,11 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
                     payments={payments as any[]}
                     totalValue={parseFloat(totalValue.replace(/[^0-9.]/g, '')) || 0}
                     clientLogoUrl={clientLogoUrl}
+                    clientLogoScale={clientLogoScale}
                     currency={getCurrencyFromTotal(totalValue)}
+                    pillars={getPillars(methodology, brandPrimary, brandSecondary)}
+                    methodologyIntro={methodology?.intro_text}
+                    hideWeeklySchedule={methodology?.hide_weekly_schedule}
                   />
                 </div>
               </div>
@@ -3076,7 +5384,7 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
                 <div className="flex justify-between items-center mb-3">
                   <div>
                     <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">
-                      Vista Previa del Documento (Pág. {getPageNumber(activeEditorTab)} / 7)
+                      Vista Previa del Documento (Pág. {getPageNumber(activeEditorTab)} / {ALL_PAGES.filter(p => !isPageHidden(p.id)).length})
                     </span>
                     <p className="text-[10px] text-slate-600">Representación en tiempo real del PDF final.</p>
                   </div>
@@ -3168,8 +5476,40 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
           <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
             <div style={{ position: 'absolute', top: '0', left: '0', right: '0', height: '8px', background: `linear-gradient(to right, ${brandPrimary}, ${brandSecondary})` }}></div>
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', flexGrow: 1, gap: '65px', marginTop: '20px', textAlign: 'center' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', alignItems: 'center' }}>
-                <img src={creappLogoOfficial} alt="CreAPP Logo" style={{ height: '105px', objectFit: 'contain' }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '30px', justifyContent: 'center', minHeight: '110px' }}>
+                {proposalType === 'service' ? (
+                  clientLogoUrl && (
+                    <img
+                      src={clientLogoUrl}
+                      alt={heroTitle || "Logo Producto"}
+                      style={{
+                        height: `${125 * (clientLogoScale / 100)}px`,
+                        maxHeight: '170px',
+                        maxWidth: '320px',
+                        objectFit: 'contain'
+                      }}
+                    />
+                  )
+                ) : (
+                  <>
+                    <img src={creappLogoOfficial} alt="CreAPP Logo" style={{ height: '105px', objectFit: 'contain' }} />
+                    {clientLogoUrl && (
+                      <>
+                        <span style={{ fontSize: '24px', fontWeight: '900', color: '#cbd5e1' }}>✕</span>
+                        <img
+                          src={clientLogoUrl}
+                          alt="Logo Cliente"
+                          style={{
+                            height: `${105 * (clientLogoScale / 100)}px`,
+                            maxHeight: '160px',
+                            maxWidth: '260px',
+                            objectFit: 'contain'
+                          }}
+                        />
+                      </>
+                    )}
+                  </>
+                )}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <span style={{ fontSize: '12px', fontWeight: '800', color: brandPrimary, letterSpacing: '3px', textTransform: 'uppercase' }}>
@@ -3186,7 +5526,10 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
               <div style={{ display: 'flex', gap: '60px', justifyContent: 'center', width: '100%' }}>
                 <div style={{ textAlign: 'center' }}>
                   <p style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1.5px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '5px' }}>Preparado para</p>
-                  <p style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>{clientName}</p>
+                  <p style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>{clientLegalData.company_name || clientName}</p>
+                  {clientLegalData.tax_id && (
+                    <p style={{ fontSize: '10px', color: '#64748b', fontWeight: '600', marginTop: '2px' }}>CUIT: {clientLegalData.tax_id}</p>
+                  )}
                 </div>
                 <div style={{ textAlign: 'center' }}>
                   <p style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1.5px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '5px' }}>Fecha</p>
@@ -3348,18 +5691,18 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
         {/* PÁGINA 3: Cronograma de Fases & Entregas */}
         {!isPageHidden('hitos') && (
           <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '25px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: (milestones && milestones.length >= 4) || (payments && payments.length >= 4) ? '15px' : '25px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
                 <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
                 <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{heroTitle ? heroTitle.toUpperCase() : 'CBKR APP V2'}</span>
               </div>
               <span style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>PROJECT_ROADMAP // 02</span>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: (milestones && milestones.length >= 4) || (payments && payments.length >= 4) ? '10px' : '20px' }}>
-              <h1 style={{ fontSize: '28px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: (milestones && milestones.length >= 4) || (payments && payments.length >= 4) ? '8px' : '20px' }}>
+              <h1 style={{ fontSize: (milestones && milestones.length >= 4) || (payments && payments.length >= 4) ? '24px' : '28px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
                 CRONOGRAMA DE FASES & <span style={{ fontStyle: 'italic', color: brandPrimary }}>ENTREGAS</span>
               </h1>
-              <p style={{ fontSize: '11px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
+              <p style={{ fontSize: (milestones && milestones.length >= 4) || (payments && payments.length >= 4) ? '10px' : '11px', color: '#475569', lineHeight: '1.35', fontWeight: '300', margin: '0' }}>
                 {(() => {
                   const meth = methodology || DEFAULT_METHODOLOGY;
                   const text = meth.phases_intro ?? DEFAULT_METHODOLOGY.phases_intro;
@@ -3373,48 +5716,50 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
                   return text;
                 })()}
               </p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: '5px', marginBottom: '2px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: '2px', marginBottom: '2px' }}>
                 <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Estructura de Sprints Mensuales</span>
                 <div style={{ flexGrow: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: milestones && milestones.length >= 4 ? '10px' : '15px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: (milestones && milestones.length >= 4) || (payments && payments.length >= 4) ? '6px' : '15px' }}>
                 {milestones && milestones.map((m, i) => (
-                  <div key={m.id || i} style={{ display: 'flex', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', minHeight: milestones && milestones.length >= 4 ? '76px' : '95px', boxSizing: 'border-box' }}>
-                    <div style={{ width: '80px', flexShrink: 0, flexGrow: 0, backgroundColor: '#000000', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: '#ffffff', gap: '4px', boxSizing: 'border-box' }}>
-                      <span style={{ fontSize: '9px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.8 }}>Fase</span>
-                      <span style={{ fontSize: '20px', fontWeight: '950' }}>{i + 1}</span>
+                  <div key={m.id || i} style={{ display: 'flex', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', minHeight: milestones && milestones.length >= 4 ? '68px' : '95px', boxSizing: 'border-box' }}>
+                    <div style={{ width: milestones && milestones.length >= 4 ? '65px' : '80px', flexShrink: 0, flexGrow: 0, backgroundColor: '#000000', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: '#ffffff', gap: '2px', boxSizing: 'border-box' }}>
+                      <span style={{ fontSize: '8px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.8 }}>Fase</span>
+                      <span style={{ fontSize: milestones && milestones.length >= 4 ? '16px' : '20px', fontWeight: '950' }}>{i + 1}</span>
                     </div>
-                    <div style={{ flexGrow: 1, flexShrink: 1, minWidth: 0, padding: milestones && milestones.length >= 4 ? '10px 15px' : '15px 20px', display: 'flex', flexDirection: 'column', gap: '4px', justifyContent: 'center', boxSizing: 'border-box' }}>
-                      <h4 style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', margin: '0', textTransform: 'uppercase' }}>{m.title}</h4>
-                      <p style={{ fontSize: '10px', color: '#475569', lineHeight: '1.3', margin: '0', fontWeight: '300' }}>
+                    <div style={{ flexGrow: 1, flexShrink: 1, minWidth: 0, padding: milestones && milestones.length >= 4 ? '6px 12px' : '15px 20px', display: 'flex', flexDirection: 'column', gap: '3px', justifyContent: 'center', boxSizing: 'border-box' }}>
+                      <h4 style={{ fontSize: milestones && milestones.length >= 4 ? '11px' : '12px', fontWeight: '900', color: '#0f172a', margin: '0', textTransform: 'uppercase' }}>{m.title}</h4>
+                      <p style={{ fontSize: milestones && milestones.length >= 4 ? '9px' : '10px', color: '#475569', lineHeight: '1.2', margin: '0', fontWeight: '300' }}>
                         {m.description || 'Sin descripción de entregables.'}
                       </p>
                     </div>
-                    <div style={{ width: '120px', flexShrink: 0, flexGrow: 0, borderLeft: '1px solid #e2e8f0', padding: '10px 15px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '4px', backgroundColor: '#fafafa', boxSizing: 'border-box' }}>
+                    <div style={{ width: milestones && milestones.length >= 4 ? '105px' : '120px', flexShrink: 0, flexGrow: 0, borderLeft: '1px solid #e2e8f0', padding: milestones && milestones.length >= 4 ? '6px 10px' : '15px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '2px', backgroundColor: '#fafafa', boxSizing: 'border-box' }}>
                       <span style={{ fontSize: '7px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Hito Control</span>
-                      <span style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', textAlign: 'center', lineHeight: '1.1' }}>
+                      <span style={{ fontSize: milestones && milestones.length >= 4 ? '9px' : '10px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', textAlign: 'center', lineHeight: '1.1' }}>
                         {m.control_milestone || 'VERIFICACIÓN'}
                       </span>
                     </div>
-                    <div style={{ width: '120px', flexShrink: 0, flexGrow: 0, borderLeft: '1px solid #e2e8f0', padding: '10px 15px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '4px', backgroundColor: '#fafafa', boxSizing: 'border-box' }}>
-                      <span style={{ fontSize: '7px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Inversión</span>
-                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}>
-                        <span style={{ fontSize: '14px', fontWeight: '950', color: '#000000', lineHeight: '1.1' }}>${m.price || '0'}</span>
-                        <span style={{ fontSize: '8px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', lineHeight: '1.1' }}>{getCurrencyFromTotal(totalValue)}</span>
+                    {!methodology?.hide_milestone_prices && (
+                      <div style={{ width: milestones && milestones.length >= 4 ? '105px' : '120px', flexShrink: 0, flexGrow: 0, borderLeft: '1px solid #e2e8f0', padding: milestones && milestones.length >= 4 ? '6px 10px' : '15px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '2px', backgroundColor: '#fafafa', boxSizing: 'border-box' }}>
+                        <span style={{ fontSize: '7px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Inversión</span>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}>
+                          <span style={{ fontSize: milestones && milestones.length >= 4 ? '13px' : '14px', fontWeight: '950', color: '#000000', lineHeight: '1.1' }}>${m.price || '0'}</span>
+                          <span style={{ fontSize: '8px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', lineHeight: '1.1' }}>{getCurrencyFromTotal(totalValue)}</span>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 ))}
               </div>
               {infrastructureCosts && infrastructureCosts.length > 0 && (
                 <div style={{ marginTop: '2px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '4px' }}>
                     <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Costos de Infraestructura Asociados</span>
                     <div style={{ flexGrow: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
                   </div>
-                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                     {infrastructureCosts.map((infra, idx) => (
-                      <div key={idx} style={{ flex: '1 1 180px', padding: '6px 12px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '9px' }}>
+                      <div key={idx} style={{ flex: '1 1 180px', padding: '5px 10px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '9px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                           <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{infra.provider}</span>
                           {infra.is_optional && (
@@ -3435,16 +5780,16 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
                     <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Esquema de Pagos / Hitos de Financiamiento</span>
                     <div style={{ flexGrow: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
                   </div>
-                  <div style={{ display: 'flex', gap: payments.length > 3 ? '6px' : '10px', flexWrap: 'nowrap', width: '100%' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: `repeat(${payments.length}, minmax(0, 1fr))`, gap: payments.length > 3 ? '8px' : '10px', width: '100%' }}>
                     {payments.map((p, idx) => (
-                      <div key={idx} style={{ flex: '1 1 0px', minWidth: '0px', padding: payments.length > 3 ? '6px 8px' : '8px 12px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '3px', boxSizing: 'border-box' }}>
+                      <div key={idx} style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: payments.length > 3 ? '8px 10px' : '10px 12px', display: 'flex', flexDirection: 'column', gap: '4px', boxSizing: 'border-box' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '4px' }}>
                           <span style={{ fontSize: payments.length > 3 ? '8.5px' : '9px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', lineHeight: '1.2' }}>{p.label}</span>
                           <span style={{ fontSize: payments.length > 3 ? '11px' : '12px', fontWeight: '950', color: brandPrimary, flexShrink: 0 }}>{p.percentage}</span>
                         </div>
-                        <span style={{ fontSize: payments.length > 3 ? '8px' : '9px', color: '#475569', fontWeight: '300', lineHeight: '1.25' }}>{p.description}</span>
+                        <span style={{ fontSize: payments.length > 3 ? '8px' : '9px', color: '#475569', fontWeight: '300', lineHeight: '1.3' }}>{p.description}</span>
                         {p.tooltip && (
-                          <span style={{ fontSize: payments.length > 3 ? '7.5px' : '8px', color: '#94a3b8', fontStyle: 'italic', lineHeight: '1.2', marginTop: '1px' }}>{p.tooltip}</span>
+                          <span style={{ fontSize: payments.length > 3 ? '7.5px' : '8px', color: '#94a3b8', fontStyle: 'italic', lineHeight: '1.3', marginTop: '2px' }}>{p.tooltip}</span>
                         )}
                       </div>
                     ))}
@@ -3591,60 +5936,72 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
                 <p style={{ fontSize: '11px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
                   {meth.intro_text || DEFAULT_METHODOLOGY.intro_text}
                 </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '5px' }}>
-                  <div style={{ padding: '20px', borderRadius: '12px', backgroundColor: '#faf5ff', border: '1px solid #f3e8ff' }}>
-                    <h4 style={{ fontSize: '10px', fontWeight: '900', color: brandPrimary, margin: '0 0 6px 0', letterSpacing: '1.5px', textTransform: 'uppercase' }}>
-                      {meth.incremental_title || DEFAULT_METHODOLOGY.incremental_title}
-                    </h4>
-                    <p style={{ fontSize: '11px', color: '#581c87', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
-                      {clientNameReplacer(meth.incremental_text || DEFAULT_METHODOLOGY.incremental_text)}
-                    </p>
-                  </div>
-                  <div style={{ padding: '20px', borderRadius: '12px', backgroundColor: '#fdf2f8', border: '1px solid #fce7f3' }}>
-                    <h4 style={{ fontSize: '10px', fontWeight: '900', color: brandSecondary, margin: '0 0 6px 0', letterSpacing: '1.5px', textTransform: 'uppercase' }}>
-                      {meth.planning_title || DEFAULT_METHODOLOGY.planning_title}
-                    </h4>
-                    <p style={{ fontSize: '11px', color: '#9d174d', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
-                      {clientNameReplacer(meth.planning_text || DEFAULT_METHODOLOGY.planning_text)}
-                    </p>
-                  </div>
-                  <div style={{ padding: '20px', borderRadius: '12px', border: '1px solid #0f172a', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    <div>
-                      <h5 style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0', letterSpacing: '1px', textTransform: 'uppercase' }}>
-                        {meth.schedule_monday_title || DEFAULT_METHODOLOGY.schedule_monday_title}
-                      </h5>
-                      <h6 style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', margin: '0 0 2px 0', textTransform: 'uppercase' }}>
-                        {meth.schedule_monday_subtitle || DEFAULT_METHODOLOGY.schedule_monday_subtitle}
-                      </h6>
-                      <p style={{ fontSize: '10px', color: '#475569', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
-                        {clientNameReplacer(meth.schedule_monday_text || DEFAULT_METHODOLOGY.schedule_monday_text)}
-                      </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: meth.hide_weekly_schedule ? '16px' : (getPillars(meth, brandPrimary, brandSecondary).length >= 4 ? '10px' : '15px'), marginTop: '5px' }}>
+                  {getPillars(meth, brandPrimary, brandSecondary).map((pillar, idx) => {
+                    const mainColor = pillar.color || (idx % 2 === 0 ? brandPrimary : brandSecondary);
+                    const isCompact = !meth.hide_weekly_schedule && getPillars(meth, brandPrimary, brandSecondary).length >= 4;
+                    return (
+                      <div
+                        key={pillar.id || idx}
+                        style={{
+                          padding: meth.hide_weekly_schedule ? '18px 22px' : (isCompact ? '12px 16px' : '18px 20px'),
+                          borderRadius: '12px',
+                          backgroundColor: `${mainColor}0A`,
+                          border: `1px solid ${mainColor}33`,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '4px'
+                        }}
+                      >
+                        <h4 style={{ fontSize: '10px', fontWeight: '900', color: mainColor, margin: '0', letterSpacing: '1.5px', textTransform: 'uppercase' }}>
+                          {pillar.title}
+                        </h4>
+                        <p style={{ fontSize: meth.hide_weekly_schedule ? '11px' : (isCompact ? '10px' : '11px'), color: '#475569', lineHeight: '1.5', margin: '0', fontWeight: '300' }}>
+                          {clientNameReplacer(pillar.description)}
+                        </p>
+                      </div>
+                    );
+                  })}
+
+                  {!meth.hide_weekly_schedule && (
+                    <div style={{ padding: '20px', borderRadius: '12px', border: '1px solid #0f172a', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <div>
+                        <h5 style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                          {meth.schedule_monday_title || DEFAULT_METHODOLOGY.schedule_monday_title}
+                        </h5>
+                        <h6 style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', margin: '0 0 2px 0', textTransform: 'uppercase' }}>
+                          {meth.schedule_monday_subtitle || DEFAULT_METHODOLOGY.schedule_monday_subtitle}
+                        </h6>
+                        <p style={{ fontSize: '10px', color: '#475569', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
+                          {clientNameReplacer(meth.schedule_monday_text || DEFAULT_METHODOLOGY.schedule_monday_text)}
+                        </p>
+                      </div>
+                      <div style={{ height: '1px', backgroundColor: '#e2e8f0' }}></div>
+                      <div>
+                        <h5 style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                          {meth.schedule_tuesday_title || DEFAULT_METHODOLOGY.schedule_tuesday_title}
+                        </h5>
+                        <h6 style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', margin: '0 0 2px 0', textTransform: 'uppercase' }}>
+                          {meth.schedule_tuesday_subtitle || DEFAULT_METHODOLOGY.schedule_tuesday_subtitle}
+                        </h6>
+                        <p style={{ fontSize: '10px', color: '#475569', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
+                          {clientNameReplacer(meth.schedule_tuesday_text || DEFAULT_METHODOLOGY.schedule_tuesday_text)}
+                        </p>
+                      </div>
+                      <div style={{ height: '1px', backgroundColor: '#e2e8f0' }}></div>
+                      <div>
+                        <h5 style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                          {meth.schedule_friday_title || DEFAULT_METHODOLOGY.schedule_friday_title}
+                        </h5>
+                        <h6 style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', margin: '0 0 2px 0', textTransform: 'uppercase' }}>
+                          {meth.schedule_friday_subtitle || DEFAULT_METHODOLOGY.schedule_friday_subtitle}
+                        </h6>
+                        <p style={{ fontSize: '10px', color: '#475569', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
+                          {clientNameReplacer(meth.schedule_friday_text || DEFAULT_METHODOLOGY.schedule_friday_text)}
+                        </p>
+                      </div>
                     </div>
-                    <div style={{ height: '1px', backgroundColor: '#e2e8f0' }}></div>
-                    <div>
-                      <h5 style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0', letterSpacing: '1px', textTransform: 'uppercase' }}>
-                        {meth.schedule_tuesday_title || DEFAULT_METHODOLOGY.schedule_tuesday_title}
-                      </h5>
-                      <h6 style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', margin: '0 0 2px 0', textTransform: 'uppercase' }}>
-                        {meth.schedule_tuesday_subtitle || DEFAULT_METHODOLOGY.schedule_tuesday_subtitle}
-                      </h6>
-                      <p style={{ fontSize: '10px', color: '#475569', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
-                        {clientNameReplacer(meth.schedule_tuesday_text || DEFAULT_METHODOLOGY.schedule_tuesday_text)}
-                      </p>
-                    </div>
-                    <div style={{ height: '1px', backgroundColor: '#e2e8f0' }}></div>
-                    <div>
-                      <h5 style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0', letterSpacing: '1px', textTransform: 'uppercase' }}>
-                        {meth.schedule_friday_title || DEFAULT_METHODOLOGY.schedule_friday_title}
-                      </h5>
-                      <h6 style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', margin: '0 0 2px 0', textTransform: 'uppercase' }}>
-                        {meth.schedule_friday_subtitle || DEFAULT_METHODOLOGY.schedule_friday_subtitle}
-                      </h6>
-                      <p style={{ fontSize: '10px', color: '#475569', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
-                        {clientNameReplacer(meth.schedule_friday_text || DEFAULT_METHODOLOGY.schedule_friday_text)}
-                      </p>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
               <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
@@ -3655,76 +6012,26 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
           );
         })()}
 
-        {/* PÁGINA 7: Acuerdo de Servicios */}
-        {!isPageHidden('contrato') && (
-          <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '25px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
-                <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
-                <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{heroTitle ? heroTitle.toUpperCase() : 'CBKR APP V2'}</span>
+        {/* PÁGINA LEGAL: Contrato y Firmas */}
+        {proposalType === 'service' ? (
+          <>
+            {!isPageHidden('legal') && (
+              <div id="page-legal-part1">
+                {renderPageLegalPart1()}
               </div>
-              <span style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>LEGAL_AGREEMENT // 05</span>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: '20px', marginBottom: '60px' }}>
-              <h1 style={{ fontSize: '28px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
-                CONTRATO Y <span style={{ fontStyle: 'italic', color: brandPrimary }}>FIRMAS</span>
-              </h1>
-              <p style={{ fontSize: '11px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
-                {contractDescription || 'Acuerdo formal que establece las bases y condiciones legales para la ejecución del proyecto de desarrollo de software detallado en esta propuesta.'}
-              </p>
-              <div style={{ fontSize: '10px', color: '#334155', lineHeight: '1.6', whiteSpace: 'pre-wrap', fontFamily: 'system-ui, -apple-system, sans-serif', padding: '20px', backgroundColor: '#f8fafc', borderRadius: '20px', border: '1px solid #e2e8f0', maxHeight: '350px', overflow: 'hidden', marginTop: '5px' }}>
-                {contractText ? (
-                  contractText
-                    .replace(/\{location\}/g, location)
-                    .replace(/\{date\}/g, date)
-                    .replace(/\{client_name\}/g, clientName)
-                    .replace(/\{total_value\}/g, totalValue)
-                    .replace(/\[input:[^\]]+\]/g, '________________________')
-                ) : (
-                  `CONTRATO DE DESARROLLO DE SOFTWARE
-   
-  Entre Creapp Software Lab y ${clientName}, se acuerda el desarrollo integral del sistema conforme a los alcances y términos especificados en esta propuesta comercial por un valor total de ${totalValue}.
-   
-  Este contrato entra en vigencia a partir de la firma del presente documento el día ${date} en la localidad de ${location}.`
-                )}
+            )}
+            {!isPageHidden('legal2') && (
+              <div id="page-legal-part2">
+                {renderPageLegalPart2()}
               </div>
-              <div style={{ display: 'flex', gap: '20px', marginTop: '20px' }}>
-                <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '2px' }}>Por CreAPP Software Lab</p>
-                  <div style={{ height: '60px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0', padding: '8px' }}>
-                    <img src="/firmaseba.png" alt="Firma Seba" style={{ height: '100%', objectFit: 'contain' }} />
-                  </div>
-                  <div style={{ fontSize: '10px' }}>
-                    <p style={{ fontWeight: '800', color: '#0f172a' }}>Sebastián Maza</p>
-                    <p style={{ color: '#64748b', fontSize: '9px' }}>Chief Technology Officer</p>
-                  </div>
-                </div>
-                <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '2px' }}>Por CreAPP Software Lab</p>
-                  <div style={{ height: '60px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1', padding: '8px' }}>
-                  </div>
-                  <div style={{ fontSize: '10px' }}>
-                    <p style={{ fontWeight: '800', color: '#0f172a' }}>Facundo Marceca</p>
-                    <p style={{ color: '#64748b', fontSize: '9px' }}>Project Manager</p>
-                  </div>
-                </div>
-                <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '2px' }}>Por {clientName}</p>
-                  <div style={{ height: '60px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1', color: '#94a3b8', fontSize: '10px', textAlign: 'center' }}>
-                    Pendiente de Firma
-                  </div>
-                  <div style={{ fontSize: '10px' }}>
-                    <p style={{ fontWeight: '800', color: '#0f172a' }}>________________________</p>
-                    <p style={{ color: '#64748b', fontSize: '9px' }}>Representante Autorizado</p>
-                  </div>
-                </div>
-              </div>
+            )}
+          </>
+        ) : (
+          !isPageHidden('legal') && (
+            <div id="page-legal">
+              {renderPage7()}
             </div>
-            <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
-              <span>Propuesta Comercial | {clientName}</span>
-              <span>Página 7 de 7</span>
-            </div>
-          </div>
+          )
         )}
       </div>
 

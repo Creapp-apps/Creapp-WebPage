@@ -13,11 +13,11 @@ import {
     Eye,
     EyeOff,
     ArrowLeft,
-    Rocket,
     LogOut,
     Copy,
     CheckCheck,
 } from 'lucide-react';
+import creappLogoOfficial from '@/assets/CREAPP LOGO VECTOR.png';
 import { supabase } from '@/lib/supabaseClient';
 import {
     getAllProjects,
@@ -115,10 +115,12 @@ const ControlCenter: React.FC = () => {
             {/* Header */}
             <header className="border-b border-white/5 bg-surface-dark/80 backdrop-blur-xl sticky top-0 z-50">
                 <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-                    <div className="flex items-center gap-4">
-                        <div className="w-9 h-9 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center">
-                            <Rocket className="text-white fill-current" size={18} />
-                        </div>
+                    <div className="flex items-center gap-3">
+                        <img
+                            src={creappLogoOfficial}
+                            alt="CreAPP"
+                            className="h-10 w-auto object-contain drop-shadow-[0_0_12px_rgba(255,45,120,0.35)]"
+                        />
                         <div>
                             <h1 className="text-lg font-display font-black text-white tracking-tight">Centro de Control</h1>
                             <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Gestión de Proyectos CreAPP</p>

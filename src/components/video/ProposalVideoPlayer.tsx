@@ -14,7 +14,11 @@ interface ProposalVideoPlayerProps {
   payments: any[];
   totalValue: number;
   clientLogoUrl?: string;
+  clientLogoScale?: number;
   currency?: string;
+  pillars?: any[];
+  methodologyIntro?: string;
+  hideWeeklySchedule?: boolean;
 }
 
 export const ProposalVideoPlayer: React.FC<ProposalVideoPlayerProps> = ({
@@ -28,7 +32,11 @@ export const ProposalVideoPlayer: React.FC<ProposalVideoPlayerProps> = ({
   payments,
   totalValue,
   clientLogoUrl = '',
+  clientLogoScale = 100,
   currency = 'USD',
+  pillars = [],
+  methodologyIntro = '',
+  hideWeeklySchedule = false,
 }) => {
   const [selectedRatio, setSelectedRatio] = useState<'16:9' | '9:16'>('16:9');
   const [renderStatus, setRenderStatus] = useState<'idle' | 'rendering' | 'completed'>('idle');
@@ -71,8 +79,12 @@ export const ProposalVideoPlayer: React.FC<ProposalVideoPlayerProps> = ({
           payments,
           totalValue,
           clientLogoUrl,
+          clientLogoScale,
           aspectRatio: selectedRatio,
           currency,
+          pillars,
+          methodologyIntro,
+          hideWeeklySchedule,
         }),
       });
 
@@ -142,10 +154,14 @@ export const ProposalVideoPlayer: React.FC<ProposalVideoPlayerProps> = ({
             payments,
             totalValue,
             clientLogoUrl,
+            clientLogoScale,
             aspectRatio: selectedRatio,
             currency,
+            pillars,
+            methodologyIntro,
+            hideWeeklySchedule,
           }}
-          durationInFrames={1440} // 48 seconds at 30 fps
+          durationInFrames={1260} // 42 seconds at 30 fps
           fps={30}
           compositionWidth={selectedRatio === '9:16' ? 1080 : 1920}
           compositionHeight={selectedRatio === '9:16' ? 1920 : 1080}

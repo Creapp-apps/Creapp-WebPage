@@ -11,6 +11,9 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 3000,
       host: '0.0.0.0',
+      watch: {
+        ignored: ['**/public/temp/**', '**/temp/**'],
+      },
     },
     plugins: [
       react(),
@@ -27,28 +30,38 @@ export default defineConfig(({ mode }) => {
                 try {
                   const inputProps = JSON.parse(body);
                   
-                  // Ensure temp directory exists under public
+                  // Ensure temp directory exists
+                  if (!fs.existsSync('./temp')) {
+                    fs.mkdirSync('./temp', { recursive: true });
+                  }
                   if (!fs.existsSync('./public/temp')) {
                     fs.mkdirSync('./public/temp', { recursive: true });
                   }
                   
-                  // Write inputs to JSON
-                  const inputPath = './public/temp/inputs.json';
+                  // Write inputs to JSON in non-public temp directory
+                  const inputPath = './temp/inputs.json';
                   fs.writeFileSync(inputPath, JSON.stringify(inputProps, null, 2));
                   
                   // Output path
                   const isVertical = inputProps.aspectRatio === '9:16';
                   const compositionId = isVertical ? 'ProposalVideoVertical' : 'ProposalVideo';
                   const prefix = isVertical ? 'vertical-' : 'horizontal-';
-                  const outputVideoName = `propuesta-${prefix}${inputProps.clientName.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}.mp4`;
+                  const safeClientSlug = (inputProps.clientName || 'cliente')
+                    .toLowerCase()
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')
+                    .replace(/[^a-z0-9]/g, '-')
+                    .replace(/-+/g, '-')
+                    .replace(/^-|-$/g, '');
+                  const outputVideoName = `propuesta-${prefix}${safeClientSlug}-${Date.now()}.mp4`;
                   const outputPath = `./public/temp/${outputVideoName}`;
                   
                   // Run Remotion CLI command
-                  const command = `npx remotion render src/remotion-entry.tsx ${compositionId} ${outputPath} --input-props=${inputPath} --overwrite`;
+                  const command = `npx remotion render src/remotion-entry.tsx ${compositionId} "${outputPath}" --props="${inputPath}" --log=error --overwrite`;
                   
                   console.log(`[Remotion Video Renderer] Executing command: ${command}`);
                   
-                  exec(command, (error, stdout, stderr) => {
+                  exec(command, { maxBuffer: 1024 * 1024 * 50 }, (error, stdout, stderr) => {
                     if (error) {
                       console.error(`[Remotion Video Renderer] Error: ${error.message}`);
                       console.error(stderr);
@@ -60,13 +73,39 @@ export default defineConfig(({ mode }) => {
                     console.log(stdout);
                     
                     res.writeHead(200, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ success: true, videoUrl: `/temp/${outputVideoName}` }));
+                    res.end(JSON.stringify({ success: true, videoUrl: `/api/download-video?file=${outputVideoName}` }));
                   });
-                } catch (err) {
+                } catch (err: any) {
                   res.writeHead(400, { 'Content-Type': 'application/json' });
-                  res.end(JSON.stringify({ error: 'Formato de petición inválido', details: err.message }));
+                  res.end(JSON.stringify({ error: 'Formato de petición inválido', details: err?.message || String(err) }));
                 }
               });
+            } else if (req.url?.startsWith('/api/download-video') && req.method === 'GET') {
+              try {
+                const urlObj = new URL(req.url, 'http://localhost');
+                const fileName = urlObj.searchParams.get('file');
+                if (!fileName || fileName.includes('..') || fileName.includes('/') || fileName.includes('\\')) {
+                  res.writeHead(400, { 'Content-Type': 'application/json' });
+                  res.end(JSON.stringify({ error: 'Nombre de archivo inválido' }));
+                  return;
+                }
+                const filePath = path.join(process.cwd(), 'public', 'temp', fileName);
+                if (!fs.existsSync(filePath)) {
+                  res.writeHead(404, { 'Content-Type': 'application/json' });
+                  res.end(JSON.stringify({ error: 'Archivo no encontrado' }));
+                  return;
+                }
+                const stat = fs.statSync(filePath);
+                res.writeHead(200, {
+                  'Content-Type': 'video/mp4',
+                  'Content-Length': stat.size,
+                  'Content-Disposition': `attachment; filename="${fileName}"`,
+                });
+                fs.createReadStream(filePath).pipe(res);
+              } catch (err: any) {
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Error al descargar el archivo', details: err?.message }));
+              }
             } else {
               next();
             }

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useCurrentFrame, useVideoConfig, spring, interpolate, Sequence } from 'remotion';
 import IconResolver from '../ui/IconResolver';
+import creappLogoOfficial from '../../assets/CREAPP LOGO VECTOR.png';
 
 interface Inclusion {
   title?: string;
@@ -42,8 +43,12 @@ interface ProposalVideoCompositionProps {
   payments: Payment[];
   totalValue: number;
   clientLogoUrl?: string;
+  clientLogoScale?: number;
   aspectRatio?: '16:9' | '9:16';
   currency?: string;
+  pillars?: Array<{ title: string; description: string; color?: string }>;
+  methodologyIntro?: string;
+  hideWeeklySchedule?: boolean;
 }
 
 // Helper to format currency
@@ -140,8 +145,12 @@ export const ProposalVideoComposition: React.FC<ProposalVideoCompositionProps> =
   payments = [],
   totalValue = 0,
   clientLogoUrl = '',
+  clientLogoScale = 100,
   aspectRatio = '16:9',
   currency = 'USD',
+  pillars = [],
+  methodologyIntro = '',
+  hideWeeklySchedule = false,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -226,6 +235,7 @@ export const ProposalVideoComposition: React.FC<ProposalVideoCompositionProps> =
           heroTitle={heroTitle}
           slideBgStyle={slideBgStyle}
           clientLogoUrl={clientLogoUrl}
+          clientLogoScale={clientLogoScale}
           aspectRatio={aspectRatio}
         />
       </Sequence>
@@ -260,28 +270,21 @@ export const ProposalVideoComposition: React.FC<ProposalVideoCompositionProps> =
         />
       </Sequence>
 
-      {/* SLIDE 5: WEEKS / DETALLE DE SEMANAS (26s - 32s / 780 - 960 frames) */}
+      {/* SLIDE 5: METHODOLOGY / METODOLOGÍA & PLAN DE ACCIÓN (26s - 32s / 780 - 960 frames) */}
       <Sequence from={780} durationInFrames={180}>
-        <WeeksDetailSlide
-          primaryColor={primaryColor}
-          secondaryColor={secondaryColor}
-          slideBgStyle={slideBgStyle}
-          aspectRatio={aspectRatio}
-        />
-      </Sequence>
-
-      {/* SLIDE 6: METHODOLOGY / METODOLOGÍA (32s - 38s / 960 - 1140 frames) */}
-      <Sequence from={960} durationInFrames={180}>
         <MethodologySlide
           primaryColor={primaryColor}
           secondaryColor={secondaryColor}
           slideBgStyle={slideBgStyle}
           aspectRatio={aspectRatio}
+          pillars={pillars}
+          methodologyIntro={methodologyIntro}
+          hideWeeklySchedule={hideWeeklySchedule}
         />
       </Sequence>
 
-      {/* SLIDE 7: FINANCIALS / PRESUPUESTO (38s - 44s / 1140 - 1320 frames) */}
-      <Sequence from={1140} durationInFrames={180}>
+      {/* SLIDE 6: FINANCIALS / PRESUPUESTO (32s - 38s / 960 - 1140 frames) */}
+      <Sequence from={960} durationInFrames={180}>
         <FinancialsSlide
           totalValue={totalValue}
           payments={payments}
@@ -293,8 +296,8 @@ export const ProposalVideoComposition: React.FC<ProposalVideoCompositionProps> =
         />
       </Sequence>
 
-      {/* SLIDE 8: OUTRO / CONTRATO Y FIRMA (44s - 48s / 1320 - 1440 frames) */}
-      <Sequence from={1320} durationInFrames={120}>
+      {/* SLIDE 7: OUTRO / CONTRATO Y FIRMA (38s - 42s / 1140 - 1260 frames) */}
+      <Sequence from={1140} durationInFrames={120}>
         <OutroSlide
           clientName={clientName}
           primaryColor={primaryColor}
@@ -335,8 +338,9 @@ const IntroSlide: React.FC<{
   heroTitle: string;
   slideBgStyle: React.CSSProperties;
   clientLogoUrl?: string;
+  clientLogoScale?: number;
   aspectRatio?: '16:9' | '9:16';
-}> = ({ clientName, primaryColor, secondaryColor, heroTitle, slideBgStyle, clientLogoUrl = '', aspectRatio = '16:9' }) => {
+}> = ({ clientName, primaryColor, secondaryColor, heroTitle, slideBgStyle, clientLogoUrl = '', clientLogoScale = 100, aspectRatio = '16:9' }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
@@ -353,9 +357,13 @@ const IntroSlide: React.FC<{
   const transform = `perspective(1200px) scale(${slideScale}) rotateY(${rotateY}deg) translateX(${translateX}px)`;
 
   // FASE 1: Cobranding / Unión de Logos (frames 0 a 110)
-  // Coordinates based on aspectRatio
-  const logoCreappOffset = interpolate(frame, [0, 45], [-800, isVertical ? -200 : -150], { extrapolateRight: 'clamp' });
-  const logoClientOffset = interpolate(frame, [0, 45], [800, isVertical ? 200 : 150], { extrapolateRight: 'clamp' });
+  // FASE 1: Cobranding / Unión de Logos (frames 0 a 110)
+  // Coordinates based on aspectRatio with safe vertical spacing
+  const targetCreappOffset = isVertical ? -240 : -220;
+  const targetClientOffset = isVertical ? 240 : 220;
+
+  const logoCreappOffset = interpolate(frame, [0, 45], [-800, targetCreappOffset], { extrapolateRight: 'clamp' });
+  const logoClientOffset = interpolate(frame, [0, 45], [800, targetClientOffset], { extrapolateRight: 'clamp' });
   
   // Both logos scale down and fade out at the end of the alliance phase
   const logoScale = interpolate(frame, [0, 25, 45, 100, 108], [0, 1.15, 1, 1, 0], { extrapolateRight: 'clamp' });
@@ -478,9 +486,10 @@ const IntroSlide: React.FC<{
             alignItems: 'center', 
             justifyContent: 'center', 
             position: 'relative', 
-            height: isVertical ? '650px' : '180px', 
+            height: isVertical ? '500px' : '180px', 
             width: '100%', 
-            maxWidth: '700px' 
+            maxWidth: '700px',
+            marginTop: isVertical ? '-160px' : '0px',
           }}>
             
             {/* Connection symbol (X) */}
@@ -488,13 +497,22 @@ const IntroSlide: React.FC<{
               position: 'absolute',
               left: '50%',
               top: '50%',
-              fontSize: isVertical ? '90px' : '38px',
+              width: isVertical ? '54px' : '36px',
+              height: isVertical ? '54px' : '36px',
+              borderRadius: '50%',
+              backgroundColor: 'rgba(15, 23, 42, 0.75)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              backdropFilter: 'blur(12px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: isVertical ? '26px' : '16px',
               fontWeight: 900,
               color: '#ffffff',
               opacity: connXOpacity,
               transform: `translate(-50%, -50%) scale(${connXScale})`,
               zIndex: 4,
-              textShadow: '0 0 15px rgba(255,255,255,0.7)',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.6), 0 0 12px rgba(255,255,255,0.1)',
             }}>
               ×
             </div>
@@ -516,7 +534,7 @@ const IntroSlide: React.FC<{
               zIndex: 2,
             }}>
               <img
-                src="/CREAPP LOGO VECTOR.png"
+                src={creappLogoOfficial}
                 alt="CREAPP Logo"
                 style={{
                   width: isVertical ? '210px' : '140px',
@@ -531,8 +549,8 @@ const IntroSlide: React.FC<{
               position: 'absolute',
               left: '50%',
               top: '50%',
-              width: isVertical ? '250px' : '165px',
-              height: isVertical ? '250px' : '165px',
+              width: isVertical ? '300px' : '200px',
+              height: isVertical ? '300px' : '200px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -551,9 +569,13 @@ const IntroSlide: React.FC<{
                   src={clientLogoUrl}
                   alt="Client Logo"
                   style={{
-                    width: isVertical ? '210px' : '140px',
-                    height: isVertical ? '210px' : '140px',
+                    maxWidth: isVertical ? '240px' : '150px',
+                    maxHeight: isVertical ? '240px' : '150px',
+                    width: 'auto',
+                    height: 'auto',
                     objectFit: 'contain',
+                    transform: `scale(${clientLogoScale / 100})`,
+                    transformOrigin: 'center center',
                   }}
                 />
               ) : (
@@ -582,7 +604,11 @@ const IntroSlide: React.FC<{
 
           {/* Alliance Text Description */}
           <div style={{
-            marginTop: isVertical ? '70px' : '35px',
+            position: isVertical ? 'absolute' : 'relative',
+            bottom: isVertical ? '110px' : 'auto',
+            left: 0,
+            right: 0,
+            marginTop: isVertical ? '0px' : '35px',
             textAlign: 'center',
             opacity: textAllianceOpacity,
             transform: `translateY(${textAllianceY}px)`,
@@ -1314,10 +1340,10 @@ const TimelineSlide: React.FC<{
         zIndex: 0,
       }} />
 
-      <div style={{ width: '100%', maxWidth: '1100px', display: 'flex', flexDirection: 'column', gap: isVertical ? '50px' : '30px', zIndex: 1, position: 'relative' }}>
+      <div style={{ width: '100%', maxWidth: '1100px', display: 'flex', flexDirection: 'column', gap: isVertical ? '20px' : '30px', zIndex: 1, position: 'relative' }}>
         <div style={{ opacity: entrance }}>
           {isVertical ? (
-            <h2 style={{ fontSize: '72px', fontWeight: 900, margin: 0, textTransform: 'uppercase', letterSpacing: '-2px', lineHeight: '1.2' }}>
+            <h2 style={{ fontSize: '52px', fontWeight: 900, margin: 0, textTransform: 'uppercase', letterSpacing: '-2px', lineHeight: '1.2' }}>
               <WordPop 
                 text={`PLAN DE [TRABAJO]`} 
                 primaryColor={primaryColor} 
@@ -1330,7 +1356,7 @@ const TimelineSlide: React.FC<{
               Plan de <span style={{ color: primaryColor, fontStyle: 'italic' }}>Trabajo</span>
             </h2>
           )}
-          <p style={{ fontSize: isVertical ? '26px' : '20px', color: '#9ca3af', margin: isVertical ? '20px 0 0 0' : '8px 0 0 0', fontWeight: 400 }}>
+          <p style={{ fontSize: isVertical ? '20px' : '20px', color: '#9ca3af', margin: isVertical ? '10px 0 0 0' : '8px 0 0 0', fontWeight: 400 }}>
             Roadmap estructurado por fases y tiempos estimados de entrega.
           </p>
         </div>
@@ -1342,15 +1368,15 @@ const TimelineSlide: React.FC<{
           justifyContent: 'space-between',
           position: 'relative',
           width: '100%',
-          paddingTop: isVertical ? '10px' : '20px',
-          gap: isVertical ? '24px' : '0px'
+          paddingTop: isVertical ? '5px' : '20px',
+          gap: isVertical ? '12px' : '0px'
         }}>
           {/* Base connector track */}
           <div style={{
             position: 'absolute',
             top: isVertical ? '20px' : '47px',
             bottom: isVertical ? '20px' : 'auto',
-            left: isVertical ? '45px' : '50px',
+            left: isVertical ? '27px' : '50px',
             right: isVertical ? 'auto' : '50px',
             height: isVertical ? 'auto' : '3px',
             width: isVertical ? '3px' : 'auto',
@@ -1362,9 +1388,9 @@ const TimelineSlide: React.FC<{
           <div style={{
             position: 'absolute',
             top: isVertical ? '20px' : '47px',
-            left: isVertical ? '45px' : '50px',
+            left: isVertical ? '27px' : '50px',
             width: isVertical ? '3px' : `calc(${lineWidth}% - 100px)`,
-            height: isVertical ? `calc(${lineWidth}% - 60px)` : '3px',
+            height: isVertical ? `calc(${lineWidth}% - 40px)` : '3px',
             background: `linear-gradient(to ${isVertical ? 'bottom' : 'right'}, ${primaryColor}, ${secondaryColor})`,
             boxShadow: `0 0 8px ${primaryColor}`,
             zIndex: 1,
@@ -1387,19 +1413,19 @@ const TimelineSlide: React.FC<{
                 zIndex: 2,
                 opacity: progressSpring,
                 transform: `translateY(${cardY}px) scale(${cardScale})`,
-                gap: isVertical ? '18px' : '0px'
+                gap: isVertical ? '14px' : '0px'
               }}>
                 {/* Node bubble */}
                 <div style={{
-                  width: isVertical ? '90px' : '54px',
-                  height: isVertical ? '90px' : '54px',
+                  width: isVertical ? '54px' : '54px',
+                  height: isVertical ? '54px' : '54px',
                   borderRadius: '50%',
                   backgroundColor: '#030712',
                   border: `3px solid ${index === 0 ? primaryColor : index === 1 ? secondaryColor : '#10b981'}`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: isVertical ? '34px' : '20px',
+                  fontSize: isVertical ? '22px' : '20px',
                   fontWeight: 'bold',
                   color: '#ffffff',
                   marginBottom: isVertical ? '0px' : '15px',
@@ -1412,7 +1438,7 @@ const TimelineSlide: React.FC<{
                 </div>
 
                 <div style={{
-                  padding: isVertical ? '32px 36px' : '24px',
+                  padding: isVertical ? '16px 20px' : '24px',
                   borderRadius: '16px',
                   background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)',
                   border: '1px solid rgba(255, 255, 255, 0.05)',
@@ -1422,11 +1448,11 @@ const TimelineSlide: React.FC<{
                   textAlign: 'left',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: isVertical ? '12px' : '8px'
+                  gap: isVertical ? '8px' : '8px'
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{
-                      fontSize: isVertical ? '24px' : '13px',
+                      fontSize: isVertical ? '16px' : '13px',
                       fontWeight: 'bold',
                       color: index === 0 ? primaryColor : index === 1 ? secondaryColor : '#10b981',
                       textTransform: 'uppercase',
@@ -1436,9 +1462,9 @@ const TimelineSlide: React.FC<{
                     </span>
 
                     <div style={{
-                      padding: isVertical ? '10px 20px' : '3px 10px',
+                      padding: isVertical ? '4px 12px' : '3px 10px',
                       borderRadius: '12px',
-                      fontSize: isVertical ? '20px' : '11px',
+                      fontSize: isVertical ? '13px' : '11px',
                       fontWeight: 'bold',
                       textTransform: 'uppercase',
                       color: milestoneStatuses[index]?.color || '#ffffff',
@@ -1450,33 +1476,33 @@ const TimelineSlide: React.FC<{
                   </div>
 
                   <div>
-                    <h3 style={{ fontSize: isVertical ? '36px' : '20px', fontWeight: '800', margin: '0 0 6px 0', color: '#f3f4f6', textTransform: 'uppercase', lineHeight: '1.2' }}>
+                    <h3 style={{ fontSize: isVertical ? '22px' : '20px', fontWeight: '800', margin: '0 0 4px 0', color: '#f3f4f6', textTransform: 'uppercase', lineHeight: '1.2' }}>
                       {m.title}
                     </h3>
-                    <p style={{ fontSize: isVertical ? '24px' : '14px', color: '#e5e7eb', margin: 0, lineHeight: '1.45', fontWeight: 400 }}>
+                    <p style={{ fontSize: isVertical ? '16px' : '14px', color: '#e5e7eb', margin: 0, lineHeight: '1.4', fontWeight: 400 }}>
                       {m.description}
                     </p>
                   </div>
 
                   {/* Sub-milestone details */}
                   <div style={{
-                    marginTop: '4px',
-                    paddingTop: '12px',
+                    marginTop: '2px',
+                    paddingTop: '8px',
                     borderTop: '1px solid rgba(255, 255, 255, 0.05)',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: isVertical ? '12px' : '6px'
+                    gap: isVertical ? '6px' : '6px'
                   }}>
                     {(milestoneSubItems[index] || []).map((subItem, idx) => (
                       <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <div style={{
-                          width: isVertical ? '10px' : '6px',
-                          height: isVertical ? '10px' : '6px',
+                          width: isVertical ? '7px' : '6px',
+                          height: isVertical ? '7px' : '6px',
                           borderRadius: '50%',
                           backgroundColor: index === 0 ? primaryColor : index === 1 ? secondaryColor : '#10b981',
                           flexShrink: 0
                         }} />
-                        <span style={{ fontSize: isVertical ? '22px' : '13px', color: '#e5e7eb', fontWeight: 400 }}>
+                        <span style={{ fontSize: isVertical ? '15px' : '13px', color: '#e5e7eb', fontWeight: 400 }}>
                           {subItem}
                         </span>
                       </div>
@@ -1492,31 +1518,31 @@ const TimelineSlide: React.FC<{
         <div style={{
           opacity: spring({ frame: frame - 60, fps, config: { damping: 15 } }),
           transform: `translateY(${interpolate(spring({ frame: frame - 60, fps, config: { damping: 15 } }), [0, 1], [30, 0])}px)`,
-          marginTop: isVertical ? '50px' : '15px',
+          marginTop: isVertical ? '16px' : '15px',
           display: 'grid',
           gridTemplateColumns: isVertical ? '1fr' : '1fr 1fr 1fr',
-          gap: isVertical ? '28px' : '20px',
+          gap: isVertical ? '16px' : '20px',
           width: '100%',
         }}>
           {/* Card 1: Demos Semanales */}
           <div style={{
-            padding: isVertical ? '30px 36px' : '22px 28px',
+            padding: isVertical ? '16px 20px' : '22px 28px',
             borderRadius: '16px',
             background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)',
             border: '1px dashed rgba(255, 255, 255, 0.12)',
             display: 'flex',
             flexDirection: 'column',
-            gap: isVertical ? '14px' : '10px',
+            gap: isVertical ? '8px' : '10px',
             boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
             textAlign: 'left'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: primaryColor, boxShadow: `0 0 10px ${primaryColor}` }} />
-              <span style={{ fontSize: isVertical ? '28px' : '16px', fontWeight: '800', color: '#ffffff', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+              <span style={{ fontSize: isVertical ? '18px' : '16px', fontWeight: '800', color: '#ffffff', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
                 DEMOS SEMANALES
               </span>
             </div>
-            <p style={{ fontSize: isVertical ? '24px' : '15px', color: '#e5e7eb', fontWeight: 400, margin: 0, lineHeight: '1.45' }}>
+            <p style={{ fontSize: isVertical ? '16px' : '15px', color: '#e5e7eb', fontWeight: 400, margin: 0, lineHeight: '1.4' }}>
               Presentaciones interactivas cada viernes para validar y aprobar el incremento de software desarrollado.
             </p>
           </div>
@@ -1852,7 +1878,10 @@ const MethodologySlide: React.FC<{
   secondaryColor: string;
   slideBgStyle: React.CSSProperties;
   aspectRatio?: '16:9' | '9:16';
-}> = ({ primaryColor, secondaryColor, slideBgStyle, aspectRatio = '16:9' }) => {
+  pillars?: Array<{ title: string; description: string; color?: string }>;
+  methodologyIntro?: string;
+  hideWeeklySchedule?: boolean;
+}> = ({ primaryColor, secondaryColor, slideBgStyle, aspectRatio = '16:9', pillars = [], methodologyIntro, hideWeeklySchedule }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
@@ -1874,13 +1903,11 @@ const MethodologySlide: React.FC<{
     ? `translateX(${entranceX_vert + exitX_vert}px)`
     : `perspective(1200px) translateX(${entranceX}px) rotateY(${entranceRotateY}deg) translateY(${exitY}px) scale(${exitScale})`;
 
-  const titleY = interpolate(entrance, [0, 1], [30, 0]);
-
-  // Agile weekly calendar tasks
-  const agendaData = [
-    { day: 'LUN', title: 'Sprint Kickoff', desc: 'Fijamos objetivos técnicos y validamos requerimientos semanales.' },
-    { day: 'MAR - JUE', title: 'Desarrollo & Staging', desc: 'Desarrollo interactivo y despliegues en entornos de prueba continuos.' },
-    { day: 'VIE', title: 'Demo & Aprobación', desc: 'Auditoría en vivo a las 16:00 hs para validar y aprobar el incremento de software.' },
+  // Pillars to render: use dynamic pillars from proposal if provided, else fall back to default structured pillars
+  const activePillars = pillars && pillars.length > 0 ? pillars : [
+    { title: 'Planificación & Requerimientos', description: 'Fijamos objetivos técnicos, arquitectura y validamos requerimientos.', color: primaryColor },
+    { title: 'Desarrollo & Staging', description: 'Desarrollo interactivo y despliegues en entornos de prueba continuos.', color: secondaryColor },
+    { title: 'Entrega & Calidad', description: 'Auditoría en vivo, pruebas de calidad y aprobación del software.', color: '#10b981' },
   ];
 
   return (
@@ -1911,21 +1938,21 @@ const MethodologySlide: React.FC<{
       <div style={{ width: '100%', maxWidth: '1100px', display: 'flex', flexDirection: 'column', gap: isVertical ? '50px' : '25px', zIndex: 1, position: 'relative' }}>
         <div style={{ opacity: entrance }}>
           {isVertical ? (
-            <h2 style={{ fontSize: '72px', fontWeight: 900, margin: 0, textTransform: 'uppercase', letterSpacing: '-2px', lineHeight: '1.2' }}>
+            <h2 style={{ fontSize: '64px', fontWeight: 900, margin: 0, textTransform: 'uppercase', letterSpacing: '-2px', lineHeight: '1.2' }}>
               <WordPop 
-                text={`METODOLOGÍA [ÁGIL]`} 
+                text={`METODOLOGÍA & [PLAN DE ACCIÓN]`} 
                 primaryColor={primaryColor} 
                 secondaryColor={secondaryColor} 
                 frame={frame - 10} 
               />
             </h2>
           ) : (
-            <h2 style={{ fontSize: '52px', fontWeight: 900, margin: 0, textTransform: 'uppercase', letterSpacing: '-1px' }}>
-              Metodología de <span style={{ color: primaryColor, fontStyle: 'italic' }}>Trabajo Ágil</span>
+            <h2 style={{ fontSize: '48px', fontWeight: 900, margin: 0, textTransform: 'uppercase', letterSpacing: '-1px' }}>
+              Metodología de <span style={{ color: primaryColor, fontStyle: 'italic' }}>Trabajo & Plan de Acción</span>
             </h2>
           )}
-          <p style={{ fontSize: isVertical ? '26px' : '20px', color: '#9ca3af', margin: isVertical ? '20px 0 0 0' : '8px 0 0 0', fontWeight: 400 }}>
-            Implementamos Scrum iterativo semanal para asegurar lanzamientos estables y correcciones rápidas.
+          <p style={{ fontSize: isVertical ? '24px' : '18px', color: '#9ca3af', margin: isVertical ? '16px 0 0 0' : '8px 0 0 0', fontWeight: 400 }}>
+            {methodologyIntro || "Metodología estructurada y pilares de ejecución para garantizar el éxito del proyecto."}
           </p>
         </div>
 
@@ -1937,54 +1964,56 @@ const MethodologySlide: React.FC<{
           width: '100%',
           alignItems: 'start',
         }}>
-          {/* Columna Izquierda: Agenda del Sprint */}
+          {/* Columna Izquierda: Pilares de Metodología */}
           <div style={{
             display: 'flex',
             flexDirection: 'column',
-            gap: isVertical ? '18px' : '16px',
+            gap: isVertical ? '18px' : '14px',
             width: '100%',
           }}>
-            {agendaData.map((item, index) => {
-              const delay = 15 + index * 12;
+            {activePillars.slice(0, 4).map((item, index) => {
+              const delay = 15 + index * 10;
               const itemSpring = spring({ frame: frame - delay, fps, config: { damping: 12 } });
               const itemX = interpolate(itemSpring, [0, 1], [50, 0]);
+              const itemColor = item.color || (index === 0 ? primaryColor : index === 1 ? secondaryColor : '#10b981');
 
               return (
                 <div key={index} style={{
                   opacity: itemSpring,
                   transform: `translateX(${itemX}px)`,
-                  padding: isVertical ? '30px 36px' : '24px 30px',
+                  padding: isVertical ? '24px 28px' : '18px 24px',
                   borderRadius: '16px',
-                  border: '1px solid rgba(255, 255, 255, 0.05)',
-                  background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.01) 100%)',
+                  border: `1px solid ${itemColor}25`,
+                  background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: isVertical ? '24px' : '24px',
+                  gap: isVertical ? '20px' : '18px',
                   boxSizing: 'border-box',
                   boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
                 }}>
-                  {/* Day Badge */}
+                  {/* Pillar Index / Color Badge */}
                   <div style={{
-                    width: isVertical ? '200px' : '150px',
-                    padding: isVertical ? '14px 18px' : '10px 14px',
+                    width: isVertical ? '150px' : '110px',
+                    padding: isVertical ? '10px 12px' : '7px 10px',
                     borderRadius: '10px',
-                    backgroundColor: `${primaryColor}15`,
-                    border: `1px solid ${primaryColor}30`,
+                    backgroundColor: `${itemColor}15`,
+                    border: `1px solid ${itemColor}40`,
                     textAlign: 'center',
-                    color: primaryColor,
+                    color: itemColor,
                     fontWeight: '900',
-                    fontSize: isVertical ? '24px' : '15px',
-                    letterSpacing: '1.5px',
-                    flexShrink: 0
+                    fontSize: isVertical ? '16px' : '12px',
+                    letterSpacing: '1px',
+                    flexShrink: 0,
+                    textTransform: 'uppercase',
                   }}>
-                    {item.day}
+                    Pilar 0{index + 1}
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-                    <h3 style={{ fontSize: isVertical ? '32px' : '22px', fontWeight: '800', margin: 0, textTransform: 'uppercase', color: '#f3f4f6', lineHeight: '1.2' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flex: 1 }}>
+                    <h3 style={{ fontSize: isVertical ? '24px' : '18px', fontWeight: '800', margin: 0, textTransform: 'uppercase', color: '#f3f4f6', lineHeight: '1.2' }}>
                       {item.title}
                     </h3>
-                    <p style={{ fontSize: isVertical ? '22px' : '16px', color: '#e5e7eb', margin: 0, fontWeight: 400, lineHeight: 1.45 }}>
-                      {item.desc}
+                    <p style={{ fontSize: isVertical ? '17px' : '13px', color: '#cbd5e1', margin: 0, fontWeight: 400, lineHeight: 1.4 }}>
+                      {item.description}
                     </p>
                   </div>
                 </div>

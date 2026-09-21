@@ -8,7 +8,7 @@ const RemotionRoot: React.FC = () => {
       <Composition
         id="ProposalVideo"
         component={ProposalVideoComposition as any}
-        durationInFrames={1440} // 48 seconds
+        durationInFrames={1260} // 42 seconds
         fps={30}
         width={1920}
         height={1080}
@@ -29,7 +29,7 @@ const RemotionRoot: React.FC = () => {
       <Composition
         id="ProposalVideoVertical"
         component={ProposalVideoComposition as any}
-        durationInFrames={1440} // 48 seconds
+        durationInFrames={1260} // 42 seconds
         fps={30}
         width={1080}
         height={1920}

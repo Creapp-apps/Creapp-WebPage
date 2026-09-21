@@ -34,6 +34,7 @@ export async function getProposalBySlug(slug: string): Promise<FullProposal | nu
 
   return {
     ...proposal,
+    proposal_type: proposal.proposal_type || proposal.methodology?.proposal_type || 'project',
     inclusions: (inclusions.data || []) as ProposalInclusion[],
     exclusions: (exclusions.data || []) as ProposalExclusion[],
     milestones: (milestones.data || []) as ProposalMilestone[],
@@ -54,33 +55,57 @@ export async function getAllProposals(): Promise<Proposal[]> {
     .order('created_at', { ascending: false });
 
   if (error) throw error;
-  return (data || []) as Proposal[];
+  return ((data || []) as any[]).map((p) => ({
+    ...p,
+    proposal_type: p.proposal_type || p.methodology?.proposal_type || 'project',
+  })) as Proposal[];
 }
 
 export async function createProposal(proposal: Omit<Proposal, 'id' | 'created_at' | 'updated_at'>): Promise<Proposal> {
+  const { proposal_type, ...cleanProposal } = proposal as any;
   const { data, error } = await supabase
     .from('proposals')
-    .insert(proposal)
+    .insert(cleanProposal)
     .select()
     .single();
 
-  if (error) throw error;
-  return data as Proposal;
+  if (error) {
+    if (error.code === '42703' || error.message?.includes('schema cache')) {
+      console.warn('Some columns do not exist. Retrying insert without extra fields.');
+      const { weekly_breakdown, methodology, ...retryProposal } = cleanProposal;
+      const { data: retryData, error: retryError } = await supabase
+        .from('proposals')
+        .insert(retryProposal)
+        .select()
+        .single();
+      if (retryError) throw retryError;
+      return {
+        ...retryData,
+        proposal_type: proposal.proposal_type || retryData.methodology?.proposal_type || 'project',
+      } as Proposal;
+    }
+    throw error;
+  }
+  return {
+    ...data,
+    proposal_type: proposal.proposal_type || data.methodology?.proposal_type || 'project',
+  } as Proposal;
 }
 
 export async function updateProposal(id: string, updates: Partial<Proposal>): Promise<Proposal> {
+  const { proposal_type, ...cleanUpdates } = updates as any;
   const { data, error } = await supabase
     .from('proposals')
-    .update(updates)
+    .update(cleanUpdates)
     .eq('id', id)
     .select()
     .single();
 
   if (error) {
-    // PostgREST error 42703 means column does not exist. We retry without newer columns
-    if (error.code === '42703') {
+    // PostgREST error 42703 or schema cache means column does not exist
+    if (error.code === '42703' || error.message?.includes('schema cache')) {
       console.warn('Some columns do not exist. Retrying update without new fields.');
-      const { weekly_breakdown, methodology, ...retryUpdates } = updates;
+      const { weekly_breakdown, methodology, ...retryUpdates } = cleanUpdates;
       const { data: retryData, error: retryError } = await supabase
         .from('proposals')
         .update(retryUpdates)
@@ -88,11 +113,17 @@ export async function updateProposal(id: string, updates: Partial<Proposal>): Pr
         .select()
         .single();
       if (retryError) throw retryError;
-      return retryData as Proposal;
+      return {
+        ...retryData,
+        proposal_type: updates.proposal_type || retryData.methodology?.proposal_type || 'project',
+      } as Proposal;
     }
     throw error;
   }
-  return data as Proposal;
+  return {
+    ...data,
+    proposal_type: updates.proposal_type || data.methodology?.proposal_type || 'project',
+  } as Proposal;
 }
 
 export async function deleteProposal(id: string): Promise<void> {

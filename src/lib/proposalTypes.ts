@@ -25,6 +25,48 @@ export interface Proposal {
   signed_at?: string;
   weekly_breakdown?: any;
   methodology?: any;
+  proposal_type?: 'project' | 'service';
+}
+
+export interface ServiceDetails {
+  plan_name?: string;
+  billing_frequency?: 'monthly' | 'quarterly' | 'annual';
+  setup_fee?: string;
+  recurring_fee?: string;
+  sla_uptime?: string;
+  support_channels?: string;
+  response_time_critical?: string;
+  response_time_normal?: string;
+  min_term_months?: string;
+  auto_renew?: boolean;
+  limits?: {
+    users?: string;
+    branches?: string;
+    storage?: string;
+    custom_notes?: string;
+  };
+}
+
+export interface MethodologyPillar {
+  id?: string;
+  title: string;
+  description: string;
+  color?: string;
+}
+
+export function getPillars(meth: any, defaultPrimary = '#ff007f', defaultSecondary = '#9d00ff'): MethodologyPillar[] {
+  if (meth?.pillars && Array.isArray(meth.pillars) && meth.pillars.length > 0) {
+    return meth.pillars;
+  }
+  const p1Title = meth?.incremental_title || "CO-CREACIÓN GERENCIAL Y OPERATIVA";
+  const p1Desc = meth?.incremental_text || "Trabajo intensivo en oficinas con la dirección para definir controles gerenciales y mesas de trabajo con DJs/técnicos líderes para optimizar la usabilidad nocturna en salón.";
+  const p2Title = meth?.planning_title || "Feedback Operativo & Salones Piloto";
+  const p2Desc = meth?.planning_text || "Para garantizar que el sistema responda a la dinámica nocturna real, {client_name} validará las funciones en salones seleccionados antes del despliegue masivo.";
+
+  return [
+    { title: p1Title, description: p1Desc, color: defaultPrimary || '#a855f7' },
+    { title: p2Title, description: p2Desc, color: defaultSecondary || '#ec4899' }
+  ];
 }
 
 export interface ProposalInclusion {
