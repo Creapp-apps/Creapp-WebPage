@@ -172,6 +172,31 @@ html.lenis body {
         scrollbar-width: thin;
         scrollbar-color: rgba(168, 85, 247, 0.4) rgba(255, 255, 255, 0.03);
     }
+
+    /* Modern Visible Kanban Column Vertical Scrollbar */
+    .kanban-col-scrollbar::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .kanban-col-scrollbar::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: 9999px;
+    }
+
+    .kanban-col-scrollbar::-webkit-scrollbar-thumb {
+        background: rgba(168, 85, 247, 0.45);
+        border-radius: 9999px;
+        border: 1px solid rgba(168, 85, 247, 0.25);
+    }
+
+    .kanban-col-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: rgba(168, 85, 247, 0.85);
+    }
+
+    .kanban-col-scrollbar {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(168, 85, 247, 0.45) rgba(255, 255, 255, 0.02);
+    }
 }
 
 .glow-orb {

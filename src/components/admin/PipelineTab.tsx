@@ -296,20 +296,20 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
             <div
               key={stageKey}
               id={`kanban-col-${stageKey}`}
-              className={`w-[270px] shrink-0 rounded-2xl border ${config.border} ${config.bg} p-3 flex flex-col max-h-[75vh]`}
+              className={`w-[275px] shrink-0 rounded-2xl border ${config.border} ${config.bg} p-3 flex flex-col h-[calc(100vh-250px)] min-h-[500px] max-h-[78vh] overflow-hidden`}
             >
               {/* Column Header */}
-              <div className="flex items-center justify-between pb-3 border-b border-white/5 mb-3">
+              <div className="flex items-center justify-between pb-3 border-b border-white/5 mb-3 shrink-0">
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-xs text-white">{config.label}</span>
-                  <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-white/10 text-zinc-300">
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/10 text-zinc-300 font-bold">
                     {stageLeads.length}
                   </span>
                 </div>
               </div>
 
               {/* Cards Container */}
-              <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+              <div className="flex-1 overflow-y-auto min-h-0 space-y-2.5 pr-1 kanban-col-scrollbar overscroll-contain">
                 {stageLeads.length === 0 ? (
                   <div className="py-8 text-center text-xs text-zinc-600 border border-dashed border-white/5 rounded-xl">
                     Sin cuentas en esta etapa
