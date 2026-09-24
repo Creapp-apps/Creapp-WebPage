@@ -3130,99 +3130,131 @@ const ProposalView: React.FC = () => {
           </>
         ) : (
           !hiddenPages.includes('legal') && (() => {
-            const activeContractTemplate = proposal.contract_text || '';
+            const rawContract = proposal.contract_text ? (
+              proposal.contract_text
+                .replace(/\{location\}/g, proposal.location)
+                .replace(/\{date\}/g, proposal.date)
+                .replace(/\{client_name\}/g, proposal.client_name)
+                .replace(/\{total_value\}/g, proposal.total_value)
+                .replace(/\[input:[^\]]+\]/g, '________________________')
+            ) : (
+              `CONTRATO DE DESARROLLO DE SOFTWARE
+
+Entre Creapp Software Lab y ${proposal.client_name}, se acuerda el desarrollo integral del sistema conforme a los alcances y términos especificados en esta propuesta comercial por un valor total de ${proposal.total_value}.
+
+Este contrato entra en vigencia a partir de la firma del presente documento el día ${proposal.date} en la localidad de ${proposal.location}.`
+            );
+
+            const textLength = rawContract.length;
+            let fontSize = '9.5px';
+            let lineHeight = '1.55';
+            let padding = '18px 22px';
+            let maxHeight = '580px';
+
+            if (textLength > 2600) {
+              fontSize = '7.5px';
+              lineHeight = '1.35';
+              padding = '12px 16px';
+              maxHeight = '620px';
+            } else if (textLength > 1900) {
+              fontSize = '8px';
+              lineHeight = '1.4';
+              padding = '14px 18px';
+              maxHeight = '600px';
+            } else if (textLength > 1300) {
+              fontSize = '8.5px';
+              lineHeight = '1.45';
+              padding = '15px 20px';
+              maxHeight = '580px';
+            }
+
             return (
               <div id="page-legal" style={{
                 width: '794px',
                 height: '1123px',
-                padding: '80px',
+                padding: '45px 65px 40px 65px',
                 display: 'flex',
                 flexDirection: 'column',
                 boxSizing: 'border-box',
                 backgroundColor: '#ffffff',
                 position: 'relative'
               }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '25px' }}>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'baseline',
+                  borderBottom: '2px solid #0f172a',
+                  paddingBottom: '8px',
+                  marginBottom: '14px'
+                }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
                     <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
-                    <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{proposal.hero_title ? proposal.hero_title.toUpperCase() : 'CBKR APP V2'}</span>
+                    <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{proposal.hero_title ? proposal.hero_title.toUpperCase() : 'DEVELOPMENT LAB'}</span>
                   </div>
                   <span style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>
                     LEGAL_AGREEMENT // 05
                   </span>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: '20px', marginBottom: '60px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: '10px', marginBottom: '45px' }}>
                   <div>
-                    <h1 style={{ fontSize: '28px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
+                    <h1 style={{ fontSize: '24px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
                       CONTRATO Y <span style={{ fontStyle: 'italic', color: brandPrimary }}>FIRMAS</span>
                     </h1>
-                    <p style={{ fontSize: '11px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '4px 0 0 0' }}>
+                    <p style={{ fontSize: '10px', color: '#475569', lineHeight: '1.4', fontWeight: '300', margin: '3px 0 0 0' }}>
                       {proposal.contract_description || 'Acuerdo formal que establece las bases y condiciones legales para la ejecución del proyecto de desarrollo de software detallado en esta propuesta.'}
                     </p>
                   </div>
                   <div style={{
-                    fontSize: '10px',
+                    fontSize,
                     color: '#334155',
-                    lineHeight: '1.6',
+                    lineHeight,
                     whiteSpace: 'pre-wrap',
                     fontFamily: 'system-ui, -apple-system, sans-serif',
-                    padding: '20px',
+                    padding,
                     backgroundColor: '#f8fafc',
-                    borderRadius: '12px',
+                    borderRadius: '16px',
                     border: '1px solid #e2e8f0',
-                    maxHeight: '350px',
-                    overflowY: 'hidden',
-                    marginTop: '2px'
+                    maxHeight,
+                    overflowY: 'auto',
+                    marginTop: '2px',
+                    textAlign: 'justify'
                   }}>
-                    {proposal.contract_text ? (
-                      proposal.contract_text
-                        .replace(/\{location\}/g, proposal.location)
-                        .replace(/\{date\}/g, proposal.date)
-                        .replace(/\{client_name\}/g, proposal.client_name)
-                        .replace(/\{total_value\}/g, proposal.total_value)
-                        .replace(/\[input:[^\]]+\]/g, '________________________')
-                    ) : (
-                      `CONTRATO DE DESARROLLO DE SOFTWARE
-        
-Entre Creapp Software Lab y ${proposal.client_name}, se acuerda el desarrollo integral del sistema conforme a los alcances y términos especificados en esta propuesta comercial por un valor total de ${proposal.total_value}.
-        
-Este contrato entra en vigencia a partir de la firma del presente documento el día ${proposal.date} en la localidad de ${proposal.location}.`
-                    )}
+                    {rawContract}
                   </div>
-                  <div style={{ display: 'flex', gap: '20px', marginTop: '20px' }}>
-                    <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '2px' }}>Por CreAPP Software Lab</p>
-                      <div style={{ height: '60px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0', padding: '6px' }}>
+                  <div style={{ display: 'flex', gap: '16px', marginTop: 'auto', paddingTop: '10px' }}>
+                    <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '1px' }}>Por CreAPP Software Lab</p>
+                      <div style={{ height: '54px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0', padding: '6px' }}>
                         <img src="/firmaseba.png" alt="Firma Seba" style={{ height: '100%', objectFit: 'contain' }} />
                       </div>
-                      <div style={{ fontSize: '10px' }}>
+                      <div style={{ fontSize: '9.5px' }}>
                         <p style={{ fontWeight: '800', color: '#0f172a' }}>Sebastián Maza</p>
                         <p style={{ color: '#64748b', fontSize: '8px' }}>Chief Technology Officer</p>
                       </div>
                     </div>
                     {(proposal.methodology?.show_facundo_signature ?? true) && (
-                      <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '2px' }}>Por CreAPP Software Lab</p>
-                        <div style={{ height: '60px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1', padding: '6px' }}>
+                      <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '1px' }}>Por CreAPP Software Lab</p>
+                        <div style={{ height: '54px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1', padding: '6px' }}>
                         </div>
-                        <div style={{ fontSize: '10px' }}>
+                        <div style={{ fontSize: '9.5px' }}>
                           <p style={{ fontWeight: '800', color: '#0f172a' }}>Facundo Marceca</p>
                           <p style={{ color: '#64748b', fontSize: '8px' }}>Project Manager</p>
                         </div>
                       </div>
                     )}
-                    <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '2px' }}>Por {proposal.client_name}</p>
+                    <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '1px' }}>Por {proposal.client_name}</p>
                       {clientSignature ? (
-                        <div style={{ height: '60px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0', padding: '6px' }}>
+                        <div style={{ height: '54px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0', padding: '6px' }}>
                           <img src={clientSignature} alt="Firma Cliente" style={{ height: '100%', objectFit: 'contain' }} />
                         </div>
                       ) : (
-                        <div style={{ height: '60px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1', color: '#94a3b8', fontSize: '9px', textAlign: 'center' }}>
+                        <div style={{ height: '54px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1', color: '#94a3b8', fontSize: '9px', textAlign: 'center' }}>
                           Pendiente de Firma
                         </div>
                       )}
-                      <div style={{ fontSize: '10px' }}>
+                      <div style={{ fontSize: '9.5px' }}>
                         <p style={{ fontWeight: '800', color: '#0f172a' }}>{clientRepName || '________________________'}</p>
                         <p style={{ color: '#64748b', fontSize: '8px' }}>{clientRole || 'Representante Autorizado'}</p>
                         {clientDNI && <p style={{ color: '#94a3b8', fontSize: '7.5px', marginTop: '1px' }}>DNI: {clientDNI}</p>}
@@ -3230,7 +3262,18 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
                     </div>
                   </div>
                 </div>
-                <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '15px', fontSize: '9px', color: '#94a3b8' }}>
+                <div style={{
+                  position: 'absolute',
+                  bottom: '30px',
+                  left: '65px',
+                  right: '65px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  borderTop: '1px solid #f1f5f9',
+                  paddingTop: '12px',
+                  fontSize: '9px',
+                  color: '#94a3b8'
+                }}>
                   <span>Propuesta Comercial | {proposal.client_name}</span>
                   <span>Página {getPrintPageNumber('legal')} de {totalPrintPages}</span>
                 </div>

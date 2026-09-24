@@ -1969,78 +1969,160 @@ const ProposalEditor: React.FC = () => {
   // =========================================================
   // RENDER PÁGINA 7 (Contrato de Proyectos de Desarrollo a Medida)
   // =========================================================
-  const renderPage7 = () => (
-    <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '25px' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
-          <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
-          <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{heroTitle ? heroTitle.toUpperCase() : 'CBKR APP V2'}</span>
-        </div>
-        <span style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>
-          LEGAL_AGREEMENT // 05
-        </span>
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: '20px', marginBottom: '60px' }}>
-        <h1 style={{ fontSize: '28px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
-          CONTRATO Y <span style={{ fontStyle: 'italic', color: brandPrimary }}>FIRMAS</span>
-        </h1>
-        <p style={{ fontSize: '11px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
-          {contractDescription || 'Acuerdo formal que establece las bases y condiciones legales para la ejecución del proyecto de desarrollo de software detallado en esta propuesta.'}
-        </p>
-        <div style={{ fontSize: '10px', color: '#334155', lineHeight: '1.6', whiteSpace: 'pre-wrap', fontFamily: 'system-ui, -apple-system, sans-serif', padding: '20px', backgroundColor: '#f8fafc', borderRadius: '20px', border: '1px solid #e2e8f0', maxHeight: '350px', overflow: 'hidden', marginTop: '5px' }}>
-          {getProcessedContractText(contractText || DEVELOPMENT_CONTRACT_TEMPLATE)}
-        </div>
-        <div style={{ display: 'flex', gap: '20px', marginTop: '20px' }}>
-          <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '2px' }}>Por CreAPP Software Lab</p>
-            <div style={{ height: '60px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0', padding: '8px' }}>
-              <img src="/firmaseba.png" alt="Firma Seba" style={{ height: '100%', objectFit: 'contain' }} />
-            </div>
-            <div style={{ fontSize: '10px' }}>
-              <p style={{ fontWeight: '800', color: '#0f172a' }}>Sebastián Maza</p>
-              <p style={{ color: '#64748b', fontSize: '9px' }}>Chief Technology Officer</p>
-            </div>
+  const renderPage7 = () => {
+    const processedText = getProcessedContractText(contractText || DEVELOPMENT_CONTRACT_TEMPLATE);
+    const textLength = processedText.length;
+
+    // Ajuste dinámico y responsivo para que contratos extensos (5+ cláusulas) entren perfectamente sin cortes
+    let fontSize = '9.5px';
+    let lineHeight = '1.55';
+    let padding = '18px 22px';
+    let maxHeight = '580px';
+
+    if (textLength > 2600) {
+      fontSize = '7.5px';
+      lineHeight = '1.35';
+      padding = '12px 16px';
+      maxHeight = '620px';
+    } else if (textLength > 1900) {
+      fontSize = '8px';
+      lineHeight = '1.4';
+      padding = '14px 18px';
+      maxHeight = '600px';
+    } else if (textLength > 1300) {
+      fontSize = '8.5px';
+      lineHeight = '1.45';
+      padding = '15px 20px';
+      maxHeight = '580px';
+    }
+
+    return (
+      <div style={{
+        width: '794px',
+        height: '1123px',
+        padding: '45px 65px 40px 65px',
+        display: 'flex',
+        flexDirection: 'column',
+        boxSizing: 'border-box',
+        backgroundColor: '#ffffff',
+        position: 'relative'
+      }}>
+        {/* Header de Página */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'baseline',
+          borderBottom: '2px solid #0f172a',
+          paddingBottom: '8px',
+          marginBottom: '14px'
+        }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
+            <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
+            <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>
+              {heroTitle ? heroTitle.toUpperCase() : 'DEVELOPMENT LAB'}
+            </span>
           </div>
-          {(methodology?.show_facundo_signature ?? true) && (
-            <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '2px' }}>Por CreAPP Software Lab</p>
-              <div style={{ height: '60px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1', padding: '8px' }}>
-              </div>
-              <div style={{ fontSize: '10px' }}>
-                <p style={{ fontWeight: '800', color: '#0f172a' }}>Facundo Marceca</p>
-                <p style={{ color: '#64748b', fontSize: '9px' }}>Project Manager</p>
-              </div>
-            </div>
-          )}
-          <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '2px' }}>
-              Por {clientLegalData.company_name || clientName || 'EL CLIENTE'}
+          <span style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>
+            LEGAL_AGREEMENT // 05
+          </span>
+        </div>
+
+        {/* Contenido Principal */}
+        <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: '10px', marginBottom: '45px' }}>
+          <div>
+            <h1 style={{ fontSize: '24px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
+              CONTRATO Y <span style={{ fontStyle: 'italic', color: brandPrimary }}>FIRMAS</span>
+            </h1>
+            <p style={{ fontSize: '10px', color: '#475569', lineHeight: '1.4', fontWeight: '300', margin: '3px 0 0 0' }}>
+              {contractDescription || 'Acuerdo formal que establece las bases y condiciones legales para la ejecución del proyecto de desarrollo de software detallado en esta propuesta.'}
             </p>
-            <div style={{ height: '60px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1', color: '#94a3b8', fontSize: '10px', textAlign: 'center' }}>
-              Pendiente de Firma
+          </div>
+
+          {/* Caja del Contrato con Altura y Tipografía Adaptativa */}
+          <div style={{
+            fontSize,
+            color: '#334155',
+            lineHeight,
+            whiteSpace: 'pre-wrap',
+            fontFamily: 'system-ui, -apple-system, sans-serif',
+            padding,
+            backgroundColor: '#f8fafc',
+            borderRadius: '16px',
+            border: '1px solid #e2e8f0',
+            maxHeight,
+            overflowY: 'auto',
+            marginTop: '2px',
+            textAlign: 'justify'
+          }}>
+            {processedText}
+          </div>
+
+          {/* Bloque de Firmas */}
+          <div style={{ display: 'flex', gap: '16px', marginTop: 'auto', paddingTop: '10px' }}>
+            <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '1px' }}>Por CreAPP Software Lab</p>
+              <div style={{ height: '54px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0', padding: '6px' }}>
+                <img src="/firmaseba.png" alt="Firma Seba" style={{ height: '100%', objectFit: 'contain' }} />
+              </div>
+              <div style={{ fontSize: '9.5px' }}>
+                <p style={{ fontWeight: '800', color: '#0f172a' }}>Sebastián Maza</p>
+                <p style={{ color: '#64748b', fontSize: '8px' }}>Chief Technology Officer</p>
+              </div>
             </div>
-            <div style={{ fontSize: '10px' }}>
-              <p style={{ fontWeight: '800', color: '#0f172a' }}>
-                {clientLegalData.representative_name || '________________________'}
+            {(methodology?.show_facundo_signature ?? true) && (
+              <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '1px' }}>Por CreAPP Software Lab</p>
+                <div style={{ height: '54px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1', padding: '6px' }}>
+                </div>
+                <div style={{ fontSize: '9.5px' }}>
+                  <p style={{ fontWeight: '800', color: '#0f172a' }}>Facundo Marceca</p>
+                  <p style={{ color: '#64748b', fontSize: '8px' }}>Project Manager</p>
+                </div>
+              </div>
+            )}
+            <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '1px' }}>
+                Por {clientLegalData.company_name || clientName || 'EL CLIENTE'}
               </p>
-              <p style={{ color: '#64748b', fontSize: '9px' }}>
-                {clientLegalData.representative_role || 'Representante Autorizado'}
-              </p>
-              {(clientLegalData.representative_dni || clientLegalData.tax_id) && (
-                <p style={{ color: '#94a3b8', fontSize: '8px', marginTop: '1px' }}>
-                  {clientLegalData.representative_dni ? `DNI: ${clientLegalData.representative_dni}` : `CUIT: ${clientLegalData.tax_id}`}
+              <div style={{ height: '54px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1', color: '#94a3b8', fontSize: '9px', textAlign: 'center' }}>
+                Pendiente de Firma
+              </div>
+              <div style={{ fontSize: '9.5px' }}>
+                <p style={{ fontWeight: '800', color: '#0f172a' }}>
+                  {clientLegalData.representative_name || '________________________'}
                 </p>
-              )}
+                <p style={{ color: '#64748b', fontSize: '8px' }}>
+                  {clientLegalData.representative_role || 'Representante Autorizado'}
+                </p>
+                {(clientLegalData.representative_dni || clientLegalData.tax_id) && (
+                  <p style={{ color: '#94a3b8', fontSize: '7.5px', marginTop: '1px' }}>
+                    {clientLegalData.representative_dni ? `DNI: ${clientLegalData.representative_dni}` : `CUIT: ${clientLegalData.tax_id}`}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Footer */}
+        <div style={{
+          position: 'absolute',
+          bottom: '30px',
+          left: '65px',
+          right: '65px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          borderTop: '1px solid #f1f5f9',
+          paddingTop: '12px',
+          fontSize: '9px',
+          color: '#94a3b8'
+        }}>
+          <span>Propuesta Comercial | {clientLegalData.company_name || clientName}</span>
+          <span>{getPageFooter('legal')}</span>
+        </div>
       </div>
-      <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
-        <span>Propuesta Comercial | {clientLegalData.company_name || clientName}</span>
-        <span>{getPageFooter('legal')}</span>
-      </div>
-    </div>
-  );
+    );
+  };
 
   const renderClientLegalCard = () => (
     <div className="glass rounded-2xl p-6 border border-white/10 space-y-6 relative overflow-hidden bg-gradient-to-b from-slate-900/60 to-slate-950/60 shadow-xl">
