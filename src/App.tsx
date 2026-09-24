@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
 import ProposalView from './pages/ProposalView';
+import ContractView from './pages/ContractView';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminPanel from './pages/admin/AdminPanel';
 import ProposalEditor from './pages/admin/ProposalEditor';
@@ -37,6 +38,7 @@ const App: React.FC = () => {
             {/* Public Routes */}
             <Route path="/" element={<LandingPage />} />
             <Route path="/propuesta/:slug" element={<ProposalView />} />
+            <Route path="/contrato/:id" element={<ContractView />} />
 
             {/* Admin Routes (Protected) */}
             <Route path="/admin/login" element={<AdminLogin />} />
