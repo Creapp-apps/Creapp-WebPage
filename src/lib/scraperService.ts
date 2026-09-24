@@ -457,8 +457,15 @@ export const importProspectToPipeline = (prospect: ScrapedProspect): Lead => {
     website: prospect.website,
     instagram,
     facebook,
-    productType: prospect.digitalHealth.suggestedSolution,
+    productType: (['Stacked SaaS', 'TrazApp', 'Dental IA', 'Desarrollo a Medida', 'Landing & Growth'].includes(prospect.digitalHealth.suggestedSolution)
+      ? prospect.digitalHealth.suggestedSolution
+      : 'Desarrollo a Medida') as any,
     notes: `Prospectado vía CreApp Scraper (${prospect.source}): ${prospect.digitalHealth.diagnosis}`,
+    address: prospect.address,
+    city: prospect.city,
+    rating: prospect.rating,
+    reviewCount: prospect.reviewCount,
+    originalProspect: prospect,
   });
 };
 

@@ -174,28 +174,32 @@ html.lenis body {
     }
 
     /* Modern Visible Kanban Column Vertical Scrollbar */
+    .kanban-col-scrollbar {
+        overflow-y: scroll !important;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(168, 85, 247, 0.65) rgba(255, 255, 255, 0.05);
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-y;
+    }
+
     .kanban-col-scrollbar::-webkit-scrollbar {
         width: 6px;
+        display: block !important;
     }
 
     .kanban-col-scrollbar::-webkit-scrollbar-track {
-        background: rgba(255, 255, 255, 0.02);
+        background: rgba(255, 255, 255, 0.04);
         border-radius: 9999px;
     }
 
     .kanban-col-scrollbar::-webkit-scrollbar-thumb {
-        background: rgba(168, 85, 247, 0.45);
+        background: rgba(168, 85, 247, 0.65);
         border-radius: 9999px;
-        border: 1px solid rgba(168, 85, 247, 0.25);
+        border: 1px solid rgba(168, 85, 247, 0.3);
     }
 
     .kanban-col-scrollbar::-webkit-scrollbar-thumb:hover {
-        background: rgba(168, 85, 247, 0.85);
-    }
-
-    .kanban-col-scrollbar {
-        scrollbar-width: thin;
-        scrollbar-color: rgba(168, 85, 247, 0.45) rgba(255, 255, 255, 0.02);
+        background: rgba(168, 85, 247, 1);
     }
 }
 

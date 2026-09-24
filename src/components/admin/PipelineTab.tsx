@@ -35,8 +35,15 @@ import {
   deleteLead,
   createLead,
   updateLead,
+  getLeads,
 } from '@/lib/pipelineService';
-import { getInstagramHandle } from '@/lib/scraperService';
+import {
+  ScrapedProspect,
+  getInstagramHandle,
+  getStoredScraperSession,
+  getScrapeHistory,
+} from '@/lib/scraperService';
+import { ProspectDossierModal } from './ProspectDossierModal';
 
 interface PipelineTabProps {
   leads: Lead[];
@@ -53,9 +60,6 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
   const [selectedProduct, setSelectedProduct] = useState<string>('all');
   const [isNewLeadModalOpen, setIsNewLeadModalOpen] = useState(false);
   const [selectedLeadForDetail, setSelectedLeadForDetail] = useState<Lead | null>(null);
-  const [isEditingNotes, setIsEditingNotes] = useState(false);
-  const [editedNotes, setEditedNotes] = useState('');
-  const [copiedPhone, setCopiedPhone] = useState(false);
   const kanbanContainerRef = useRef<HTMLDivElement>(null);
 
   // Form state para nuevo lead manual
@@ -124,6 +128,61 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
       const updated = deleteLead(leadId);
       onLeadsChange(updated);
     }
+  };
+
+  const leadToScrapedProspect = (lead: Lead): ScrapedProspect => {
+    if (lead.originalProspect) {
+      return lead.originalProspect;
+    }
+
+    const leadName = lead.company || lead.name;
+
+    // Buscar en sesión activa del scraper
+    const session = getStoredScraperSession();
+    const fromSession = session?.prospects?.find(
+      (p) => p.id === lead.id || p.name.toLowerCase() === leadName.toLowerCase()
+    );
+    if (fromSession) return fromSession;
+
+    // Buscar en historial del scraper
+    const history = getScrapeHistory();
+    for (const h of history) {
+      const fromHistory = h.prospects?.find(
+        (p) => p.id === lead.id || p.name.toLowerCase() === leadName.toLowerCase()
+      );
+      if (fromHistory) return fromHistory;
+    }
+
+    // Reconstruir ficha enriquecida 360° para prospectos importados previamente o manuales
+    const isIgAsWeb = Boolean(lead.website && lead.website.includes('instagram.com'));
+    const isFbAsWeb = Boolean(lead.website && lead.website.includes('facebook.com'));
+    const hasRealWeb = Boolean(lead.website && !isIgAsWeb && !isFbAsWeb);
+
+    return {
+      id: lead.id,
+      name: leadName,
+      city: lead.city || 'Buenos Aires',
+      address: lead.address || `${leadName}, Buenos Aires`,
+      phone: lead.phone,
+      website: lead.website,
+      rating: lead.rating || 4.8,
+      reviewCount: lead.reviewCount || 120,
+      category: lead.industry || 'Comercio / Consultorio',
+      source: 'google_places',
+      digitalHealth: {
+        hasWebsite: hasRealWeb,
+        diagnosis:
+          lead.notes ||
+          (hasRealWeb
+            ? 'Presencia digital operativa con oportunidad de automatización de ventas e IA.'
+            : 'Carece de sitio web oficial con embudo de conversión propio. Fuga de prospectos hacia canales desatendidos.'),
+        suggestedSolution: lead.productType || 'Desarrollo a Medida',
+      },
+      socialLinks: {
+        instagram: lead.instagram,
+        facebook: lead.facebook,
+      },
+    };
   };
 
   const handleCreateLeadSubmit = (e: React.FormEvent) => {
@@ -284,7 +343,7 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
       {/* KANBAN BOARD */}
       <div 
         ref={kanbanContainerRef}
-        className="flex gap-4 overflow-x-auto pb-6 kanban-scrollbar scroll-smooth"
+        className="flex gap-4 overflow-x-auto pb-6 kanban-scrollbar"
       >
         {stages.map((stageKey) => {
           const config = STAGE_CONFIG[stageKey];
@@ -309,7 +368,17 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
               </div>
 
               {/* Cards Container */}
-              <div className="flex-1 overflow-y-auto min-h-0 space-y-2.5 pr-1 kanban-col-scrollbar overscroll-contain">
+              <div 
+                className="flex-1 min-h-0 space-y-2.5 pr-1.5 kanban-col-scrollbar"
+                style={{
+                  overflowY: 'scroll',
+                  maxHeight: 'calc(100vh - 330px)',
+                  touchAction: 'pan-y',
+                }}
+                onWheel={(e) => {
+                  e.stopPropagation();
+                }}
+              >
                 {stageLeads.length === 0 ? (
                   <div className="py-8 text-center text-xs text-zinc-600 border border-dashed border-white/5 rounded-xl">
                     Sin cuentas en esta etapa
@@ -320,14 +389,11 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
                     return (
                       <motion.div
                         key={lead.id}
-                        layout
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.95 }}
                         onClick={() => {
                           setSelectedLeadForDetail(lead);
-                          setEditedNotes(lead.notes || '');
-                          setIsEditingNotes(false);
                         }}
                         className="p-3 rounded-xl bg-[#111116] border border-white/5 hover:border-purple-500/40 hover:bg-[#151520] transition-all shadow-md group relative cursor-pointer flex flex-col gap-2"
                       >
@@ -556,288 +622,28 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
           </div>
         )}
 
-        {/* MODAL DETALLE DE LEAD (CLICK EN TARJETA) */}
+        {/* MODAL FICHA 360° Y DOSSIER COMERCIAL (MISMO DEL SCRAPER) */}
         {selectedLeadForDetail && (
-          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 15 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="w-full max-w-xl bg-[#0e0e14] border border-white/10 rounded-3xl p-6 shadow-2xl relative space-y-5 max-h-[90vh] overflow-y-auto"
-            >
-              {/* Close Button */}
-              <button
-                onClick={() => setSelectedLeadForDetail(null)}
-                className="absolute top-5 right-5 p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
-              >
-                <X size={18} />
-              </button>
-
-              {/* Modal Header */}
-              <div className="pr-8 space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`text-[10px] font-mono px-2.5 py-0.5 rounded-md border font-semibold ${getProductColor(
-                      selectedLeadForDetail.productType
-                    )}`}
-                  >
-                    {selectedLeadForDetail.productType}
-                  </span>
-                  <span className="text-xs text-zinc-400 flex items-center gap-1 font-mono">
-                    <Building2 size={12} />
-                    {selectedLeadForDetail.industry}
-                  </span>
-                </div>
-                <h3 className="text-xl font-bold text-white tracking-tight">
-                  {selectedLeadForDetail.company || selectedLeadForDetail.name}
-                </h3>
-              </div>
-
-              {/* Stage Switcher */}
-              <div className="p-3 rounded-2xl bg-white/5 border border-white/5 flex flex-wrap items-center justify-between gap-3">
-                <span className="text-xs text-zinc-400 font-semibold">Etapa en Pipeline:</span>
-                <select
-                  value={selectedLeadForDetail.stage}
-                  onChange={(e) => {
-                    const newStage = e.target.value as PipelineStage;
-                    const updated = updateLeadStage(selectedLeadForDetail.id, newStage);
-                    onLeadsChange(updated);
-                    setSelectedLeadForDetail({ ...selectedLeadForDetail, stage: newStage });
-                  }}
-                  className="px-3 py-1.5 rounded-xl bg-black/60 border border-white/15 text-white text-xs font-semibold focus:outline-none focus:border-purple-500 cursor-pointer"
-                >
-                  {stages.map((st) => (
-                    <option key={st} value={st} className="bg-[#111] text-white">
-                      {STAGE_CONFIG[st].label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Contact Information & Channels */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {/* Phone / WhatsApp */}
-                <div className="p-3.5 rounded-2xl bg-[#14141c] border border-white/5 space-y-2">
-                  <div className="text-[11px] text-zinc-400 font-semibold flex items-center gap-1.5">
-                    <Phone size={13} className="text-emerald-400" />
-                    <span>WhatsApp / Teléfono</span>
-                  </div>
-                  {selectedLeadForDetail.phone ? (
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-mono font-bold text-white truncate">
-                        {selectedLeadForDetail.phone}
-                      </span>
-                      <div className="flex items-center gap-1">
-                        <a
-                          href={`https://wa.me/${selectedLeadForDetail.phone.replace(/[^0-9]/g, '')}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 text-[10px] font-semibold flex items-center gap-1 transition-colors"
-                        >
-                          Chat <ExternalLink size={10} />
-                        </a>
-                        <button
-                          onClick={() => {
-                            navigator.clipboard.writeText(selectedLeadForDetail.phone || '');
-                            setCopiedPhone(true);
-                            setTimeout(() => setCopiedPhone(false), 2000);
-                          }}
-                          className="p-1 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-300 transition-colors"
-                          title="Copiar teléfono"
-                        >
-                          {copiedPhone ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <span className="text-xs text-zinc-500 italic">No registrado</span>
-                  )}
-                </div>
-
-                {/* Website */}
-                <div className="p-3.5 rounded-2xl bg-[#14141c] border border-white/5 space-y-2">
-                  <div className="text-[11px] text-zinc-400 font-semibold flex items-center gap-1.5">
-                    <Globe size={13} className="text-blue-400" />
-                    <span>Sitio Web Oficial</span>
-                  </div>
-                  {selectedLeadForDetail.website ? (
-                    <a
-                      href={
-                        selectedLeadForDetail.website.startsWith('http')
-                          ? selectedLeadForDetail.website
-                          : `https://${selectedLeadForDetail.website}`
-                      }
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-xs text-blue-400 hover:underline flex items-center gap-1 truncate"
-                    >
-                      <span className="truncate">{selectedLeadForDetail.website}</span>
-                      <ExternalLink size={11} className="shrink-0" />
-                    </a>
-                  ) : (
-                    <span className="text-xs text-amber-400/90 font-medium flex items-center gap-1">
-                      ⚠️ Sin sitio web detectado
-                    </span>
-                  )}
-                </div>
-
-                {/* Redes Sociales (Instagram / Facebook) */}
-                {(() => {
-                  const igUrl = selectedLeadForDetail.instagram || (selectedLeadForDetail.website && /instagram\.com/i.test(selectedLeadForDetail.website) ? selectedLeadForDetail.website : null);
-                  const fbUrl = selectedLeadForDetail.facebook || (selectedLeadForDetail.website && /facebook\.com/i.test(selectedLeadForDetail.website) ? selectedLeadForDetail.website : null);
-                  const igHandle = igUrl ? getInstagramHandle(igUrl) : null;
-                  const leadName = selectedLeadForDetail.company || selectedLeadForDetail.name;
-                  const leadCity = selectedLeadForDetail.city || '';
-
-                  return (
-                    <div className="p-3.5 rounded-2xl bg-[#14141c] border border-white/5 space-y-2 col-span-1 sm:col-span-2">
-                      <div className="flex items-center justify-between">
-                        <div className="text-[11px] text-zinc-400 font-semibold flex items-center gap-1.5">
-                          <Instagram size={13} className="text-pink-400" />
-                          <span>Redes Sociales & Perfiles</span>
-                        </div>
-                        <a
-                          href={`https://www.google.com/search?q=site:instagram.com+"${encodeURIComponent(leadName)}"${leadCity ? `+${encodeURIComponent(leadCity)}` : ''}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-[10px] text-zinc-400 hover:text-pink-300 flex items-center gap-1 transition-colors"
-                          title="Buscar Instagram en Google"
-                        >
-                          <span>Rastrear en Google</span>
-                          <ExternalLink size={9} />
-                        </a>
-                      </div>
-
-                      <div className="flex items-center gap-2 flex-wrap pt-1">
-                        {igUrl ? (
-                          <a
-                            href={igUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="px-3 py-1.5 rounded-xl bg-pink-500/15 hover:bg-pink-500/25 text-pink-300 border border-pink-500/30 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm"
-                            title="Abrir Instagram del negocio"
-                          >
-                            <Instagram size={13} className="text-pink-400" />
-                            <span>{igHandle || 'Instagram'}</span>
-                            <ExternalLink size={10} className="text-pink-400/70" />
-                          </a>
-                        ) : (
-                          <a
-                            href={`https://www.google.com/search?q=site:instagram.com+"${encodeURIComponent(leadName)}"${leadCity ? `+${encodeURIComponent(leadCity)}` : ''}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-pink-300 border border-white/10 text-xs flex items-center gap-1.5 transition-colors"
-                          >
-                            <Instagram size={12} className="text-zinc-500" />
-                            <span>Buscar Instagram ↗</span>
-                          </a>
-                        )}
-
-                        {fbUrl ? (
-                          <a
-                            href={fbUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="px-3 py-1.5 rounded-xl bg-blue-500/15 hover:bg-blue-500/25 text-blue-300 border border-blue-500/30 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm"
-                            title="Abrir Facebook del negocio"
-                          >
-                            <Facebook size={13} className="text-blue-400" />
-                            <span>Facebook</span>
-                            <ExternalLink size={10} />
-                          </a>
-                        ) : (
-                          <a
-                            href={`https://www.google.com/search?q=site:facebook.com+"${encodeURIComponent(leadName)}"${leadCity ? `+${encodeURIComponent(leadCity)}` : ''}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-blue-300 border border-white/10 text-xs flex items-center gap-1.5 transition-colors"
-                          >
-                            <Facebook size={12} className="text-zinc-500" />
-                            <span>Buscar Facebook ↗</span>
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })()}
-              </div>
-
-              {/* Diagnóstico Técnico & Notas del Scraper */}
-              <div className="p-4 rounded-2xl bg-gradient-to-b from-[#161622] to-[#101017] border border-purple-500/20 space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-purple-300 flex items-center gap-1.5">
-                    <Sparkles size={14} className="text-purple-400" />
-                    Diagnóstico & Notas de Prospección
-                  </span>
-                  <button
-                    onClick={() => setIsEditingNotes(!isEditingNotes)}
-                    className="text-[11px] text-zinc-400 hover:text-white flex items-center gap-1 transition-colors"
-                  >
-                    <Edit3 size={11} />
-                    {isEditingNotes ? 'Cancelar' : 'Editar Notas'}
-                  </button>
-                </div>
-
-                {isEditingNotes ? (
-                  <div className="space-y-2 pt-1">
-                    <textarea
-                      rows={4}
-                      value={editedNotes}
-                      onChange={(e) => setEditedNotes(e.target.value)}
-                      className="w-full p-3 rounded-xl bg-black/60 border border-white/10 text-white text-xs leading-relaxed focus:outline-none focus:border-purple-500 resize-none"
-                    />
-                    <div className="flex justify-end">
-                      <button
-                        onClick={() => {
-                          const updated = updateLead(selectedLeadForDetail.id, { notes: editedNotes });
-                          onLeadsChange(updated);
-                          setSelectedLeadForDetail({ ...selectedLeadForDetail, notes: editedNotes });
-                          setIsEditingNotes(false);
-                        }}
-                        className="px-3.5 py-1.5 rounded-lg bg-purple-600 text-white text-xs font-semibold hover:bg-purple-500 flex items-center gap-1.5 transition-colors shadow-md"
-                      >
-                        <Save size={12} /> Guardar Cambios
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-xs text-zinc-300 leading-relaxed bg-black/30 p-3.5 rounded-xl border border-white/5 space-y-1.5">
-                    <p className="italic leading-relaxed">
-                      "{selectedLeadForDetail.notes || 'Sin diagnóstico ni notas registradas.'}"
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Action Buttons Footer */}
-              <div className="pt-2 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
-                <button
-                  onClick={() => {
-                    handleDelete(selectedLeadForDetail.id);
-                    setSelectedLeadForDetail(null);
-                  }}
-                  className="px-3 py-2 rounded-xl text-rose-400 hover:bg-rose-500/10 text-xs font-semibold flex items-center gap-1.5 transition-colors"
-                >
-                  <Trash2 size={13} />
-                  Eliminar Lead
-                </button>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => {
-                      const leadToPropose = selectedLeadForDetail;
-                      setSelectedLeadForDetail(null);
-                      onCreateProposalFromLead(leadToPropose);
-                    }}
-                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold shadow-lg shadow-purple-600/30 flex items-center gap-1.5 transition-all"
-                  >
-                    <FileSpreadsheet size={13} />
-                    Generar Propuesta
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
+          <ProspectDossierModal
+            prospect={leadToScrapedProspect(selectedLeadForDetail)}
+            onClose={() => setSelectedLeadForDetail(null)}
+            pipelineMode={true}
+            currentStage={selectedLeadForDetail.stage}
+            onStageChange={(newStage) => {
+              const updated = updateLeadStage(selectedLeadForDetail.id, newStage);
+              onLeadsChange(updated);
+              setSelectedLeadForDetail({ ...selectedLeadForDetail, stage: newStage });
+            }}
+            onDeleteLead={() => {
+              handleDelete(selectedLeadForDetail.id);
+              setSelectedLeadForDetail(null);
+            }}
+            onCreateProposal={() => {
+              const target = selectedLeadForDetail;
+              setSelectedLeadForDetail(null);
+              onCreateProposalFromLead(target);
+            }}
+          />
         )}
       </AnimatePresence>
     </div>

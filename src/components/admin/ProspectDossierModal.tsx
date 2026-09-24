@@ -29,15 +29,23 @@ import {
   Instagram,
   Facebook,
   Search,
+  FileSpreadsheet,
+  Trash2,
 } from 'lucide-react';
 import { ScrapedProspect, generateColdPitchWithAI, getInstagramHandle } from '@/lib/scraperService';
+import { PipelineStage, STAGE_CONFIG } from '@/lib/pipelineService';
 
 interface ProspectDossierModalProps {
   prospect: ScrapedProspect | null;
   onClose: () => void;
-  onImportToPipeline: (prospect: ScrapedProspect) => void;
-  isImported: boolean;
-  onFocusOnMap: (prospect: ScrapedProspect) => void;
+  onImportToPipeline?: (prospect: ScrapedProspect) => void;
+  isImported?: boolean;
+  onFocusOnMap?: (prospect: ScrapedProspect) => void;
+  pipelineMode?: boolean;
+  currentStage?: PipelineStage;
+  onStageChange?: (newStage: PipelineStage) => void;
+  onDeleteLead?: () => void;
+  onCreateProposal?: () => void;
 }
 
 export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
@@ -46,6 +54,11 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
   onImportToPipeline,
   isImported,
   onFocusOnMap,
+  pipelineMode,
+  currentStage,
+  onStageChange,
+  onDeleteLead,
+  onCreateProposal,
 }) => {
   const [activeTab, setActiveTab] = useState<'strategy' | 'pitches' | 'audit'>('strategy');
   const [pitchChannel, setPitchChannel] = useState<'whatsapp' | 'call' | 'email' | 'visit'>('whatsapp');
@@ -219,39 +232,97 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
               )}
             </div>
 
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  onFocusOnMap(prospect);
-                  onClose();
-                }}
-                className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white border border-white/10 flex items-center gap-1.5 transition-colors cursor-pointer"
-              >
-                <Compass size={13} className="text-purple-400" />
-                <span>Enfocar en Radar</span>
-              </button>
+            <div className="flex items-center gap-2 flex-wrap">
+              {pipelineMode ? (
+                <>
+                  {/* Stage Switcher */}
+                  {currentStage && onStageChange && (
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-purple-950/40 border border-purple-500/30">
+                      <span className="text-[11px] text-zinc-400 font-semibold">Etapa:</span>
+                      <select
+                        value={currentStage}
+                        onChange={(e) => onStageChange(e.target.value as PipelineStage)}
+                        className="bg-transparent text-white text-xs font-semibold focus:outline-none cursor-pointer"
+                      >
+                        {(Object.keys(STAGE_CONFIG) as PipelineStage[]).map((st) => (
+                          <option key={st} value={st} className="bg-[#111] text-white">
+                            {STAGE_CONFIG[st].label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
 
-              <button
-                onClick={() => onImportToPipeline(prospect)}
-                disabled={isImported}
-                className={`px-3.5 py-1.5 rounded-xl font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
-                  isImported
-                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                    : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md hover:opacity-90'
-                }`}
-              >
-                {isImported ? (
-                  <>
-                    <CheckCircle2 size={13} />
-                    <span>En Pipeline CRM</span>
-                  </>
-                ) : (
-                  <>
-                    <ArrowRight size={13} />
-                    <span>Mover al Pipeline CRM</span>
-                  </>
-                )}
-              </button>
+                  {/* Create Proposal Button */}
+                  {onCreateProposal && (
+                    <button
+                      onClick={() => {
+                        onClose();
+                        onCreateProposal();
+                      }}
+                      className="px-3.5 py-1.5 rounded-xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs shadow-md shadow-purple-600/30 flex items-center gap-1.5 transition-all cursor-pointer"
+                    >
+                      <FileSpreadsheet size={13} />
+                      <span>Generar Propuesta</span>
+                    </button>
+                  )}
+
+                  {/* Delete Lead Button */}
+                  {onDeleteLead && (
+                    <button
+                      onClick={() => {
+                        if (confirm(`¿Eliminar este lead de "${prospect.name}" del pipeline?`)) {
+                          onClose();
+                          onDeleteLead();
+                        }
+                      }}
+                      className="p-1.5 rounded-xl text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                      title="Eliminar lead del pipeline"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  )}
+                </>
+              ) : (
+                <>
+                  {onFocusOnMap && (
+                    <button
+                      onClick={() => {
+                        onFocusOnMap(prospect);
+                        onClose();
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white border border-white/10 flex items-center gap-1.5 transition-colors cursor-pointer"
+                    >
+                      <Compass size={13} className="text-purple-400" />
+                      <span>Enfocar en Radar</span>
+                    </button>
+                  )}
+
+                  {onImportToPipeline && (
+                    <button
+                      onClick={() => onImportToPipeline(prospect)}
+                      disabled={isImported}
+                      className={`px-3.5 py-1.5 rounded-xl font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                        isImported
+                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                          : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md hover:opacity-90'
+                      }`}
+                    >
+                      {isImported ? (
+                        <>
+                          <CheckCircle2 size={13} />
+                          <span>En Pipeline CRM</span>
+                        </>
+                      ) : (
+                        <>
+                          <ArrowRight size={13} />
+                          <span>Mover al Pipeline CRM</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                </>
+              )}
             </div>
           </div>
 

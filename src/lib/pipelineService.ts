@@ -24,6 +24,11 @@ export interface Lead {
   createdAt: string;
   lastContactAt?: string;
   proposalSlug?: string;
+  address?: string;
+  city?: string;
+  rating?: number;
+  reviewCount?: number;
+  originalProspect?: any;
 }
 
 export const STAGE_CONFIG: Record<PipelineStage, { label: string; color: string; bg: string; border: string }> = {
