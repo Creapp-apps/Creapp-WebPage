@@ -68,254 +68,41 @@ export interface FinanceTransaction {
   createdAt: string;
 }
 
-const SUBSCRIPTIONS_KEY = 'creapp_subscriptions_v1';
-const FINANCES_KEY = 'creapp_finances_v1';
-
-// Datos iniciales de demostración contextualizados en CreApp
-const INITIAL_SUBSCRIPTIONS: Subscription[] = [
-  {
-    id: 'sub-001',
-    clientName: 'Dr. Alejandro Fernández',
-    companyName: 'Clínica Odontológica Dental Norte',
-    planName: 'Dental-IA Pro & Turnero Predictivo',
-    category: 'saas_license',
-    productType: 'Dental IA',
-    amount: 180,
-    currency: 'USD',
-    billingDay: 5,
-    billingCycle: 'monthly',
-    status: 'active',
-    startDate: '2026-05-01',
-    nextBillingDate: '2026-10-05',
-    lastPaymentDate: '2026-09-05',
-    paymentMethod: 'Transferencia Bancaria',
-    paymentLink: 'https://mpago.la/dental-norte',
-    clientPhone: '+54 9 11 4455-6677',
-    clientEmail: 'info@dentalnorte.com.ar',
-    notes: 'Abono recurrente con SLA de 99.8% y agente WhatsApp activo.',
-    createdAt: '2026-05-01T12:00:00Z',
-  },
-  {
-    id: 'sub-002',
-    clientName: 'Club Cannábico del Plata',
-    companyName: 'Asociación TrazApp Mar del Plata',
-    planName: 'TrazApp Enterprise & Trazabilidad INASE',
-    category: 'saas_license',
-    productType: 'TrazApp',
-    amount: 320,
-    currency: 'USD',
-    billingDay: 10,
-    billingCycle: 'monthly',
-    status: 'active',
-    startDate: '2026-06-10',
-    nextBillingDate: '2026-10-10',
-    lastPaymentDate: '2026-09-10',
-    paymentMethod: 'Crypto USDT',
-    clientPhone: '+54 9 223 589-1122',
-    clientEmail: 'admin@trazapp-mdp.org',
-    notes: 'Control de lotes, dispensario y 5 usuarios administrativos concurrentes.',
-    createdAt: '2026-06-10T15:30:00Z',
-  },
-  {
-    id: 'sub-003',
-    clientName: 'Martín Rossi',
-    companyName: 'Stacked Burger Bar & Dark Kitchens',
-    planName: 'Stacked SaaS - Sistema de Pedidos y Delivery Propio',
-    category: 'saas_license',
-    productType: 'Stacked SaaS',
-    amount: 150,
-    currency: 'USD',
-    billingDay: 1,
-    billingCycle: 'monthly',
-    status: 'pending_payment',
-    startDate: '2026-07-01',
-    nextBillingDate: '2026-10-01',
-    lastPaymentDate: '2026-09-01',
-    paymentMethod: 'MercadoPago',
-    paymentLink: 'https://mpago.la/stacked-burger-mrr',
-    clientPhone: '+54 9 11 3322-8899',
-    clientEmail: 'hola@stackedburger.com',
-    notes: 'Ahorro directo en comisiones de PedidosYa / Rappi. Cobro el primer día de cada mes.',
-    createdAt: '2026-07-01T10:00:00Z',
-  },
-  {
-    id: 'sub-004',
-    clientName: 'Estudio Jurídico Maza & Asoc.',
-    companyName: 'Maza Legal Partners',
-    planName: 'Mantenimiento Cloud & Backup Cifrado',
-    category: 'maintenance',
-    productType: 'Infraestructura & SLA',
-    amount: 120,
-    currency: 'USD',
-    billingDay: 15,
-    billingCycle: 'monthly',
-    status: 'active',
-    startDate: '2026-04-15',
-    nextBillingDate: '2026-10-15',
-    lastPaymentDate: '2026-09-15',
-    paymentMethod: 'Transferencia Bancaria',
-    clientPhone: '+54 9 11 6789-0123',
-    clientEmail: 'contacto@mazalegal.com',
-    notes: 'Soporte web prioritario, certificados SSL y copias de seguridad semanales.',
-    createdAt: '2026-04-15T09:00:00Z',
-  },
-];
-
-const INITIAL_TRANSACTIONS: FinanceTransaction[] = [
-  {
-    id: 'tx-001',
-    type: 'expense',
-    concept: 'Vercel Pro Plan (Hosting & Edge Network)',
-    provider: 'Vercel Inc.',
-    category: 'infrastructure',
-    amount: 20,
-    currency: 'USD',
-    date: '2026-09-02',
-    paymentMethod: 'Tarjeta Corporativa',
-    recurring: true,
-    status: 'paid',
-    notes: 'Despliegues en producción para CreApp y aplicaciones de clientes.',
-    createdAt: '2026-09-02T10:00:00Z',
-  },
-  {
-    id: 'tx-002',
-    type: 'expense',
-    concept: 'Supabase Pro Plan (PostgreSQL Cloud & Auth)',
-    provider: 'Supabase Inc.',
-    category: 'infrastructure',
-    amount: 25,
-    currency: 'USD',
-    date: '2026-09-05',
-    paymentMethod: 'Tarjeta Corporativa',
-    recurring: true,
-    status: 'paid',
-    notes: 'Base de datos de producción con réplicas y Row Level Security.',
-    createdAt: '2026-09-05T11:00:00Z',
-  },
-  {
-    id: 'tx-003',
-    type: 'expense',
-    concept: 'OpenAI API (Tokens GPT-4o & Embeddings)',
-    provider: 'OpenAI LLC',
-    category: 'ai_apis',
-    amount: 45,
-    currency: 'USD',
-    date: '2026-09-12',
-    paymentMethod: 'Tarjeta Corporativa',
-    recurring: true,
-    status: 'paid',
-    notes: 'Consumo de IA para diagnóstico de prospección y agentes conversacionales.',
-    createdAt: '2026-09-12T14:20:00Z',
-  },
-  {
-    id: 'tx-004',
-    type: 'expense',
-    concept: 'Google Maps Platform & Places API',
-    provider: 'Google Cloud Platform',
-    category: 'infrastructure',
-    amount: 18,
-    currency: 'USD',
-    date: '2026-09-15',
-    paymentMethod: 'Tarjeta Corporativa',
-    recurring: true,
-    status: 'paid',
-    notes: 'Scraper radar geográfico y validación de ubicaciones de prospectos.',
-    createdAt: '2026-09-15T09:15:00Z',
-  },
-  {
-    id: 'tx-005',
-    type: 'expense',
-    concept: 'Figma Professional (Diseño UI/UX & Sistemas)',
-    provider: 'Figma Inc.',
-    category: 'saas_tools',
-    amount: 15,
-    currency: 'USD',
-    date: '2026-09-18',
-    paymentMethod: 'Tarjeta Corporativa',
-    recurring: true,
-    status: 'paid',
-    notes: 'Licencia para prototipado interactivo de productos de software.',
-    createdAt: '2026-09-18T16:00:00Z',
-  },
-  {
-    id: 'tx-006',
-    type: 'expense',
-    concept: 'GitHub Team & Copilot Workspace',
-    provider: 'GitHub Inc.',
-    category: 'saas_tools',
-    amount: 19,
-    currency: 'USD',
-    date: '2026-09-20',
-    paymentMethod: 'Tarjeta Corporativa',
-    recurring: true,
-    status: 'paid',
-    notes: 'Repositorios privados de clientes y CI/CD pipelines.',
-    createdAt: '2026-09-20T08:30:00Z',
-  },
-  {
-    id: 'tx-007',
-    type: 'expense',
-    concept: 'Honorarios Especialista QA & Automatización',
-    provider: 'Lucas Romero (Freelancer)',
-    category: 'resources_freelance',
-    amount: 160,
-    currency: 'USD',
-    date: '2026-09-22',
-    paymentMethod: 'Transferencia',
-    recurring: false,
-    status: 'paid',
-    notes: 'Testing end-to-end de pasarelas de pago y seguridad.',
-    createdAt: '2026-09-22T17:00:00Z',
-  },
-  {
-    id: 'tx-008',
-    type: 'income',
-    concept: 'Cobro Abono Mensual - TrazApp Enterprise',
-    provider: 'Asociación TrazApp Mar del Plata',
-    category: 'saas_tools',
-    amount: 320,
-    currency: 'USD',
-    date: '2026-09-10',
-    paymentMethod: 'Crypto',
-    recurring: true,
-    status: 'paid',
-    subscriptionId: 'sub-002',
-    notes: 'Cobro recurrente mensual recibido.',
-    createdAt: '2026-09-10T12:00:00Z',
-  },
-  {
-    id: 'tx-009',
-    type: 'income',
-    concept: 'Cobro Abono Mensual - Dental-IA Pro',
-    provider: 'Clínica Odontológica Dental Norte',
-    category: 'saas_tools',
-    amount: 180,
-    currency: 'USD',
-    date: '2026-09-05',
-    paymentMethod: 'Transferencia',
-    recurring: true,
-    status: 'paid',
-    subscriptionId: 'sub-001',
-    notes: 'Cobro recurrente mensual recibido.',
-    createdAt: '2026-09-05T12:00:00Z',
-  },
-];
+const SUBSCRIPTIONS_KEY = 'creapp_subscriptions_real_v1';
+const FINANCES_KEY = 'creapp_finances_real_v1';
 
 // --- SUSCRIPCIONES STORAGE & CRUD ---
 
 export function getSubscriptions(): Subscription[] {
-  if (typeof window === 'undefined') return INITIAL_SUBSCRIPTIONS;
+  if (typeof window === 'undefined') return [];
   try {
+    // Limpiar claves viejas con datos mock si existiesen
+    const legacy = localStorage.getItem('creapp_subscriptions_v1');
+    if (legacy) {
+      localStorage.removeItem('creapp_subscriptions_v1');
+    }
+
     const raw = localStorage.getItem(SUBSCRIPTIONS_KEY);
     if (!raw) {
-      localStorage.setItem(SUBSCRIPTIONS_KEY, JSON.stringify(INITIAL_SUBSCRIPTIONS));
-      return INITIAL_SUBSCRIPTIONS;
+      localStorage.setItem(SUBSCRIPTIONS_KEY, JSON.stringify([]));
+      return [];
     }
-    return JSON.parse(raw);
+    const parsed: Subscription[] = JSON.parse(raw);
+    // Filtrar cualquier residuo de mock sub-00
+    const clean = parsed.filter((s) => !s.id.startsWith('sub-00'));
+    if (clean.length !== parsed.length) {
+      localStorage.setItem(SUBSCRIPTIONS_KEY, JSON.stringify(clean));
+    }
+    return clean;
   } catch (e) {
     console.error('Error reading subscriptions:', e);
-    return INITIAL_SUBSCRIPTIONS;
+    return [];
   }
+}
+
+export function clearAllSubscriptions(): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(SUBSCRIPTIONS_KEY, JSON.stringify([]));
 }
 
 export function saveSubscriptions(subscriptions: Subscription[]): void {
@@ -415,18 +202,35 @@ export function recordSubscriptionPayment(
 // --- FINANZAS / DÉBITOS STORAGE & CRUD ---
 
 export function getTransactions(): FinanceTransaction[] {
-  if (typeof window === 'undefined') return INITIAL_TRANSACTIONS;
+  if (typeof window === 'undefined') return [];
   try {
+    // Limpiar claves viejas con datos mock si existiesen
+    const legacy = localStorage.getItem('creapp_finances_v1');
+    if (legacy) {
+      localStorage.removeItem('creapp_finances_v1');
+    }
+
     const raw = localStorage.getItem(FINANCES_KEY);
     if (!raw) {
-      localStorage.setItem(FINANCES_KEY, JSON.stringify(INITIAL_TRANSACTIONS));
-      return INITIAL_TRANSACTIONS;
+      localStorage.setItem(FINANCES_KEY, JSON.stringify([]));
+      return [];
     }
-    return JSON.parse(raw);
+    const parsed: FinanceTransaction[] = JSON.parse(raw);
+    // Filtrar cualquier residuo de mock tx-00
+    const clean = parsed.filter((t) => !t.id.startsWith('tx-00'));
+    if (clean.length !== parsed.length) {
+      localStorage.setItem(FINANCES_KEY, JSON.stringify(clean));
+    }
+    return clean;
   } catch (e) {
     console.error('Error reading transactions:', e);
-    return INITIAL_TRANSACTIONS;
+    return [];
   }
+}
+
+export function clearAllTransactions(): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(FINANCES_KEY, JSON.stringify([]));
 }
 
 export function saveTransactions(transactions: FinanceTransaction[]): void {
