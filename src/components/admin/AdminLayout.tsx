@@ -19,6 +19,8 @@ import {
   Sparkles,
   Menu,
   X,
+  Repeat,
+  WalletCards,
 } from 'lucide-react';
 import creappLogoOfficial from '@/assets/CREAPP LOGO VECTOR.png';
 import { supabase } from '@/lib/supabaseClient';
@@ -29,7 +31,9 @@ export type AdminTab =
   | 'pipeline'
   | 'proposals'
   | 'contracts'
-  | 'projects';
+  | 'projects'
+  | 'subscriptions'
+  | 'finances';
 
 interface AdminLayoutProps {
   currentTab: AdminTab;
@@ -105,6 +109,25 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
           icon: FileSpreadsheet,
           badge: 'Remotion',
           badgeColor: 'bg-pink-500/10 text-pink-400 border-pink-500/20',
+        },
+      ],
+    },
+    {
+      category: 'Finanzas & Contable',
+      items: [
+        {
+          id: 'subscriptions',
+          label: 'Suscripciones',
+          icon: Repeat,
+          badge: 'MRR',
+          badgeColor: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+        },
+        {
+          id: 'finances',
+          label: 'Finanzas',
+          icon: WalletCards,
+          badge: 'OPEX',
+          badgeColor: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
         },
       ],
     },

@@ -27,6 +27,8 @@ import PipelineTab from '@/components/admin/PipelineTab';
 import ScraperTab from '@/components/admin/ScraperTab';
 import ContractsTab from '@/components/admin/ContractsTab';
 import ProjectsTab from '@/components/admin/ProjectsTab';
+import SubscriptionsTab from '@/components/admin/SubscriptionsTab';
+import FinancesTab from '@/components/admin/FinancesTab';
 
 const statusColors: Record<string, string> = {
   draft: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
@@ -357,6 +359,12 @@ const AdminPanel: React.FC = () => {
 
       {/* 6. CREDENCIALES & PROYECTOS (VAULT) VIEW */}
       {activeTab === 'projects' && <ProjectsTab />}
+
+      {/* 7. SUSCRIPCIONES & ABONOS DE CLIENTES */}
+      {activeTab === 'subscriptions' && <SubscriptionsTab leads={leads} />}
+
+      {/* 8. FINANZAS & DÉBITOS OPERATIVOS */}
+      {activeTab === 'finances' && <FinancesTab />}
 
       {/* MODAL: SELECCIÓN DE PROPUESTA COMERCIAL */}
       <AnimatePresence>

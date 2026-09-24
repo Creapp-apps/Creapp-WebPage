@@ -19,6 +19,7 @@ import {
 import type { Proposal } from '@/lib/proposalTypes';
 import { Lead, STAGE_CONFIG } from '@/lib/pipelineService';
 import { AdminTab } from './AdminLayout';
+import { getFinancialMetrics } from '@/lib/financeService';
 
 interface DashboardTabProps {
   proposals: Proposal[];
@@ -33,16 +34,15 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
   onNavigateTab,
   onCreateProposal,
 }) => {
-  // Cálculos de métricas 100% reales basadas en el estado actual
+  // Cálculos de métricas reales basadas en el estado actual
   const totalPipelineValue = leads.reduce((acc, lead) => acc + (lead.estimatedValue || 0), 0);
   const signedProposals = proposals.filter((p) => p.status === 'signed').length;
   const publishedProposals = proposals.filter((p) => p.status === 'published').length;
   const winRate = proposals.length > 0 ? Math.round((signedProposals / proposals.length) * 100) : 0;
   
-  // MRR recurrente real de clientes en entrega o producción
-  const activeSaaSMRR = leads
-    .filter((l) => l.stage === 'delivered' || l.stage === 'in_production')
-    .reduce((acc, l) => acc + (l.productType === 'Stacked SaaS' ? 350 : 200), 0);
+  // MRR recurrente de contratos de suscripción activos
+  const financeMetrics = getFinancialMetrics();
+  const activeSaaSMRR = financeMetrics.totalMRR;
 
   const qualifiedLeads = leads.filter((l) => l.stage === 'prospect' || l.stage === 'contacted').length;
   const inProductionLead = leads.find((l) => l.stage === 'in_production');
@@ -58,10 +58,10 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
       color: 'from-purple-500/20 to-pink-500/20 border-purple-500/30 text-purple-400',
     },
     {
-      title: 'MRR Proyectado (SaaS & SLA)',
+      title: 'MRR Recurrente (Suscripciones)',
       value: `$${activeSaaSMRR.toLocaleString()} USD/mes`,
-      subtitle: 'Suscripciones y cuotas de mantenimiento',
-      change: activeSaaSMRR > 0 ? 'Recurrente activo' : 'Sin contratos activos',
+      subtitle: `${financeMetrics.activeSubscriptionsCount} abonos activos facturando`,
+      change: `${financeMetrics.activeSubscriptionsCount} contratos activos`,
       icon: TrendingUp,
       color: 'from-emerald-500/20 to-teal-500/20 border-emerald-500/30 text-emerald-400',
     },
