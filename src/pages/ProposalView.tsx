@@ -32,15 +32,27 @@ import { DEFAULT_SERVICE_DETAILS, STACKED_CONTRACT_DESCRIPTION, STACKED_SERVICE_
 
 const getCurrencyFromTotal = (valString: string) => {
   const clean = (valString || '').trim().toUpperCase();
-  const match = clean.match(/^([A-Z\$]{1,5})/);
-  if (match) {
-    return match[1];
-  }
+  if (clean.includes('ARS')) return 'ARS';
+  if (clean.includes('USD')) return 'USD';
+  if (clean.includes('EUR')) return 'EUR';
   const currencies = ['USD', 'ARS', 'EUR', 'CLP', 'MXN', 'UYU', 'BRL', 'PEN', 'COP'];
   for (const curr of currencies) {
     if (clean.includes(curr)) return curr;
   }
+  const match = clean.match(/^([A-Z]{3})/);
+  if (match) {
+    return match[1];
+  }
   return 'USD';
+};
+
+const formatMilestonePrice = (val: string | undefined | null) => {
+  if (!val) return '0';
+  const trimmed = String(val).trim();
+  if (/^\d+$/.test(trimmed)) {
+    return Number(trimmed).toLocaleString('es-AR');
+  }
+  return trimmed;
 };
 
 const getValueFromTotal = (valString: string) => {
@@ -72,6 +84,7 @@ const staggerContainer: Variants = {
 };
 
 const DEFAULT_METHODOLOGY = {
+  currency: 'USD',
   intro_text: "Implementamos un proceso de desarrollo iterativo para asegurar lanzamientos predecibles y la validación constante de la usabilidad de la interfaz por parte del cliente.",
   scope_intro: "Detalle técnico del desarrollo y los entregables comprometidos para la ejecución del proyecto.",
   exclusions_intro: "Aspectos, integraciones y requerimientos no contemplados en el desarrollo de la presente propuesta.",
@@ -2393,8 +2406,8 @@ const ProposalView: React.FC = () => {
                       <div style={{ width: proposal.milestones && proposal.milestones.length >= 4 ? '105px' : '120px', flexShrink: 0, flexGrow: 0, borderLeft: '1px solid #e2e8f0', padding: proposal.milestones && proposal.milestones.length >= 4 ? '6px 10px' : '15px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '2px', backgroundColor: '#fafafa', boxSizing: 'border-box' }}>
                         <span style={{ fontSize: '7px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Inversión</span>
                         <div style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}>
-                          <span style={{ fontSize: proposal.milestones && proposal.milestones.length >= 4 ? '13px' : '14px', fontWeight: '950', color: '#000000', lineHeight: '1.1' }}>${m.price || '0'}</span>
-                          <span style={{ fontSize: '8px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', lineHeight: '1.1' }}>{getCurrencyFromTotal(proposal.total_value)}</span>
+                          <span style={{ fontSize: proposal.milestones && proposal.milestones.length >= 4 ? '13px' : '14px', fontWeight: '950', color: '#000000', lineHeight: '1.1' }}>${formatMilestonePrice(m.price)}</span>
+                          <span style={{ fontSize: '8px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', lineHeight: '1.1' }}>{proposal.methodology?.currency || getCurrencyFromTotal(proposal.total_value)}</span>
                         </div>
                       </div>
                     )}

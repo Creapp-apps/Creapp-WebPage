@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -110,15 +110,27 @@ export const DEFAULT_CLIENT_LEGAL_DATA: ClientLegalData = {
 
 const getCurrencyFromTotal = (valString: string) => {
   const clean = (valString || '').trim().toUpperCase();
-  const match = clean.match(/^([A-Z\$]{1,5})/);
-  if (match) {
-    return match[1];
-  }
+  if (clean.includes('ARS')) return 'ARS';
+  if (clean.includes('USD')) return 'USD';
+  if (clean.includes('EUR')) return 'EUR';
   const currencies = ['USD', 'ARS', 'EUR', 'CLP', 'MXN', 'UYU', 'BRL', 'PEN', 'COP'];
   for (const curr of currencies) {
     if (clean.includes(curr)) return curr;
   }
+  const match = clean.match(/^([A-Z]{3})/);
+  if (match) {
+    return match[1];
+  }
   return 'USD';
+};
+
+const formatMilestonePrice = (val: string | undefined | null) => {
+  if (!val) return '0';
+  const trimmed = String(val).trim();
+  if (/^\d+$/.test(trimmed)) {
+    return Number(trimmed).toLocaleString('es-AR');
+  }
+  return trimmed;
 };
 
 const getValueFromTotal = (valString: string) => {
@@ -146,26 +158,30 @@ interface SectionProps {
   onAdd?: () => void;
   addLabel?: string;
   disabledAdd?: boolean;
+  headerRight?: React.ReactNode;
 }
 
-const Section: React.FC<SectionProps> = ({ title, children, onAdd, addLabel = 'Agregar', disabledAdd }) => (
+const Section: React.FC<SectionProps> = ({ title, children, onAdd, addLabel = 'Agregar', disabledAdd, headerRight }) => (
   <div className="glass rounded-2xl p-6 space-y-4">
-    <div className="flex justify-between items-center">
+    <div className="flex flex-wrap justify-between items-center gap-3">
       <h3 className="text-sm font-display font-black text-white uppercase tracking-widest">{title}</h3>
-      {onAdd && (
-        <button
-          onClick={onAdd}
-          disabled={disabledAdd}
-          className={`flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest transition-colors ${
-            disabledAdd 
-              ? 'text-slate-600 cursor-not-allowed opacity-50' 
-              : 'text-primary hover:text-white'
-          }`}
-          title={disabledAdd ? 'Límite máximo alcanzado (máx 6)' : undefined}
-        >
-          <Plus size={14} /> {addLabel}
-        </button>
-      )}
+      <div className="flex items-center gap-3">
+        {headerRight}
+        {onAdd && (
+          <button
+            onClick={onAdd}
+            disabled={disabledAdd}
+            className={`flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest transition-colors ${
+              disabledAdd 
+                ? 'text-slate-600 cursor-not-allowed opacity-50' 
+                : 'text-primary hover:text-white'
+            }`}
+            title={disabledAdd ? 'Límite máximo alcanzado (máx 6)' : undefined}
+          >
+            <Plus size={14} /> {addLabel}
+          </button>
+        )}
+      </div>
     </div>
     {children}
   </div>
@@ -268,6 +284,7 @@ const DEFAULT_WEEKLY_BREAKDOWN = [
 ];
 
 const DEFAULT_METHODOLOGY = {
+  currency: 'USD',
   intro_text: "Implementamos un proceso de desarrollo iterativo para asegurar lanzamientos predecibles y la validación constante de la usabilidad de la interfaz por parte del cliente.",
   scope_intro: "Detalle técnico del desarrollo y los entregables comprometidos para la ejecución del proyecto.",
   exclusions_intro: "Aspectos, integraciones y requerimientos no contemplados en el desarrollo de la presente propuesta.",
@@ -511,6 +528,24 @@ const ProposalEditor: React.FC = () => {
       }));
     }
   };
+
+  const activeMilestoneCurrency: 'USD' | 'ARS' = (methodology?.currency as 'USD' | 'ARS') || (getCurrencyFromTotal(totalValue) as 'USD' | 'ARS') || 'USD';
+
+  const handleMilestoneCurrencyChange = (newCurr: 'USD' | 'ARS') => {
+    setMethodology((prev: any) => ({
+      ...(prev || DEFAULT_METHODOLOGY),
+      currency: newCurr,
+    }));
+    const val = getValueFromTotal(totalValue);
+    handleUpdateTotalValue(`${newCurr} ${val}`);
+  };
+
+  const milestoneSum = useMemo(() => {
+    return (milestones || []).reduce((acc, m) => {
+      const num = parseFloat((m.price || '').replace(/[^0-9.]/g, ''));
+      return acc + (isNaN(num) ? 0 : num);
+    }, 0);
+  }, [milestones]);
 
   const updateServiceLimitField = (limitKey: string, value: string) => {
     setServiceDetails((prev) => ({
@@ -1268,7 +1303,7 @@ const ProposalEditor: React.FC = () => {
   };
 
   const renderPage3 = () => {
-    const currency = getCurrencyFromTotal(totalValue);
+    const currency = methodology?.currency || getCurrencyFromTotal(totalValue) || 'USD';
     const isCompact = (milestones && milestones.length >= 4) || (payments && payments.length >= 4);
     return (
       <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
@@ -1325,7 +1360,7 @@ const ProposalEditor: React.FC = () => {
                   <div style={{ width: isCompact ? '105px' : '120px', flexShrink: 0, flexGrow: 0, borderLeft: '1px solid #e2e8f0', padding: isCompact ? '6px 10px' : '15px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '2px', backgroundColor: '#fafafa', boxSizing: 'border-box' }}>
                     <span style={{ fontSize: '7px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Inversión</span>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}>
-                      <span style={{ fontSize: isCompact ? '13px' : '14px', fontWeight: '950', color: '#000000', lineHeight: '1.1' }}>${m.price || '0'}</span>
+                      <span style={{ fontSize: isCompact ? '13px' : '14px', fontWeight: '950', color: '#000000', lineHeight: '1.1' }}>${formatMilestonePrice(m.price)}</span>
                       <span style={{ fontSize: '8px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', lineHeight: '1.1' }}>{currency}</span>
                     </div>
                   </div>
@@ -3745,10 +3780,55 @@ const ProposalEditor: React.FC = () => {
             {/* CRONOGRAMA DE FASES */}
             <Section 
               title="Cronograma de Sprints / Fases" 
+              headerRight={
+                <div className="flex items-center bg-[#090d16] p-1 rounded-xl border border-white/10 gap-1 shadow-inner">
+                  <span className="text-[9px] font-mono font-bold text-slate-400 px-1.5 uppercase">Divisa:</span>
+                  <button
+                    type="button"
+                    onClick={() => handleMilestoneCurrencyChange('ARS')}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all ${
+                      activeMilestoneCurrency === 'ARS'
+                        ? 'bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 shadow-sm'
+                        : 'text-slate-400 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    $ ARS
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleMilestoneCurrencyChange('USD')}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all ${
+                      activeMilestoneCurrency === 'USD'
+                        ? 'bg-primary/25 text-primary border border-primary/40 shadow-sm'
+                        : 'text-slate-400 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    $ USD
+                  </button>
+                </div>
+              }
               onAdd={() => setMilestones([...milestones, { week_range: '', title: '', icon_name: 'Rocket', description: '', control_milestone: '', price: '' }])}
               disabledAdd={milestones.length >= 4}
             >
-              <p className="text-slate-500 text-xs -mt-2 mb-4">Mapea las fases semanales que se muestran en el documento y el video (máx 4).</p>
+              <div className="flex flex-wrap items-center justify-between gap-2 -mt-2 mb-4">
+                <p className="text-slate-500 text-xs">Mapea las fases semanales que se muestran en el documento y el video (máx 4).</p>
+                {milestoneSum > 0 && (
+                  <div className="flex items-center gap-2 bg-white/5 px-2.5 py-1 rounded-lg border border-white/10 text-[11px]">
+                    <span className="text-slate-400">Total Fases:</span>
+                    <strong className="text-white font-mono">
+                      ${milestoneSum.toLocaleString('es-AR')} {activeMilestoneCurrency}
+                    </strong>
+                    <button
+                      type="button"
+                      onClick={() => handleUpdateTotalValue(`${activeMilestoneCurrency} ${milestoneSum.toLocaleString('es-AR')}`)}
+                      className="text-[9px] text-primary hover:underline font-bold uppercase tracking-wider ml-1 cursor-pointer"
+                      title="Sincronizar este monto como Total del Proyecto"
+                    >
+                      Copiar a Total
+                    </button>
+                  </div>
+                )}
+              </div>
               <div className="space-y-4">
                 {milestones.length === 0 ? (
                   <div className="text-center py-8 text-slate-500 border border-dashed border-white/10 rounded-2xl bg-white/[0.01]">
@@ -3872,14 +3952,23 @@ const ProposalEditor: React.FC = () => {
                                   type="text" 
                                   value={item.price || ''} 
                                   onChange={(e) => updateItem(milestones, setMilestones, i, 'price', e.target.value)} 
-                                  placeholder="Precio/Costo de Fase (ej: 550)" 
-                                  className="w-full bg-white/5 border border-white/10 hover:border-white/20 rounded-lg pl-3 pr-14 py-2 text-white text-sm focus:outline-none focus:border-primary/50 placeholder-slate-600 font-medium transition-all" 
+                                  placeholder={activeMilestoneCurrency === 'ARS' ? "Precio de Fase (ej: 767500)" : "Precio de Fase (ej: 750)"} 
+                                  className="w-full bg-white/5 border border-white/10 hover:border-white/20 rounded-lg pl-3 pr-24 py-2 text-white text-sm focus:outline-none focus:border-primary/50 placeholder-slate-600 font-medium transition-all" 
                                 />
-                                <span className={`absolute right-3 top-2.5 text-[9px] font-mono font-bold select-none ${
-                                  priceLen > 10 ? 'text-red-400' : 'text-slate-500'
-                                }`}>
-                                  {priceLen}/10
-                                </span>
+                                <div className="absolute right-2 top-2 flex items-center gap-1.5 pointer-events-none">
+                                  <span className={`text-[10px] font-black font-mono px-1.5 py-0.5 rounded ${
+                                    activeMilestoneCurrency === 'ARS'
+                                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                      : 'bg-primary/20 text-primary border border-primary/30'
+                                  }`}>
+                                    {activeMilestoneCurrency}
+                                  </span>
+                                  <span className={`text-[9px] font-mono font-bold select-none ${
+                                    priceLen > 15 ? 'text-red-400' : 'text-slate-500'
+                                  }`}>
+                                    {priceLen}/15
+                                  </span>
+                                </div>
                               </div>
                             )}
                           </div>
@@ -5898,8 +5987,8 @@ const ProposalEditor: React.FC = () => {
                       <div style={{ width: milestones && milestones.length >= 4 ? '105px' : '120px', flexShrink: 0, flexGrow: 0, borderLeft: '1px solid #e2e8f0', padding: milestones && milestones.length >= 4 ? '6px 10px' : '15px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '2px', backgroundColor: '#fafafa', boxSizing: 'border-box' }}>
                         <span style={{ fontSize: '7px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Inversión</span>
                         <div style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}>
-                          <span style={{ fontSize: milestones && milestones.length >= 4 ? '13px' : '14px', fontWeight: '950', color: '#000000', lineHeight: '1.1' }}>${m.price || '0'}</span>
-                          <span style={{ fontSize: '8px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', lineHeight: '1.1' }}>{getCurrencyFromTotal(totalValue)}</span>
+                          <span style={{ fontSize: milestones && milestones.length >= 4 ? '13px' : '14px', fontWeight: '950', color: '#000000', lineHeight: '1.1' }}>${formatMilestonePrice(m.price)}</span>
+                          <span style={{ fontSize: '8px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', lineHeight: '1.1' }}>{methodology?.currency || getCurrencyFromTotal(totalValue) || 'USD'}</span>
                         </div>
                       </div>
                     )}
