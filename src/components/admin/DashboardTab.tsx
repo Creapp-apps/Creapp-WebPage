@@ -240,8 +240,8 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
                     <FileSpreadsheet size={16} />
                   </div>
                   <div>
-                    <div className="text-xs font-semibold text-white">Nueva Propuesta Interactiva</div>
-                    <div className="text-[10px] text-zinc-400">Con video pitch Remotion y contrato</div>
+                    <div className="text-xs font-semibold text-white">Creador de Propuestas de Desarrollo</div>
+                    <div className="text-[10px] text-zinc-400">Software a medida por hitos, sprints y video pitch</div>
                   </div>
                 </div>
                 <ArrowUpRight size={14} className="text-zinc-500 group-hover:text-pink-400" />

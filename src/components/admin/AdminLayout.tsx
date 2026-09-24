@@ -105,9 +105,9 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
         },
         {
           id: 'proposals',
-          label: 'Propuestas Video',
+          label: 'Creador de Propuestas',
           icon: FileSpreadsheet,
-          badge: 'Remotion',
+          badge: 'Dev',
           badgeColor: 'bg-pink-500/10 text-pink-400 border-pink-500/20',
         },
       ],
@@ -154,7 +154,10 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
 
   // Helper para buscar el título actual del tab
   const allNavItems = navGroups.flatMap((g) => g.items);
-  const currentTabLabel = allNavItems.find((n) => n.id === currentTab)?.label || 'CreApp OS';
+  const currentTabLabel =
+    currentTab === 'proposals'
+      ? 'Creador de Propuestas de Desarrollo'
+      : allNavItems.find((n) => n.id === currentTab)?.label || 'CreApp OS';
 
   return (
     <div className="min-h-screen bg-[#070709] text-zinc-100 flex flex-col font-sans selection:bg-purple-500 selection:text-white">

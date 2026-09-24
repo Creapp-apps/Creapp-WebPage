@@ -159,17 +159,17 @@ const AdminPanel: React.FC = () => {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-                <span>Propuestas Comerciales & Video Pitch</span>
+                <span>Creador de Propuestas de Desarrollo & Comerciales</span>
                 <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20">
                   {proposals.length} Total
                 </span>
               </h2>
               <p className="text-xs text-zinc-400">
-                Páginas interactivas con renderizado de video Remotion, especificaciones técnicas y aceptación en línea.
+                Páginas interactivas con cotizador por hitos, sprints técnicos, renderizado de video Remotion y aceptación en línea.
               </p>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2.5">
               {/* Filter */}
               <div className="flex items-center gap-1 p-1 bg-white/5 border border-white/10 rounded-xl text-xs">
                 {(['all', 'published', 'signed', 'draft'] as const).map((filter) => (
@@ -187,15 +187,27 @@ const AdminPanel: React.FC = () => {
                 ))}
               </div>
 
+              {/* Botón directo: Creador de Propuesta de Desarrollo */}
               <button
-                onClick={() => {
-                  setCreateModalStep('type');
-                  setIsCreateModalOpen(true);
-                }}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md hover:opacity-90 transition-all"
+                onClick={() => navigate('/admin/propuesta/nueva?type=project')}
+                className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 text-white shadow-md hover:opacity-90 transition-all hover:scale-[1.02]"
+                title="Abrir Creador de Propuesta de Desarrollo de Software a Medida"
               >
                 <Plus size={14} />
-                <span>Nueva Propuesta</span>
+                <span>+ Propuesta de Desarrollo</span>
+              </button>
+
+              {/* Botón para Contrato SaaS */}
+              <button
+                onClick={() => {
+                  setCreateModalStep('product');
+                  setIsCreateModalOpen(true);
+                }}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-white/5 hover:bg-white/10 text-zinc-300 border border-white/10 transition-all"
+                title="Nueva Propuesta para Productos SaaS (Stacked, TrazApp, Dental-IA)"
+              >
+                <Zap size={14} className="text-pink-400" />
+                <span className="hidden sm:inline">Contrato SaaS</span>
               </button>
             </div>
           </div>
@@ -210,18 +222,27 @@ const AdminPanel: React.FC = () => {
               <FileText className="mx-auto text-zinc-700 mb-4" size={44} />
               <h3 className="text-base font-bold text-white mb-2">Sin propuestas en este filtro</h3>
               <p className="text-zinc-400 text-xs mb-6 max-w-sm mx-auto">
-                Crea una propuesta personalizada o selecciona un producto Stacked, TrazApp o Dental-IA.
+                Crea una propuesta de desarrollo de software a medida o selecciona un producto SaaS de CreApp.
               </p>
-              <button
-                onClick={() => {
-                  setCreateModalStep('type');
-                  setIsCreateModalOpen(true);
-                }}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-white/10 hover:bg-white/20 text-white transition-all"
-              >
-                <Plus size={14} />
-                <span>Crear Propuesta Ahora</span>
-              </button>
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                <button
+                  onClick={() => navigate('/admin/propuesta/nueva?type=project')}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md hover:opacity-90 transition-all"
+                >
+                  <Plus size={14} />
+                  <span>Crear Propuesta de Desarrollo</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setCreateModalStep('product');
+                    setIsCreateModalOpen(true);
+                  }}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold bg-white/10 hover:bg-white/20 text-white transition-all"
+                >
+                  <Zap size={14} className="text-pink-400" />
+                  <span>Contrato SaaS & SLA</span>
+                </button>
+              </div>
             </div>
           ) : (
             <div className="grid gap-4">
