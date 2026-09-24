@@ -108,6 +108,20 @@ export const DEFAULT_CLIENT_LEGAL_DATA: ClientLegalData = {
   contact_phone: '',
 };
 
+export const cleanNumberString = (val: string | number | null | undefined): string => {
+  if (!val) return '';
+  return String(val)
+    .replace(/USD|ARS|EUR|CLP|MXN|UYU|BRL|PEN|COP/gi, '')
+    .replace(/\$/g, '')
+    .trim();
+};
+
+export const formatCurrencyDisplay = (val: string | number | null | undefined, currency: 'USD' | 'ARS' | string = 'ARS'): string => {
+  const clean = cleanNumberString(val);
+  if (!clean || clean === '0') return `$0 ${currency}`;
+  return `$${clean} ${currency}`;
+};
+
 const getCurrencyFromTotal = (valString: string) => {
   const clean = (valString || '').trim().toUpperCase();
   if (clean.includes('ARS')) return 'ARS';
@@ -121,31 +135,26 @@ const getCurrencyFromTotal = (valString: string) => {
   if (match) {
     return match[1];
   }
-  return 'USD';
+  return 'ARS';
 };
 
 const formatMilestonePrice = (val: string | undefined | null) => {
   if (!val) return '0';
-  const trimmed = String(val).trim();
+  const trimmed = cleanNumberString(val);
   if (/^\d+$/.test(trimmed)) {
     return Number(trimmed).toLocaleString('es-AR');
   }
-  return trimmed;
+  return trimmed || '0';
 };
 
 const getValueFromTotal = (valString: string) => {
-  const clean = (valString || '').trim();
-  const match = clean.match(/^[A-Z\$]{1,5}\s*(.*)$/i);
-  if (match) {
-    return match[1];
-  }
-  return clean;
+  return cleanNumberString(valString);
 };
 
-const formatTotalValue = (valString: string) => {
-  const clean = (valString || '').trim();
-  if (/^[A-Z\$]{1,5}\s/i.test(clean)) return clean;
-  return `${getCurrencyFromTotal(clean)} ${clean}`;
+const formatTotalValue = (valString: string, currency?: string) => {
+  const clean = cleanNumberString(valString);
+  const curr = currency || getCurrencyFromTotal(valString) || 'ARS';
+  return `$${clean} ${curr}`;
 };
 
 // =========================================================
@@ -284,7 +293,8 @@ const DEFAULT_WEEKLY_BREAKDOWN = [
 ];
 
 const DEFAULT_METHODOLOGY = {
-  currency: 'USD',
+  currency: 'ARS',
+  legal_currency: 'ARS',
   intro_text: "Implementamos un proceso de desarrollo iterativo para asegurar lanzamientos predecibles y la validación constante de la usabilidad de la interfaz por parte del cliente.",
   scope_intro: "Detalle técnico del desarrollo y los entregables comprometidos para la ejecución del proyecto.",
   exclusions_intro: "Aspectos, integraciones y requerimientos no contemplados en el desarrollo de la presente propuesta.",
@@ -529,15 +539,31 @@ const ProposalEditor: React.FC = () => {
     }
   };
 
-  const activeMilestoneCurrency: 'USD' | 'ARS' = (methodology?.currency as 'USD' | 'ARS') || (getCurrencyFromTotal(totalValue) as 'USD' | 'ARS') || 'USD';
+  // Divisa independiente para las Fases (Pág. 3 / Cronograma)
+  const activeMilestoneCurrency: 'USD' | 'ARS' = (methodology?.currency as 'USD' | 'ARS') || 'ARS';
 
   const handleMilestoneCurrencyChange = (newCurr: 'USD' | 'ARS') => {
     setMethodology((prev: any) => ({
       ...(prev || DEFAULT_METHODOLOGY),
       currency: newCurr,
     }));
-    const val = getValueFromTotal(totalValue);
-    handleUpdateTotalValue(`${newCurr} ${val}`);
+  };
+
+  // Divisa independiente para el Contrato & Aspectos Legales (Pág. 5/7 / Legal)
+  const activeLegalCurrency: 'USD' | 'ARS' = (() => {
+    if (methodology?.legal_currency === 'ARS' || methodology?.legal_currency === 'USD') {
+      return methodology.legal_currency;
+    }
+    const txt = ((contractText || '') + ' ' + (totalValue || '')).toLowerCase();
+    if (txt.includes('ars') || txt.includes('pesos')) return 'ARS';
+    return 'USD';
+  })();
+
+  const handleLegalCurrencyChange = (newCurr: 'USD' | 'ARS') => {
+    setMethodology((prev: any) => ({
+      ...(prev || DEFAULT_METHODOLOGY),
+      legal_currency: newCurr,
+    }));
   };
 
   const milestoneSum = useMemo(() => {
@@ -792,7 +818,9 @@ const ProposalEditor: React.FC = () => {
       setDate(proposal.date);
       setLocation(proposal.location);
       setDescription(proposal.description);
-      setTotalValue(proposal.total_value);
+      const rawTotal = proposal.total_value || '';
+      const cleanNum = cleanNumberString(rawTotal);
+      setTotalValue(cleanNum || rawTotal || '0');
       setBrandPrimary(proposal.brand_color_primary);
       setBrandSecondary(proposal.brand_color_secondary);
       setClientLogoUrl(proposal.client_logo_url || '');
@@ -809,7 +837,19 @@ const ProposalEditor: React.FC = () => {
         setWeeklyBreakdown(DEFAULT_WEEKLY_BREAKDOWN);
       }
       if (proposal.methodology) {
-        setMethodology(proposal.methodology);
+        const detectedLegalCurr = proposal.methodology.legal_currency || (
+          (proposal.contract_text || '').toLowerCase().includes('ars') || rawTotal.toLowerCase().includes('ars')
+            ? 'ARS'
+            : 'USD'
+        );
+        const detectedMilestoneCurr = proposal.methodology.currency || (
+          rawTotal.toLowerCase().includes('ars') ? 'ARS' : 'USD'
+        );
+        setMethodology({
+          ...proposal.methodology,
+          currency: detectedMilestoneCurr,
+          legal_currency: detectedLegalCurr,
+        });
         if (proposal.methodology.client_logo_scale !== undefined) {
           setClientLogoScale(Number(proposal.methodology.client_logo_scale) || 100);
         }
@@ -826,7 +866,12 @@ const ProposalEditor: React.FC = () => {
           });
         }
       } else {
-        setMethodology(DEFAULT_METHODOLOGY);
+        const detectedLegalCurr = (proposal.contract_text || '').toLowerCase().includes('ars') || rawTotal.toLowerCase().includes('ars') ? 'ARS' : 'USD';
+        setMethodology({
+          ...DEFAULT_METHODOLOGY,
+          currency: rawTotal.toLowerCase().includes('ars') ? 'ARS' : 'USD',
+          legal_currency: detectedLegalCurr,
+        });
         setClientLogoScale(100);
         setClientLegalData({
           ...DEFAULT_CLIENT_LEGAL_DATA,
@@ -839,8 +884,8 @@ const ProposalEditor: React.FC = () => {
       if (proposal.methodology?.service_details) {
         const rawSD = proposal.methodology.service_details;
         const fee = (proposal.total_value && proposal.total_value !== '$350 USD / mes')
-          ? proposal.total_value
-          : (rawSD.recurring_fee || proposal.total_value || '');
+          ? cleanNumberString(proposal.total_value)
+          : (cleanNumberString(rawSD.recurring_fee) || cleanNumberString(proposal.total_value) || '');
         setServiceDetails({
           ...rawSD,
           recurring_fee: fee,
@@ -848,7 +893,7 @@ const ProposalEditor: React.FC = () => {
         if (fee) setTotalValue(fee);
       } else {
         setServiceDetails(DEFAULT_SERVICE_DETAILS);
-        if (proposal.total_value) setTotalValue(proposal.total_value);
+        if (cleanNum) setTotalValue(cleanNum);
       }
       if (proposal.methodology?.product_id) {
         setSelectedProductId(proposal.methodology.product_id);
@@ -1670,9 +1715,10 @@ const ProposalEditor: React.FC = () => {
       .replace(/\{client_representative\}/g, repName || '________________________')
       .replace(/\{client_representative_dni\}/g, repDni || '________________________')
       .replace(/\{client_representative_role\}/g, repRole || 'Representante Legal')
-      .replace(/\{total_value\}/g, totalValue || serviceDetails?.recurring_fee || '$350 USD / mes')
-      .replace(/\{recurring_fee\}/g, totalValue || serviceDetails?.recurring_fee || '$350 USD / mes')
-      .replace(/\{setup_fee\}/g, serviceDetails?.setup_fee || '$0')
+      .replace(/\{total_value\}/g, formatCurrencyDisplay(totalValue || serviceDetails?.recurring_fee, activeLegalCurrency))
+      .replace(/\{recurring_fee\}/g, `${formatCurrencyDisplay(methodology?.monthly_fee || serviceDetails?.recurring_fee || totalValue, activeLegalCurrency)} / mes`)
+      .replace(/\{monthly_fee\}/g, `${formatCurrencyDisplay(methodology?.monthly_fee || serviceDetails?.recurring_fee || totalValue, activeLegalCurrency)} / mes`)
+      .replace(/\{setup_fee\}/g, formatCurrencyDisplay(serviceDetails?.setup_fee, activeLegalCurrency))
       .replace(/\{plan_name\}/g, serviceDetails?.plan_name || (selectedProductId ? selectedProductId.toUpperCase() : 'Stacked'))
       .replace(/\{min_term_months\}/g, vigencia)
       .replace(/\{minimum_commitment\}/g, vigencia)
@@ -2009,14 +2055,15 @@ const ProposalEditor: React.FC = () => {
     const processedText = getProcessedContractText(contractText || DEVELOPMENT_CONTRACT_TEMPLATE);
     const textLength = processedText.length;
 
-    // Helper para limpiar display de total
-    const cleanTotal = (() => {
-      if (!totalValue) return '$15.000 USD';
-      let val = totalValue.trim();
-      val = val.replace(/USD\s*(\$)?/gi, '').replace(/ARS\s*(\$)?/gi, '').replace(/\$ARS/gi, '').replace(/\$USD/gi, '').replace(/^\$+/g, '').trim();
-      if (!val) return '$15.000 USD';
-      return `$${val} ${activeMilestoneCurrency || 'ARS'}`;
-    })();
+    // Cálculos limpios con divisa legal independiente
+    const cleanTotal = formatCurrencyDisplay(totalValue, activeLegalCurrency);
+    const numericTotal = parseFloat(cleanNumberString(totalValue).replace(/\./g, '').replace(/,/g, '.')) || 0;
+    const halfFormatted = numericTotal > 0
+      ? `$${Math.round(numericTotal * 0.5).toLocaleString('es-AR')} ${activeLegalCurrency}`
+      : `50% ${activeLegalCurrency}`;
+    const monthlyFeeFormatted = methodology?.monthly_fee
+      ? formatCurrencyDisplay(methodology.monthly_fee, activeLegalCurrency)
+      : cleanTotal;
 
     // Tipografía adaptativa
     let fontSize = '9.8px';
@@ -2155,19 +2202,19 @@ const ProposalEditor: React.FC = () => {
           boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
         }}>
           <div style={{ borderLeft: `3px solid ${brandPrimary}`, paddingLeft: '8px' }}>
-            <span style={{ fontSize: '8px', fontWeight: '900', color: brandPrimary, textTransform: 'uppercase', display: 'block' }}>Hito 1 · Anticipo Inicial (50%)</span>
+            <span style={{ fontSize: '8px', fontWeight: '900', color: brandPrimary, textTransform: 'uppercase', display: 'block' }}>Hito 1 · Anticipo Inicial ({halfFormatted})</span>
             <p style={{ fontSize: '8.5px', color: '#334155', margin: '2px 0 0 0', lineHeight: '1.35', fontWeight: '500' }}>
               Firma del acuerdo y reserva de squad técnico. Inicio inmediato de arquitectura, modelado y prototipo UI.
             </p>
           </div>
           <div style={{ borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
-            <span style={{ fontSize: '8px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', display: 'block' }}>Hito 2 · Pase a Producción (50%)</span>
+            <span style={{ fontSize: '8px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', display: 'block' }}>Hito 2 · Pase a Producción ({halfFormatted})</span>
             <p style={{ fontSize: '8.5px', color: '#334155', margin: '2px 0 0 0', lineHeight: '1.35', fontWeight: '500' }}>
               Auditoría y aprobación en entorno Staging. Despliegue en salones, capacitación y entrega de accesos finales.
             </p>
           </div>
           <div style={{ borderLeft: '3px solid #059669', paddingLeft: '8px' }}>
-            <span style={{ fontSize: '8px', fontWeight: '900', color: '#059669', textTransform: 'uppercase', display: 'block' }}>Abono Operativo & SLA</span>
+            <span style={{ fontSize: '8px', fontWeight: '900', color: '#059669', textTransform: 'uppercase', display: 'block' }}>Abono Operativo & SLA ({monthlyFeeFormatted})</span>
             <p style={{ fontSize: '8.5px', color: '#334155', margin: '2px 0 0 0', lineHeight: '1.35', fontWeight: '500' }}>
               Soporte de incidentes, guardias operativas en salones y mantenimiento continuo a partir del día 30 post-lanzamiento.
             </p>
@@ -5011,6 +5058,43 @@ const ProposalEditor: React.FC = () => {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                {/* Switcher de Divisa del Contrato */}
+                <div className="space-y-1.5 col-span-1 sm:col-span-2 bg-white/[0.02] border border-white/10 rounded-xl p-3 flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                      <DollarSign size={14} />
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-black text-white uppercase tracking-wider block">Divisa de la Página Legal & Contrato</span>
+                      <span className="text-[9px] text-slate-400">Independiente de los costos de fases y proveedores.</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 bg-[#090d16] p-1 rounded-xl border border-white/10 shadow-inner">
+                    <button
+                      type="button"
+                      onClick={() => handleLegalCurrencyChange('ARS')}
+                      className={`px-3 py-1 rounded-lg text-xs font-black transition-all ${
+                        activeLegalCurrency === 'ARS'
+                          ? 'bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 shadow-sm'
+                          : 'text-slate-400 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      $ ARS (Pesos)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleLegalCurrencyChange('USD')}
+                      className={`px-3 py-1 rounded-lg text-xs font-black transition-all ${
+                        activeLegalCurrency === 'USD'
+                          ? 'bg-primary/25 text-primary border border-primary/40 shadow-sm'
+                          : 'text-slate-400 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      $ USD (Dólares)
+                    </button>
+                  </div>
+                </div>
+
                 {/* Cliente / Razón Social */}
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-black text-slate-300 uppercase tracking-widest flex items-center gap-1.5">
@@ -5027,20 +5111,60 @@ const ProposalEditor: React.FC = () => {
                   <span className="text-[9px] text-slate-500 block">Reemplaza automáticamente a <code className="text-primary/80 font-mono">{'{client_name}'}</code></span>
                 </div>
 
-                {/* Canon Mensual / Tarifa */}
+                {/* Inversión Total / Honorarios de Desarrollo */}
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-black text-slate-300 uppercase tracking-widest flex items-center gap-1.5">
                     <DollarSign size={12} className="text-emerald-400" />
-                    Canon Mensual / Abono
+                    Inversión Total / Honorarios
                   </label>
-                  <input
-                    type="text"
-                    value={proposalType === 'service' ? (totalValue || serviceDetails.recurring_fee) : totalValue}
-                    onChange={(e) => handleUpdateTotalValue(e.target.value)}
-                    placeholder="Ej: $350 USD / mes ó $150.000 ARS"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-emerald-300 font-bold placeholder-slate-600 focus:outline-none focus:border-emerald-500/50 transition-all"
-                  />
+                  <div className="relative flex items-center">
+                    <span className="absolute left-3 text-slate-500 font-bold text-xs">$</span>
+                    <input
+                      type="text"
+                      value={cleanNumberString(totalValue)}
+                      onChange={(e) => {
+                        const clean = cleanNumberString(e.target.value);
+                        handleUpdateTotalValue(clean);
+                      }}
+                      placeholder="1.500.000"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl pl-7 pr-16 py-2.5 text-xs text-emerald-300 font-bold placeholder-slate-600 focus:outline-none focus:border-emerald-500/50 transition-all font-mono"
+                    />
+                    <span className="absolute right-3 text-[10px] font-mono font-bold text-slate-400 uppercase">
+                      {activeLegalCurrency}
+                    </span>
+                  </div>
                   <span className="text-[9px] text-slate-500 block">Reemplaza automáticamente a <code className="text-emerald-400/80 font-mono">{'{total_value}'}</code></span>
+                </div>
+
+                {/* Abono Mensual / Mantenimiento Operativo */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-300 uppercase tracking-widest flex items-center gap-1.5">
+                    <DollarSign size={12} className="text-teal-400" />
+                    Abono Mensual / Soporte & SLA
+                  </label>
+                  <div className="relative flex items-center">
+                    <span className="absolute left-3 text-slate-500 font-bold text-xs">$</span>
+                    <input
+                      type="text"
+                      value={cleanNumberString(methodology?.monthly_fee || serviceDetails?.recurring_fee || totalValue)}
+                      onChange={(e) => {
+                        const clean = cleanNumberString(e.target.value);
+                        setMethodology((prev: any) => ({
+                          ...(prev || DEFAULT_METHODOLOGY),
+                          monthly_fee: clean,
+                        }));
+                        if (proposalType === 'service') {
+                          updateServiceDetailField('recurring_fee', clean);
+                        }
+                      }}
+                      placeholder="1.500.000"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl pl-7 pr-24 py-2.5 text-xs text-teal-300 font-bold placeholder-slate-600 focus:outline-none focus:border-teal-500/50 transition-all font-mono"
+                    />
+                    <span className="absolute right-3 text-[10px] font-mono font-bold text-slate-400 uppercase">
+                      {activeLegalCurrency} / mes
+                    </span>
+                  </div>
+                  <span className="text-[9px] text-slate-500 block">Reemplaza automáticamente a <code className="text-teal-400/80 font-mono">{'{monthly_fee}'}</code></span>
                 </div>
 
                 {/* Vigencia Inicial */}
@@ -5207,12 +5331,25 @@ const ProposalEditor: React.FC = () => {
                       type="button"
                       onClick={() => insertVariableIntoContract('{total_value}')}
                       className="px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[11px] font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
-                      title={`Inserta {total_value} (Valor actual: "${totalValue || '$0'}")`}
+                      title={`Inserta {total_value} (Valor actual: "$${cleanNumberString(totalValue) || '1.500.000'} ${activeLegalCurrency}")`}
                     >
                       <span>+</span>
                       <span>{'{total_value}'}</span>
                       <span className="text-[9px] opacity-70 font-sans font-normal border-l border-emerald-500/30 pl-1.5 text-emerald-200">
-                        {totalValue ? `${totalValue.slice(0, 14)}` : '$0'}
+                        ${cleanNumberString(totalValue) || '1.500.000'} {activeLegalCurrency}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => insertVariableIntoContract('{monthly_fee}')}
+                      className="px-2.5 py-1 rounded-lg bg-teal-500/10 hover:bg-teal-500/20 text-teal-400 border border-teal-500/30 text-[11px] font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
+                      title={`Inserta {monthly_fee} (Valor actual: "$${cleanNumberString(methodology?.monthly_fee || serviceDetails?.recurring_fee || totalValue) || '1.500.000'} ${activeLegalCurrency} / mes")`}
+                    >
+                      <span>+</span>
+                      <span>{'{monthly_fee}'}</span>
+                      <span className="text-[9px] opacity-70 font-sans font-normal border-l border-teal-500/30 pl-1.5 text-teal-200">
+                        ${cleanNumberString(methodology?.monthly_fee || serviceDetails?.recurring_fee || totalValue) || '1.500.000'} {activeLegalCurrency} / mes
                       </span>
                     </button>
 
@@ -5665,31 +5802,91 @@ const ProposalEditor: React.FC = () => {
             ) : (
               <div className="glass rounded-2xl p-4 border border-white/5 flex-1 flex flex-col overflow-hidden">
                 {/* Document Header & Zoom Controls */}
-                <div className="flex justify-between items-center mb-3">
+                <div className="flex flex-wrap justify-between items-center gap-2 mb-3">
                   <div>
                     <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">
                       Vista Previa del Documento (Pág. {getPageNumber(activeEditorTab)} / {ALL_PAGES.filter(p => !isPageHidden(p.id)).length})
                     </span>
                     <p className="text-[10px] text-slate-600">Representación en tiempo real del PDF final.</p>
                   </div>
-                  <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg p-1">
-                    <button
-                      onClick={() => setZoom(Math.max(0.3, zoom - 0.1))}
-                      className="p-1.5 text-slate-400 hover:text-white transition-colors hover:bg-white/5 rounded"
-                      title="Alejar"
-                    >
-                      <ZoomOut size={14} />
-                    </button>
-                    <span className="text-[10px] font-mono font-bold text-slate-300 w-12 text-center">
-                      {Math.round(zoom * 100)}%
-                    </span>
-                    <button
-                      onClick={() => setZoom(Math.min(1.5, zoom + 0.1))}
-                      className="p-1.5 text-slate-400 hover:text-white transition-colors hover:bg-white/5 rounded"
-                      title="Acercar"
-                    >
-                      <ZoomIn size={14} />
-                    </button>
+
+                  {/* Switcher contextual de Divisa según la página que se visualiza */}
+                  <div className="flex items-center gap-2.5">
+                    {activeEditorTab === 'hitos' && (
+                      <div className="flex items-center gap-1.5 bg-[#090d16] border border-white/10 px-2.5 py-1 rounded-xl shadow-inner">
+                        <span className="text-[9px] font-mono font-bold text-slate-400 uppercase tracking-wider">Divisa Fases (Pág. 3):</span>
+                        <button
+                          type="button"
+                          onClick={() => handleMilestoneCurrencyChange('ARS')}
+                          className={`px-2 py-0.5 rounded-lg text-xs font-black transition-all ${
+                            activeMilestoneCurrency === 'ARS'
+                              ? 'bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 shadow-sm'
+                              : 'text-slate-400 hover:text-white hover:bg-white/5'
+                          }`}
+                        >
+                          $ ARS
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleMilestoneCurrencyChange('USD')}
+                          className={`px-2 py-0.5 rounded-lg text-xs font-black transition-all ${
+                            activeMilestoneCurrency === 'USD'
+                              ? 'bg-primary/25 text-primary border border-primary/40 shadow-sm'
+                              : 'text-slate-400 hover:text-white hover:bg-white/5'
+                          }`}
+                        >
+                          $ USD
+                        </button>
+                      </div>
+                    )}
+
+                    {(activeEditorTab === 'legal' || activeEditorTab === 'legal2') && (
+                      <div className="flex items-center gap-1.5 bg-[#090d16] border border-white/10 px-2.5 py-1 rounded-xl shadow-inner">
+                        <span className="text-[9px] font-mono font-bold text-slate-400 uppercase tracking-wider">Divisa Contrato (Pág. Legal):</span>
+                        <button
+                          type="button"
+                          onClick={() => handleLegalCurrencyChange('ARS')}
+                          className={`px-2 py-0.5 rounded-lg text-xs font-black transition-all ${
+                            activeLegalCurrency === 'ARS'
+                              ? 'bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 shadow-sm'
+                              : 'text-slate-400 hover:text-white hover:bg-white/5'
+                          }`}
+                        >
+                          $ ARS
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleLegalCurrencyChange('USD')}
+                          className={`px-2 py-0.5 rounded-lg text-xs font-black transition-all ${
+                            activeLegalCurrency === 'USD'
+                              ? 'bg-primary/25 text-primary border border-primary/40 shadow-sm'
+                              : 'text-slate-400 hover:text-white hover:bg-white/5'
+                          }`}
+                        >
+                          $ USD
+                        </button>
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg p-1">
+                      <button
+                        onClick={() => setZoom(Math.max(0.3, zoom - 0.1))}
+                        className="p-1.5 text-slate-400 hover:text-white transition-colors hover:bg-white/5 rounded"
+                        title="Alejar"
+                      >
+                        <ZoomOut size={14} />
+                      </button>
+                      <span className="text-[10px] font-mono font-bold text-slate-300 w-12 text-center">
+                        {Math.round(zoom * 100)}%
+                      </span>
+                      <button
+                        onClick={() => setZoom(Math.min(1.5, zoom + 0.1))}
+                        className="p-1.5 text-slate-400 hover:text-white transition-colors hover:bg-white/5 rounded"
+                        title="Acercar"
+                      >
+                        <ZoomIn size={14} />
+                      </button>
+                    </div>
                   </div>
                 </div>
 

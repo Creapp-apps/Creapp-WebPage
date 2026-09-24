@@ -30,6 +30,20 @@ import Lightfall from '@/components/backgrounds/Lightfall';
 import { getPillars } from '@/lib/proposalTypes';
 import { DEFAULT_SERVICE_DETAILS, STACKED_CONTRACT_DESCRIPTION, STACKED_SERVICE_CONTRACT_TEMPLATE } from '@/lib/serviceContractTemplates';
 
+export const cleanNumberString = (val: string | number | null | undefined): string => {
+  if (!val) return '';
+  return String(val)
+    .replace(/USD|ARS|EUR|CLP|MXN|UYU|BRL|PEN|COP/gi, '')
+    .replace(/\$/g, '')
+    .trim();
+};
+
+export const formatCurrencyDisplay = (val: string | number | null | undefined, currency: 'USD' | 'ARS' | string = 'ARS'): string => {
+  const clean = cleanNumberString(val);
+  if (!clean || clean === '0') return `$0 ${currency}`;
+  return `$${clean} ${currency}`;
+};
+
 const getCurrencyFromTotal = (valString: string) => {
   const clean = (valString || '').trim().toUpperCase();
   if (clean.includes('ARS')) return 'ARS';
@@ -43,31 +57,26 @@ const getCurrencyFromTotal = (valString: string) => {
   if (match) {
     return match[1];
   }
-  return 'USD';
+  return 'ARS';
 };
 
 const formatMilestonePrice = (val: string | undefined | null) => {
   if (!val) return '0';
-  const trimmed = String(val).trim();
+  const trimmed = cleanNumberString(val);
   if (/^\d+$/.test(trimmed)) {
     return Number(trimmed).toLocaleString('es-AR');
   }
-  return trimmed;
+  return trimmed || '0';
 };
 
 const getValueFromTotal = (valString: string) => {
-  const clean = (valString || '').trim();
-  const match = clean.match(/^[A-Z\$]{1,5}\s*(.*)$/i);
-  if (match) {
-    return match[1];
-  }
-  return clean;
+  return cleanNumberString(valString);
 };
 
-const formatTotalValue = (valString: string) => {
-  const clean = (valString || '').trim();
-  if (/^[A-Z\$]{1,5}\s/i.test(clean)) return clean;
-  return `${getCurrencyFromTotal(clean)} ${clean}`;
+const formatTotalValue = (valString: string, currency?: string) => {
+  const clean = cleanNumberString(valString);
+  const curr = currency || getCurrencyFromTotal(valString) || 'ARS';
+  return `$${clean} ${curr}`;
 };
 
 const fadeUp: Variants = {
@@ -2407,7 +2416,7 @@ const ProposalView: React.FC = () => {
                         <span style={{ fontSize: '7px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Inversión</span>
                         <div style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}>
                           <span style={{ fontSize: proposal.milestones && proposal.milestones.length >= 4 ? '13px' : '14px', fontWeight: '950', color: '#000000', lineHeight: '1.1' }}>${formatMilestonePrice(m.price)}</span>
-                          <span style={{ fontSize: '8px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', lineHeight: '1.1' }}>{proposal.methodology?.currency || getCurrencyFromTotal(proposal.total_value)}</span>
+                          <span style={{ fontSize: '8px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', lineHeight: '1.1' }}>{proposal.methodology?.currency || ((proposal.total_value || '').toLowerCase().includes('ars') ? 'ARS' : 'USD')}</span>
                         </div>
                       </div>
                     )}
@@ -3143,31 +3152,44 @@ const ProposalView: React.FC = () => {
           </>
         ) : (
           !hiddenPages.includes('legal') && (() => {
+            const legalCurrency = proposal.methodology?.legal_currency || (
+              (proposal.contract_text || '').toLowerCase().includes('ars') ||
+              (proposal.total_value || '').toLowerCase().includes('ars')
+                ? 'ARS'
+                : 'USD'
+            );
+            const cleanTotal = formatCurrencyDisplay(proposal.total_value, legalCurrency);
+            const numericTotal = parseFloat(cleanNumberString(proposal.total_value).replace(/\./g, '').replace(/,/g, '.')) || 0;
+            const halfFormatted = numericTotal > 0
+              ? `$${Math.round(numericTotal * 0.5).toLocaleString('es-AR')} ${legalCurrency}`
+              : `50% ${legalCurrency}`;
+            const monthlyFeeFormatted = proposal.methodology?.monthly_fee
+              ? formatCurrencyDisplay(proposal.methodology.monthly_fee, legalCurrency)
+              : cleanTotal;
+
+            const cleanTotalNum = cleanNumberString(proposal.total_value) || '1.500.000';
+            const formattedTotal = `$${cleanTotalNum} ${legalCurrency}`;
+            const monthlyVal = cleanNumberString(proposal.methodology?.monthly_fee) || cleanTotalNum;
+            const formattedMonthly = `$${monthlyVal} ${legalCurrency} / mes`;
+
             const rawContract = proposal.contract_text ? (
               proposal.contract_text
                 .replace(/\{location\}/g, proposal.location)
                 .replace(/\{date\}/g, proposal.date)
                 .replace(/\{client_name\}/g, proposal.client_name)
-                .replace(/\{total_value\}/g, proposal.total_value)
+                .replace(/\{total_value\}/g, formattedTotal)
+                .replace(/\{monthly_fee\}/g, formattedMonthly)
+                .replace(/\{recurring_fee\}/g, formattedMonthly)
                 .replace(/\[input:[^\]]+\]/g, '________________________')
             ) : (
               `CONTRATO DE DESARROLLO DE SOFTWARE
 
-Entre Creapp Software Lab y ${proposal.client_name}, se acuerda el desarrollo integral del sistema conforme a los alcances y términos especificados en esta propuesta comercial por un valor total de ${proposal.total_value}.
+Entre Creapp Software Lab y ${proposal.client_name}, se acuerda el desarrollo integral del sistema conforme a los alcances y términos especificados en esta propuesta comercial por un valor total de ${formattedTotal}.
 
 Este contrato entra en vigencia a partir de la firma del presente documento el día ${proposal.date} en la localidad de ${proposal.location}.`
             );
 
             const textLength = rawContract.length;
-
-            const cleanTotal = (() => {
-              if (!proposal.total_value) return '$15.000 USD';
-              let val = proposal.total_value.trim();
-              val = val.replace(/USD\s*(\$)?/gi, '').replace(/ARS\s*(\$)?/gi, '').replace(/\$ARS/gi, '').replace(/\$USD/gi, '').replace(/^\$+/g, '').trim();
-              if (!val) return '$15.000 USD';
-              const curr = proposal.methodology?.currency || getCurrencyFromTotal(proposal.total_value) || 'ARS';
-              return `$${val} ${curr}`;
-            })();
 
             let fontSize = '9.8px';
             let lineHeight = '1.65';
@@ -3303,19 +3325,19 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
                   boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
                 }}>
                   <div style={{ borderLeft: `3px solid ${brandPrimary}`, paddingLeft: '8px' }}>
-                    <span style={{ fontSize: '8px', fontWeight: '900', color: brandPrimary, textTransform: 'uppercase', display: 'block' }}>Hito 1 · Anticipo Inicial (50%)</span>
+                    <span style={{ fontSize: '8px', fontWeight: '900', color: brandPrimary, textTransform: 'uppercase', display: 'block' }}>Hito 1 · Anticipo Inicial ({halfFormatted})</span>
                     <p style={{ fontSize: '8.5px', color: '#334155', margin: '2px 0 0 0', lineHeight: '1.35', fontWeight: '500' }}>
                       Firma del acuerdo y reserva de squad técnico. Inicio inmediato de arquitectura, modelado y prototipo UI.
                     </p>
                   </div>
                   <div style={{ borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
-                    <span style={{ fontSize: '8px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', display: 'block' }}>Hito 2 · Pase a Producción (50%)</span>
+                    <span style={{ fontSize: '8px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', display: 'block' }}>Hito 2 · Pase a Producción ({halfFormatted})</span>
                     <p style={{ fontSize: '8.5px', color: '#334155', margin: '2px 0 0 0', lineHeight: '1.35', fontWeight: '500' }}>
                       Auditoría y aprobación en entorno Staging. Despliegue en salones, capacitación y entrega de accesos finales.
                     </p>
                   </div>
                   <div style={{ borderLeft: '3px solid #059669', paddingLeft: '8px' }}>
-                    <span style={{ fontSize: '8px', fontWeight: '900', color: '#059669', textTransform: 'uppercase', display: 'block' }}>Abono Operativo & SLA</span>
+                    <span style={{ fontSize: '8px', fontWeight: '900', color: '#059669', textTransform: 'uppercase', display: 'block' }}>Abono Operativo & SLA ({monthlyFeeFormatted})</span>
                     <p style={{ fontSize: '8.5px', color: '#334155', margin: '2px 0 0 0', lineHeight: '1.35', fontWeight: '500' }}>
                       Soporte de incidentes, guardias operativas en salones y mantenimiento continuo a partir del día 30 post-lanzamiento.
                     </p>
