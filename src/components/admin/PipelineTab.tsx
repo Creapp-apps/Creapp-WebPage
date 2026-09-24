@@ -141,7 +141,7 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
       notes: newLeadForm.notes,
     });
 
-    onLeadsChange(leads); // Trigger refresh
+    onLeadsChange(getLeads()); // Trigger refresh with newly created lead
     setIsNewLeadModalOpen(false);
     setNewLeadForm({
       name: '',
