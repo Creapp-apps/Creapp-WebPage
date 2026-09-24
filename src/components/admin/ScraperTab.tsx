@@ -26,6 +26,12 @@ import {
   CheckCircle2,
   Map,
   Crosshair,
+  History,
+  Download,
+  Trash2,
+  Clock,
+  RotateCcw,
+  Bookmark,
 } from 'lucide-react';
 import {
   ScrapedProspect,
@@ -36,6 +42,14 @@ import {
   setStoredApiKeys,
   getGeminiApiKey,
   getGoogleMapsApiKey,
+  SavedScrapeSession,
+  getStoredScraperSession,
+  saveStoredScraperSession,
+  clearStoredScraperSession,
+  getScrapeHistory,
+  addScrapeToHistory,
+  deleteScrapeFromHistory,
+  clearAllScrapeHistory,
 } from '@/lib/scraperService';
 import { Lead } from '@/lib/pipelineService';
 import { GoogleRadarMap } from './GoogleRadarMap';
@@ -83,6 +97,10 @@ export const ScraperTab: React.FC<ScraperTabProps> = ({
   const [customMapsKey, setCustomMapsKey] = useState(getGoogleMapsApiKey());
   const [savingKeys, setSavingKeys] = useState(false);
 
+  // Historial de Búsquedas & Sesión Persistente
+  const [scrapeHistory, setScrapeHistory] = useState<SavedScrapeSession[]>([]);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+
   // Pitch Modal State
   const [activePitchProspect, setActivePitchProspect] = useState<ScrapedProspect | null>(null);
   const [pitchChannel, setPitchChannel] = useState<'whatsapp' | 'email' | 'linkedin'>('whatsapp');
@@ -104,6 +122,25 @@ export const ScraperTab: React.FC<ScraperTabProps> = ({
     checkStatus();
     setCustomGeminiKey(getGeminiApiKey());
     setCustomMapsKey(getGoogleMapsApiKey());
+
+    // Cargar historial de búsquedas
+    const history = getScrapeHistory();
+    setScrapeHistory(history);
+
+    // Restaurar última búsqueda activa para no perder resultados al navegar entre pestañas
+    const lastSession = getStoredScraperSession();
+    if (lastSession && lastSession.prospects && lastSession.prospects.length > 0) {
+      setSearchKeyword(lastSession.keyword);
+      setSelectedCity(lastSession.city);
+      setOnlyWithoutWeb(lastSession.onlyWithoutWeb);
+      if (lastSession.geoCenter) setGeoCenter(lastSession.geoCenter);
+      if (lastSession.radiusMeters) setRadiusMeters(lastSession.radiusMeters);
+      setProspects(lastSession.prospects);
+      setHasSearched(true);
+      if (lastSession.prospects.length > 0) {
+        setSelectedProspect(lastSession.prospects[0]);
+      }
+    }
   }, []);
 
   const handleSaveApiKeys = async (e: React.FormEvent) => {
@@ -139,11 +176,112 @@ export const ScraperTab: React.FC<ScraperTabProps> = ({
       if (results.length > 0) {
         setSelectedProspect(results[0]);
       }
+
+      // Persistir automáticamente en la sesión del navegador e historial
+      const newSession: SavedScrapeSession = {
+        id: `scrape-${Date.now()}`,
+        keyword,
+        city: queryCity,
+        onlyWithoutWeb,
+        timestamp: new Date().toISOString(),
+        geoCenter,
+        radiusMeters,
+        prospects: results,
+      };
+      saveStoredScraperSession(newSession);
+      const updatedHist = addScrapeToHistory(newSession);
+      setScrapeHistory(updatedHist);
     } catch (e: any) {
       console.error(e);
       setErrorMessage(e.message || 'Error durante la búsqueda de prospectos.');
     }
     setLoading(false);
+  };
+
+  const handleRestoreSession = (session: SavedScrapeSession) => {
+    setSearchKeyword(session.keyword);
+    setSelectedCity(session.city);
+    setOnlyWithoutWeb(session.onlyWithoutWeb);
+    if (session.geoCenter) setGeoCenter(session.geoCenter);
+    if (session.radiusMeters) setRadiusMeters(session.radiusMeters);
+    setProspects(session.prospects);
+    setHasSearched(true);
+    setSelectedProspect(session.prospects[0] || null);
+    saveStoredScraperSession(session);
+    setIsHistoryModalOpen(false);
+  };
+
+  const handleClearCurrentSession = () => {
+    clearStoredScraperSession();
+    setProspects([]);
+    setHasSearched(false);
+    setSelectedProspect(null);
+  };
+
+  const handleDeleteHistoryItem = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const updated = deleteScrapeFromHistory(id);
+    setScrapeHistory(updated);
+  };
+
+  const handleClearAllHistory = () => {
+    if (confirm('¿Eliminar todo el historial de búsquedas guardadas?')) {
+      clearAllScrapeHistory();
+      setScrapeHistory([]);
+      setProspects([]);
+      setHasSearched(false);
+      setSelectedProspect(null);
+      setIsHistoryModalOpen(false);
+    }
+  };
+
+  const exportProspectsToCSV = (prospectsToExport: ScrapedProspect[], queryInfo = 'creapp_scraped') => {
+    if (!prospectsToExport || prospectsToExport.length === 0) return;
+    const headers = [
+      'Nombre',
+      'Categoría',
+      'Ciudad',
+      'Dirección',
+      'Teléfono',
+      'Email',
+      'Sitio Web',
+      'Tiene Web',
+      'Diagnóstico Digital',
+      'Solución Sugerida',
+      'Presupuesto USD Estimado',
+      'Rating',
+      'Cantidad Reseñas',
+      'Fuente',
+    ];
+
+    const rows = prospectsToExport.map((p) => [
+      `"${(p.name || '').replace(/"/g, '""')}"`,
+      `"${(p.category || '').replace(/"/g, '""')}"`,
+      `"${(p.city || '').replace(/"/g, '""')}"`,
+      `"${(p.address || '').replace(/"/g, '""')}"`,
+      `"${(p.phone || '').replace(/"/g, '""')}"`,
+      `"${(p.email || '').replace(/"/g, '""')}"`,
+      `"${(p.website || '').replace(/"/g, '""')}"`,
+      p.digitalHealth.hasWebsite ? 'Sí' : 'No',
+      `"${(p.digitalHealth.diagnosis || '').replace(/"/g, '""')}"`,
+      `"${p.digitalHealth.suggestedSolution}"`,
+      p.digitalHealth.estimatedBudget || 0,
+      p.rating || 0,
+      p.reviewCount || 0,
+      p.source,
+    ]);
+
+    const csvContent =
+      'data:text/csv;charset=utf-8,\uFEFF' +
+      [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    const safeName = queryInfo.toLowerCase().replace(/[^a-z0-9]/gi, '_');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `leads_${safeName}_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const handleOpenPitchModal = async (prospect: ScrapedProspect) => {
@@ -241,10 +379,49 @@ export const ScraperTab: React.FC<ScraperTabProps> = ({
             <span>{apiStatus.googleMaps.hasKey ? 'Google Places: Activo' : 'Google Places: Opcional'}</span>
           </div>
 
+          {/* Historial / Búsquedas Guardadas Button */}
+          <button
+            onClick={() => setIsHistoryModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs font-medium transition-colors cursor-pointer"
+            title="Ver búsquedas y scraps guardados"
+          >
+            <History size={14} className="text-indigo-400" />
+            <span>Búsquedas Guardadas</span>
+            {scrapeHistory.length > 0 && (
+              <span className="px-1.5 py-0.2 rounded-full bg-indigo-500 text-white font-mono text-[10px] font-bold">
+                {scrapeHistory.length}
+              </span>
+            )}
+          </button>
+
+          {/* Export CSV Button */}
+          {prospects.length > 0 && (
+            <button
+              onClick={() => exportProspectsToCSV(prospects, `${searchKeyword}_${selectedCity}`)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-medium transition-colors cursor-pointer"
+              title="Descargar prospectos actuales en formato CSV"
+            >
+              <Download size={14} className="text-emerald-400" />
+              <span>Exportar CSV</span>
+            </button>
+          )}
+
+          {/* Clear current search */}
+          {prospects.length > 0 && (
+            <button
+              onClick={handleClearCurrentSession}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white border border-white/10 text-xs transition-colors cursor-pointer"
+              title="Limpiar resultados actuales"
+            >
+              <RotateCcw size={13} />
+              <span>Limpiar</span>
+            </button>
+          )}
+
           {/* Config Button */}
           <button
             onClick={() => setIsConfigModalOpen(true)}
-            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white border border-white/10 transition-colors"
+            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white border border-white/10 transition-colors cursor-pointer"
             title="Configurar claves de API"
           >
             <Settings size={15} />
@@ -365,6 +542,41 @@ export const ScraperTab: React.FC<ScraperTabProps> = ({
             </button>
           ))}
         </div>
+
+        {/* Búsquedas Guardadas Recientes (Quick Access) */}
+        {scrapeHistory.length > 0 && (
+          <div className="pt-2.5 border-t border-white/5 flex items-center gap-2 flex-wrap text-xs">
+            <span className="text-zinc-500 font-medium flex items-center gap-1 shrink-0 text-[11px]">
+              <Bookmark size={11} className="text-indigo-400" />
+              <span>Búsquedas Guardadas:</span>
+            </span>
+            {scrapeHistory.slice(0, 4).map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => handleRestoreSession(item)}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/25 text-[11px] transition-all cursor-pointer group"
+                title={`Recuperar búsqueda: ${item.keyword} en ${item.city} (${item.prospects.length} resultados)`}
+              >
+                <Clock size={10} className="text-indigo-400" />
+                <span className="font-semibold">{item.keyword}</span>
+                <span className="text-zinc-400 font-normal">en {item.city.split(',')[0]}</span>
+                <span className="font-mono px-1.5 py-0.2 rounded-full bg-indigo-500/30 text-indigo-200 text-[10px] font-bold">
+                  {item.prospects.length}
+                </span>
+              </button>
+            ))}
+            {scrapeHistory.length > 4 && (
+              <button
+                type="button"
+                onClick={() => setIsHistoryModalOpen(true)}
+                className="text-[11px] text-purple-400 hover:text-purple-300 underline underline-offset-2 ml-1 cursor-pointer font-medium"
+              >
+                Ver todas ({scrapeHistory.length})
+              </button>
+            )}
+          </div>
+        )}
 
         {errorMessage && (
           <div className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs rounded-xl flex items-center gap-2">
@@ -845,6 +1057,153 @@ export const ScraperTab: React.FC<ScraperTabProps> = ({
                   </button>
                 </div>
               </form>
+            </motion.div>
+          </div>
+        )}
+
+        {/* MODAL HISTORIAL DE BÚSQUEDAS GUARDADAS */}
+        {isHistoryModalOpen && (
+          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="w-full max-w-2xl bg-[#0e0e14] border border-white/10 rounded-3xl p-6 shadow-2xl relative space-y-4 max-h-[85vh] flex flex-col"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-indigo-500/20 text-indigo-400">
+                    <History size={18} />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-white flex items-center gap-2">
+                      <span>Búsquedas Guardadas & Scraps</span>
+                      <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                        {scrapeHistory.length}
+                      </span>
+                    </h3>
+                    <p className="text-xs text-zinc-400">
+                      Accede a tus prospecciones anteriores sin volver a consumir consultas de API.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsHistoryModalOpen(false)}
+                  className="p-1.5 rounded-xl text-zinc-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* List */}
+              <div className="flex-1 overflow-y-auto space-y-2.5 pr-1">
+                {scrapeHistory.length === 0 ? (
+                  <div className="py-12 text-center text-zinc-500 text-xs border border-dashed border-white/5 rounded-2xl flex flex-col items-center gap-2">
+                    <History size={28} className="text-zinc-600" />
+                    <span>No hay búsquedas guardadas aún.</span>
+                    <span className="text-[11px] text-zinc-600">
+                      Cada vez que rastrees oportunidades con el scraper, se almacenarán aquí automáticamente.
+                    </span>
+                  </div>
+                ) : (
+                  scrapeHistory.map((item) => {
+                    const withoutWebCount = item.prospects.filter((p) => !p.digitalHealth.hasWebsite).length;
+                    const dateFormatted = new Date(item.timestamp).toLocaleDateString([], {
+                      day: '2-digit',
+                      month: 'short',
+                      year: 'numeric',
+                    });
+                    const timeFormatted = new Date(item.timestamp).toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    });
+
+                    return (
+                      <div
+                        key={item.id}
+                        className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-indigo-500/30 hover:bg-white/[0.04] transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 group"
+                      >
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-bold text-sm text-white">{item.keyword}</span>
+                            <span className="text-xs text-zinc-400 flex items-center gap-1 font-medium">
+                              <MapPin size={11} className="text-purple-400" />
+                              {item.city}
+                            </span>
+                            {item.onlyWithoutWeb && (
+                              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                                Sólo sin web
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3 text-[11px] text-zinc-500">
+                            <span className="flex items-center gap-1 font-mono">
+                              <Clock size={10} />
+                              {dateFormatted} {timeFormatted}
+                            </span>
+                            <span>•</span>
+                            <span className="text-indigo-300 font-semibold font-mono">
+                              {item.prospects.length} locales
+                            </span>
+                            <span>•</span>
+                            <span className="text-amber-400/90 font-medium">
+                              {withoutWebCount} sin web
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-1.5 self-end sm:self-auto shrink-0">
+                          <button
+                            onClick={() => handleRestoreSession(item)}
+                            className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                            title="Cargar esta búsqueda en el tablero y mapa"
+                          >
+                            <RotateCcw size={12} />
+                            <span>Cargar</span>
+                          </button>
+                          <button
+                            onClick={() => exportProspectsToCSV(item.prospects, `${item.keyword}_${item.city}`)}
+                            className="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white border border-white/5 transition-colors cursor-pointer"
+                            title="Exportar esta búsqueda a CSV"
+                          >
+                            <Download size={13} />
+                          </button>
+                          <button
+                            onClick={(e) => handleDeleteHistoryItem(item.id, e)}
+                            className="p-1.5 rounded-xl bg-white/5 hover:bg-rose-500/20 text-zinc-500 hover:text-rose-400 border border-white/5 transition-colors cursor-pointer"
+                            title="Eliminar de historial"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="pt-3 border-t border-white/10 flex items-center justify-between">
+                {scrapeHistory.length > 0 ? (
+                  <button
+                    onClick={handleClearAllHistory}
+                    className="text-xs text-rose-400 hover:text-rose-300 transition-colors flex items-center gap-1 cursor-pointer"
+                  >
+                    <Trash2 size={12} />
+                    <span>Limpiar todo el historial</span>
+                  </button>
+                ) : (
+                  <div />
+                )}
+                <button
+                  onClick={() => setIsHistoryModalOpen(false)}
+                  className="px-4 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 text-xs font-medium transition-colors cursor-pointer"
+                >
+                  Cerrar
+                </button>
+              </div>
             </motion.div>
           </div>
         )}

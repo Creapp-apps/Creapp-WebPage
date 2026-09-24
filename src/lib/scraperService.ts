@@ -396,3 +396,102 @@ export const importProspectToPipeline = (prospect: ScrapedProspect): Lead => {
     notes: `Prospectado vía CreApp Scraper (${prospect.source}): ${prospect.digitalHealth.diagnosis}`,
   });
 };
+
+/* =========================================================
+   PERSISTENCIA DE SESIÓN & HISTORIAL DE BÚSQUEDAS SCRAPER
+   ========================================================= */
+
+export interface SavedScrapeSession {
+  id: string;
+  keyword: string;
+  city: string;
+  onlyWithoutWeb: boolean;
+  timestamp: string;
+  geoCenter?: { lat: number; lng: number };
+  radiusMeters?: number;
+  prospects: ScrapedProspect[];
+}
+
+const SCRAPER_CURRENT_SESSION_KEY = 'creapp_scraper_current_session_v1';
+const SCRAPER_HISTORY_KEY = 'creapp_scraper_history_v1';
+
+export const getStoredScraperSession = (): SavedScrapeSession | null => {
+  if (typeof window === 'undefined' || !window.localStorage) return null;
+  try {
+    const raw = localStorage.getItem(SCRAPER_CURRENT_SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    console.error('Error loading scraper session', e);
+    return null;
+  }
+};
+
+export const saveStoredScraperSession = (session: SavedScrapeSession): void => {
+  if (typeof window === 'undefined' || !window.localStorage) return;
+  try {
+    localStorage.setItem(SCRAPER_CURRENT_SESSION_KEY, JSON.stringify(session));
+  } catch (e) {
+    console.error('Error saving scraper session', e);
+  }
+};
+
+export const clearStoredScraperSession = (): void => {
+  if (typeof window === 'undefined' || !window.localStorage) return;
+  try {
+    localStorage.removeItem(SCRAPER_CURRENT_SESSION_KEY);
+  } catch (e) {
+    console.error('Error clearing scraper session', e);
+  }
+};
+
+export const getScrapeHistory = (): SavedScrapeSession[] => {
+  if (typeof window === 'undefined' || !window.localStorage) return [];
+  try {
+    const raw = localStorage.getItem(SCRAPER_HISTORY_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    console.error('Error reading scraper history', e);
+    return [];
+  }
+};
+
+export const addScrapeToHistory = (session: SavedScrapeSession): SavedScrapeSession[] => {
+  if (typeof window === 'undefined' || !window.localStorage) return [];
+  try {
+    const history = getScrapeHistory();
+    // Excluir id duplicado o búsqueda exacta duplicada
+    const filtered = history.filter(
+      (h) => h.id !== session.id && !(h.keyword.toLowerCase() === session.keyword.toLowerCase() && h.city.toLowerCase() === session.city.toLowerCase())
+    );
+    const updated = [session, ...filtered].slice(0, 30); // Guardar hasta 30 búsquedas
+    localStorage.setItem(SCRAPER_HISTORY_KEY, JSON.stringify(updated));
+    return updated;
+  } catch (e) {
+    console.error('Error adding scrape to history', e);
+    return [];
+  }
+};
+
+export const deleteScrapeFromHistory = (id: string): SavedScrapeSession[] => {
+  if (typeof window === 'undefined' || !window.localStorage) return [];
+  try {
+    const history = getScrapeHistory();
+    const updated = history.filter((h) => h.id !== id);
+    localStorage.setItem(SCRAPER_HISTORY_KEY, JSON.stringify(updated));
+    return updated;
+  } catch (e) {
+    console.error('Error deleting scrape from history', e);
+    return [];
+  }
+};
+
+export const clearAllScrapeHistory = (): void => {
+  if (typeof window === 'undefined' || !window.localStorage) return;
+  try {
+    localStorage.removeItem(SCRAPER_HISTORY_KEY);
+    localStorage.removeItem(SCRAPER_CURRENT_SESSION_KEY);
+  } catch (e) {
+    console.error('Error clearing history', e);
+  }
+};
+
