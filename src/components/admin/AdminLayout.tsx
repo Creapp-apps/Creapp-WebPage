@@ -338,7 +338,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
           </header>
 
           {/* PAGE CONTENT */}
-          <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+          <main className={`flex-1 p-4 sm:p-6 lg:p-8 w-full ${currentTab === 'pipeline' ? 'max-w-[1920px] mx-auto' : 'max-w-7xl mx-auto'}`}>
             {children}
           </main>
         </div>

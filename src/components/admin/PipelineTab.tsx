@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus,
@@ -6,6 +6,8 @@ import {
   Filter,
   ArrowRight,
   ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
   Phone,
   Globe,
   Sparkles,
@@ -51,6 +53,7 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
   const [isEditingNotes, setIsEditingNotes] = useState(false);
   const [editedNotes, setEditedNotes] = useState('');
   const [copiedPhone, setCopiedPhone] = useState(false);
+  const kanbanContainerRef = useRef<HTMLDivElement>(null);
 
   // Form state para nuevo lead manual
   const [newLeadForm, setNewLeadForm] = useState({
@@ -74,6 +77,22 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
     'delivered',
   ];
 
+  const scrollToStage = (index: number) => {
+    const stageKey = stages[index];
+    const targetEl = document.getElementById(`kanban-col-${stageKey}`);
+    if (targetEl) {
+      targetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    } else if (kanbanContainerRef.current) {
+      kanbanContainerRef.current.scrollTo({ left: index * 286, behavior: 'smooth' });
+    }
+  };
+
+  const scrollHorizontal = (direction: 'left' | 'right') => {
+    if (!kanbanContainerRef.current) return;
+    const delta = direction === 'left' ? -350 : 350;
+    kanbanContainerRef.current.scrollBy({ left: delta, behavior: 'smooth' });
+  };
+
   const filteredLeads = leads.filter((lead) => {
     const matchSearch =
       lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -90,6 +109,10 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
       const nextStage = stages[targetIndex];
       const updated = updateLeadStage(leadId, nextStage);
       onLeadsChange(updated);
+      // Auto-centrar la columna objetivo para que el usuario nunca pierda de vista la tarjeta
+      setTimeout(() => {
+        scrollToStage(targetIndex);
+      }, 50);
     }
   };
 
@@ -201,8 +224,65 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
         </div>
       </div>
 
+      {/* QUICK STAGE JUMP & HORIZONTAL SCROLL CONTROLS */}
+      <div className="flex items-center justify-between gap-3 p-2 rounded-2xl bg-white/[0.02] border border-white/5 backdrop-blur-sm">
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+          <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider px-2 shrink-0">
+            Saltar a Etapa:
+          </span>
+          {stages.map((stageKey, idx) => {
+            const config = STAGE_CONFIG[stageKey];
+            const count = filteredLeads.filter((l) => l.stage === stageKey).length;
+            const hasActiveLeads = count > 0;
+            return (
+              <button
+                key={stageKey}
+                onClick={() => scrollToStage(idx)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium transition-all shrink-0 cursor-pointer ${
+                  hasActiveLeads
+                    ? 'bg-purple-500/20 text-purple-200 border border-purple-500/40 hover:bg-purple-500/30 shadow-[0_0_12px_rgba(168,85,247,0.15)] font-semibold'
+                    : 'bg-white/5 text-zinc-400 border border-white/5 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                <span>{config.label.split('. ')[1] || config.label}</span>
+                <span
+                  className={`text-[10px] font-mono px-1.5 py-0.5 rounded-full ${
+                    hasActiveLeads
+                      ? 'bg-purple-500 text-white font-bold'
+                      : 'bg-white/10 text-zinc-400'
+                  }`}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Scroll Controls */}
+        <div className="flex items-center gap-1 shrink-0 pl-2 border-l border-white/10">
+          <button
+            onClick={() => scrollHorizontal('left')}
+            className="p-1.5 rounded-lg bg-white/5 hover:bg-white/15 text-zinc-400 hover:text-white transition-colors"
+            title="Desplazar a la izquierda"
+          >
+            <ChevronLeft size={16} />
+          </button>
+          <button
+            onClick={() => scrollHorizontal('right')}
+            className="p-1.5 rounded-lg bg-white/5 hover:bg-white/15 text-zinc-400 hover:text-white transition-colors"
+            title="Desplazar a la derecha"
+          >
+            <ChevronRight size={16} />
+          </button>
+        </div>
+      </div>
+
       {/* KANBAN BOARD */}
-      <div className="flex gap-4 overflow-x-auto pb-6 scrollbar-thin">
+      <div 
+        ref={kanbanContainerRef}
+        className="flex gap-4 overflow-x-auto pb-6 kanban-scrollbar scroll-smooth"
+      >
         {stages.map((stageKey) => {
           const config = STAGE_CONFIG[stageKey];
           const stageLeads = filteredLeads.filter((l) => l.stage === stageKey);
@@ -212,7 +292,8 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
           return (
             <div
               key={stageKey}
-              className={`w-72 shrink-0 rounded-2xl border ${config.border} ${config.bg} p-3 flex flex-col max-h-[75vh]`}
+              id={`kanban-col-${stageKey}`}
+              className={`w-[270px] shrink-0 rounded-2xl border ${config.border} ${config.bg} p-3 flex flex-col max-h-[75vh]`}
             >
               {/* Column Header */}
               <div className="flex items-center justify-between pb-3 border-b border-white/5 mb-3">
