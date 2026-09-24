@@ -34,6 +34,8 @@ import {
   deleteSubscription,
   recordSubscriptionPayment,
   getFinancialMetrics,
+  saveSubscriptions,
+  parseArgentineNumber,
 } from '@/lib/financeService';
 import { Lead } from '@/lib/pipelineService';
 
@@ -54,6 +56,9 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ leads = [] }
   const [paymentNotes, setPaymentNotes] = useState('');
   const [successToast, setSuccessToast] = useState<string | null>(null);
 
+  // Input formateado para moneda argentina (permite ingresar 125.000 sin truncar a 125)
+  const [amountInput, setAmountInput] = useState('125.000');
+
   // Form State
   const [formData, setFormData] = useState({
     companyName: '',
@@ -61,9 +66,9 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ leads = [] }
     planName: '',
     productType: 'Stacked SaaS' as Subscription['productType'],
     category: 'saas_license' as Subscription['category'],
-    amount: 150,
-    currency: 'USD' as 'USD' | 'ARS',
-    billingDay: 5,
+    amount: 125000,
+    currency: 'ARS' as 'USD' | 'ARS',
+    billingDay: 23,
     billingCycle: 'monthly' as Subscription['billingCycle'],
     status: 'active' as SubscriptionStatus,
     startDate: new Date().toISOString().split('T')[0],
@@ -80,7 +85,20 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ leads = [] }
   });
 
   const loadData = () => {
-    setSubscriptions(getSubscriptions());
+    const rawSubs = getSubscriptions();
+    // Auto-curar si alguna suscripción de AlPaso o en ARS se guardó con el bug del punto como $125
+    let hasHealed = false;
+    const healed = rawSubs.map((s) => {
+      if (s.amount === 125 && (s.currency === 'ARS' || s.companyName.toLowerCase().includes('alpaso'))) {
+        hasHealed = true;
+        return { ...s, amount: 125000, currency: 'ARS' as const };
+      }
+      return s;
+    });
+    if (hasHealed) {
+      saveSubscriptions(healed);
+    }
+    setSubscriptions(healed);
   };
 
   useEffect(() => {
@@ -92,7 +110,7 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ leads = [] }
     setTimeout(() => setSuccessToast(null), 3500);
   };
 
-  // KPIs
+  // KPIs en Pesos Argentinos ($ARS)
   const metrics = getFinancialMetrics();
   const totalActiveSubs = subscriptions.filter((s) => s.status === 'active').length;
   const totalPendingSubs = subscriptions.filter(
@@ -101,7 +119,7 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ leads = [] }
 
   const totalMRR = subscriptions
     .filter((s) => s.status === 'active' || s.status === 'pending_payment')
-    .reduce((acc, s) => acc + (s.currency === 'USD' ? s.amount : s.amount / 1200), 0);
+    .reduce((acc, s) => acc + (s.currency === 'ARS' ? s.amount : s.amount * 1250), 0);
 
   // Filtrado
   const filteredSubscriptions = subscriptions.filter((s) => {
@@ -118,15 +136,16 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ leads = [] }
 
   const handleOpenCreate = () => {
     setEditingSub(null);
+    setAmountInput('125.000');
     setFormData({
       companyName: '',
       clientName: '',
       planName: 'Abono Mensual de Servicio & SLA',
       productType: 'Stacked SaaS',
       category: 'saas_license',
-      amount: 150,
-      currency: 'USD',
-      billingDay: 1,
+      amount: 125000,
+      currency: 'ARS',
+      billingDay: 23,
       billingCycle: 'monthly',
       status: 'active',
       startDate: new Date().toISOString().split('T')[0],
@@ -146,14 +165,19 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ leads = [] }
 
   const handleOpenEdit = (sub: Subscription) => {
     setEditingSub(sub);
+    let realAmt = sub.amount;
+    if (realAmt === 125 && (sub.currency === 'ARS' || sub.companyName.toLowerCase().includes('alpaso'))) {
+      realAmt = 125000;
+    }
+    setAmountInput(realAmt.toLocaleString('es-AR'));
     setFormData({
       companyName: sub.companyName,
       clientName: sub.clientName,
       planName: sub.planName,
       productType: sub.productType,
       category: sub.category,
-      amount: sub.amount,
-      currency: sub.currency,
+      amount: realAmt,
+      currency: sub.currency || 'ARS',
       billingDay: sub.billingDay,
       billingCycle: sub.billingCycle,
       status: sub.status,
@@ -172,12 +196,15 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ leads = [] }
     const lead = leads.find((l) => l.id === leadId);
     if (!lead) return;
 
+    const leadAmt = lead.estimatedValue > 0 ? lead.estimatedValue : 125000;
+    setAmountInput(leadAmt.toLocaleString('es-AR'));
     setFormData((prev) => ({
       ...prev,
       companyName: lead.company,
       clientName: lead.name,
       clientPhone: lead.phone || '',
       clientEmail: lead.email || '',
+      currency: 'ARS',
       productType:
         lead.productType === 'Stacked SaaS'
           ? 'Stacked SaaS'
@@ -187,7 +214,7 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ leads = [] }
           ? 'Dental IA'
           : 'Desarrollo a Medida',
       planName: `Abono Mensual ${lead.productType}`,
-      amount: lead.estimatedValue > 0 ? lead.estimatedValue : 150,
+      amount: leadAmt,
     }));
   };
 
@@ -195,11 +222,17 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ leads = [] }
     e.preventDefault();
     if (!formData.companyName) return;
 
+    const parsedAmount = parseArgentineNumber(amountInput) || formData.amount;
+    const finalData = {
+      ...formData,
+      amount: parsedAmount,
+    };
+
     if (editingSub) {
-      updateSubscription(editingSub.id, formData);
+      updateSubscription(editingSub.id, finalData);
       showToast('Suscripción actualizada exitosamente.');
     } else {
-      createSubscription(formData);
+      createSubscription(finalData);
       showToast('Nueva suscripción registrada y activada.');
     }
 
@@ -225,7 +258,7 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ leads = [] }
     if (!paymentModalSub) return;
     const res = recordSubscriptionPayment(paymentModalSub.id, paymentModalSub.paymentMethod, paymentNotes);
     if (res) {
-      showToast(`¡Cobro de $${paymentModalSub.amount} ${paymentModalSub.currency} registrado e ingresado a Finanzas!`);
+      showToast(`¡Cobro de $${paymentModalSub.amount.toLocaleString('es-AR')} ${paymentModalSub.currency === 'ARS' ? '$ars' : 'USD'} registrado e ingresado a Finanzas!`);
     }
     setPaymentModalSub(null);
     setPaymentNotes('');
@@ -234,8 +267,9 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ leads = [] }
 
   const handleSendWhatsAppReminder = (sub: Subscription) => {
     const cleanPhone = (sub.clientPhone || '').replace(/[^0-9]/g, '');
+    const formattedAmount = `$${sub.amount.toLocaleString('es-AR')} ${sub.currency === 'ARS' ? '$ars' : 'USD'}`;
     const message = encodeURIComponent(
-      `Hola ${sub.clientName || sub.companyName}, te escribimos desde CreApp. Te recordamos el abono mensual correspondiente al servicio de ${sub.planName} por un monto de $${sub.amount} ${sub.currency}.\n\nCualquier consulta sobre la facturación o soporte quedamos a entera disposición. ¡Muchas gracias!`
+      `Hola ${sub.clientName || sub.companyName}, te escribimos desde CreApp. Te recordamos el abono mensual correspondiente al servicio de ${sub.planName} por un monto de ${formattedAmount}.\n\nCualquier consulta sobre la facturación o soporte quedamos a entera disposición. ¡Muchas gracias!`
     );
     if (cleanPhone) {
       window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank');
@@ -312,7 +346,8 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ leads = [] }
             </div>
           </div>
           <div className="text-2xl font-black text-white font-mono tracking-tight">
-            ${Math.round(totalMRR).toLocaleString()} <span className="text-xs text-zinc-500 font-normal">USD/mes</span>
+            ${Math.round(totalMRR).toLocaleString('es-AR')}{' '}
+            <span className="text-xs text-emerald-400 font-semibold">$ars / mes</span>
           </div>
           <p className="text-[11px] text-emerald-400/90 flex items-center gap-1 font-medium">
             <span>● {totalActiveSubs} contratos activos facturando</span>
@@ -499,7 +534,7 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ leads = [] }
                       <span className="text-xs text-zinc-300 font-semibold">{sub.planName}</span>
                       <div className="text-right">
                         <span className="text-base font-black text-emerald-400 font-mono">
-                          ${sub.amount} {sub.currency}
+                          ${sub.amount.toLocaleString('es-AR')} {sub.currency === 'ARS' ? '$ars' : 'USD'}
                         </span>
                         <span className="text-[10px] text-zinc-500 font-normal"> /mes</span>
                       </div>
@@ -793,14 +828,32 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ leads = [] }
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="space-y-1">
                     <label className="text-zinc-400 font-medium">Monto Recurrente *</label>
-                    <input
-                      type="number"
-                      required
-                      min={1}
-                      value={formData.amount}
-                      onChange={(e) => setFormData({ ...formData, amount: Number(e.target.value) })}
-                      className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-white font-mono focus:outline-none focus:border-emerald-500/50"
-                    />
+                    <div className="relative">
+                      <span className="absolute left-3 top-2 text-zinc-500 font-mono text-xs">$</span>
+                      <input
+                        type="text"
+                        required
+                        placeholder="125.000"
+                        value={amountInput}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setAmountInput(val);
+                          const parsed = parseArgentineNumber(val);
+                          setFormData((prev) => ({ ...prev, amount: parsed }));
+                        }}
+                        onBlur={() => {
+                          const parsed = parseArgentineNumber(amountInput);
+                          if (parsed > 0) {
+                            setAmountInput(parsed.toLocaleString('es-AR'));
+                            setFormData((prev) => ({ ...prev, amount: parsed }));
+                          }
+                        }}
+                        className="w-full pl-7 pr-3 py-2 rounded-xl bg-black/40 border border-white/10 text-white font-mono focus:outline-none focus:border-emerald-500/50"
+                      />
+                    </div>
+                    <span className="text-[10px] text-zinc-500 block">
+                      Interpretado: ${(parseArgentineNumber(amountInput) || formData.amount).toLocaleString('es-AR')} {formData.currency === 'ARS' ? '$ars' : 'USD'}
+                    </span>
                   </div>
 
                   <div className="space-y-1">
@@ -812,8 +865,8 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ leads = [] }
                       }
                       className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-white focus:outline-none focus:border-emerald-500/50"
                     >
+                      <option value="ARS">ARS ($ Pesos Argentinos)</option>
                       <option value="USD">USD ($ Dólar)</option>
-                      <option value="ARS">ARS ($ Pesos)</option>
                     </select>
                   </div>
 

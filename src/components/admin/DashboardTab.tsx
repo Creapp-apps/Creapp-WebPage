@@ -59,7 +59,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
     },
     {
       title: 'MRR Recurrente (Suscripciones)',
-      value: `$${activeSaaSMRR.toLocaleString()} USD/mes`,
+      value: `$${activeSaaSMRR.toLocaleString('es-AR')} $ars/mes`,
       subtitle: `${financeMetrics.activeSubscriptionsCount} abonos activos facturando`,
       change: `${financeMetrics.activeSubscriptionsCount} contratos activos`,
       icon: TrendingUp,

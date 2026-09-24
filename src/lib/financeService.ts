@@ -277,26 +277,55 @@ export function deleteTransaction(id: string): void {
 
 // --- RESUMEN FINANCIERO Y MÉTRICAS GLOBALES ---
 
+// Utility para parsear números en formato argentino ($125.000 -> 125000)
+export function parseArgentineNumber(value: string | number): number {
+  if (typeof value === 'number') return isNaN(value) ? 0 : value;
+  if (!value) return 0;
+  let clean = value.toString().trim().replace(/[^0-9.,]/g, '');
+  if (!clean) return 0;
+
+  // Si tiene puntos como separadores de miles (ej: 125.000 o 1.250.000)
+  if (clean.includes('.') && !clean.includes(',')) {
+    const parts = clean.split('.');
+    if (parts.length > 2 || (parts.length === 2 && parts[1].length === 3)) {
+      clean = clean.replace(/\./g, '');
+    }
+  } else if (clean.includes('.') && clean.includes(',')) {
+    // Formato estándar con decimales 125.000,50
+    clean = clean.replace(/\./g, '').replace(',', '.');
+  } else if (clean.includes(',')) {
+    const parts = clean.split(',');
+    if (parts.length === 2 && parts[1].length === 3) {
+      clean = clean.replace(/,/g, '');
+    } else {
+      clean = clean.replace(',', '.');
+    }
+  }
+
+  const result = parseFloat(clean);
+  return isNaN(result) ? 0 : result;
+}
+
 export interface FinancialMetrics {
-  totalMRR: number; // Monthly Recurring Revenue de suscripciones activas (USD)
+  totalMRR: number; // Monthly Recurring Revenue de suscripciones activas en $ARS
   activeSubscriptionsCount: number;
   pendingSubscriptionsCount: number;
-  totalIncomeMonth: number; // Ingresos registrados este mes
-  totalExpensesMonth: number; // Débitos / OPEX registrados este mes
-  netBalanceMonth: number; // Margen neto = Ingresos - Gastos
+  totalIncomeMonth: number; // Ingresos registrados este mes ($ARS)
+  totalExpensesMonth: number; // Débitos / OPEX registrados este mes ($ARS)
+  netBalanceMonth: number; // Margen neto = Ingresos - Gastos ($ARS)
   profitMarginPercent: number; // Margen de ganancia en %
   expensesByCategory: Record<ExpenseCategory, number>;
-  recurringExpensesMRR: number; // Gastos operativos recurrentes mensuales
+  recurringExpensesMRR: number; // Gastos operativos recurrentes mensuales ($ARS)
 }
 
 export function getFinancialMetrics(): FinancialMetrics {
   const subscriptions = getSubscriptions();
   const transactions = getTransactions();
 
-  // MRR: Suma de suscripciones activas en USD
+  // MRR: Suma de suscripciones activas en $ARS (CreApp opera en Pesos Argentinos)
   const totalMRR = subscriptions
     .filter((s) => s.status === 'active' || s.status === 'pending_payment')
-    .reduce((acc, s) => acc + (s.currency === 'USD' ? s.amount : s.amount / 1200), 0);
+    .reduce((acc, s) => acc + (s.currency === 'ARS' ? s.amount : s.amount * 1250), 0);
 
   const activeSubscriptionsCount = subscriptions.filter((s) => s.status === 'active').length;
   const pendingSubscriptionsCount = subscriptions.filter(
@@ -307,26 +336,26 @@ export function getFinancialMetrics(): FinancialMetrics {
   const currentMonthStr = new Date().toISOString().substring(0, 7); // YYYY-MM
   const thisMonthTransactions = transactions.filter((t) => t.date.startsWith(currentMonthStr));
 
-  // Ingresos del mes
+  // Ingresos del mes ($ARS)
   const totalIncomeMonth = thisMonthTransactions
     .filter((t) => t.type === 'income' && t.status === 'paid')
-    .reduce((acc, t) => acc + (t.currency === 'USD' ? t.amount : t.amount / 1200), 0);
+    .reduce((acc, t) => acc + (t.currency === 'ARS' ? t.amount : t.amount * 1250), 0);
 
-  // Gastos del mes
+  // Gastos del mes ($ARS)
   const totalExpensesMonth = thisMonthTransactions
     .filter((t) => t.type === 'expense' && t.status === 'paid')
-    .reduce((acc, t) => acc + (t.currency === 'USD' ? t.amount : t.amount / 1200), 0);
+    .reduce((acc, t) => acc + (t.currency === 'ARS' ? t.amount : t.amount * 1250), 0);
 
-  // Gastos recurrentes fijos (stacks mensuales)
+  // Gastos recurrentes fijos ($ARS)
   const recurringExpensesMRR = transactions
     .filter((t) => t.type === 'expense' && t.recurring)
-    .reduce((acc, t) => acc + (t.currency === 'USD' ? t.amount : t.amount / 1200), 0);
+    .reduce((acc, t) => acc + (t.currency === 'ARS' ? t.amount : t.amount * 1250), 0);
 
   const netBalanceMonth = totalIncomeMonth - totalExpensesMonth;
   const profitMarginPercent =
     totalIncomeMonth > 0 ? Math.round((netBalanceMonth / totalIncomeMonth) * 100) : 0;
 
-  // Desglose por categoría
+  // Desglose por categoría (en $ARS)
   const expensesByCategory: Record<ExpenseCategory, number> = {
     infrastructure: 0,
     ai_apis: 0,
@@ -340,7 +369,7 @@ export function getFinancialMetrics(): FinancialMetrics {
   thisMonthTransactions
     .filter((t) => t.type === 'expense')
     .forEach((t) => {
-      const amt = t.currency === 'USD' ? t.amount : t.amount / 1200;
+      const amt = t.currency === 'ARS' ? t.amount : t.amount * 1250;
       if (expensesByCategory[t.category] !== undefined) {
         expensesByCategory[t.category] += amt;
       } else {

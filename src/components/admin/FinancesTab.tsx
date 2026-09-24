@@ -36,6 +36,7 @@ import {
   deleteTransaction,
   getFinancialMetrics,
   EXPENSE_CATEGORIES_INFO,
+  parseArgentineNumber,
 } from '@/lib/financeService';
 
 export const FinancesTab: React.FC = () => {
@@ -49,6 +50,7 @@ export const FinancesTab: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTx, setEditingTx] = useState<FinanceTransaction | null>(null);
   const [successToast, setSuccessToast] = useState<string | null>(null);
+  const [amountInput, setAmountInput] = useState('45.000');
 
   // Form State
   const [formData, setFormData] = useState({
@@ -56,8 +58,8 @@ export const FinancesTab: React.FC = () => {
     concept: '',
     provider: '',
     category: 'infrastructure' as ExpenseCategory,
-    amount: 20,
-    currency: 'USD' as 'USD' | 'ARS',
+    amount: 45000,
+    currency: 'ARS' as 'USD' | 'ARS',
     date: new Date().toISOString().split('T')[0],
     paymentMethod: 'Tarjeta Corporativa' as FinanceTransaction['paymentMethod'],
     recurring: true,
@@ -97,13 +99,14 @@ export const FinancesTab: React.FC = () => {
 
   const handleOpenCreate = () => {
     setEditingTx(null);
+    setAmountInput('45.000');
     setFormData({
       type: 'expense',
       concept: '',
       provider: '',
       category: 'infrastructure',
-      amount: 20,
-      currency: 'USD',
+      amount: 45000,
+      currency: 'ARS',
       date: new Date().toISOString().split('T')[0],
       paymentMethod: 'Tarjeta Corporativa',
       recurring: true,
@@ -116,6 +119,7 @@ export const FinancesTab: React.FC = () => {
 
   const handleOpenEdit = (tx: FinanceTransaction) => {
     setEditingTx(tx);
+    setAmountInput(tx.amount.toLocaleString('es-AR'));
     setFormData({
       type: tx.type,
       concept: tx.concept,
@@ -137,11 +141,17 @@ export const FinancesTab: React.FC = () => {
     e.preventDefault();
     if (!formData.concept || !formData.provider) return;
 
+    const parsedAmount = parseArgentineNumber(amountInput) || formData.amount;
+    const finalData = {
+      ...formData,
+      amount: parsedAmount,
+    };
+
     if (editingTx) {
-      updateTransaction(editingTx.id, formData);
+      updateTransaction(editingTx.id, finalData);
       showToast('Movimiento financiero actualizado.');
     } else {
-      createTransaction(formData);
+      createTransaction(finalData);
       showToast(formData.type === 'expense' ? 'Débito operativo registrado.' : 'Ingreso registrado en Finanzas.');
     }
 
@@ -256,7 +266,7 @@ export const FinancesTab: React.FC = () => {
             </div>
           </div>
           <div className="text-2xl font-black text-emerald-400 font-mono tracking-tight">
-            +${metrics.totalIncomeMonth.toLocaleString()} <span className="text-xs text-zinc-500 font-normal">USD</span>
+            +${metrics.totalIncomeMonth.toLocaleString('es-AR')} <span className="text-xs text-emerald-300 font-semibold">$ars</span>
           </div>
           <p className="text-[11px] text-zinc-400">
             Abonos cobrados + ingresos operativos
@@ -272,7 +282,7 @@ export const FinancesTab: React.FC = () => {
             </div>
           </div>
           <div className="text-2xl font-black text-rose-400 font-mono tracking-tight">
-            -${metrics.totalExpensesMonth.toLocaleString()} <span className="text-xs text-zinc-500 font-normal">USD</span>
+            -${metrics.totalExpensesMonth.toLocaleString('es-AR')} <span className="text-xs text-rose-300 font-semibold">$ars</span>
           </div>
           <p className="text-[11px] text-zinc-400">
             Servicios cloud, APIs y recursos
@@ -288,7 +298,7 @@ export const FinancesTab: React.FC = () => {
             </div>
           </div>
           <div className={`text-2xl font-black font-mono tracking-tight ${metrics.netBalanceMonth >= 0 ? 'text-cyan-400' : 'text-rose-400'}`}>
-            ${metrics.netBalanceMonth.toLocaleString()} <span className="text-xs text-zinc-500 font-normal">USD</span>
+            ${metrics.netBalanceMonth.toLocaleString('es-AR')} <span className="text-xs text-cyan-300 font-semibold">$ars</span>
           </div>
           <p className="text-[11px] text-cyan-300/80 font-semibold">
             {metrics.profitMarginPercent}% de rentabilidad sobre ingresos
@@ -304,7 +314,7 @@ export const FinancesTab: React.FC = () => {
             </div>
           </div>
           <div className="text-2xl font-black text-purple-300 font-mono tracking-tight">
-            ${metrics.recurringExpensesMRR.toLocaleString()} <span className="text-xs text-zinc-500 font-normal">USD/mes</span>
+            ${metrics.recurringExpensesMRR.toLocaleString('es-AR')} <span className="text-xs text-purple-300 font-semibold">$ars / mes</span>
           </div>
           <p className="text-[11px] text-zinc-400">
             Costo base mensual de arquitectura
@@ -629,15 +639,29 @@ export const FinancesTab: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="space-y-1">
                     <label className="text-zinc-400 font-medium">Monto *</label>
-                    <input
-                      type="number"
-                      required
-                      min={0.01}
-                      step="any"
-                      value={formData.amount}
-                      onChange={(e) => setFormData({ ...formData, amount: Number(e.target.value) })}
-                      className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-white font-mono focus:outline-none focus:border-cyan-500/50"
-                    />
+                    <div className="relative">
+                      <span className="absolute left-3 top-2 text-zinc-500 font-mono text-xs">$</span>
+                      <input
+                        type="text"
+                        required
+                        placeholder="45.000"
+                        value={amountInput}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setAmountInput(val);
+                          const parsed = parseArgentineNumber(val);
+                          setFormData((prev) => ({ ...prev, amount: parsed }));
+                        }}
+                        onBlur={() => {
+                          const parsed = parseArgentineNumber(amountInput);
+                          if (parsed > 0) {
+                            setAmountInput(parsed.toLocaleString('es-AR'));
+                            setFormData((prev) => ({ ...prev, amount: parsed }));
+                          }
+                        }}
+                        className="w-full pl-7 pr-3 py-2 rounded-xl bg-black/40 border border-white/10 text-white font-mono focus:outline-none focus:border-cyan-500/50"
+                      />
+                    </div>
                   </div>
 
                   <div className="space-y-1">
@@ -649,8 +673,8 @@ export const FinancesTab: React.FC = () => {
                       }
                       className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-white focus:outline-none focus:border-cyan-500/50"
                     >
+                      <option value="ARS">ARS ($ Pesos Argentinos)</option>
                       <option value="USD">USD ($ Dólar)</option>
-                      <option value="ARS">ARS ($ Pesos)</option>
                     </select>
                   </div>
 

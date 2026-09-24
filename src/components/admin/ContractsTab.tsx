@@ -50,6 +50,7 @@ import {
   deleteContract,
   markContractAsSent,
   signContract,
+  syncContractsWithSupabase,
 } from '@/lib/contractService';
 
 interface ContractsTabProps {
@@ -78,7 +79,7 @@ export const ContractsTab: React.FC<ContractsTabProps> = ({ leads }) => {
   const [clientEmail, setClientEmail] = useState<string>('');
   const [clientPhone, setClientPhone] = useState<string>('');
   const [contractDate, setContractDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [monthlyFee, setMonthlyFee] = useState<string>('$350 USD');
+  const [monthlyFee, setMonthlyFee] = useState<string>('$125.000 $ars');
   const [setupFee, setSetupFee] = useState<string>('Bonificado');
   const [slaUptime, setSlaUptime] = useState<string>('99.5%');
   const [responseTimeCritical, setResponseTimeCritical] = useState<string>('< 2 horas (Incidentes Críticos P1)');
@@ -87,14 +88,21 @@ export const ContractsTab: React.FC<ContractsTabProps> = ({ leads }) => {
 
   useEffect(() => {
     setContracts(getContracts());
+    // Sincronizar en tiempo real con la base de datos Supabase (verifica estado de AlPaso y propuestas)
+    syncContractsWithSupabase().then((synced) => {
+      setContracts(synced);
+    });
   }, []);
 
   const refreshContracts = () => {
     setContracts(getContracts());
-    if (inspectingContract) {
-      const updated = getContracts().find((c) => c.id === inspectingContract.id);
-      if (updated) setInspectingContract(updated);
-    }
+    syncContractsWithSupabase().then((synced) => {
+      setContracts(synced);
+      if (inspectingContract) {
+        const updated = synced.find((c) => c.id === inspectingContract.id);
+        if (updated) setInspectingContract(updated);
+      }
+    });
   };
 
   const currentPreset: CreappProductPreset =
@@ -110,15 +118,15 @@ export const ContractsTab: React.FC<ContractsTabProps> = ({ leads }) => {
   const handleProductPresetChange = (key: string) => {
     setSelectedProductKey(key);
     if (key === 'stacked') {
-      setMonthlyFee('$350 USD');
+      setMonthlyFee('$125.000 $ars');
       setSlaUptime('99.5%');
       setResponseTimeCritical('< 2 horas (Incidentes Críticos P1)');
     } else if (key === 'trazapp') {
-      setMonthlyFee('$450 USD');
+      setMonthlyFee('$180.000 $ars');
       setSlaUptime('99.9%');
       setResponseTimeCritical('< 1 hora (Incidentes Críticos P1)');
     } else if (key === 'dental-ia') {
-      setMonthlyFee('$280 USD');
+      setMonthlyFee('$150.000 $ars');
       setSlaUptime('99.8%');
       setResponseTimeCritical('< 1 hora (Incidentes Críticos P1)');
     }
@@ -172,8 +180,9 @@ export const ContractsTab: React.FC<ContractsTabProps> = ({ leads }) => {
   };
 
   const handleCopyLink = (contractId: string) => {
+    const target = contracts.find((c) => c.id === contractId);
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://creapp.com.ar';
-    const link = `${origin}/contrato/${contractId}`;
+    const link = target?.slug ? `${origin}/propuesta/${target.slug}` : `${origin}/contrato/${contractId}`;
     navigator.clipboard.writeText(link);
     setCopiedId(contractId);
     setTimeout(() => setCopiedId(null), 2500);
@@ -181,10 +190,10 @@ export const ContractsTab: React.FC<ContractsTabProps> = ({ leads }) => {
 
   const handleSendWhatsApp = (c: ServiceContract) => {
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://creapp.com.ar';
-    const link = `${origin}/contrato/${c.id}`;
+    const link = c.slug ? `${origin}/propuesta/${c.slug}` : `${origin}/contrato/${c.id}`;
     const cleanPhone = c.clientPhone ? c.clientPhone.replace(/[^0-9]/g, '') : '';
     const text = encodeURIComponent(
-      `Estimado equipo de ${c.clientName},\n\nLes compartimos el enlace oficial para la revisión y firma digital de su Acuerdo de Nivel de Servicio Tecnológico (SLA) para ${c.productName}:\n\n🔗 ${link}\n\nQuedamos a su total disposición ante cualquier consulta técnica o administrativa.\n\nEquipo CreApp Software Lab`
+      `Hola ${c.clientName || 'equipo'},\n\nLes compartimos el enlace oficial para la revisión y firma digital de su Contrato de Servicio & SLA de ${c.productName}:\n\n🔗 ${link}\n\nQuedamos a su total disposición ante cualquier consulta técnica o administrativa.\n\nEquipo CreApp Software Lab`
     );
 
     markContractAsSent(c.id, 'WhatsApp');
@@ -944,7 +953,7 @@ export const ContractsTab: React.FC<ContractsTabProps> = ({ leads }) => {
                   </button>
 
                   <a
-                    href={`/contrato/${inspectingContract.id}`}
+                    href={inspectingContract.slug ? `/propuesta/${inspectingContract.slug}` : `/contrato/${inspectingContract.id}`}
                     target="_blank"
                     rel="noreferrer"
                     className="px-3 py-1.5 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30 font-semibold flex items-center gap-1.5 transition-all"
@@ -964,6 +973,19 @@ export const ContractsTab: React.FC<ContractsTabProps> = ({ leads }) => {
                   </button>
                 )}
               </div>
+
+              {/* Banner de Sincronización para AlPaso */}
+              {inspectingContract.slug === 'al-paso' && (
+                <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-start gap-2.5">
+                  <ShieldCheck size={18} className="text-emerald-400 shrink-0 mt-0.5" />
+                  <div className="space-y-0.5">
+                    <span className="font-bold text-white block">Contrato Original de AlPaso Burguers Conectado</span>
+                    <p className="text-emerald-300/80 leading-relaxed">
+                      Este acuerdo corresponde a la propuesta oficial generada el 21/09/2026 para <strong>Dante Luca De Simone (DNI: 20-41883145-7)</strong> por <strong>$125.000 $ars / mes</strong>. El enlace oficial es <code className="px-1.5 py-0.5 rounded bg-black/40 text-emerald-300 font-mono">/propuesta/al-paso</code>. Está sincronizado en tiempo real con Supabase y detectará automáticamente la firma digital del cliente cuando la efectúe.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Activity & Tracking Log */}
               <div className="space-y-3">

@@ -1,3 +1,5 @@
+import { supabase } from './supabaseClient';
+
 export type ContractStatus = 'draft' | 'sent' | 'viewed' | 'signed' | 'cancelled';
 
 export interface ContractActivityLog {
@@ -16,6 +18,7 @@ export interface ServiceContract {
   clientEmail?: string;
   clientPhone?: string;
   leadId?: string;
+  slug?: string;
   productId: 'stacked' | 'trazapp' | 'dental-ia' | 'custom';
   productName: string;
   monthlyFee: string;
@@ -49,131 +52,142 @@ export interface ServiceContract {
   activityHistory: ContractActivityLog[];
 }
 
-const STORAGE_KEY = 'creapp_service_contracts_v2';
+const STORAGE_KEY = 'creapp_service_contracts_v3';
 
-const INITIAL_CONTRACTS: ServiceContract[] = [
-  {
-    id: 'cnt-stacked-001',
-    contractRef: '#STACKED-20260920-01',
-    clientName: 'Burger Club Palermo',
-    clientTaxId: '30-71649281-9',
-    clientEmail: 'gerencia@burgerclub.com.ar',
-    clientPhone: '+54 11 4829-1920',
-    productId: 'stacked',
-    productName: 'Stacked SaaS',
-    monthlyFee: '$350 USD',
-    setupFee: 'Bonificado',
-    currency: 'USD',
-    slaUptime: '99.5%',
-    responseTimeCritical: '< 2 horas (Incidentes Críticos P1)',
-    supportChannels: 'WhatsApp Prioritario + Tickets/Email',
-    effectiveDate: '2026-09-20',
-    durationMonths: '6 meses',
-    status: 'viewed',
-    viewCount: 4,
-    firstViewedAt: '2026-09-21T14:32:00.000Z',
-    lastViewedAt: '2026-09-24T09:45:00.000Z',
-    sentAt: '2026-09-20T16:00:00.000Z',
-    createdAt: '2026-09-20T15:45:00.000Z',
-    updatedAt: '2026-09-24T09:45:00.000Z',
-    activityHistory: [
-      {
-        id: 'act-1',
-        type: 'created',
-        description: 'Contrato generado por CreApp Software Lab',
-        timestamp: '2026-09-20T15:45:00.000Z',
-      },
-      {
-        id: 'act-2',
-        type: 'sent',
-        description: 'Enlace de firma remitido al cliente vía WhatsApp',
-        timestamp: '2026-09-20T16:00:00.000Z',
-      },
-      {
-        id: 'act-3',
-        type: 'viewed',
-        description: 'El cliente abrió el contrato desde Buenos Aires (Apertura #1)',
-        timestamp: '2026-09-21T14:32:00.000Z',
-      },
-      {
-        id: 'act-4',
-        type: 'viewed',
-        description: 'El cliente revisó el acuerdo de SLA y cuotas (Apertura #4)',
-        timestamp: '2026-09-24T09:45:00.000Z',
-      },
-    ],
-  },
-  {
-    id: 'cnt-dent-002',
-    contractRef: '#DENTALIA-20260918-01',
-    clientName: 'Clínica Odontológica Belgrano',
-    clientTaxId: '20-33829104-4',
-    clientEmail: 'contacto@odontologiabelgrano.com',
-    clientPhone: '+54 11 5820-3040',
-    productId: 'dental-ia',
-    productName: 'Dental IA',
-    monthlyFee: '$280 USD',
-    setupFee: '$150 USD',
-    currency: 'USD',
-    slaUptime: '99.8%',
-    responseTimeCritical: '< 1 hora (Incidentes Críticos P1)',
-    supportChannels: 'WhatsApp Prioritario 24/7',
-    effectiveDate: '2026-09-18',
-    durationMonths: '12 meses',
-    status: 'signed',
-    viewCount: 3,
-    firstViewedAt: '2026-09-18T11:10:00.000Z',
-    lastViewedAt: '2026-09-19T17:22:00.000Z',
-    sentAt: '2026-09-18T10:45:00.000Z',
-    signedAt: '2026-09-19T17:25:00.000Z',
-    signedByName: 'Dr. Roberto Méndez',
-    signedByTaxId: '20-33829104-4',
-    signedByRole: 'Director Médico y Titular',
-    verificationHash: 'SHA256-DNT-8819A4B-2026',
-    createdAt: '2026-09-18T10:30:00.000Z',
-    updatedAt: '2026-09-19T17:25:00.000Z',
-    activityHistory: [
-      {
-        id: 'act-10',
-        type: 'created',
-        description: 'Contrato generado por CreApp Software Lab',
-        timestamp: '2026-09-18T10:30:00.000Z',
-      },
-      {
-        id: 'act-11',
-        type: 'sent',
-        description: 'Enviado para firma digital',
-        timestamp: '2026-09-18T10:45:00.000Z',
-      },
-      {
-        id: 'act-12',
-        type: 'viewed',
-        description: 'Contrato abierto por el cliente',
-        timestamp: '2026-09-18T11:10:00.000Z',
-      },
-      {
-        id: 'act-13',
-        type: 'signed',
-        description: 'Firmado digitalmente por Dr. Roberto Méndez (Director Médico)',
-        timestamp: '2026-09-19T17:25:00.000Z',
-        metadata: { hash: 'SHA256-DNT-8819A4B-2026' },
-      },
-    ],
-  },
-];
+// Contrato ORIGINAL real generado en CreApp para AlPaso Burguers (Dante Luca De Simone)
+export const AL_PASO_CONTRACT: ServiceContract = {
+  id: 'c3483f5d-e49a-4314-8da6-17191c5a1149',
+  contractRef: '#STACKED-ALPASO-01',
+  clientName: 'AlPaso Burguers',
+  clientTaxId: '20-41883145-7',
+  clientEmail: 'alpaso@alpaso.com',
+  clientPhone: '+54 9 11 5975-7013',
+  productId: 'stacked',
+  productName: 'Stacked SaaS',
+  monthlyFee: '$125.000 $ars',
+  setupFee: 'Bonificado',
+  currency: 'ARS',
+  slaUptime: '99.5%',
+  responseTimeCritical: '< 2 horas (Incidentes Críticos P1)',
+  supportChannels: 'WhatsApp Prioritario + Soporte vía Tickets/Email',
+  effectiveDate: '2026-09-21',
+  durationMonths: '6 meses',
+  status: 'sent',
+  slug: 'al-paso',
+  viewCount: 1,
+  sentAt: '2026-09-21T21:04:21.000Z',
+  createdAt: '2026-09-21T21:04:21.000Z',
+  updatedAt: '2026-09-23T13:40:22.000Z',
+  notes: 'AlPaso Burguers - Villa Ballester (Titular: Dante Luca De Simone)',
+  activityHistory: [
+    {
+      id: 'act-alpaso-1',
+      type: 'created',
+      description: 'Contrato marco de prestación de servicios Stacked SaaS emitido en CreApp Lab',
+      timestamp: '2026-09-21T21:04:21.000Z',
+    },
+    {
+      id: 'act-alpaso-2',
+      type: 'sent',
+      description: 'Enlace original de firma remitido a Dante Luca De Simone vía WhatsApp (+54 9 11 5975-7013)',
+      timestamp: '2026-09-21T21:05:00.000Z',
+    },
+  ],
+};
+
+const INITIAL_CONTRACTS: ServiceContract[] = [AL_PASO_CONTRACT];
 
 export const getContracts = (): ServiceContract[] => {
   if (typeof window === 'undefined' || !window.localStorage) return INITIAL_CONTRACTS;
   try {
+    // Limpiar claves viejas con mocks ficticios
+    const oldV2 = localStorage.getItem('creapp_service_contracts_v2');
+    if (oldV2) {
+      localStorage.removeItem('creapp_service_contracts_v2');
+    }
+
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_CONTRACTS));
       return INITIAL_CONTRACTS;
     }
-    return JSON.parse(raw);
+    const parsed: ServiceContract[] = JSON.parse(raw);
+    // Filtrar cualquier contrato mock ficticio anterior
+    const filtered = parsed.filter(
+      (c) =>
+        !c.id.includes('stacked-001') &&
+        !c.clientName.toLowerCase().includes('burger club') &&
+        !c.clientName.toLowerCase().includes('odontol')
+    );
+    if (!filtered.some((c) => c.slug === 'al-paso' || c.id === AL_PASO_CONTRACT.id)) {
+      filtered.unshift(AL_PASO_CONTRACT);
+    }
+    if (filtered.length !== parsed.length) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+    }
+    return filtered;
   } catch (e) {
     console.error('Error loading contracts from storage', e);
     return INITIAL_CONTRACTS;
+  }
+};
+
+// Sincronización en tiempo real con Supabase para verificar si Dante firmó el contrato original
+export const syncContractsWithSupabase = async (): Promise<ServiceContract[]> => {
+  const current = getContracts();
+  try {
+    const { data: proposal, error } = await supabase
+      .from('proposals')
+      .select('*')
+      .eq('slug', 'al-paso')
+      .single();
+
+    if (error || !proposal) return current;
+
+    const isSigned = !!proposal.signed_at || proposal.status === 'signed';
+    const signedAt = proposal.signed_at || (isSigned ? proposal.updated_at : undefined);
+    const signedUrl = proposal.signed_contract_url || undefined;
+    const clientRep =
+      proposal.methodology?.client_legal_data?.representative_name?.trim() ||
+      'Dante Luca De Simone';
+    const clientDni =
+      proposal.methodology?.client_legal_data?.representative_dni?.trim() ||
+      '20-41883145-7';
+    const clientRole =
+      proposal.methodology?.client_legal_data?.representative_role?.trim() || 'Dueño';
+
+    const updated = current.map((c) => {
+      if (c.slug === 'al-paso' || c.id === 'c3483f5d-e49a-4314-8da6-17191c5a1149') {
+        const nextStatus: ContractStatus = isSigned ? 'signed' : (c.status === 'draft' ? 'sent' : c.status);
+        const activities = [...c.activityHistory];
+        if (isSigned && !activities.some((a) => a.type === 'signed')) {
+          activities.push({
+            id: `act-sign-${Date.now()}`,
+            type: 'signed',
+            description: `Contrato firmado digitalmente por ${clientRep} (${clientRole})`,
+            timestamp: signedAt || new Date().toISOString(),
+          });
+        }
+        return {
+          ...c,
+          status: nextStatus,
+          signedAt,
+          signedByName: clientRep,
+          signedByTaxId: clientDni,
+          signedByRole: clientRole,
+          signatureImage: signedUrl,
+          activityHistory: activities,
+          updatedAt: proposal.updated_at || c.updatedAt,
+        };
+      }
+      return c;
+    });
+
+    saveContracts(updated);
+    return updated;
+  } catch (err) {
+    console.error('Error syncing contracts with Supabase:', err);
+    return current;
   }
 };
 
@@ -188,7 +202,12 @@ export const saveContracts = (contracts: ServiceContract[]): void => {
 
 export const getContractById = (id: string): ServiceContract | undefined => {
   const contracts = getContracts();
-  return contracts.find((c) => c.id === id || c.contractRef.toLowerCase() === id.toLowerCase());
+  return contracts.find(
+    (c) =>
+      c.id === id ||
+      c.contractRef.toLowerCase() === id.toLowerCase() ||
+      (c.slug && c.slug.toLowerCase() === id.toLowerCase())
+  );
 };
 
 export const createContract = (
