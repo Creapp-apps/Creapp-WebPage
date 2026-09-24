@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Player } from '@remotion/player';
 import { ProposalVideoComposition } from './ProposalVideoComposition';
 import { Play, Pause, RefreshCw, Film, Download, CheckCircle, Loader } from 'lucide-react';
+import { parseProposalNumericValue } from '../../lib/utils';
 
 interface ProposalVideoPlayerProps {
   clientName: string;
@@ -12,9 +13,10 @@ interface ProposalVideoPlayerProps {
   exclusions?: any[];
   milestones: any[];
   payments: any[];
-  totalValue: number;
+  totalValue: number | string;
   clientLogoUrl?: string;
   clientLogoScale?: number;
+  videoLogoScale?: number;
   currency?: string;
   pillars?: any[];
   methodologyIntro?: string;
@@ -33,6 +35,7 @@ export const ProposalVideoPlayer: React.FC<ProposalVideoPlayerProps> = ({
   totalValue,
   clientLogoUrl = '',
   clientLogoScale = 100,
+  videoLogoScale,
   currency = 'USD',
   pillars = [],
   methodologyIntro = '',
@@ -43,6 +46,11 @@ export const ProposalVideoPlayer: React.FC<ProposalVideoPlayerProps> = ({
   const [progress, setProgress] = useState(0);
   const [videoUrl, setVideoUrl] = useState<string>('');
   const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+  const numericTotal = typeof totalValue === 'number' && !isNaN(totalValue) && totalValue > 0
+    ? totalValue
+    : parseProposalNumericValue(totalValue);
+  const effectiveLogoScale = videoLogoScale ?? clientLogoScale ?? 140;
 
   // Call Vite backend custom plugin to compile composition using Remotion CLI
   const handleStartRender = async () => {
@@ -77,9 +85,10 @@ export const ProposalVideoPlayer: React.FC<ProposalVideoPlayerProps> = ({
           exclusions,
           milestones,
           payments,
-          totalValue,
+          totalValue: numericTotal,
           clientLogoUrl,
           clientLogoScale,
+          videoLogoScale: effectiveLogoScale,
           aspectRatio: selectedRatio,
           currency,
           pillars,
@@ -159,9 +168,10 @@ export const ProposalVideoPlayer: React.FC<ProposalVideoPlayerProps> = ({
             exclusions,
             milestones,
             payments,
-            totalValue,
+            totalValue: numericTotal,
             clientLogoUrl,
             clientLogoScale,
+            videoLogoScale: effectiveLogoScale,
             aspectRatio: selectedRatio,
             currency,
             pillars,

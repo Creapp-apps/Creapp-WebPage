@@ -50,6 +50,7 @@ import {
   UserCheck,
 } from 'lucide-react';
 import { ProposalVideoPlayer } from '@/components/video/ProposalVideoPlayer';
+import { parseProposalNumericValue } from '@/lib/utils';
 import { supabase } from '@/lib/supabaseClient';
 import {
   createProposal,
@@ -464,6 +465,17 @@ const ProposalEditor: React.FC = () => {
       client_logo_scale: scale,
     }));
   };
+
+  const [videoLogoScale, setVideoLogoScale] = useState<number>(140);
+
+  const updateVideoLogoScale = (newScale: number) => {
+    const scale = Math.min(350, Math.max(40, newScale));
+    setVideoLogoScale(scale);
+    setMethodology((prev: any) => ({
+      ...(prev || DEFAULT_METHODOLOGY),
+      video_logo_scale: scale,
+    }));
+  };
   const [contractText, setContractText] = useState('');
   const [contractDescription, setContractDescription] = useState('Acuerdo formal que establece las bases y condiciones legales para la ejecución del proyecto de desarrollo de software detallado en esta propuesta.');
   const [heroBadge, setHeroBadge] = useState('');
@@ -857,6 +869,9 @@ const ProposalEditor: React.FC = () => {
         if (proposal.methodology.client_logo_scale !== undefined) {
           setClientLogoScale(Number(proposal.methodology.client_logo_scale) || 100);
         }
+        if (proposal.methodology.video_logo_scale !== undefined) {
+          setVideoLogoScale(Number(proposal.methodology.video_logo_scale) || 140);
+        }
         if (proposal.methodology.client_legal_data) {
           setClientLegalData({
             ...DEFAULT_CLIENT_LEGAL_DATA,
@@ -992,10 +1007,11 @@ const ProposalEditor: React.FC = () => {
           exclusions,
           milestones,
           payments,
-          totalValue: parseFloat(totalValue.replace(/[^0-9.]/g, '')) || 0,
+          totalValue: parseProposalNumericValue(totalValue),
           clientLogoUrl,
-          clientLogoScale,
-          currency: getCurrencyFromTotal(totalValue),
+          clientLogoScale: videoLogoScale,
+          videoLogoScale: videoLogoScale,
+          currency: methodology?.currency || getCurrencyFromTotal(totalValue) || 'ARS',
           pillars: getPillars(methodology, brandPrimary, brandSecondary),
           methodologyIntro: methodology?.intro_text,
           hideWeeklySchedule: methodology?.hide_weekly_schedule,
@@ -1095,6 +1111,7 @@ const ProposalEditor: React.FC = () => {
         methodology: {
           ...(methodology || DEFAULT_METHODOLOGY),
           client_logo_scale: clientLogoScale,
+          video_logo_scale: videoLogoScale,
           proposal_type: proposalType,
           service_details: finalServiceDetails,
           product_id: selectedProductId,
@@ -5761,9 +5778,103 @@ const ProposalEditor: React.FC = () => {
           </div>
         )}
 
-        {/* VIDEO TAB - Left panel info */}
+        {/* VIDEO TAB - Left panel info & controls */}
         {activeEditorTab === 'video' && (
           <div className="space-y-4">
+            {/* Dedicated Video Logo Scale Control */}
+            <div className="glass rounded-2xl p-5 border border-primary/30 bg-slate-900/60 shadow-xl space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20 text-primary border border-primary/20">
+                    <Maximize2 size={16} />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-display font-black text-white uppercase tracking-wider">Tamaño del Logo en Video</h3>
+                    <p className="text-[10px] text-slate-400">Escala exclusiva para el render animado</p>
+                  </div>
+                </div>
+                <span className="text-xs font-mono font-black text-primary bg-primary/10 px-2.5 py-1 rounded-lg border border-primary/20">
+                  {videoLogoScale}%
+                </span>
+              </div>
+
+              {clientLogoUrl ? (
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-black/30 border border-white/5">
+                  <div className="w-16 h-12 rounded-lg bg-black/40 border border-white/10 flex items-center justify-center p-1.5 overflow-hidden shrink-0">
+                    <img
+                      src={clientLogoUrl}
+                      alt="Logo preview"
+                      className="max-w-full max-h-full object-contain transition-transform duration-200"
+                      style={{ transform: `scale(${Math.min(1.5, videoLogoScale / 100)})` }}
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-[11px] font-bold text-white truncate block">{clientName || 'Cliente'}</span>
+                    <span className="text-[10px] text-emerald-400/90 font-medium">Logo vinculado para animación</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3 rounded-xl bg-amber-400/5 border border-amber-400/10 text-[11px] text-amber-300">
+                  No se ha subido logo aún. Puedes subirlo en la pestaña "Portada (P1)". Mientras tanto, se animará la inicial "{clientName?.charAt(0) || 'C'}".
+                </div>
+              )}
+
+              {/* Slider and Stepper Buttons */}
+              <div className="space-y-2 pt-1">
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => updateVideoLogoScale(videoLogoScale - 10)}
+                    className="p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-slate-300 hover:text-white transition-colors cursor-pointer"
+                    title="Reducir 10%"
+                  >
+                    <Minus size={14} />
+                  </button>
+
+                  <input
+                    type="range"
+                    min="50"
+                    max="300"
+                    step="5"
+                    value={videoLogoScale}
+                    onChange={(e) => updateVideoLogoScale(Number(e.target.value))}
+                    className="w-full accent-primary bg-white/10 h-2 rounded-lg appearance-none cursor-pointer"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => updateVideoLogoScale(videoLogoScale + 10)}
+                    className="p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-slate-300 hover:text-white transition-colors cursor-pointer"
+                    title="Aumentar 10%"
+                  >
+                    <Plus size={14} />
+                  </button>
+                </div>
+
+                {/* Preset Chips */}
+                <div className="grid grid-cols-6 gap-1.5 pt-1">
+                  {[80, 100, 130, 160, 200, 250].map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => updateVideoLogoScale(s)}
+                      className={`py-1 rounded-lg text-[10px] font-mono font-bold transition-all cursor-pointer ${
+                        videoLogoScale === s
+                          ? 'bg-primary text-white shadow-md shadow-primary/30'
+                          : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white border border-white/5'
+                      }`}
+                    >
+                      {s}%
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-primary/5 border border-primary/10 text-[10px] text-slate-300 leading-relaxed">
+                🛡️ <strong>Ajuste aislado:</strong> Este valor se aplica <em>únicamente</em> al video (horizontal y vertical). El tamaño del logo en la portada del contrato ({clientLogoScale}%) permanece intacto.
+              </div>
+            </div>
+
             <div className="glass rounded-2xl p-5 border border-primary/10">
               <div className="flex items-center gap-2 mb-3">
                 <Film size={16} className="text-primary" />
@@ -5782,7 +5893,7 @@ const ProposalEditor: React.FC = () => {
               <ul className="text-xs text-slate-400 space-y-2 list-disc pl-4">
                 <li>Usa títulos cortos en los entregables para que se visualicen correctamente en las tarjetas.</li>
                 <li>Asegúrate de que los colores primarios y secundarios tengan buen contraste para los gradientes de fondo.</li>
-                <li>El video tiene una duración óptima de 21 segundos dividida en 5 secciones automáticas.</li>
+                <li>El video tiene una duración óptima de 42 segundos dividida en secciones sincronizadas.</li>
               </ul>
             </div>
           </div>
@@ -5808,10 +5919,11 @@ const ProposalEditor: React.FC = () => {
                     exclusions={exclusions as any[]}
                     milestones={milestones as any[]}
                     payments={payments as any[]}
-                    totalValue={parseFloat(totalValue.replace(/[^0-9.]/g, '')) || 0}
+                    totalValue={parseProposalNumericValue(totalValue)}
                     clientLogoUrl={clientLogoUrl}
-                    clientLogoScale={clientLogoScale}
-                    currency={getCurrencyFromTotal(totalValue)}
+                    clientLogoScale={videoLogoScale}
+                    videoLogoScale={videoLogoScale}
+                    currency={methodology?.currency || getCurrencyFromTotal(totalValue) || 'ARS'}
                     pillars={getPillars(methodology, brandPrimary, brandSecondary)}
                     methodologyIntro={methodology?.intro_text}
                     hideWeeklySchedule={methodology?.hide_weekly_schedule}

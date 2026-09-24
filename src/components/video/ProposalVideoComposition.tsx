@@ -2,6 +2,7 @@ import React from 'react';
 import { useCurrentFrame, useVideoConfig, spring, interpolate, Sequence } from 'remotion';
 import IconResolver from '../ui/IconResolver';
 import creappLogoOfficial from '../../assets/CREAPP LOGO VECTOR.png';
+import { parseProposalNumericValue } from '../../lib/utils';
 
 interface Inclusion {
   title?: string;
@@ -24,7 +25,7 @@ interface Payment {
   tooltip?: string;
   sort_order?: number;
   milestone_name?: string;
-  amount?: number;
+  amount?: number | string;
 }
 
 interface Exclusion {
@@ -41,9 +42,10 @@ interface ProposalVideoCompositionProps {
   exclusions: Exclusion[];
   milestones: Milestone[];
   payments: Payment[];
-  totalValue: number;
+  totalValue: number | string;
   clientLogoUrl?: string;
   clientLogoScale?: number;
+  videoLogoScale?: number;
   aspectRatio?: '16:9' | '9:16';
   currency?: string;
   pillars?: Array<{ title: string; description: string; color?: string }>;
@@ -146,6 +148,7 @@ export const ProposalVideoComposition: React.FC<ProposalVideoCompositionProps> =
   totalValue = 0,
   clientLogoUrl = '',
   clientLogoScale = 100,
+  videoLogoScale = 140,
   aspectRatio = '16:9',
   currency = 'USD',
   pillars = [],
@@ -236,6 +239,7 @@ export const ProposalVideoComposition: React.FC<ProposalVideoCompositionProps> =
           slideBgStyle={slideBgStyle}
           clientLogoUrl={clientLogoUrl}
           clientLogoScale={clientLogoScale}
+          videoLogoScale={videoLogoScale}
           aspectRatio={aspectRatio}
         />
       </Sequence>
@@ -339,12 +343,14 @@ const IntroSlide: React.FC<{
   slideBgStyle: React.CSSProperties;
   clientLogoUrl?: string;
   clientLogoScale?: number;
+  videoLogoScale?: number;
   aspectRatio?: '16:9' | '9:16';
-}> = ({ clientName, primaryColor, secondaryColor, heroTitle, slideBgStyle, clientLogoUrl = '', clientLogoScale = 100, aspectRatio = '16:9' }) => {
+}> = ({ clientName, primaryColor, secondaryColor, heroTitle, slideBgStyle, clientLogoUrl = '', clientLogoScale = 100, videoLogoScale, aspectRatio = '16:9' }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
   const isVertical = aspectRatio === '9:16';
+  const effectiveLogoScale = videoLogoScale ?? clientLogoScale ?? 140;
 
   // Exit transition of the entire slide starts at frame 225
   const exit = spring({ frame: frame - 225, fps, config: { damping: 12, stiffness: 100 } });
@@ -549,8 +555,8 @@ const IntroSlide: React.FC<{
               position: 'absolute',
               left: '50%',
               top: '50%',
-              width: isVertical ? '300px' : '200px',
-              height: isVertical ? '300px' : '200px',
+              width: isVertical ? '420px' : '340px',
+              height: isVertical ? '300px' : '220px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -569,31 +575,32 @@ const IntroSlide: React.FC<{
                   src={clientLogoUrl}
                   alt="Client Logo"
                   style={{
-                    maxWidth: isVertical ? '240px' : '150px',
-                    maxHeight: isVertical ? '240px' : '150px',
+                    maxWidth: isVertical ? '400px' : '320px',
+                    maxHeight: isVertical ? '260px' : '180px',
                     width: 'auto',
                     height: 'auto',
                     objectFit: 'contain',
-                    transform: `scale(${clientLogoScale / 100})`,
+                    transform: `scale(${effectiveLogoScale / 100})`,
                     transformOrigin: 'center center',
                   }}
                 />
               ) : (
                 /* Stylized high tech client avatar with glow */
                 <div style={{
-                  width: isVertical ? '190px' : '100px',
-                  height: isVertical ? '190px' : '100px',
+                  width: isVertical ? '220px' : '140px',
+                  height: isVertical ? '220px' : '140px',
                   borderRadius: '50%',
                   background: `linear-gradient(135deg, ${secondaryColor}25, #000000 70%)`,
                   border: '1px solid rgba(255,255,255,0.08)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: isVertical ? '80px' : '44px',
+                  fontSize: isVertical ? '85px' : '54px',
                   fontWeight: 900,
                   color: '#ffffff',
                   fontFamily: 'system-ui, sans-serif',
                   textShadow: `0 0 20px ${secondaryColor}`,
+                  transform: `scale(${effectiveLogoScale / 100})`,
                 }}>
                   {clientInitial}
                 </div>
@@ -2184,7 +2191,7 @@ const MethodologySlide: React.FC<{
 
 // 4. Financials Slide
 const FinancialsSlide: React.FC<{
-  totalValue: number;
+  totalValue: number | string;
   payments: Payment[];
   primaryColor: string;
   secondaryColor: string;
@@ -2196,6 +2203,9 @@ const FinancialsSlide: React.FC<{
   const { fps } = useVideoConfig();
 
   const isVertical = aspectRatio === '9:16';
+  const numericTotal = typeof totalValue === 'number' && !isNaN(totalValue) && totalValue > 0
+    ? totalValue
+    : parseProposalNumericValue(totalValue);
 
   // Slide is 180 frames. Exit transition starts at frame 165.
   const entrance = spring({ frame, fps, config: { damping: 12, stiffness: 100 } });
@@ -2224,7 +2234,15 @@ const FinancialsSlide: React.FC<{
       const label = p.label || p.milestone_name || 'Hito de Pago';
       const pctString = String(p.percentage || '').replace(/[^0-9.]/g, '');
       const percentage = parseFloat(pctString) || 0;
-      const amount = p.amount || (totalValue * percentage) / 100;
+      let amount = 0;
+      if (typeof p.amount === 'number' && p.amount > 0) {
+        amount = p.amount;
+      } else if (typeof p.amount === 'string' && p.amount.trim()) {
+        const parsed = parseProposalNumericValue(p.amount);
+        amount = parsed > 0 ? parsed : (numericTotal * percentage) / 100;
+      } else {
+        amount = (numericTotal * percentage) / 100;
+      }
       return { label, percentage, amount };
     })
     .filter(p => p.percentage > 0);
@@ -2232,8 +2250,8 @@ const FinancialsSlide: React.FC<{
   const validPayments = processedPayments.length > 0
     ? processedPayments
     : [
-        { label: 'Anticipo / Inicio', percentage: 50, amount: totalValue * 0.5 },
-        { label: 'Entrega Final / QA', percentage: 50, amount: totalValue * 0.5 }
+        { label: 'Anticipo / Inicio', percentage: 50, amount: numericTotal * 0.5 },
+        { label: 'Entrega Final / QA', percentage: 50, amount: numericTotal * 0.5 }
       ];
 
   const displayPayments = validPayments;
@@ -2313,7 +2331,7 @@ const FinancialsSlide: React.FC<{
             INVERSIÓN TOTAL DEL PROYECTO
           </p>
           <h3 style={{ fontSize: isVertical ? (displayPayments.length > 3 ? '76px' : '90px') : '64px', fontWeight: 950, color: '#ffffff', margin: 0, letterSpacing: '-2px', fontFamily: 'monospace' }}>
-            {currency === 'ARS' ? 'ARS' : 'US$'} {Math.round(interpolate(spring({ frame: frame - 25, fps, config: { damping: 22, stiffness: 50 } }), [0, 1], [0, totalValue])).toLocaleString('es-AR')}
+            {currency === 'ARS' ? 'ARS' : 'US$'} {Math.round(interpolate(spring({ frame: frame - 25, fps, config: { damping: 22, stiffness: 50 } }), [0, 1], [0, numericTotal])).toLocaleString('es-AR')}
           </h3>
           <div style={{
             padding: isVertical ? (displayPayments.length > 3 ? '10px 24px' : '14px 32px') : '6px 16px',
