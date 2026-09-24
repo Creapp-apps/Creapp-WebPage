@@ -124,7 +124,7 @@ export const searchProspects = async (
   // 1. Intentar consultar Google Places API mediante nuestro proxy seguro
   try {
     const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
-    let placesUrl = `${origin}/api/places/search?query=${encodeURIComponent(query)}${
+    let placesUrl = `${origin}/api/places/search?query=${encodeURIComponent(query)}&fetchAll=true${
       mapsKey ? `&key=${encodeURIComponent(mapsKey)}` : ''
     }`;
     if (geo?.lat && geo?.lng) {
@@ -140,11 +140,12 @@ export const searchProspects = async (
     console.warn("No se pudo conectar al endpoint de Google Places, fallback a Gemini:", err);
   }
 
-  // 2. Si Google Places devolvió locales reales: enriquecer con Gemini
-  if (placesList.length > 0 && geminiKey) {
-    try {
-      const ai = new GoogleGenAI({ apiKey: geminiKey });
-      const analysisPrompt = `
+  // 2. Si Google Places devolvió locales reales: enriquecer con Gemini o fallback garantizado
+  if (placesList.length > 0) {
+    if (geminiKey) {
+      try {
+        const ai = new GoogleGenAI({ apiKey: geminiKey });
+        const analysisPrompt = `
 Eres el Director de Estrategia Tecnológica de CreApp (Software Lab).
 Analiza esta lista de locales reales extraídos de Google Maps${city ? ` en "${city}"` : ''}:
 
@@ -184,39 +185,77 @@ Devuelve un JSON estrictamente válido con la lista completa respetando los camp
   }
 ]
 Devuelve ÚNICAMENTE el array JSON sin markdown ni explicaciones.
-      `;
+        `;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.6-flash',
-        contents: analysisPrompt,
-        config: { temperature: 0.2 },
-      });
-
-      const raw = response.text?.trim() || '';
-      const match = raw.match(/\[[\s\S]*\]/);
-      if (match) {
-        const parsed = JSON.parse(match[0]);
-        // Asegurar que lat y lng se conserven desde placesList
-        const enrichedWithCoords = parsed.map((p: any, idx: number) => {
-          const original = placesList.find(x => x.place_id === p.id || x.name === p.name) || placesList[idx];
-          return {
-            ...p,
-            lat: p.lat ?? original?.lat,
-            lng: p.lng ?? original?.lng,
-            phone: p.phone || original?.phone || '',
-            website: p.website || original?.website || '',
-            address: p.address || original?.address || '',
-          };
+        const response = await ai.models.generateContent({
+          model: 'gemini-3.6-flash',
+          contents: analysisPrompt,
+          config: { temperature: 0.2 },
         });
 
-        if (onlyWithoutWebsite) {
-          return enrichedWithCoords.filter((p: ScrapedProspect) => !p.digitalHealth.hasWebsite);
+        const raw = response.text?.trim() || '';
+        const match = raw.match(/\[[\s\S]*\]/);
+        if (match) {
+          const parsed = JSON.parse(match[0]);
+          // Asegurar que lat y lng se conserven desde placesList
+          const enrichedWithCoords = parsed.map((p: any, idx: number) => {
+            const original = placesList.find(x => x.place_id === p.id || x.name === p.name) || placesList[idx];
+            return {
+              ...p,
+              lat: p.lat ?? original?.lat,
+              lng: p.lng ?? original?.lng,
+              phone: p.phone || original?.phone || '',
+              website: p.website || original?.website || '',
+              address: p.address || original?.address || '',
+            };
+          });
+
+          if (onlyWithoutWebsite) {
+            return enrichedWithCoords.filter((p: ScrapedProspect) => !p.digitalHealth.hasWebsite);
+          }
+          return enrichedWithCoords;
         }
-        return enrichedWithCoords;
+      } catch (aiErr) {
+        console.error("Error analizando con Gemini:", aiErr);
       }
-    } catch (aiErr) {
-      console.error("Error analizando con Gemini:", aiErr);
     }
+
+    // Fallback garantizado si no hay clave de Gemini o si el enriquecimiento falló:
+    // Muestra el 100% de los locales reales de Google Places
+    const fallbackResults: ScrapedProspect[] = placesList.map((place: any, idx: number) => {
+      const hasWeb = Boolean(place.website && place.website.trim());
+      return {
+        id: place.place_id || `place-${idx}`,
+        name: place.name || 'Comercio',
+        category: category || 'Comercio',
+        city: city || 'Zona Seleccionada',
+        address: place.address || '',
+        phone: place.phone || '',
+        email: '',
+        website: place.website || '',
+        rating: place.rating || 0,
+        reviewCount: place.user_ratings_total || 0,
+        source: 'google_places',
+        lat: place.lat,
+        lng: place.lng,
+        digitalHealth: {
+          hasWebsite: hasWeb,
+          isMobileFriendly: false,
+          hasSSL: Boolean(place.website?.startsWith('https')),
+          loadSpeed: hasWeb ? 'Media' : 'Inexistente',
+          diagnosis: hasWeb
+            ? 'Cuenta con sitio web. Oportunidad de modernización y optimización de conversión.'
+            : 'Sin sitio web propio. Depende de redes o plataformas intermediarias con altas comisiones.',
+          suggestedSolution: 'Stacked SaaS',
+          estimatedBudget: 350,
+        },
+      };
+    });
+
+    if (onlyWithoutWebsite) {
+      return fallbackResults.filter((p) => !p.digitalHealth.hasWebsite);
+    }
+    return fallbackResults;
   }
 
   // 3. Si no hay Google Maps Key o no devolvió datos: Usar Gemini directamente para rastrear e investigar negocios reales
