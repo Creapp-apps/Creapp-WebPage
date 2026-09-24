@@ -16,6 +16,7 @@ interface GoogleRadarMapProps {
   radiusMeters: number;
   prospects: ScrapedProspect[];
   selectedProspect?: ScrapedProspect | null;
+  importedIds?: Set<string>;
   onCenterChange: (center: { lat: number; lng: number }, addressName?: string) => void;
   onRadiusChange: (radiusMeters: number) => void;
   onSelectProspect: (prospect: ScrapedProspect) => void;
@@ -87,6 +88,7 @@ export const GoogleRadarMap: React.FC<GoogleRadarMapProps> = ({
   radiusMeters,
   prospects,
   selectedProspect,
+  importedIds,
   onCenterChange,
   onRadiusChange,
   onSelectProspect,
@@ -291,21 +293,30 @@ export const GoogleRadarMap: React.FC<GoogleRadarMapProps> = ({
       const pos = { lat: prospect.lat, lng: prospect.lng };
       bounds.extend(pos);
 
+      const isImported = importedIds ? importedIds.has(prospect.id) : false;
       const hasNoWeb = !prospect.digitalHealth.hasWebsite;
-      const markerColor = hasNoWeb ? '#ef4444' : '#10b981';
+
+      // Pin Color & Scale:
+      // Si ya está transferido al Pipeline CRM: Púrpura Neón CreApp (#a855f7) destacado
+      // Si no tiene web: Rojo (#ef4444)
+      // Si tiene web: Verde (#10b981)
+      const markerColor = isImported ? '#a855f7' : hasNoWeb ? '#ef4444' : '#10b981';
+      const markerScale = isImported ? 6.5 : 5;
+      const markerStrokeWeight = isImported ? 2.5 : 1.5;
 
       const marker = new gmaps.Marker({
         position: pos,
         map: mapInstanceRef.current!,
-        title: prospect.name,
+        title: `${prospect.name}${isImported ? ' (En Pipeline CRM)' : ''}`,
         animation: gmaps.Animation.DROP,
+        zIndex: isImported ? 999 : 1,
         icon: {
           path: gmaps.SymbolPath.BACKWARD_CLOSED_ARROW,
-          scale: 5,
+          scale: markerScale,
           fillColor: markerColor,
           fillOpacity: 0.95,
           strokeColor: '#ffffff',
-          strokeWeight: 1.5,
+          strokeWeight: markerStrokeWeight,
         },
       });
 
@@ -314,11 +325,20 @@ export const GoogleRadarMap: React.FC<GoogleRadarMapProps> = ({
 
         if (infoWindowRef.current && mapInstanceRef.current) {
           const contentString = `
-            <div style="background:#0e0e14; color:#fff; padding:12px; border-radius:12px; font-family:sans-serif; max-width:280px; box-shadow:0 10px 25px rgba(0,0,0,0.5); border:1px solid rgba(168,85,247,0.3);">
+            <div style="background:#0e0e14; color:#fff; padding:12px; border-radius:12px; font-family:sans-serif; max-width:280px; box-shadow:0 10px 25px rgba(0,0,0,0.5); border:1px solid ${isImported ? 'rgba(168,85,247,0.7)' : 'rgba(168,85,247,0.3)'};">
               <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
                 <span style="font-size:10px; font-weight:700; color:#c084fc; text-transform:uppercase;">${prospect.category}</span>
                 <span style="font-size:11px; color:#fbbf24; font-weight:bold;">★ ${prospect.rating || 'N/A'}</span>
               </div>
+              
+              ${
+                isImported
+                  ? `<div style="display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:bold; color:#e9d5ff; background:rgba(168,85,247,0.3); padding:3px 8px; border-radius:6px; border:1px solid rgba(168,85,247,0.6); margin-bottom:6px;">
+                      <span>✓ EN PIPELINE CRM</span>
+                    </div>`
+                  : ''
+              }
+
               <h4 style="font-size:14px; font-weight:bold; margin:0 0 4px 0; color:#ffffff;">${prospect.name}</h4>
               <p style="font-size:11px; color:#94a3b8; margin:0 0 8px 0; line-height:1.3;">${prospect.address}</p>
               
@@ -358,7 +378,7 @@ export const GoogleRadarMap: React.FC<GoogleRadarMapProps> = ({
     if (prospects.length > 0 && mapInstanceRef.current) {
       mapInstanceRef.current.fitBounds(bounds, { top: 40, bottom: 40, left: 40, right: 40 });
     }
-  }, [prospects, mapLoaded]);
+  }, [prospects, mapLoaded, importedIds]);
 
   // Centrar y rebotar marker cuando cambia selectedProspect
   useEffect(() => {
@@ -548,15 +568,18 @@ export const GoogleRadarMap: React.FC<GoogleRadarMapProps> = ({
       </div>
 
       {/* MAP RADAR LEGEND */}
-      <div className="absolute top-18 left-4 z-10 pointer-events-none hidden sm:flex items-center gap-2 bg-[#0e0e14]/85 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/5 text-[10px] text-zinc-400">
-        <span className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-red-500" /> Sin Web
+      <div className="absolute top-18 left-4 z-10 pointer-events-none hidden sm:flex items-center gap-2.5 bg-[#0e0e14]/90 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-white/10 text-[10px] text-zinc-300 shadow-xl">
+        <span className="flex items-center gap-1 font-medium">
+          <span className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-sm shadow-red-500/50" /> Sin Web
         </span>
-        <span className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-emerald-500" /> Con Web
+        <span className="flex items-center gap-1 font-medium">
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50" /> Con Web
         </span>
-        <span className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-purple-400" /> Centro Radar
+        <span className="flex items-center gap-1 font-semibold text-purple-300">
+          <span className="w-2.5 h-2.5 rounded-full bg-purple-500 shadow-sm shadow-purple-500/80 ring-2 ring-purple-400/40" /> En Pipeline CRM
+        </span>
+        <span className="flex items-center gap-1 font-medium text-zinc-400">
+          <span className="w-2.5 h-2.5 rounded-full bg-purple-300 ring-2 ring-purple-500/40" /> Centro Radar
         </span>
       </div>
     </div>

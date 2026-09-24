@@ -54,7 +54,7 @@ import {
   clearAllScrapeHistory,
   getInstagramHandle,
 } from '@/lib/scraperService';
-import { Lead } from '@/lib/pipelineService';
+import { Lead, getLeads } from '@/lib/pipelineService';
 import { GoogleRadarMap } from './GoogleRadarMap';
 import { ProspectDossierModal } from './ProspectDossierModal';
 
@@ -145,6 +145,27 @@ export const ScraperTab: React.FC<ScraperTabProps> = ({
       }
     }
   }, []);
+
+  // Sincronizar importedIds con los leads del Pipeline CRM para pintar sus pines en el Radar
+  useEffect(() => {
+    try {
+      const pipelineLeads = getLeads();
+      const pipelineNames = new Set(
+        pipelineLeads.map((l) => (l.company || l.name || '').toLowerCase().trim())
+      );
+      const matchedIds = new Set<string>();
+      prospects.forEach((p) => {
+        if (pipelineNames.has(p.name.toLowerCase().trim())) {
+          matchedIds.add(p.id);
+        }
+      });
+      if (matchedIds.size > 0) {
+        setImportedIds((prev) => new Set([...prev, ...matchedIds]));
+      }
+    } catch (e) {
+      console.error('Error synchronizing pipeline leads with map pins:', e);
+    }
+  }, [prospects]);
 
   const handleSaveApiKeys = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -625,6 +646,7 @@ export const ScraperTab: React.FC<ScraperTabProps> = ({
             radiusMeters={radiusMeters}
             prospects={prospects}
             selectedProspect={selectedProspect}
+            importedIds={importedIds}
             onCenterChange={(newCenter, addressName) => {
               setGeoCenter(newCenter);
               if (addressName) {
