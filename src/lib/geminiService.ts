@@ -9,7 +9,7 @@ export const generateProjectAdvice = async (userPrompt: string) => {
   const ai = new GoogleGenAI({ apiKey: API_KEY });
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-3.6-flash',
       contents: userPrompt,
       config: {
         systemInstruction: "You are a professional Fintech consultant at Creapp. Help the user brainstorm or define their fintech project. Be concise, professional, and innovative.",
@@ -134,7 +134,7 @@ Debes devolver ÚNICAMENTE un objeto JSON que cumpla exactamente con el siguient
     }
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.6-flash',
       contents: contents,
       config: {
         systemInstruction: systemInstruction,
@@ -171,7 +171,7 @@ Devuelve ÚNICAMENTE la versión optimizada en español, sin preámbulos, explic
     const userPrompt = `Optimiza la siguiente descripción:\n\n"${text}"${context ? `\n\nContexto adicional del proyecto:\n${context}` : ''}`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.6-flash',
       contents: userPrompt,
       config: {
         systemInstruction: systemInstruction,

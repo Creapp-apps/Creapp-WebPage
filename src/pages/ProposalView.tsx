@@ -440,13 +440,59 @@ const ProposalView: React.FC = () => {
     }
   }, [proposal]);
 
-  // Dynamically update document title based on proposal data
+  // Dynamically update document title and Open Graph meta tags based on proposal data
   useEffect(() => {
-    if (proposal) {
-      document.title = `Propuesta Comercial | ${proposal.client_name}`;
-    } else {
+    if (!proposal) {
       document.title = 'CreAPP - Propuesta Comercial Interactiva';
+      return;
     }
+
+    const isService = proposal.proposal_type === 'service' || proposal.methodology?.proposal_type === 'service';
+    const clientName = proposal.methodology?.client_legal_data?.company_name?.trim() || proposal.client_name?.trim() || 'Cliente';
+    const prodId = proposal.methodology?.product_id;
+    const productName = prodId === 'dental-ia' ? 'Dental-IA' : prodId === 'trazapp' ? 'Trazapp' : 'Stacked';
+
+    const pageTitle = isService
+      ? `Contrato de Servicio ${productName} – ${clientName}`
+      : `Propuesta Comercial | ${clientName}`;
+
+    document.title = pageTitle;
+
+    // Helper to dynamically update or inject Open Graph tags in DOM
+    const setMeta = (attr: string, key: string, content: string) => {
+      let el = document.querySelector(`meta[${attr}="${key}"]`);
+      if (!el) {
+        el = document.createElement('meta');
+        el.setAttribute(attr, key);
+        document.head.appendChild(el);
+      }
+      el.setAttribute('content', content);
+    };
+
+    const fee = proposal.methodology?.service_details?.recurring_fee || proposal.total_value;
+    const sla = proposal.methodology?.service_details?.sla_uptime || '99.5%';
+    const description = isService
+      ? `Acuerdo oficial de prestación de servicios, nivel de servicio (SLA ${sla}) y suscripción a la plataforma ${productName}${fee ? ` (${fee})` : ''} para ${clientName}. Accedé para revisar las cláusulas y firmar digitalmente.`
+      : (proposal.description || `Dossier oficial de propuesta técnica y comercial de desarrollo de software preparada para ${clientName}. CreAPP Software Lab.`);
+
+    let imageUrl = proposal.client_logo_url;
+    if (!imageUrl && isService) {
+      imageUrl = prodId === 'dental-ia'
+        ? 'https://creapp.com.ar/products/dentalia-logo.png'
+        : prodId === 'trazapp'
+          ? 'https://creapp.com.ar/products/trazapp-logo.png'
+          : 'https://creapp.com.ar/products/stacked-logo.png';
+    } else if (imageUrl && !imageUrl.startsWith('http')) {
+      imageUrl = `https://creapp.com.ar${imageUrl}`;
+    }
+
+    setMeta('property', 'og:title', pageTitle);
+    setMeta('property', 'og:description', description);
+    setMeta('property', 'og:site_name', isService ? `${productName} | Contrato de Servicio` : 'CreAPP Software Lab');
+    if (imageUrl) setMeta('property', 'og:image', imageUrl);
+    setMeta('name', 'twitter:title', pageTitle);
+    setMeta('name', 'twitter:description', description);
+    if (imageUrl) setMeta('name', 'twitter:image', imageUrl);
   }, [proposal]);
 
   // Synchronize active desglose tab if weeks 1-8 page is hidden

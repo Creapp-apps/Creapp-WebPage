@@ -1,8 +1,30 @@
 {
-    "rewrites": [
+  "rewrites": [
+    {
+      "source": "/propuesta/:slug",
+      "has": [
         {
-            "source": "/(.*)",
-            "destination": "/index.html"
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(facebookexternalhit|WhatsApp|whatsapp|Twitterbot|twitterbot|TelegramBot|telegrambot|Slackbot|slackbot|LinkedInBot|linkedinbot|Discordbot|discordbot|Applebot|applebot).*"
         }
-    ]
+      ],
+      "destination": "/api/og?slug=:slug"
+    },
+    {
+      "source": "/propuesta/:slug/",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(facebookexternalhit|WhatsApp|whatsapp|Twitterbot|twitterbot|TelegramBot|telegrambot|Slackbot|slackbot|LinkedInBot|linkedinbot|Discordbot|discordbot|Applebot|applebot).*"
+        }
+      ],
+      "destination": "/api/og?slug=:slug"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
 }

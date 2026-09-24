@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => {
       {
         name: 'remotion-renderer-api',
         configureServer(server) {
-          server.middlewares.use((req, res, next) => {
+          server.middlewares.use(async (req, res, next) => {
             if (req.url === '/api/render-video' && req.method === 'POST') {
               let body = '';
               req.on('data', chunk => {
@@ -106,6 +106,95 @@ export default defineConfig(({ mode }) => {
                 res.writeHead(500, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ error: 'Error al descargar el archivo', details: err?.message }));
               }
+            } else if (req.url?.startsWith('/api/places/search') && req.method === 'GET') {
+              try {
+                const urlObj = new URL(req.url, 'http://localhost');
+                const query = urlObj.searchParams.get('query') || '';
+                const lat = urlObj.searchParams.get('lat');
+                const lng = urlObj.searchParams.get('lng');
+                const radius = urlObj.searchParams.get('radius') || '2500';
+                const key = urlObj.searchParams.get('key') || env.GOOGLE_MAPS_API_KEY;
+
+                if (!key) {
+                  res.writeHead(200, { 'Content-Type': 'application/json' });
+                  res.end(JSON.stringify({ success: true, hasGoogleKey: false, results: [] }));
+                  return;
+                }
+
+                let placesData: any = null;
+
+                // Si se suministraron coordenadas geográficas, usar Nearby Search API
+                if (lat && lng) {
+                  const nearbyUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=${radius}&keyword=${encodeURIComponent(query)}&language=es&key=${key}`;
+                  const nearbyRes = await fetch(nearbyUrl);
+                  placesData = await nearbyRes.json();
+                }
+
+                // Fallback a Text Search si no hay coordenadas o no hubo resultados
+                if (!placesData || placesData.status === 'ZERO_RESULTS' || !placesData.results?.length) {
+                  const textUrl = lat && lng 
+                    ? `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&location=${lat},${lng}&radius=${radius}&language=es&key=${key}`
+                    : `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&language=es&key=${key}`;
+                  const textRes = await fetch(textUrl);
+                  const textData = await textRes.json();
+                  if (textData.status === 'OK' || !placesData) {
+                    placesData = textData;
+                  }
+                }
+
+                if (placesData.status !== 'OK' && placesData.status !== 'ZERO_RESULTS') {
+                  res.writeHead(200, { 'Content-Type': 'application/json' });
+                  res.end(JSON.stringify({ 
+                    success: false, 
+                    hasGoogleKey: true, 
+                    error: placesData.error_message || placesData.status,
+                    results: [] 
+                  }));
+                  return;
+                }
+
+                const rawResults = placesData.results || [];
+                // Obtenemos detalles complementarios (web y teléfono) para los resultados
+                const enriched = await Promise.all(
+                  rawResults.slice(0, 10).map(async (place: any) => {
+                    let phone = '';
+                    let website = '';
+                    try {
+                      if (place.place_id) {
+                        const detRes = await fetch(
+                          `https://maps.googleapis.com/maps/api/place/details/json?place_id=${place.place_id}&fields=name,formatted_phone_number,international_phone_number,website&key=${key}`
+                        );
+                        const detData = await detRes.json();
+                        if (detData.result) {
+                          phone = detData.result.international_phone_number || detData.result.formatted_phone_number || '';
+                          website = detData.result.website || '';
+                        }
+                      }
+                    } catch (e) {
+                      // ignore detail failure
+                    }
+
+                    return {
+                      place_id: place.place_id,
+                      name: place.name,
+                      address: place.vicinity || place.formatted_address || '',
+                      rating: place.rating || 0,
+                      user_ratings_total: place.user_ratings_total || 0,
+                      lat: place.geometry?.location?.lat,
+                      lng: place.geometry?.location?.lng,
+                      phone,
+                      website,
+                      types: place.types || [],
+                    };
+                  })
+                );
+
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true, hasGoogleKey: true, results: enriched }));
+              } catch (err: any) {
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Error consultando Google Places', details: err?.message }));
+              }
             } else {
               next();
             }
@@ -115,7 +204,8 @@ export default defineConfig(({ mode }) => {
     ],
     define: {
       'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
+      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
+      'process.env.GOOGLE_MAPS_API_KEY': JSON.stringify(env.GOOGLE_MAPS_API_KEY || '')
     },
     resolve: {
       alias: {
