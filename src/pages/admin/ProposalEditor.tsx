@@ -331,6 +331,10 @@ const ProposalEditor: React.FC = () => {
   const [importError, setImportError] = useState<string | null>(null);
   const [extractedData, setExtractedData] = useState<any>(null);
 
+  const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  const [isVideoNoticeModalOpen, setIsVideoNoticeModalOpen] = useState(false);
+  const [targetVideoRatio, setTargetVideoRatio] = useState<'16:9' | '9:16'>('16:9');
+
   const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -950,6 +954,12 @@ const ProposalEditor: React.FC = () => {
   };
 
   const handleExportVideo = async (ratio: '16:9' | '9:16') => {
+    if (!isLocalhost) {
+      setTargetVideoRatio(ratio);
+      setIsVideoNoticeModalOpen(true);
+      return;
+    }
+
     const isVertical = ratio === '9:16';
     const setRendering = isVertical ? setRenderingVertical : setRenderingHorizontal;
     const setProgress = isVertical ? setVideoProgressVertical : setVideoProgressHorizontal;
@@ -995,12 +1005,19 @@ const ProposalEditor: React.FC = () => {
 
       clearInterval(interval);
 
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.details ? `${errData.error}: ${errData.details}` : (errData.error || 'Fallo en la compilación del video.'));
+      const contentType = response.headers.get('content-type') || '';
+      let data: any = {};
+      if (contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        throw new Error(`El servidor devolvió un error (${response.status}): ${text.slice(0, 120)}`);
       }
 
-      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.details ? `${data.error}: ${data.details}` : (data.error || 'Fallo en la compilación del video.'));
+      }
+
       setProgress(100);
 
       const link = document.createElement('a');
@@ -1010,7 +1027,7 @@ const ProposalEditor: React.FC = () => {
       document.body.removeChild(link);
     } catch (error) {
       clearInterval(interval);
-      alert('Error rendering video: ' + (error instanceof Error ? error.message : String(error)));
+      alert('Error renderizando video: ' + (error instanceof Error ? error.message : String(error)));
     } finally {
       setRendering(false);
       setProgress(0);
@@ -2661,6 +2678,7 @@ const ProposalEditor: React.FC = () => {
                 <button
                   onClick={() => handleExportVideo('9:16')}
                   disabled={renderingVertical}
+                  title={!isLocalhost ? 'Información sobre renderizado Remotion MP4 local y previsualización en vivo' : 'Exportar video vertical 9:16'}
                   className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-slate-300 hover:text-white text-[11px] uppercase tracking-widest font-bold transition-all hover:bg-white/10 disabled:opacity-50"
                 >
                   {renderingVertical ? (
@@ -2678,6 +2696,7 @@ const ProposalEditor: React.FC = () => {
                 <button
                   onClick={() => handleExportVideo('16:9')}
                   disabled={renderingHorizontal}
+                  title={!isLocalhost ? 'Información sobre renderizado Remotion MP4 local y previsualización en vivo' : 'Exportar video horizontal 16:9'}
                   className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-slate-300 hover:text-white text-[11px] uppercase tracking-widest font-bold transition-all hover:bg-white/10 disabled:opacity-50"
                 >
                   {renderingHorizontal ? (
@@ -6608,6 +6627,94 @@ const ProposalEditor: React.FC = () => {
                   </button>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Video Notice Modal for Production / Cloud Environments */}
+      {isVideoNoticeModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md transition-all duration-300">
+          <div className="w-full max-w-xl rounded-3xl border border-white/10 bg-slate-900 shadow-2xl p-6 sm:p-8 relative overflow-hidden">
+            {/* Ambient glow */}
+            <div className="absolute -top-24 -right-24 w-60 h-60 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-24 -left-24 w-60 h-60 bg-secondary/15 rounded-full blur-3xl pointer-events-none" />
+
+            <button
+              onClick={() => setIsVideoNoticeModalOpen(false)}
+              className="absolute top-5 right-5 text-slate-400 hover:text-white p-2 rounded-full hover:bg-white/5 transition-all cursor-pointer z-10"
+            >
+              ✕
+            </button>
+
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-3 rounded-2xl bg-gradient-to-br from-primary/20 to-secondary/20 border border-primary/30 text-primary">
+                  <Film size={24} />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-display font-black text-white uppercase tracking-wider">
+                    Renderizado Remotion CLI
+                  </h3>
+                  <span className="text-[10px] font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-400/20">
+                    Formato: {targetVideoRatio === '9:16' ? 'Vertical 9:16 (Stories/Reels)' : 'Horizontal 16:9 HD'}
+                  </span>
+                </div>
+              </div>
+
+              <p className="text-xs text-slate-300 leading-relaxed mb-5">
+                El compilador de video <strong>Remotion CLI</strong> procesa y renderiza los 1.260 fotogramas de animación en alta definición (1080p a 30fps) utilizando Chromium y FFmpeg en el sistema operativo. Por arquitectura, este proceso de renderizado local requiere correrse en tu máquina.
+              </p>
+
+              <div className="space-y-3 mb-6">
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 flex items-start gap-3">
+                  <div className="p-2 rounded-xl bg-primary/10 text-primary shrink-0 mt-0.5">
+                    <Sparkles size={16} />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-white uppercase tracking-wide mb-1">
+                      1. Previsualización Inmediata en Vivo
+                    </h4>
+                    <p className="text-[11px] text-slate-400 leading-relaxed">
+                      Puedes reproducir la presentación animada completa con audio, motion graphics y branding en tiempo real directamente desde la pestaña <strong>VIDEO</strong> de este editor web.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 flex items-start gap-3">
+                  <div className="p-2 rounded-xl bg-secondary/10 text-secondary shrink-0 mt-0.5">
+                    <Download size={16} />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-white uppercase tracking-wide mb-1">
+                      2. Exportar archivo .MP4 físico
+                    </h4>
+                    <p className="text-[11px] text-slate-400 leading-relaxed">
+                      Para compilar y descargar el archivo <code className="text-primary font-mono text-[10px] bg-black/40 px-1.5 py-0.5 rounded">.mp4</code> final, abre la propuesta en tu entorno local ejecutando <code className="text-secondary font-mono text-[10px] bg-black/40 px-1.5 py-0.5 rounded">npm run dev</code> en <code className="text-white font-mono text-[10px] bg-black/40 px-1.5 py-0.5 rounded">localhost:3000</code>.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsVideoNoticeModalOpen(false);
+                    setActiveEditorTab('video');
+                  }}
+                  className="w-full sm:flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-primary to-secondary text-white text-xs font-black uppercase tracking-widest hover:brightness-110 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-primary/20"
+                >
+                  <Film size={14} /> Ver en pestaña Video
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsVideoNoticeModalOpen(false)}
+                  className="w-full sm:w-auto py-3 px-5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white text-xs font-bold uppercase tracking-wider transition-all cursor-pointer border border-white/5"
+                >
+                  Entendido
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -90,12 +90,19 @@ export const ProposalVideoPlayer: React.FC<ProposalVideoPlayerProps> = ({
 
       clearInterval(interval);
 
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.error || 'Fallo en la compilación del video.');
+      const contentType = response.headers.get('content-type') || '';
+      let data: any = {};
+      if (contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        throw new Error(`El servidor devolvió un error (${response.status}): ${text.slice(0, 120)}`);
       }
 
-      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.details ? `${data.error}: ${data.details}` : (data.error || 'Fallo en la compilación del video.'));
+      }
+
       setVideoUrl(data.videoUrl);
       setProgress(100);
       setRenderStatus('completed');
