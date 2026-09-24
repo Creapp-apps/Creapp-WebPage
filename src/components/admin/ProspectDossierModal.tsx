@@ -304,12 +304,12 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
                   </div>
 
                   <div className="p-4 rounded-xl bg-black/40 border border-white/10 text-right shrink-0">
-                    <div className="text-[10px] text-zinc-400 uppercase font-bold">Ticket Estimado</div>
-                    <div className="text-2xl font-black text-white font-mono text-purple-400">
-                      ${prospect.digitalHealth.estimatedBudget} USD
+                    <div className="text-[10px] text-zinc-400 uppercase font-bold">Propuesta Comercial</div>
+                    <div className="text-base font-bold text-white font-mono text-purple-300">
+                      A definir s/ alcance
                     </div>
-                    <div className="text-[10px] text-emerald-400 mt-0.5">
-                      + $40/mes soporte / hosting
+                    <div className="text-[10px] text-zinc-400 mt-0.5">
+                      Diagnóstico personalizado
                     </div>
                   </div>
                 </div>

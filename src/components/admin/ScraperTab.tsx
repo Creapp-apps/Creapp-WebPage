@@ -504,7 +504,7 @@ export const ScraperTab: React.FC<ScraperTabProps> = ({
                       <div className="pt-2 border-t border-white/5 flex items-center justify-between text-[11px]">
                         <span className="text-zinc-400">Solución de CreApp sugerida:</span>
                         <span className="font-semibold text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20">
-                          {p.digitalHealth?.suggestedSolution} (${p.digitalHealth?.estimatedBudget} USD)
+                          {p.digitalHealth?.suggestedSolution}
                         </span>
                       </div>
                     </div>

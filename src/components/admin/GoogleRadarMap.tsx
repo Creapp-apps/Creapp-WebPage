@@ -332,7 +332,7 @@ export const GoogleRadarMap: React.FC<GoogleRadarMapProps> = ({
               </div>
 
               <div style="font-size:11px; color:#c084fc; font-weight:600; margin-bottom:8px;">
-                Solución: ${prospect.digitalHealth.suggestedSolution} ($${prospect.digitalHealth.estimatedBudget} USD)
+                Solución: ${prospect.digitalHealth.suggestedSolution}
               </div>
 
               <button onclick="window.__creappOpenDossier && window.__creappOpenDossier('${prospect.id}')" style="width:100%; padding:7px 10px; background:linear-gradient(to right, #9333ea, #6366f1); color:#ffffff; font-weight:bold; border-radius:8px; border:none; cursor:pointer; font-size:11px; display:flex; align-items:center; justify-content:center; gap:4px; box-shadow:0 4px 12px rgba(147,51,234,0.3);">

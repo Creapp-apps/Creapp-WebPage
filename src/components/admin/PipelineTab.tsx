@@ -48,7 +48,7 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
     company: '',
     industry: 'Gastronomía',
     productType: 'Stacked SaaS' as Lead['productType'],
-    estimatedValue: 350,
+    estimatedValue: 0,
     phone: '',
     email: '',
     website: '',
@@ -99,7 +99,7 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
       company: newLeadForm.company,
       industry: newLeadForm.industry,
       stage: 'prospect',
-      estimatedValue: Number(newLeadForm.estimatedValue) || 350,
+      estimatedValue: Number(newLeadForm.estimatedValue) || 0,
       currency: 'USD',
       phone: newLeadForm.phone,
       email: newLeadForm.email,
@@ -115,7 +115,7 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
       company: '',
       industry: 'Gastronomía',
       productType: 'Stacked SaaS',
-      estimatedValue: 350,
+      estimatedValue: 0,
       phone: '',
       email: '',
       website: '',
@@ -212,9 +212,6 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
                     {stageLeads.length}
                   </span>
                 </div>
-                <span className="text-[11px] font-mono font-medium text-zinc-400">
-                  ${stageSum} USD
-                </span>
               </div>
 
               {/* Cards Container */}
@@ -235,7 +232,7 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
                         exit={{ opacity: 0, scale: 0.95 }}
                         className="p-3.5 rounded-xl bg-[#121217] border border-white/5 hover:border-white/20 transition-all shadow-md group relative flex flex-col justify-between gap-2.5"
                       >
-                        {/* Top: Product Badge & Amount */}
+                        {/* Top: Product Badge & Amount (only if explicitly set > 0) */}
                         <div className="flex items-center justify-between gap-2">
                           <span
                             className={`text-[9px] font-mono px-2 py-0.5 rounded-md border font-semibold ${getProductColor(
@@ -244,9 +241,11 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
                           >
                             {lead.productType}
                           </span>
-                          <span className="text-xs font-bold text-white font-mono flex items-center">
-                            ${lead.estimatedValue} <span className="text-[10px] text-zinc-500 ml-1">USD</span>
-                          </span>
+                          {lead.estimatedValue && lead.estimatedValue > 0 ? (
+                            <span className="text-xs font-bold text-white font-mono flex items-center">
+                              ${lead.estimatedValue} <span className="text-[10px] text-zinc-500 ml-1">USD</span>
+                            </span>
+                          ) : null}
                         </div>
 
                         {/* Middle: Company & Contact */}
@@ -405,10 +404,11 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
                     </select>
                   </div>
                   <div>
-                    <label className="block text-zinc-400 mb-1">Presupuesto Estimado (USD)</label>
+                    <label className="block text-zinc-400 mb-1">Presupuesto Estimado USD (Opcional)</label>
                     <input
                       type="number"
-                      value={newLeadForm.estimatedValue}
+                      placeholder="0 (A definir)"
+                      value={newLeadForm.estimatedValue === 0 ? '' : newLeadForm.estimatedValue}
                       onChange={(e) => setNewLeadForm({ ...newLeadForm, estimatedValue: Number(e.target.value) })}
                       className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-purple-500"
                     />

@@ -75,7 +75,14 @@ export const getLeads = (): Lead[] => {
     if (!raw) {
       return [];
     }
-    return JSON.parse(raw);
+    const leads: Lead[] = JSON.parse(raw);
+    // Sanear leads importados desde el scraper para que no tengan valores asignados artificiales
+    return leads.map((l) => {
+      if (l.notes?.includes('Scraper') || l.notes?.includes('google_places') || l.notes?.includes('gemini_intelligence')) {
+        return { ...l, estimatedValue: 0 };
+      }
+      return l;
+    });
   } catch (e) {
     console.error('Error reading leads from storage', e);
     return [];

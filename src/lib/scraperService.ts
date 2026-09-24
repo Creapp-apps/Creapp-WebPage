@@ -152,11 +152,11 @@ Analiza esta lista de locales reales extraídos de Google Maps${city ? ` en "${c
 ${JSON.stringify(placesList, null, 2)}
 
 Para cada local, evalúa su oportunidad técnica según el portafolio de CreApp:
-- Si es gastronomía (burgers, hamburguesas, pizzerías, sushi, cafés, cervecerías) -> Stacked SaaS ($350 USD)
-- Si es salud, consultorios u odontología (consultorio odontológico, clínicas, dentistas, estética) -> Dental IA ($600 USD)
-- Si es agro, botánica o trazabilidad -> TrazApp ($500 USD)
-- Si es servicios (veterinarias, gimnasios, barberías, estudios) sin web -> Landing & Growth ($350 USD)
-- Si requiere software complejo a medida -> Desarrollo a Medida ($550 USD)
+- Si es gastronomía (burgers, hamburguesas, pizzerías, sushi, cafés, cervecerías) -> Stacked SaaS
+- Si es salud, consultorios u odontología (consultorio odontológico, clínicas, dentistas, estética) -> Dental IA
+- Si es agro, botánica o trazabilidad -> TrazApp
+- Si es servicios (veterinarias, gimnasios, barberías, estudios) sin web -> Landing & Growth
+- Si requiere software complejo a medida -> Desarrollo a Medida
 
 Devuelve un JSON estrictamente válido con la lista completa respetando los campos originales pero agregando digitalHealth:
 [
@@ -180,7 +180,7 @@ Devuelve un JSON estrictamente válido con la lista completa respetando los camp
       "loadSpeed": "Rápida" | "Lenta" | "Inexistente",
       "diagnosis": "Diagnóstico breve del dolor u oportunidad del negocio",
       "suggestedSolution": "Stacked SaaS",
-      "estimatedBudget": 350
+      "estimatedBudget": 0
     }
   }
 ]
@@ -247,7 +247,7 @@ Devuelve ÚNICAMENTE el array JSON sin markdown ni explicaciones.
             ? 'Cuenta con sitio web. Oportunidad de modernización y optimización de conversión.'
             : 'Sin sitio web propio. Depende de redes o plataformas intermediarias con altas comisiones.',
           suggestedSolution: 'Stacked SaaS',
-          estimatedBudget: 350,
+          estimatedBudget: 0,
         },
       };
     });
@@ -288,7 +288,7 @@ Devuelve un array JSON con esta estructura exacta:
       "loadSpeed": "Inexistente",
       "diagnosis": "Diagnóstico específico de por qué pierden clientes y cómo CreApp lo soluciona",
       "suggestedSolution": "Stacked SaaS", // Stacked SaaS, Dental IA, TrazApp, Desarrollo a Medida, Landing & Growth
-      "estimatedBudget": 350
+      "estimatedBudget": 0
     }
   }
 ]
@@ -387,7 +387,7 @@ export const importProspectToPipeline = (prospect: ScrapedProspect): Lead => {
     company: prospect.name,
     industry: prospect.category,
     stage: 'prospect',
-    estimatedValue: prospect.digitalHealth.estimatedBudget || 0,
+    estimatedValue: 0,
     currency: 'USD',
     phone: prospect.phone,
     email: prospect.email,
