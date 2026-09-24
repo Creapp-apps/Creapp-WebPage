@@ -36,6 +36,7 @@ import {
   getFinancialMetrics,
   saveSubscriptions,
   parseArgentineNumber,
+  formatBillingDay,
 } from '@/lib/financeService';
 import { Lead } from '@/lib/pipelineService';
 
@@ -59,6 +60,12 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ leads = [] }
   // Input formateado para moneda argentina (permite ingresar 125.000 sin truncar a 125)
   const [amountInput, setAmountInput] = useState('125.000');
 
+  // Estados para el selector de día/rango de cobro
+  const [billingScheduleMode, setBillingScheduleMode] = useState<'preset' | 'range' | 'fixed'>('preset');
+  const [rangeStart, setRangeStart] = useState<number>(1);
+  const [rangeEnd, setRangeEnd] = useState<number>(10);
+  const [fixedDay, setFixedDay] = useState<number>(1);
+
   // Form State
   const [formData, setFormData] = useState({
     companyName: '',
@@ -68,7 +75,7 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ leads = [] }
     category: 'saas_license' as Subscription['category'],
     amount: 125000,
     currency: 'ARS' as 'USD' | 'ARS',
-    billingDay: 23,
+    billingDay: 'Del 1 al 10 de cada mes' as number | string,
     billingCycle: 'monthly' as Subscription['billingCycle'],
     status: 'active' as SubscriptionStatus,
     startDate: new Date().toISOString().split('T')[0],
@@ -137,6 +144,10 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ leads = [] }
   const handleOpenCreate = () => {
     setEditingSub(null);
     setAmountInput('125.000');
+    setBillingScheduleMode('preset');
+    setRangeStart(1);
+    setRangeEnd(10);
+    setFixedDay(1);
     setFormData({
       companyName: '',
       clientName: '',
@@ -145,7 +156,7 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ leads = [] }
       category: 'saas_license',
       amount: 125000,
       currency: 'ARS',
-      billingDay: 23,
+      billingDay: 'Del 1 al 10 de cada mes',
       billingCycle: 'monthly',
       status: 'active',
       startDate: new Date().toISOString().split('T')[0],
@@ -170,6 +181,38 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ leads = [] }
       realAmt = 125000;
     }
     setAmountInput(realAmt.toLocaleString('es-AR'));
+
+    const bStr = String(sub.billingDay || '').trim();
+    if (bStr.includes('Del 1 al 10')) {
+      setBillingScheduleMode('preset');
+      setRangeStart(1);
+      setRangeEnd(10);
+    } else if (bStr.includes('Del 1 al 5')) {
+      setBillingScheduleMode('preset');
+      setRangeStart(1);
+      setRangeEnd(5);
+    } else if (bStr.includes('Del 10 al 15')) {
+      setBillingScheduleMode('preset');
+      setRangeStart(10);
+      setRangeEnd(15);
+    } else if (bStr.includes('Del 15 al 20')) {
+      setBillingScheduleMode('preset');
+      setRangeStart(15);
+      setRangeEnd(20);
+    } else if (bStr.includes('al') || bStr.includes('-')) {
+      setBillingScheduleMode('range');
+      const numbers = bStr.match(/\d+/g);
+      if (numbers && numbers.length >= 2) {
+        setRangeStart(Number(numbers[0]));
+        setRangeEnd(Number(numbers[1]));
+      }
+    } else if (!isNaN(Number(bStr))) {
+      setBillingScheduleMode('fixed');
+      setFixedDay(Number(bStr));
+    } else {
+      setBillingScheduleMode('preset');
+    }
+
     setFormData({
       companyName: sub.companyName,
       clientName: sub.clientName,
@@ -178,7 +221,7 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ leads = [] }
       category: sub.category,
       amount: realAmt,
       currency: sub.currency || 'ARS',
-      billingDay: sub.billingDay,
+      billingDay: sub.billingDay || 'Del 1 al 10 de cada mes',
       billingCycle: sub.billingCycle,
       status: sub.status,
       startDate: sub.startDate,
@@ -543,8 +586,8 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ leads = [] }
                     {/* Fechas de Cobro */}
                     <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/5 text-[11px]">
                       <div>
-                        <span className="text-zinc-500 block">Día de cobro mensual:</span>
-                        <span className="text-zinc-200 font-medium">Día {sub.billingDay} de cada mes</span>
+                        <span className="text-zinc-500 block">Período de cobro:</span>
+                        <span className="text-zinc-200 font-medium">{formatBillingDay(sub.billingDay)}</span>
                       </div>
                       <div>
                         <span className="text-zinc-500 block">Próximo cobro:</span>
@@ -825,7 +868,7 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ leads = [] }
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <label className="text-zinc-400 font-medium">Monto Recurrente *</label>
                     <div className="relative">
@@ -869,20 +912,162 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ leads = [] }
                       <option value="USD">USD ($ Dólar)</option>
                     </select>
                   </div>
+                </div>
 
-                  <div className="space-y-1">
-                    <label className="text-zinc-400 font-medium">Día de Cobro Mensual</label>
-                    <input
-                      type="number"
-                      min={1}
-                      max={31}
-                      value={formData.billingDay}
-                      onChange={(e) =>
-                        setFormData({ ...formData, billingDay: Number(e.target.value) })
-                      }
-                      className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-white font-mono focus:outline-none focus:border-emerald-500/50"
-                    />
+                {/* SELECTOR DE PERÍODO / RANGO DE COBRO MENSUAL */}
+                <div className="p-3.5 rounded-2xl bg-black/50 border border-white/10 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-zinc-300 font-semibold flex items-center gap-1.5">
+                      <Calendar size={14} className="text-emerald-400" />
+                      <span>Día / Período de Cobro Mensual *</span>
+                    </label>
+                    <span className="text-[11px] font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+                      {formatBillingDay(formData.billingDay)}
+                    </span>
                   </div>
+
+                  {/* Selector rápido con botones tipo pastilla */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {[
+                      { id: '1-10', label: 'Del 1 al 10 de cada mes', short: 'Del 1 al 10' },
+                      { id: '1-5', label: 'Del 1 al 5 de cada mes', short: 'Del 1 al 5' },
+                      { id: '10-15', label: 'Del 10 al 15 de cada mes', short: 'Del 10 al 15' },
+                      { id: '15-20', label: 'Del 15 al 20 de cada mes', short: 'Del 15 al 20' },
+                    ].map((preset) => {
+                      const isSelected = formData.billingDay === preset.label;
+                      return (
+                        <button
+                          key={preset.id}
+                          type="button"
+                          onClick={() => {
+                            setBillingScheduleMode('preset');
+                            setFormData({ ...formData, billingDay: preset.label });
+                          }}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-emerald-500/25 text-emerald-300 border border-emerald-500/50 shadow-sm'
+                              : 'bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white border border-white/5'
+                          }`}
+                        >
+                          {preset.short}
+                        </button>
+                      );
+                    })}
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBillingScheduleMode('range');
+                        setFormData({
+                          ...formData,
+                          billingDay: `Del ${rangeStart} al ${rangeEnd} de cada mes`,
+                        });
+                      }}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                        billingScheduleMode === 'range'
+                          ? 'bg-purple-500/25 text-purple-300 border border-purple-500/50 shadow-sm'
+                          : 'bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white border border-white/5'
+                      }`}
+                    >
+                      Rango Personalizado
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBillingScheduleMode('fixed');
+                        setFormData({
+                          ...formData,
+                          billingDay: `Día ${fixedDay} de cada mes`,
+                        });
+                      }}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                        billingScheduleMode === 'fixed'
+                          ? 'bg-cyan-500/25 text-cyan-300 border border-cyan-500/50 shadow-sm'
+                          : 'bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white border border-white/5'
+                      }`}
+                    >
+                      Día Fijo Único
+                    </button>
+                  </div>
+
+                  {/* Panel interactivo: Rango Personalizado */}
+                  {billingScheduleMode === 'range' && (
+                    <div className="pt-2 border-t border-white/5 flex items-center gap-3">
+                      <div className="flex-1 space-y-1">
+                        <label className="text-[11px] text-zinc-400">Desde el día:</label>
+                        <select
+                          value={rangeStart}
+                          onChange={(e) => {
+                            const newStart = Number(e.target.value);
+                            setRangeStart(newStart);
+                            setFormData({
+                              ...formData,
+                              billingDay: `Del ${newStart} al ${rangeEnd} de cada mes`,
+                            });
+                          }}
+                          className="w-full px-3 py-1.5 rounded-xl bg-black/60 border border-purple-500/30 text-white text-xs focus:outline-none"
+                        >
+                          {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                            <option key={d} value={d}>
+                              Día {d}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <span className="text-zinc-500 font-bold pt-4">al</span>
+
+                      <div className="flex-1 space-y-1">
+                        <label className="text-[11px] text-zinc-400">Hasta el día:</label>
+                        <select
+                          value={rangeEnd}
+                          onChange={(e) => {
+                            const newEnd = Number(e.target.value);
+                            setRangeEnd(newEnd);
+                            setFormData({
+                              ...formData,
+                              billingDay: `Del ${rangeStart} al ${newEnd} de cada mes`,
+                            });
+                          }}
+                          className="w-full px-3 py-1.5 rounded-xl bg-black/60 border border-purple-500/30 text-white text-xs focus:outline-none"
+                        >
+                          {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                            <option key={d} value={d}>
+                              Día {d}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Panel interactivo: Día Fijo Único */}
+                  {billingScheduleMode === 'fixed' && (
+                    <div className="pt-2 border-t border-white/5 flex items-center gap-3">
+                      <div className="w-full space-y-1">
+                        <label className="text-[11px] text-zinc-400">Seleccionar día puntual de cobro:</label>
+                        <select
+                          value={fixedDay}
+                          onChange={(e) => {
+                            const day = Number(e.target.value);
+                            setFixedDay(day);
+                            setFormData({
+                              ...formData,
+                              billingDay: `Día ${day} de cada mes`,
+                            });
+                          }}
+                          className="w-full px-3 py-1.5 rounded-xl bg-black/60 border border-cyan-500/30 text-white text-xs focus:outline-none"
+                        >
+                          {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                            <option key={d} value={d}>
+                              Día {d} de cada mes
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

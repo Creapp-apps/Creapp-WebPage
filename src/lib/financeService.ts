@@ -24,7 +24,7 @@ export interface Subscription {
   productType: 'Stacked SaaS' | 'TrazApp' | 'Dental IA' | 'Desarrollo a Medida' | 'Infraestructura & SLA';
   amount: number;
   currency: 'USD' | 'ARS';
-  billingDay: number; // 1 - 31
+  billingDay: number | string; // Ej: "Del 1 al 10 de cada mes", "Del 1 al 5 de cada mes", o número 23
   billingCycle: 'monthly' | 'quarterly' | 'annual';
   status: SubscriptionStatus;
   startDate: string; // YYYY-MM-DD
@@ -164,8 +164,11 @@ export function recordSubscriptionPayment(
   // Calcular próxima fecha de cobro (+1 mes)
   const nextDate = new Date(today);
   nextDate.setMonth(nextDate.getMonth() + 1);
-  if (sub.billingDay > 0 && sub.billingDay <= 28) {
-    nextDate.setDate(sub.billingDay);
+  const numericDay = typeof sub.billingDay === 'number'
+    ? sub.billingDay
+    : parseInt(String(sub.billingDay).replace(/\D+/g, ' ').trim().split(' ')[0] || '1');
+  if (numericDay > 0 && numericDay <= 28) {
+    nextDate.setDate(numericDay);
   }
   const nextDateStr = nextDate.toISOString().split('T')[0];
 
@@ -304,6 +307,23 @@ export function parseArgentineNumber(value: string | number): number {
 
   const result = parseFloat(clean);
   return isNaN(result) ? 0 : result;
+}
+
+// Utility para formatear el día o rango de cobro mensual
+export function formatBillingDay(billingDay: number | string | undefined): string {
+  if (!billingDay) return 'Del 1 al 10 de cada mes';
+  const str = String(billingDay).trim();
+  if (str.toLowerCase().includes('cada mes') || str.toLowerCase().includes('del ')) {
+    return str;
+  }
+  if (str.includes('-')) {
+    const [start, end] = str.split('-');
+    return `Del ${start.trim()} al ${end.trim()} de cada mes`;
+  }
+  if (!isNaN(Number(str))) {
+    return `Día ${str} de cada mes`;
+  }
+  return str;
 }
 
 export interface FinancialMetrics {
