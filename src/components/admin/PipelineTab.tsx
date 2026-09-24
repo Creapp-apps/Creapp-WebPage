@@ -24,6 +24,8 @@ import {
   Edit3,
   Save,
   MessageSquare,
+  Instagram,
+  Facebook,
 } from 'lucide-react';
 import {
   Lead,
@@ -34,6 +36,7 @@ import {
   createLead,
   updateLead,
 } from '@/lib/pipelineService';
+import { getInstagramHandle } from '@/lib/scraperService';
 
 interface PipelineTabProps {
   leads: Lead[];
@@ -677,6 +680,86 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
                     </span>
                   )}
                 </div>
+
+                {/* Redes Sociales (Instagram / Facebook) */}
+                {(() => {
+                  const igUrl = selectedLeadForDetail.instagram || (selectedLeadForDetail.website && /instagram\.com/i.test(selectedLeadForDetail.website) ? selectedLeadForDetail.website : null);
+                  const fbUrl = selectedLeadForDetail.facebook || (selectedLeadForDetail.website && /facebook\.com/i.test(selectedLeadForDetail.website) ? selectedLeadForDetail.website : null);
+                  const igHandle = igUrl ? getInstagramHandle(igUrl) : null;
+                  const leadName = selectedLeadForDetail.company || selectedLeadForDetail.name;
+                  const leadCity = selectedLeadForDetail.city || '';
+
+                  return (
+                    <div className="p-3.5 rounded-2xl bg-[#14141c] border border-white/5 space-y-2 col-span-1 sm:col-span-2">
+                      <div className="flex items-center justify-between">
+                        <div className="text-[11px] text-zinc-400 font-semibold flex items-center gap-1.5">
+                          <Instagram size={13} className="text-pink-400" />
+                          <span>Redes Sociales & Perfiles</span>
+                        </div>
+                        <a
+                          href={`https://www.google.com/search?q=site:instagram.com+"${encodeURIComponent(leadName)}"${leadCity ? `+${encodeURIComponent(leadCity)}` : ''}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[10px] text-zinc-400 hover:text-pink-300 flex items-center gap-1 transition-colors"
+                          title="Buscar Instagram en Google"
+                        >
+                          <span>Rastrear en Google</span>
+                          <ExternalLink size={9} />
+                        </a>
+                      </div>
+
+                      <div className="flex items-center gap-2 flex-wrap pt-1">
+                        {igUrl ? (
+                          <a
+                            href={igUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="px-3 py-1.5 rounded-xl bg-pink-500/15 hover:bg-pink-500/25 text-pink-300 border border-pink-500/30 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm"
+                            title="Abrir Instagram del negocio"
+                          >
+                            <Instagram size={13} className="text-pink-400" />
+                            <span>{igHandle || 'Instagram'}</span>
+                            <ExternalLink size={10} className="text-pink-400/70" />
+                          </a>
+                        ) : (
+                          <a
+                            href={`https://www.google.com/search?q=site:instagram.com+"${encodeURIComponent(leadName)}"${leadCity ? `+${encodeURIComponent(leadCity)}` : ''}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-pink-300 border border-white/10 text-xs flex items-center gap-1.5 transition-colors"
+                          >
+                            <Instagram size={12} className="text-zinc-500" />
+                            <span>Buscar Instagram ↗</span>
+                          </a>
+                        )}
+
+                        {fbUrl ? (
+                          <a
+                            href={fbUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="px-3 py-1.5 rounded-xl bg-blue-500/15 hover:bg-blue-500/25 text-blue-300 border border-blue-500/30 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm"
+                            title="Abrir Facebook del negocio"
+                          >
+                            <Facebook size={13} className="text-blue-400" />
+                            <span>Facebook</span>
+                            <ExternalLink size={10} />
+                          </a>
+                        ) : (
+                          <a
+                            href={`https://www.google.com/search?q=site:facebook.com+"${encodeURIComponent(leadName)}"${leadCity ? `+${encodeURIComponent(leadCity)}` : ''}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-blue-300 border border-white/10 text-xs flex items-center gap-1.5 transition-colors"
+                          >
+                            <Facebook size={12} className="text-zinc-500" />
+                            <span>Buscar Facebook ↗</span>
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Diagnóstico Técnico & Notas del Scraper */}

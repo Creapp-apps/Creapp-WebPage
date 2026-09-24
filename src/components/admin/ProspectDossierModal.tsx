@@ -26,8 +26,11 @@ import {
   ShieldAlert,
   Bot,
   RefreshCw,
+  Instagram,
+  Facebook,
+  Search,
 } from 'lucide-react';
-import { ScrapedProspect, generateColdPitchWithAI } from '@/lib/scraperService';
+import { ScrapedProspect, generateColdPitchWithAI, getInstagramHandle } from '@/lib/scraperService';
 
 interface ProspectDossierModalProps {
   prospect: ScrapedProspect | null;
@@ -93,7 +96,14 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
   if (!prospect) return null;
 
   const cleanPhone = prospect.phone?.replace(/[^0-9]/g, '') || '';
-  const hasNoWeb = !prospect.digitalHealth.hasWebsite;
+  const instagramUrl = prospect.socialLinks?.instagram || (prospect.website?.includes('instagram.com') ? prospect.website : undefined);
+  const igHandle = getInstagramHandle(instagramUrl);
+  const facebookUrl = prospect.socialLinks?.facebook || (prospect.website?.includes('facebook.com') ? prospect.website : undefined);
+  const tiktokUrl = prospect.socialLinks?.tiktok || (prospect.website?.includes('tiktok.com') ? prospect.website : undefined);
+  const isInstagramAsWebsite = Boolean(prospect.website && prospect.website.includes('instagram.com'));
+  const isFacebookAsWebsite = Boolean(prospect.website && prospect.website.includes('facebook.com'));
+  const hasRealWebsite = Boolean(prospect.website && !isInstagramAsWebsite && !isFacebookAsWebsite);
+  const hasNoWeb = !hasRealWebsite;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(pitchContent);
@@ -172,7 +182,7 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
 
           {/* QUICK ACTION BAR */}
           <div className="px-6 py-3 bg-[#08080d] border-b border-white/5 flex flex-wrap items-center justify-between gap-3 text-xs">
-            <div className="flex items-center gap-4 text-zinc-400">
+            <div className="flex items-center gap-4 text-zinc-400 flex-wrap">
               {prospect.phone ? (
                 <a
                   href={`tel:${cleanPhone}`}
@@ -187,9 +197,9 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
                 </span>
               )}
 
-              {prospect.website ? (
+              {hasRealWebsite ? (
                 <a
-                  href={prospect.website.startsWith('http') ? prospect.website : `https://${prospect.website}`}
+                  href={prospect.website?.startsWith('http') ? prospect.website : `https://${prospect.website}`}
                   target="_blank"
                   rel="noreferrer"
                   className="flex items-center gap-1 text-emerald-400 hover:underline truncate max-w-[200px]"
@@ -198,6 +208,10 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
                   <span>{prospect.website}</span>
                   <ExternalLink size={10} />
                 </a>
+              ) : isInstagramAsWebsite ? (
+                <span className="text-amber-400 flex items-center gap-1">
+                  <AlertTriangle size={13} /> Usa Instagram como web (Sin software propio)
+                </span>
               ) : (
                 <span className="text-rose-400 flex items-center gap-1">
                   <AlertTriangle size={13} /> Sin web registrada
@@ -211,7 +225,7 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
                   onFocusOnMap(prospect);
                   onClose();
                 }}
-                className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white border border-white/10 flex items-center gap-1.5 transition-colors"
+                className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white border border-white/10 flex items-center gap-1.5 transition-colors cursor-pointer"
               >
                 <Compass size={13} className="text-purple-400" />
                 <span>Enfocar en Radar</span>
@@ -220,15 +234,15 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
               <button
                 onClick={() => onImportToPipeline(prospect)}
                 disabled={isImported}
-                className={`px-3.5 py-1.5 rounded-xl font-semibold flex items-center gap-1.5 transition-all ${
+                className={`px-3.5 py-1.5 rounded-xl font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
                   isImported
                     ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                    : 'bg-purple-600 hover:bg-purple-500 text-white shadow-md shadow-purple-600/30'
+                    : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md hover:opacity-90'
                 }`}
               >
                 {isImported ? (
                   <>
-                    <Check size={13} />
+                    <CheckCircle2 size={13} />
                     <span>En Pipeline CRM</span>
                   </>
                 ) : (
@@ -240,6 +254,96 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
               </button>
             </div>
           </div>
+
+          {/* SOCIAL MEDIA & DIGITAL PRESENCE BAR */}
+          <div className="px-6 py-2.5 bg-[#0a0a0f] border-b border-white/5 flex flex-wrap items-center justify-between gap-2.5 text-xs">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-zinc-500 font-medium text-[11px] flex items-center gap-1">
+                <span>Redes Sociales:</span>
+              </span>
+
+              {/* Instagram Direct Link or 1-Click Search */}
+              {instagramUrl ? (
+                <a
+                  href={instagramUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-gradient-to-r from-pink-500/20 via-purple-500/20 to-amber-500/20 text-pink-300 border border-pink-500/35 hover:border-pink-500/60 font-medium text-xs transition-all shadow-sm group"
+                  title="Abrir perfil de Instagram"
+                >
+                  <Instagram size={13} className="text-pink-400 group-hover:scale-110 transition-transform" />
+                  <span className="font-semibold">{igHandle || 'Instagram'}</span>
+                  {isInstagramAsWebsite && (
+                    <span className="text-[9px] px-1 py-0.2 rounded bg-pink-500/30 text-pink-200 font-mono">Web Oficial</span>
+                  )}
+                  <ExternalLink size={10} className="text-pink-400/70" />
+                </a>
+              ) : (
+                <a
+                  href={`https://www.google.com/search?q=site:instagram.com+"${encodeURIComponent(prospect.name)}"+${encodeURIComponent(prospect.city)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-pink-300 border border-white/5 hover:border-pink-500/30 text-xs transition-colors"
+                  title="Rastrear perfil de Instagram en Google con 1 clic"
+                >
+                  <Instagram size={12} className="text-zinc-500" />
+                  <span>Buscar Instagram ↗</span>
+                </a>
+              )}
+
+              {/* Facebook Direct Link or 1-Click Search */}
+              {facebookUrl ? (
+                <a
+                  href={facebookUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-blue-500/20 text-blue-300 border border-blue-500/30 hover:bg-blue-500/30 font-medium text-xs transition-all"
+                  title="Abrir página de Facebook"
+                >
+                  <Facebook size={13} className="text-blue-400" />
+                  <span>Facebook</span>
+                  <ExternalLink size={10} />
+                </a>
+              ) : (
+                <a
+                  href={`https://www.google.com/search?q=site:facebook.com+"${encodeURIComponent(prospect.name)}"+${encodeURIComponent(prospect.city)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-blue-300 border border-white/5 hover:border-blue-500/30 text-xs transition-colors"
+                  title="Rastrear Facebook en Google"
+                >
+                  <Facebook size={12} className="text-zinc-500" />
+                  <span>Buscar Facebook ↗</span>
+                </a>
+              )}
+
+              {/* TikTok if exists */}
+              {tiktokUrl && (
+                <a
+                  href={tiktokUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-zinc-800 text-zinc-200 border border-zinc-700 hover:bg-zinc-700 text-xs transition-colors"
+                >
+                  <span>TikTok</span>
+                  <ExternalLink size={10} />
+                </a>
+              )}
+            </div>
+
+            {/* Google Search Link */}
+            <a
+              href={`https://www.google.com/search?q="${encodeURIComponent(prospect.name)}"+${encodeURIComponent(prospect.city)}`}
+              target="_blank"
+              rel="noreferrer"
+              className="text-[11px] text-zinc-400 hover:text-purple-300 flex items-center gap-1 transition-colors"
+            >
+              <Search size={11} />
+              <span>Ver ficha en Google</span>
+              <ExternalLink size={9} />
+            </a>
+          </div>
+
 
           {/* TAB NAVIGATION */}
           <div className="flex items-center gap-2 px-6 pt-4 border-b border-white/5 bg-[#0c0c14]">

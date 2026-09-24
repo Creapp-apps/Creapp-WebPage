@@ -10,6 +10,12 @@ export interface ScrapedProspect {
   phone: string;
   email?: string;
   website?: string;
+  socialLinks?: {
+    instagram?: string;
+    facebook?: string;
+    tiktok?: string;
+    linkedin?: string;
+  };
   rating: number;
   reviewCount: number;
   source: 'google_places' | 'gemini_intelligence';
@@ -19,12 +25,46 @@ export interface ScrapedProspect {
     hasWebsite: boolean;
     isMobileFriendly: boolean;
     hasSSL: boolean;
-    loadSpeed: 'Rápida' | 'Lenta' | 'Crítica' | 'Inexistente';
+    loadSpeed: 'Rápida' | 'Media' | 'Lenta' | 'Crítica' | 'Inexistente';
     diagnosis: string;
     suggestedSolution: 'Stacked SaaS' | 'TrazApp' | 'Dental IA' | 'Desarrollo a Medida' | 'Landing & Growth';
     estimatedBudget: number;
   };
 }
+
+export const extractSocials = (
+  url?: string,
+  existing?: { instagram?: string; facebook?: string; tiktok?: string; linkedin?: string }
+): { instagram?: string; facebook?: string; tiktok?: string; linkedin?: string } => {
+  const res: { instagram?: string; facebook?: string; tiktok?: string; linkedin?: string } = { ...existing };
+  if (!url) return res;
+  const trimmed = url.trim();
+  const lower = trimmed.toLowerCase();
+
+  if (lower.includes('instagram.com/')) {
+    res.instagram = trimmed;
+  } else if (lower.includes('facebook.com/') || lower.includes('fb.me/') || lower.includes('fb.com/')) {
+    res.facebook = trimmed;
+  } else if (lower.includes('tiktok.com/')) {
+    res.tiktok = trimmed;
+  } else if (lower.includes('linkedin.com/')) {
+    res.linkedin = trimmed;
+  }
+  return res;
+};
+
+export const getInstagramHandle = (url?: string): string | null => {
+  if (!url) return null;
+  const clean = url
+    .trim()
+    .replace(/^https?:\/\/(www\.)?instagram\.com\//i, '')
+    .replace(/\/.*$/, '')
+    .replace(/^[?#].*$/, '');
+  if (clean && !['p', 'reel', 'reels', 'explore', 'stories', 'direct'].includes(clean.toLowerCase())) {
+    return `@${clean.replace(/^@/, '')}`;
+  }
+  return null;
+};
 
 export interface GeoSearchOptions {
   lat?: number;
@@ -197,16 +237,29 @@ Devuelve ÚNICAMENTE el array JSON sin markdown ni explicaciones.
         const match = raw.match(/\[[\s\S]*\]/);
         if (match) {
           const parsed = JSON.parse(match[0]);
-          // Asegurar que lat y lng se conserven desde placesList
+          // Asegurar que lat y lng se conserven desde placesList y extraer redes sociales
           const enrichedWithCoords = parsed.map((p: any, idx: number) => {
             const original = placesList.find(x => x.place_id === p.id || x.name === p.name) || placesList[idx];
+            const rawWeb = p.website || original?.website || '';
+            const socials = extractSocials(rawWeb, p.socialLinks);
+            const isSocialAsWebsite = Boolean(socials.instagram || socials.facebook || socials.tiktok);
+            const hasRealWebsite = Boolean(rawWeb && !isSocialAsWebsite);
+
             return {
               ...p,
               lat: p.lat ?? original?.lat,
               lng: p.lng ?? original?.lng,
               phone: p.phone || original?.phone || '',
-              website: p.website || original?.website || '',
+              website: rawWeb,
+              socialLinks: socials,
               address: p.address || original?.address || '',
+              digitalHealth: {
+                ...p.digitalHealth,
+                hasWebsite: hasRealWebsite,
+                diagnosis: isSocialAsWebsite
+                  ? `Utiliza perfil de ${socials.instagram ? 'Instagram' : 'redes'} como canal digital pero carece de sitio web y software propio.`
+                  : p.digitalHealth?.diagnosis,
+              }
             };
           });
 
@@ -223,7 +276,11 @@ Devuelve ÚNICAMENTE el array JSON sin markdown ni explicaciones.
     // Fallback garantizado si no hay clave de Gemini o si el enriquecimiento falló:
     // Muestra el 100% de los locales reales de Google Places
     const fallbackResults: ScrapedProspect[] = placesList.map((place: any, idx: number) => {
-      const hasWeb = Boolean(place.website && place.website.trim());
+      const rawWeb = (place.website || '').trim();
+      const socials = extractSocials(rawWeb);
+      const isSocialAsWebsite = Boolean(socials.instagram || socials.facebook || socials.tiktok);
+      const hasRealWeb = Boolean(rawWeb && !isSocialAsWebsite);
+
       return {
         id: place.place_id || `place-${idx}`,
         name: place.name || 'Comercio',
@@ -232,18 +289,21 @@ Devuelve ÚNICAMENTE el array JSON sin markdown ni explicaciones.
         address: place.address || '',
         phone: place.phone || '',
         email: '',
-        website: place.website || '',
+        website: rawWeb,
+        socialLinks: socials,
         rating: place.rating || 0,
         reviewCount: place.user_ratings_total || 0,
         source: 'google_places',
         lat: place.lat,
         lng: place.lng,
         digitalHealth: {
-          hasWebsite: hasWeb,
+          hasWebsite: hasRealWeb,
           isMobileFriendly: false,
-          hasSSL: Boolean(place.website?.startsWith('https')),
-          loadSpeed: hasWeb ? 'Media' : 'Inexistente',
-          diagnosis: hasWeb
+          hasSSL: Boolean(rawWeb.startsWith('https')),
+          loadSpeed: hasRealWeb ? 'Media' : 'Inexistente',
+          diagnosis: isSocialAsWebsite
+            ? `Utiliza ${socials.instagram ? 'Instagram' : 'redes'} como canal principal pero no tiene web ni software propio.`
+            : hasRealWeb
             ? 'Cuenta con sitio web. Oportunidad de modernización y optimización de conversión.'
             : 'Sin sitio web propio. Depende de redes o plataformas intermediarias con altas comisiones.',
           suggestedSolution: 'Stacked SaaS',
@@ -382,6 +442,9 @@ Pautas de tono y estilo:
 };
 
 export const importProspectToPipeline = (prospect: ScrapedProspect): Lead => {
+  const instagram = prospect.socialLinks?.instagram || (prospect.website?.includes('instagram.com') ? prospect.website : undefined);
+  const facebook = prospect.socialLinks?.facebook || (prospect.website?.includes('facebook.com') ? prospect.website : undefined);
+
   return createLead({
     name: prospect.name,
     company: prospect.name,
@@ -392,6 +455,8 @@ export const importProspectToPipeline = (prospect: ScrapedProspect): Lead => {
     phone: prospect.phone,
     email: prospect.email,
     website: prospect.website,
+    instagram,
+    facebook,
     productType: prospect.digitalHealth.suggestedSolution,
     notes: `Prospectado vía CreApp Scraper (${prospect.source}): ${prospect.digitalHealth.diagnosis}`,
   });

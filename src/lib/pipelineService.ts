@@ -17,6 +17,8 @@ export interface Lead {
   phone?: string;
   email?: string;
   website?: string;
+  instagram?: string;
+  facebook?: string;
   productType: 'Stacked SaaS' | 'TrazApp' | 'Dental IA' | 'Desarrollo a Medida' | 'Landing & Growth';
   notes?: string;
   createdAt: string;

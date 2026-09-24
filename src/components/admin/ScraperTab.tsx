@@ -32,6 +32,8 @@ import {
   Clock,
   RotateCcw,
   Bookmark,
+  Instagram,
+  Facebook,
 } from 'lucide-react';
 import {
   ScrapedProspect,
@@ -50,6 +52,7 @@ import {
   addScrapeToHistory,
   deleteScrapeFromHistory,
   clearAllScrapeHistory,
+  getInstagramHandle,
 } from '@/lib/scraperService';
 import { Lead } from '@/lib/pipelineService';
 import { GoogleRadarMap } from './GoogleRadarMap';
@@ -658,6 +661,9 @@ export const ScraperTab: React.FC<ScraperTabProps> = ({
             {prospects.map((p) => {
               const isImported = importedIds.has(p.id);
               const cleanPhone = getCleanPhone(p.phone);
+              const igUrl = p.socialLinks?.instagram || (p.website && /instagram\.com/i.test(p.website) ? p.website : null);
+              const igHandle = igUrl ? getInstagramHandle(igUrl) : null;
+              const isIgAsWeb = Boolean(p.website && /instagram\.com/i.test(p.website));
 
               return (
                 <motion.div
@@ -698,7 +704,11 @@ export const ScraperTab: React.FC<ScraperTabProps> = ({
                     <div className="p-3 rounded-xl bg-black/40 border border-white/5 space-y-2 text-xs">
                       <div className="flex items-center justify-between">
                         <span className="text-zinc-400">Presencia Web:</span>
-                        {p.digitalHealth?.hasWebsite ? (
+                        {isIgAsWeb ? (
+                          <span className="text-pink-400 font-medium flex items-center gap-1">
+                            <Instagram size={12} /> Usa Instagram como Web
+                          </span>
+                        ) : p.digitalHealth?.hasWebsite ? (
                           <span className="text-emerald-400 font-medium flex items-center gap-1 truncate max-w-[200px]">
                             <CheckCircle size={12} /> {p.website || 'Web Activa'}
                           </span>
@@ -709,7 +719,37 @@ export const ScraperTab: React.FC<ScraperTabProps> = ({
                         )}
                       </div>
 
-                      <div className="text-[11px] text-zinc-300 italic leading-relaxed">
+                      {/* Social Presence Quick Pill */}
+                      <div className="flex items-center justify-between pt-1">
+                        <span className="text-zinc-500 text-[11px]">Redes Sociales:</span>
+                        {igUrl ? (
+                          <a
+                            href={igUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-[11px] font-semibold text-pink-300 hover:text-pink-200 flex items-center gap-1 px-2 py-0.5 rounded-md bg-pink-500/10 border border-pink-500/20 hover:border-pink-500/40 transition-colors"
+                          >
+                            <Instagram size={11} className="text-pink-400" />
+                            <span>{igHandle || 'Instagram'}</span>
+                            <ExternalLink size={9} />
+                          </a>
+                        ) : (
+                          <a
+                            href={`https://www.google.com/search?q=site:instagram.com+"${encodeURIComponent(p.name)}"+${encodeURIComponent(p.city)}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-[10px] text-zinc-500 hover:text-pink-300 flex items-center gap-1 transition-colors"
+                            title="Rastrear perfil de Instagram en Google"
+                          >
+                            <Instagram size={10} />
+                            <span>Buscar perfil ↗</span>
+                          </a>
+                        )}
+                      </div>
+
+                      <div className="text-[11px] text-zinc-300 italic leading-relaxed pt-1 border-t border-white/5">
                         🔍 <strong>Diagnóstico:</strong> {p.digitalHealth?.diagnosis}
                       </div>
 
@@ -727,7 +767,7 @@ export const ScraperTab: React.FC<ScraperTabProps> = ({
                     className="pt-2 border-t border-white/5 flex flex-wrap items-center justify-between gap-2"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -739,6 +779,30 @@ export const ScraperTab: React.FC<ScraperTabProps> = ({
                         <Bot size={13} className="text-purple-400" />
                         <span>Ficha 360°</span>
                       </button>
+
+                      {igUrl ? (
+                        <a
+                          href={igUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-2 py-1.5 rounded-lg bg-pink-500/10 hover:bg-pink-500/20 text-pink-300 border border-pink-500/20 text-xs flex items-center gap-1 transition-colors"
+                          title="Abrir Instagram"
+                        >
+                          <Instagram size={12} className="text-pink-400" />
+                          <span>{igHandle || 'IG'}</span>
+                        </a>
+                      ) : (
+                        <a
+                          href={`https://www.google.com/search?q=site:instagram.com+"${encodeURIComponent(p.name)}"+${encodeURIComponent(p.city)}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-2 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-pink-300 border border-white/10 text-xs flex items-center gap-1 transition-colors"
+                          title="Rastrear Instagram en Google"
+                        >
+                          <Instagram size={11} className="text-zinc-500" />
+                          <span className="text-[11px]">IG ↗</span>
+                        </a>
+                      )}
 
                       {cleanPhone && (
                         <a
@@ -769,10 +833,10 @@ export const ScraperTab: React.FC<ScraperTabProps> = ({
 
                       <button
                         onClick={() => handleOpenPitchModal(p)}
-                        className="px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-300 border border-white/10 text-xs flex items-center gap-1.5 transition-colors"
+                        className="px-2 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-300 border border-white/10 text-xs flex items-center gap-1 transition-colors"
                       >
                         <Sparkles size={12} />
-                        <span>Pitch IA</span>
+                        <span>Pitch</span>
                       </button>
                     </div>
 
