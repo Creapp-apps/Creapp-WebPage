@@ -1276,41 +1276,41 @@ const ProposalEditor: React.FC = () => {
     const totalVisibleExclusions = exclusions.slice(0, 6).length;
     const totalItemsPage2 = totalVisibleInclusions + totalVisibleExclusions;
 
-    let p2Gap = '12px';
-    let p2CardPadding = '12px 14px';
-    let p2TitleMarginTop = '16px';
-    let p2MainGap = '16px';
-    let p2DescriptionSize = '13px';
+    let p2Gap = '10px';
+    let p2CardPadding = '9px 12px';
+    let p2TitleMarginTop = '10px';
+    let p2MainGap = '10px';
+    let p2DescriptionSize = '12.5px';
     let p2TitleSize = '28px';
-    let p2SubTitleSize = '13.5px';
-    let p2ItemTitleSize = '13.5px';
-    let p2TextGap = '4px';
+    let p2SubTitleSize = '13px';
+    let p2ItemTitleSize = '13px';
+    let p2TextGap = '3px';
 
     if (totalItemsPage2 > 10) {
-      p2Gap = '8px';
-      p2CardPadding = '10px 12px';
-      p2TitleMarginTop = '10px';
-      p2MainGap = '10px';
-      p2DescriptionSize = '12px';
-      p2TitleSize = '26px';
-      p2SubTitleSize = '12.5px';
-      p2ItemTitleSize = '12.5px';
-      p2TextGap = '3px';
+      p2Gap = '7px';
+      p2CardPadding = '7px 10px';
+      p2TitleMarginTop = '6px';
+      p2MainGap = '6px';
+      p2DescriptionSize = '11.5px';
+      p2TitleSize = '25px';
+      p2SubTitleSize = '12px';
+      p2ItemTitleSize = '12px';
+      p2TextGap = '2px';
     } else if (totalItemsPage2 <= 6) {
-      p2Gap = '16px';
-      p2CardPadding = '16px 18px';
-      p2TitleMarginTop = '24px';
-      p2MainGap = '24px';
-      p2DescriptionSize = '14.5px';
-      p2TitleSize = '32px';
-      p2SubTitleSize = '15px';
-      p2ItemTitleSize = '15px';
-      p2TextGap = '6px';
+      p2Gap = '14px';
+      p2CardPadding = '12px 16px';
+      p2TitleMarginTop = '16px';
+      p2MainGap = '16px';
+      p2DescriptionSize = '13.5px';
+      p2TitleSize = '30px';
+      p2SubTitleSize = '14px';
+      p2ItemTitleSize = '14px';
+      p2TextGap = '4px';
     }
 
     return (
-      <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '25px' }}>
+      <div style={{ width: '794px', height: '1123px', padding: '55px 80px 45px 80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '10px', marginBottom: '14px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
             <span style={{ fontSize: '15px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
             <span style={{ fontSize: '11px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{heroTitle ? heroTitle.toUpperCase() : 'CBKR APP V2'}</span>
@@ -1318,11 +1318,11 @@ const ProposalEditor: React.FC = () => {
           <span style={{ fontSize: '11px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>PROJECT_SCOPE // 02</span>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: p2MainGap }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
             <h1 style={{ fontSize: p2TitleSize, fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
               Alcance & <span style={{ fontStyle: 'italic', color: brandPrimary }}>Entregables</span>
             </h1>
-            <p style={{ fontSize: p2SubTitleSize, color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
+            <p style={{ fontSize: p2SubTitleSize, color: '#475569', lineHeight: '1.45', fontWeight: '300', margin: '0' }}>
               {(methodology || DEFAULT_METHODOLOGY).scope_intro || DEFAULT_METHODOLOGY.scope_intro}
             </p>
           </div>
@@ -1333,7 +1333,7 @@ const ProposalEditor: React.FC = () => {
               return (
                 <div key={index} style={{
                   padding: p2CardPadding,
-                  borderRadius: '12px',
+                  borderRadius: '10px',
                   border: '1px solid #f1f5f9',
                   backgroundColor: '#f8fafc',
                   display: 'flex',
@@ -1341,25 +1341,25 @@ const ProposalEditor: React.FC = () => {
                   gap: p2TextGap,
                   gridColumn: isLastAndOdd ? 'span 2' : 'auto'
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
                     <div style={{ color: brandPrimary, display: 'flex', alignItems: 'center' }}>
                       <IconResolver name={inc.icon_name || 'CheckCircle2'} className="w-4 h-4" />
                     </div>
                     <h4 style={{ fontSize: p2ItemTitleSize, fontWeight: '800', color: '#0f172a', margin: '0', textTransform: 'uppercase' }}>{inc.title || 'Entregable'}</h4>
                   </div>
-                  <p style={{ fontSize: p2DescriptionSize, color: '#475569', margin: '0', lineHeight: '1.45', fontWeight: '300' }}>{inc.description || 'Descripción del alcance.'}</p>
-                  {inc.tooltip && <p style={{ fontSize: '11.5px', color: '#94a3b8', margin: '2px 0 0 0', fontStyle: 'italic' }}>{inc.tooltip}</p>}
+                  <p style={{ fontSize: p2DescriptionSize, color: '#475569', margin: '0', lineHeight: '1.4', fontWeight: '300' }}>{inc.description || 'Descripción del alcance.'}</p>
+                  {inc.tooltip && <p style={{ fontSize: '11px', color: '#94a3b8', margin: '1px 0 0 0', fontStyle: 'italic' }}>{inc.tooltip}</p>}
                 </div>
               );
             })}
           </div>
           {exclusions.length > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: p2MainGap === '8px' ? '4px' : '10px', marginTop: p2TitleMarginTop }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: p2MainGap === '6px' ? '3px' : '6px', marginTop: p2TitleMarginTop }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                 <h1 style={{ fontSize: p2TitleSize, fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
                   Fuera de <span style={{ fontStyle: 'italic', color: '#e11d48' }}>Alcance</span>
                 </h1>
-                <p style={{ fontSize: p2SubTitleSize, color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
+                <p style={{ fontSize: p2SubTitleSize, color: '#475569', lineHeight: '1.45', fontWeight: '300', margin: '0' }}>
                   {(methodology || DEFAULT_METHODOLOGY).exclusions_intro || DEFAULT_METHODOLOGY.exclusions_intro}
                 </p>
               </div>
@@ -1370,7 +1370,7 @@ const ProposalEditor: React.FC = () => {
                   return (
                     <div key={index} style={{
                       padding: p2CardPadding,
-                      borderRadius: '12px',
+                      borderRadius: '10px',
                       border: '1px solid #ffe4e6',
                       backgroundColor: '#fff5f5',
                       display: 'flex',
@@ -1378,13 +1378,13 @@ const ProposalEditor: React.FC = () => {
                       gap: p2TextGap,
                       gridColumn: isLastAndOdd ? 'span 2' : 'auto'
                     }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
                         <div style={{ color: '#e11d48', display: 'flex', alignItems: 'center' }}>
                           <IconResolver name="XCircle" className="w-4 h-4" />
                         </div>
                         <h4 style={{ fontSize: p2ItemTitleSize, fontWeight: '850', color: '#9f1239', margin: '0', textTransform: 'uppercase' }}>{exc.title || 'Exclusión'}</h4>
                       </div>
-                      <p style={{ fontSize: p2DescriptionSize, color: '#b91c1c', margin: '0', lineHeight: '1.45', fontWeight: '300' }}>{exc.tooltip || 'No incluido en el presupuesto base.'}</p>
+                      <p style={{ fontSize: p2DescriptionSize, color: '#b91c1c', margin: '0', lineHeight: '1.4', fontWeight: '300' }}>{exc.tooltip || 'No incluido en el presupuesto base.'}</p>
                     </div>
                   );
                 })}
@@ -1392,7 +1392,7 @@ const ProposalEditor: React.FC = () => {
             </div>
           )}
         </div>
-        <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '12px', color: '#94a3b8' }}>
+        <div style={{ position: 'absolute', bottom: '40px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '14px', fontSize: '12px', color: '#94a3b8' }}>
           <span>Propuesta Comercial | {clientName}</span>
           <span>{getPageFooter('alcance')}</span>
         </div>
@@ -1404,19 +1404,19 @@ const ProposalEditor: React.FC = () => {
     const currency = methodology?.currency || getCurrencyFromTotal(totalValue) || 'USD';
     const isCompact = (milestones && milestones.length >= 4) || (payments && payments.length >= 4);
     return (
-      <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: isCompact ? '16px' : '22px' }}>
+      <div style={{ width: '794px', height: '1123px', padding: '55px 80px 45px 80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '10px', marginBottom: '14px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
             <span style={{ fontSize: '15px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
             <span style={{ fontSize: '11px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{heroTitle ? heroTitle.toUpperCase() : 'CBKR APP V2'}</span>
           </div>
           <span style={{ fontSize: '11px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>PROJECT_ROADMAP // 02</span>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: isCompact ? '12px' : '20px' }}>
-          <h1 style={{ fontSize: isCompact ? '26px' : '30px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: isCompact ? '8px' : '12px' }}>
+          <h1 style={{ fontSize: isCompact ? '26px' : '28px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
             CRONOGRAMA DE FASES & <span style={{ fontStyle: 'italic', color: brandPrimary }}>ENTREGAS</span>
           </h1>
-          <p style={{ fontSize: isCompact ? '13px' : '14.5px', color: '#475569', lineHeight: '1.45', fontWeight: '300', margin: '0' }}>
+          <p style={{ fontSize: isCompact ? '13px' : '14px', color: '#475569', lineHeight: '1.4', fontWeight: '300', margin: '0' }}>
             {(() => {
               const meth = methodology || DEFAULT_METHODOLOGY;
               const text = meth.phases_intro ?? DEFAULT_METHODOLOGY.phases_intro;
@@ -1430,35 +1430,35 @@ const ProposalEditor: React.FC = () => {
               return text;
             })()}
           </p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: '2px', marginBottom: '2px' }}>
-            <span style={{ fontSize: '11.5px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Estructura de Sprints Mensuales</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: '0px', marginBottom: '0px' }}>
+            <span style={{ fontSize: '11px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Estructura de Sprints Mensuales</span>
             <div style={{ flexGrow: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: isCompact ? '8px' : '16px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: isCompact ? '6px' : '10px' }}>
             {milestones && milestones.map((m, i) => (
-              <div key={m.id || i} style={{ display: 'flex', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', minHeight: isCompact ? '82px' : '105px', boxSizing: 'border-box' }}>
-                <div style={{ width: isCompact ? '75px' : '90px', flexShrink: 0, flexGrow: 0, backgroundColor: '#000000', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: '#ffffff', gap: '2px', boxSizing: 'border-box' }}>
-                  <span style={{ fontSize: '10px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.8 }}>Fase</span>
-                  <span style={{ fontSize: isCompact ? '22px' : '28px', fontWeight: '950' }}>{i + 1}</span>
+              <div key={m.id || i} style={{ display: 'flex', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', minHeight: isCompact ? '76px' : '88px', boxSizing: 'border-box' }}>
+                <div style={{ width: isCompact ? '75px' : '85px', flexShrink: 0, flexGrow: 0, backgroundColor: '#000000', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: '#ffffff', gap: '2px', boxSizing: 'border-box' }}>
+                  <span style={{ fontSize: '9.5px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.8 }}>Fase</span>
+                  <span style={{ fontSize: isCompact ? '20px' : '26px', fontWeight: '950' }}>{i + 1}</span>
                 </div>
-                <div style={{ flexGrow: 1, flexShrink: 1, minWidth: 0, padding: isCompact ? '8px 14px' : '14px 20px', display: 'flex', flexDirection: 'column', gap: '4px', justifyContent: 'center', boxSizing: 'border-box' }}>
-                  <h4 style={{ fontSize: isCompact ? '13.5px' : '15px', fontWeight: '900', color: '#0f172a', margin: '0', textTransform: 'uppercase' }}>{m.title}</h4>
-                  <p style={{ fontSize: isCompact ? '12px' : '13.5px', color: '#475569', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
+                <div style={{ flexGrow: 1, flexShrink: 1, minWidth: 0, padding: isCompact ? '8px 12px' : '10px 18px', display: 'flex', flexDirection: 'column', gap: '3px', justifyContent: 'center', boxSizing: 'border-box' }}>
+                  <h4 style={{ fontSize: isCompact ? '13px' : '14.5px', fontWeight: '900', color: '#0f172a', margin: '0', textTransform: 'uppercase' }}>{m.title}</h4>
+                  <p style={{ fontSize: isCompact ? '11.5px' : '13px', color: '#475569', lineHeight: '1.35', margin: '0', fontWeight: '300' }}>
                     {m.description || 'Sin descripción de entregables.'}
                   </p>
                 </div>
-                <div style={{ width: isCompact ? '115px' : '135px', flexShrink: 0, flexGrow: 0, borderLeft: '1px solid #e2e8f0', padding: isCompact ? '8px 12px' : '14px 16px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '3px', backgroundColor: '#fafafa', boxSizing: 'border-box' }}>
+                <div style={{ width: isCompact ? '115px' : '130px', flexShrink: 0, flexGrow: 0, borderLeft: '1px solid #e2e8f0', padding: isCompact ? '8px 10px' : '10px 14px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '2px', backgroundColor: '#fafafa', boxSizing: 'border-box' }}>
                   <span style={{ fontSize: '9px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Hito Control</span>
-                  <span style={{ fontSize: isCompact ? '11px' : '13px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', textAlign: 'center', lineHeight: '1.2' }}>
+                  <span style={{ fontSize: isCompact ? '11px' : '12.5px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', textAlign: 'center', lineHeight: '1.2' }}>
                     {m.control_milestone || 'VERIFICACIÓN'}
                   </span>
                 </div>
                 {!methodology?.hide_milestone_prices && (
-                  <div style={{ width: isCompact ? '115px' : '135px', flexShrink: 0, flexGrow: 0, borderLeft: '1px solid #e2e8f0', padding: isCompact ? '8px 12px' : '14px 16px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '3px', backgroundColor: '#fafafa', boxSizing: 'border-box' }}>
+                  <div style={{ width: isCompact ? '115px' : '130px', flexShrink: 0, flexGrow: 0, borderLeft: '1px solid #e2e8f0', padding: isCompact ? '8px 10px' : '10px 14px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '2px', backgroundColor: '#fafafa', boxSizing: 'border-box' }}>
                     <span style={{ fontSize: '9px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Inversión</span>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: '3px' }}>
-                      <span style={{ fontSize: isCompact ? '16px' : '18.5px', fontWeight: '950', color: '#000000', lineHeight: '1.1' }}>${formatMilestonePrice(m.price)}</span>
+                      <span style={{ fontSize: isCompact ? '15px' : '18px', fontWeight: '950', color: '#000000', lineHeight: '1.1' }}>${formatMilestonePrice(m.price)}</span>
                       <span style={{ fontSize: '10px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', lineHeight: '1.1' }}>{currency}</span>
                     </div>
                   </div>
@@ -1468,14 +1468,14 @@ const ProposalEditor: React.FC = () => {
           </div>
 
           {infrastructureCosts && infrastructureCosts.length > 0 && (
-            <div style={{ marginTop: '2px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '6px' }}>
-                <span style={{ fontSize: '11.5px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Costos de Infraestructura Asociados</span>
+            <div style={{ marginTop: '0px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '4px' }}>
+                <span style={{ fontSize: '11px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Costos de Infraestructura Asociados</span>
                 <div style={{ flexGrow: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
               </div>
-              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 {infrastructureCosts.map((infra, idx) => (
-                  <div key={idx} style={{ flex: '1 1 200px', padding: '7px 12px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
+                  <div key={idx} style={{ flex: '1 1 180px', padding: '5px 12px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11.5px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                       <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{infra.provider}</span>
                       {infra.is_optional && (
@@ -1483,7 +1483,7 @@ const ProposalEditor: React.FC = () => {
                       )}
                       <span style={{ color: '#64748b' }}> — {infra.title}</span>
                     </div>
-                    <span style={{ fontWeight: 'bold', color: brandPrimary, flexShrink: 0, marginLeft: '10px', fontSize: '12.5px' }}>{infra.monthly_cost}</span>
+                    <span style={{ fontWeight: 'bold', color: brandPrimary, flexShrink: 0, marginLeft: '8px', fontSize: '12px' }}>{infra.monthly_cost}</span>
                   </div>
                 ))}
               </div>
@@ -1491,21 +1491,21 @@ const ProposalEditor: React.FC = () => {
           )}
 
           {payments && payments.length > 0 && (
-            <div style={{ marginTop: '4px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '8px' }}>
-                <span style={{ fontSize: '11.5px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Esquema de Pagos / Hitos de Financiamiento</span>
+            <div style={{ marginTop: '2px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '6px' }}>
+                <span style={{ fontSize: '11px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Esquema de Pagos / Hitos de Financiamiento</span>
                 <div style={{ flexGrow: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${payments.length}, minmax(0, 1fr))`, gap: payments.length > 3 ? '10px' : '12px', width: '100%' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${payments.length}, minmax(0, 1fr))`, gap: payments.length > 3 ? '8px' : '10px', width: '100%' }}>
                 {payments.map((p, idx) => (
-                  <div key={idx} style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: payments.length > 3 ? '10px 12px' : '12px 14px', display: 'flex', flexDirection: 'column', gap: '5px', boxSizing: 'border-box' }}>
+                  <div key={idx} style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: payments.length > 3 ? '8px 10px' : '10px 12px', display: 'flex', flexDirection: 'column', gap: '3px', boxSizing: 'border-box' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '4px' }}>
-                      <span style={{ fontSize: payments.length > 3 ? '11px' : '12.5px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', lineHeight: '1.2' }}>{p.label}</span>
-                      <span style={{ fontSize: payments.length > 3 ? '15px' : '18px', fontWeight: '950', color: brandPrimary, flexShrink: 0 }}>{p.percentage}</span>
+                      <span style={{ fontSize: payments.length > 3 ? '10.5px' : '12px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', lineHeight: '1.2' }}>{p.label}</span>
+                      <span style={{ fontSize: payments.length > 3 ? '15px' : '17.5px', fontWeight: '950', color: brandPrimary, flexShrink: 0 }}>{p.percentage}</span>
                     </div>
-                    <span style={{ fontSize: payments.length > 3 ? '11px' : '12.5px', color: '#475569', fontWeight: '300', lineHeight: '1.4' }}>{p.description}</span>
+                    <span style={{ fontSize: payments.length > 3 ? '10.5px' : '12px', color: '#475569', fontWeight: '300', lineHeight: '1.35' }}>{p.description}</span>
                     {p.tooltip && (
-                      <span style={{ fontSize: payments.length > 3 ? '9.5px' : '11px', color: '#94a3b8', fontStyle: 'italic', lineHeight: '1.3', marginTop: '2px' }}>{p.tooltip}</span>
+                      <span style={{ fontSize: payments.length > 3 ? '9.5px' : '10.5px', color: '#94a3b8', fontStyle: 'italic', lineHeight: '1.3', marginTop: '1px' }}>{p.tooltip}</span>
                     )}
                   </div>
                 ))}
@@ -1513,7 +1513,7 @@ const ProposalEditor: React.FC = () => {
             </div>
           )}
         </div>
-        <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '12px', color: '#94a3b8' }}>
+        <div style={{ position: 'absolute', bottom: '40px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '14px', fontSize: '12px', color: '#94a3b8' }}>
           <span>Presupuesto Consolidado: <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{formatTotalValue(totalValue)} TOTAL</span></span>
           <span>{getPageFooter('hitos')}</span>
         </div>
