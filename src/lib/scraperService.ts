@@ -616,7 +616,37 @@ export interface PlaceReview {
  * 2. Si no hay reseñas directas o fue generado por Gemini, sintetiza con Gemini opiniones fieles
  *    a su puntuación y rubro (mencionando atención profesional, turnos, pedidos, etc.)
  */
-export const fetchPlaceReviews = async (prospect: ScrapedProspect): Promise<PlaceReview[]> => {
+export const fetchPlaceReviews = async (
+  prospect: ScrapedProspect,
+  forceRefresh: boolean = false
+): Promise<PlaceReview[]> => {
+  const cacheKey = `creapp_reviews_${prospect.id || encodeURIComponent((prospect.name || '').trim().toLowerCase())}`;
+
+  // 0. Si ya están en caché local y no se forzó recarga, retornar inmediatamente (0 llamadas a API, 0 costo)
+  if (!forceRefresh && typeof window !== 'undefined') {
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.warn("Error leyendo reseñas de localStorage:", e);
+    }
+  }
+
+  const saveToCache = (reviews: PlaceReview[]) => {
+    if (typeof window !== 'undefined' && reviews && reviews.length > 0) {
+      try {
+        localStorage.setItem(cacheKey, JSON.stringify(reviews));
+      } catch (e) {
+        console.warn("Error guardando reseñas en localStorage:", e);
+      }
+    }
+  };
+
   const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
   const mapsKey = getGoogleMapsApiKey();
   const geminiKey = getGeminiApiKey();
@@ -631,13 +661,15 @@ export const fetchPlaceReviews = async (prospect: ScrapedProspect): Promise<Plac
       );
       const data = await res.json();
       if (data.success && data.reviews && data.reviews.length > 0) {
-        return data.reviews.map((r: any) => ({
+        const reviews = data.reviews.map((r: any) => ({
           authorName: r.author_name || 'Paciente / Cliente',
           rating: r.rating || 5,
           text: r.text || '',
           relativeTime: r.relative_time_description || 'Reciente',
           profilePhotoUrl: r.profile_photo_url,
         }));
+        saveToCache(reviews);
+        return reviews;
       }
     } catch (e) {
       console.warn("Error fetching reviews from Google Places API:", e);
@@ -681,6 +713,7 @@ Devuelve ÚNICAMENTE un JSON con esta estructura exacta sin explicaciones adicio
       if (response.text) {
         const parsed = JSON.parse(response.text.trim());
         if (Array.isArray(parsed) && parsed.length > 0) {
+          saveToCache(parsed);
           return parsed;
         }
       }
@@ -691,8 +724,9 @@ Devuelve ÚNICAMENTE un JSON con esta estructura exacta sin explicaciones adicio
 
   // 3. Fallback inteligente
   const isDental = /odont|dent|dient/i.test(`${prospect.category} ${prospect.name}`);
+  let fallbackList: PlaceReview[] = [];
   if (isDental) {
-    return [
+    fallbackList = [
       {
         authorName: 'Mariana Gómez',
         rating: Math.round(prospect.rating || 4),
@@ -712,22 +746,25 @@ Devuelve ÚNICAMENTE un JSON con esta estructura exacta sin explicaciones adicio
         text: 'La atención es de primera, pero tuve que llamar varias veces en distintos días para que me respondan sobre los turnos.',
       },
     ];
+  } else {
+    fallbackList = [
+      {
+        authorName: 'Cliente verificado',
+        rating: Math.round(prospect.rating || 4),
+        relativeTime: 'hace 1 mes',
+        text: `Muy buena atención y servicio en ${prospect.name}. Estaría genial que tengan un canal web o WhatsApp directo para consultas rápidas.`,
+      },
+      {
+        authorName: 'Vecino de la zona',
+        rating: 5,
+        relativeTime: 'hace 3 meses',
+        text: `Excelente calidad. Totalmente recomendable en la zona.`,
+      },
+    ];
   }
 
-  return [
-    {
-      authorName: 'Cliente verificado',
-      rating: Math.round(prospect.rating || 4),
-      relativeTime: 'hace 1 mes',
-      text: `Muy buena atención y servicio en ${prospect.name}. Estaría genial que tengan un canal web o WhatsApp directo para consultas rápidas.`,
-    },
-    {
-      authorName: 'Vecino de la zona',
-      rating: 5,
-      relativeTime: 'hace 3 meses',
-      text: `Excelente calidad. Totalmente recomendable en la zona.`,
-    },
-  ];
+  saveToCache(fallbackList);
+  return fallbackList;
 };
 
 /**

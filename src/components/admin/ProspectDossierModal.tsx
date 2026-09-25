@@ -94,18 +94,36 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
     setTimeout(() => setCopiedReviewIdx(null), 2000);
   };
 
-  const handleOpenReviews = async () => {
+  const handleOpenReviews = async (force: boolean = false) => {
     setShowReviewsToast(true);
-    if (reviewsList.length === 0 && prospect) {
-      setLoadingReviews(true);
+    if (!prospect) return;
+
+    // Si ya están en memoria y no es forzado, no hacemos nada
+    if (!force && reviewsList.length > 0) return;
+
+    // Verificar primero en localStorage para carga instantánea con 0 lag y 0 costo de API
+    const cacheKey = `creapp_reviews_${prospect.id || encodeURIComponent((prospect.name || '').trim().toLowerCase())}`;
+    if (!force && typeof window !== 'undefined') {
       try {
-        const revs = await fetchPlaceReviews(prospect);
-        setReviewsList(revs);
-      } catch (e) {
-        console.warn("Error cargando reseñas:", e);
-      }
-      setLoadingReviews(false);
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setReviewsList(parsed);
+            return;
+          }
+        }
+      } catch (e) {}
     }
+
+    setLoadingReviews(true);
+    try {
+      const revs = await fetchPlaceReviews(prospect, force);
+      setReviewsList(revs);
+    } catch (e) {
+      console.warn("Error cargando reseñas:", e);
+    }
+    setLoadingReviews(false);
   };
 
   // Cargar pitch inicial al abrir el prospecto o cambiar de etapa
@@ -971,54 +989,80 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
         <AnimatePresence>
           {showReviewsToast && (
             <div 
-              className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/75 backdrop-blur-md"
+              data-lenis-prevent
+              className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md"
               onClick={() => setShowReviewsToast(false)}
             >
               <motion.div
+                data-lenis-prevent
                 initial={{ opacity: 0, scale: 0.92, y: 15 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.92, y: 15 }}
                 transition={{ type: "spring", stiffness: 350, damping: 28 }}
-                className="relative w-full max-w-lg bg-[#0e0e17] border border-amber-500/30 rounded-2xl shadow-2xl shadow-amber-950/40 overflow-hidden flex flex-col max-h-[85vh]"
+                className="relative w-full max-w-lg bg-[#0e0e17] border border-amber-500/30 rounded-2xl shadow-2xl shadow-amber-950/40 overflow-hidden flex flex-col h-[650px] max-h-[82vh] my-auto"
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* TOAST HEADER */}
-                <div className="p-4 bg-gradient-to-r from-amber-950/40 via-[#12121e] to-[#0e0e17] border-b border-white/10 flex items-center justify-between gap-3">
+                <div className="p-4 bg-gradient-to-r from-amber-950/40 via-[#12121e] to-[#0e0e17] border-b border-white/10 flex items-center justify-between gap-3 shrink-0">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                    <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
                       <Star size={18} className="fill-amber-400" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
+                      <h3 className="text-sm font-bold text-white flex items-center gap-1.5 flex-wrap">
                         <span>Reseñas de Google Maps</span>
                         <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-mono font-bold">
                           {prospect.rating} ★ ({prospect.reviewCount})
                         </span>
+                        {reviewsList.length > 0 && !loadingReviews && (
+                          <span 
+                            className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-semibold"
+                            title="Reseñas guardadas localmente. 0 consumo de saldo o cuotas de API al volver a abrirlas."
+                          >
+                            ⚡ En Caché Local (0 costo)
+                          </span>
+                        )}
                       </h3>
-                      <p className="text-[11px] text-zinc-400 truncate max-w-[280px]">
+                      <p className="text-[11px] text-zinc-400 truncate max-w-[260px] sm:max-w-[300px]">
                         {prospect.name}
                       </p>
                     </div>
                   </div>
 
-                  <button
-                    onClick={() => setShowReviewsToast(false)}
-                    className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
-                  >
-                    <X size={16} />
-                  </button>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => handleOpenReviews(true)}
+                      disabled={loadingReviews}
+                      className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-amber-300 transition-colors"
+                      title="Recargar desde Google Maps (consume API)"
+                    >
+                      <RefreshCw size={13} className={loadingReviews ? 'animate-spin text-amber-400' : ''} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowReviewsToast(false)}
+                      className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
                 </div>
 
                 {/* HELPFUL PROSPECTING TIP */}
-                <div className="px-4 py-2 bg-amber-500/5 border-b border-amber-500/10 flex items-center gap-2 text-[11px] text-amber-300/80">
+                <div className="px-4 py-2 bg-amber-500/5 border-b border-amber-500/10 flex items-center gap-2 text-[11px] text-amber-300/80 shrink-0">
                   <Sparkles size={13} className="shrink-0 text-amber-400" />
                   <span>
-                    Opiniones públicas reales para citar dolores o felicitaciones en tus llamadas y mensajes.
+                    Opiniones públicas para citar dolores reales o elogios en tus llamadas y mensajes.
                   </span>
                 </div>
 
                 {/* REVIEWS LIST BODY */}
-                <div className="p-4 overflow-y-auto space-y-3 flex-1 custom-scrollbar">
+                <div 
+                  data-lenis-prevent
+                  onWheel={(e) => e.stopPropagation()}
+                  className="p-4 overflow-y-auto space-y-3 flex-1 min-h-0 custom-scrollbar overscroll-contain"
+                >
                   {loadingReviews ? (
                     <div className="py-12 flex flex-col items-center justify-center gap-3 text-zinc-400">
                       <RefreshCw className="animate-spin text-amber-400" size={24} />
@@ -1037,7 +1081,7 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
                       >
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-500/30 to-purple-500/30 border border-white/10 flex items-center justify-center text-[10px] font-bold text-white uppercase">
+                            <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-500/30 to-purple-500/30 border border-white/10 flex items-center justify-center text-[10px] font-bold text-white uppercase shrink-0">
                               {rev.authorName.charAt(0) || 'U'}
                             </div>
                             <div>
@@ -1052,7 +1096,7 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex items-center gap-1.5 shrink-0">
                             <div className="flex items-center gap-0.5 text-amber-400">
                               {[...Array(5)].map((_, i) => (
                                 <Star
@@ -1063,6 +1107,7 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
                               ))}
                             </div>
                             <button
+                              type="button"
                               onClick={() => handleCopyReview(rev.text, idx)}
                               className="p-1 rounded bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
                               title="Copiar texto de reseña"
@@ -1085,7 +1130,7 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
                 </div>
 
                 {/* TOAST FOOTER */}
-                <div className="p-3 bg-black/40 border-t border-white/10 flex items-center justify-between gap-3 text-xs">
+                <div className="p-3 bg-black/40 border-t border-white/10 flex items-center justify-between gap-3 text-xs shrink-0">
                   <a
                     href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
                       `${prospect.name} ${prospect.address || ''} ${prospect.city || ''}`
@@ -1099,6 +1144,7 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
                   </a>
 
                   <button
+                    type="button"
                     onClick={() => setShowReviewsToast(false)}
                     className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white text-xs font-semibold transition-colors"
                   >

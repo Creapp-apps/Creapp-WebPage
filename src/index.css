@@ -201,6 +201,34 @@ html.lenis body {
     .kanban-col-scrollbar::-webkit-scrollbar-thumb:hover {
         background: rgba(168, 85, 247, 1);
     }
+
+    /* Modal / Reviews Custom Scrollbar */
+    .custom-scrollbar {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(245, 158, 11, 0.4) rgba(255, 255, 255, 0.03);
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-y;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+        display: block !important;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 9999px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgba(245, 158, 11, 0.35);
+        border-radius: 9999px;
+        border: 1px solid rgba(245, 158, 11, 0.2);
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: rgba(245, 158, 11, 0.7);
+    }
 }
 
 .glow-orb {
