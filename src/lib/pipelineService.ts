@@ -5,7 +5,8 @@ export type PipelineStage =
   | 'proposal_sent'     // Propuesta comercial interactiva enviada
   | 'negotiation'       // Negociación / Ajuste de contrato
   | 'in_production'     // En desarrollo / Sprint activo
-  | 'delivered';        // Entregado / Mantenimiento mensual MRR
+  | 'delivered'         // Entregado / Mantenimiento mensual MRR
+  | 'rejected';         // Rechazados (cerrado perdido / ya tienen agenda / no interesados)
 
 export interface Lead {
   id: string;
@@ -74,6 +75,12 @@ export const STAGE_CONFIG: Record<PipelineStage, { label: string; color: string;
     color: 'text-cyan-400',
     bg: 'bg-cyan-950/20',
     border: 'border-cyan-500/30',
+  },
+  rejected: {
+    label: '7. Rechazados',
+    color: 'text-red-400',
+    bg: 'bg-red-950/20',
+    border: 'border-red-500/30',
   },
 };
 

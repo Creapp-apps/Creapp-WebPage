@@ -27,6 +27,8 @@ import {
   Instagram,
   Facebook,
   PhoneOff,
+  XCircle,
+  RefreshCw,
 } from 'lucide-react';
 import {
   Lead,
@@ -85,6 +87,7 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
     'negotiation',
     'in_production',
     'delivered',
+    'rejected',
   ];
 
   const formatCoolingTime = (isoDate?: string): string => {
@@ -123,6 +126,8 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
   });
 
   const handleStageMove = (leadId: string, currentStage: PipelineStage, direction: 'next' | 'prev') => {
+    // Delivered no avanza automáticamente a Rechazados
+    if (currentStage === 'delivered' && direction === 'next') return;
     const currentIndex = stages.indexOf(currentStage);
     const targetIndex = direction === 'next' ? currentIndex + 1 : currentIndex - 1;
     if (targetIndex >= 0 && targetIndex < stages.length) {
@@ -132,6 +137,17 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
       // Auto-centrar la columna objetivo para que el usuario nunca pierda de vista la tarjeta
       setTimeout(() => {
         scrollToStage(targetIndex);
+      }, 50);
+    }
+  };
+
+  const handleDirectReject = (leadId: string) => {
+    const updated = updateLeadStage(leadId, 'rejected');
+    onLeadsChange(updated);
+    const rejectedIndex = stages.indexOf('rejected');
+    if (rejectedIndex >= 0) {
+      setTimeout(() => {
+        scrollToStage(rejectedIndex);
       }, 50);
     }
   };
@@ -310,6 +326,7 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
             const count = filteredLeads.filter((l) => l.stage === stageKey).length;
             const hasActiveLeads = count > 0;
             const isNoAnswer = stageKey === 'no_answer';
+            const isRejected = stageKey === 'rejected';
 
             return (
               <button
@@ -319,17 +336,22 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
                   hasActiveLeads
                     ? isNoAnswer
                       ? 'bg-rose-500/20 text-rose-200 border border-rose-500/40 hover:bg-rose-500/30 shadow-[0_0_12px_rgba(244,63,94,0.15)] font-semibold'
+                      : isRejected
+                      ? 'bg-red-500/20 text-red-200 border border-red-500/40 hover:bg-red-500/30 shadow-[0_0_12px_rgba(239,68,68,0.15)] font-semibold'
                       : 'bg-purple-500/20 text-purple-200 border border-purple-500/40 hover:bg-purple-500/30 shadow-[0_0_12px_rgba(168,85,247,0.15)] font-semibold'
                     : 'bg-white/5 text-zinc-400 border border-white/5 hover:bg-white/10 hover:text-white'
                 }`}
               >
                 {isNoAnswer && <PhoneOff size={12} className={hasActiveLeads ? 'text-rose-400' : 'text-zinc-500'} />}
+                {isRejected && <XCircle size={12} className={hasActiveLeads ? 'text-red-400' : 'text-zinc-500'} />}
                 <span>{config.label.split('. ')[1] || config.label}</span>
                 <span
                   className={`text-[10px] font-mono px-1.5 py-0.5 rounded-full ${
                     hasActiveLeads
                       ? isNoAnswer
                         ? 'bg-rose-500 text-white font-bold'
+                        : isRejected
+                        ? 'bg-red-500 text-white font-bold'
                         : 'bg-purple-500 text-white font-bold'
                       : 'bg-white/10 text-zinc-400'
                   }`}
@@ -385,12 +407,25 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
                       <PhoneOff size={13} />
                     </div>
                   )}
-                  <span className={`font-semibold text-xs ${stageKey === 'no_answer' ? 'text-rose-200' : 'text-white'}`}>
+                  {stageKey === 'rejected' && (
+                    <div className="p-1 rounded-md bg-red-500/20 text-red-400">
+                      <XCircle size={13} />
+                    </div>
+                  )}
+                  <span className={`font-semibold text-xs ${
+                    stageKey === 'no_answer' 
+                      ? 'text-rose-200' 
+                      : stageKey === 'rejected'
+                      ? 'text-red-200'
+                      : 'text-white'
+                  }`}>
                     {config.label}
                   </span>
                   <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold ${
                     stageKey === 'no_answer'
                       ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                      : stageKey === 'rejected'
+                      ? 'bg-red-500/20 text-red-300 border border-red-500/30'
                       : 'bg-white/10 text-zinc-300'
                   }`}>
                     {stageLeads.length}
@@ -430,6 +465,8 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
                         className={`p-3 rounded-xl bg-[#111116] border transition-all shadow-md group relative cursor-pointer flex flex-col gap-2 ${
                           lead.stage === 'no_answer'
                             ? 'border-rose-500/20 hover:border-rose-500/50 hover:bg-[#181116]'
+                            : lead.stage === 'rejected'
+                            ? 'border-red-500/25 hover:border-red-500/50 hover:bg-[#181112] opacity-85 hover:opacity-100'
                             : 'border-white/5 hover:border-purple-500/40 hover:bg-[#151520]'
                         }`}
                       >
@@ -448,31 +485,55 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
                             className="flex items-center gap-1 shrink-0"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            {stageIndex > 0 && (
+                            {lead.stage === 'rejected' ? (
                               <button
-                                onClick={() => handleStageMove(lead.id, lead.stage, 'prev')}
-                                className={`p-1 rounded-md transition-colors ${
-                                  stageIndex === 1
-                                    ? 'bg-rose-500/10 hover:bg-rose-500/25 text-rose-400 hover:text-rose-200'
-                                    : 'bg-white/5 hover:bg-white/15 text-zinc-400 hover:text-white'
-                                }`}
-                                title={stageIndex === 1 ? 'Mover a No Contestó / Contacto Nulo' : 'Mover etapa anterior'}
+                                onClick={() => {
+                                  const updated = updateLeadStage(lead.id, 'prospect');
+                                  onLeadsChange(updated);
+                                  scrollToStage(stages.indexOf('prospect'));
+                                }}
+                                className="px-2 py-0.5 rounded-md bg-purple-500/20 hover:bg-purple-500/40 text-purple-300 text-[10px] font-semibold flex items-center gap-1 transition-colors"
+                                title="Reactivar y devolver a 1. Prospecto / Lead"
                               >
-                                <ArrowLeft size={11} />
+                                <RefreshCw size={10} />
+                                <span>Reactivar</span>
                               </button>
-                            )}
-                            {stageIndex < stages.length - 1 && (
-                              <button
-                                onClick={() => handleStageMove(lead.id, lead.stage, 'next')}
-                                className={`p-1 rounded-md transition-colors ${
-                                  stageIndex === 0
-                                    ? 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/40'
-                                    : 'bg-purple-500/20 text-purple-300 hover:bg-purple-500/40'
-                                }`}
-                                title={stageIndex === 0 ? 'Reactivar a Prospecto / Lead' : 'Avanzar etapa'}
-                              >
-                                <ArrowRight size={11} />
-                              </button>
+                            ) : (
+                              <>
+                                {stageIndex > 0 && (
+                                  <button
+                                    onClick={() => handleStageMove(lead.id, lead.stage, 'prev')}
+                                    className={`p-1 rounded-md transition-colors ${
+                                      stageIndex === 1
+                                        ? 'bg-rose-500/10 hover:bg-rose-500/25 text-rose-400 hover:text-rose-200'
+                                        : 'bg-white/5 hover:bg-white/15 text-zinc-400 hover:text-white'
+                                    }`}
+                                    title={stageIndex === 1 ? 'Mover a No Contestó / Contacto Nulo' : 'Mover etapa anterior'}
+                                  >
+                                    <ArrowLeft size={11} />
+                                  </button>
+                                )}
+                                {stageIndex < stages.length - 2 && (
+                                  <button
+                                    onClick={() => handleStageMove(lead.id, lead.stage, 'next')}
+                                    className={`p-1 rounded-md transition-colors ${
+                                      stageIndex === 0
+                                        ? 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/40'
+                                        : 'bg-purple-500/20 text-purple-300 hover:bg-purple-500/40'
+                                    }`}
+                                    title={stageIndex === 0 ? 'Reactivar a Prospecto / Lead' : 'Avanzar etapa'}
+                                  >
+                                    <ArrowRight size={11} />
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => handleDirectReject(lead.id)}
+                                  className="p-1 rounded-md bg-white/5 hover:bg-red-500/20 text-zinc-500 hover:text-red-400 transition-colors"
+                                  title="Mover a Rechazados (Ej: 'Ya manejamos agenda')"
+                                >
+                                  <XCircle size={11} />
+                                </button>
+                              </>
                             )}
                           </div>
                         </div>
@@ -484,6 +545,16 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
                             <span className="font-semibold">Sin respuesta</span>
                             <span className="text-zinc-600">·</span>
                             <span className="text-zinc-400 font-mono text-[9px]">{formatCoolingTime(lead.lastContactAt)}</span>
+                          </div>
+                        )}
+
+                        {/* Rejected Badge */}
+                        {lead.stage === 'rejected' && (
+                          <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-red-500/10 border border-red-500/20 text-[10px] text-red-300">
+                            <XCircle size={11} className="shrink-0 text-red-400" />
+                            <span className="font-semibold">Rechazado</span>
+                            <span className="text-zinc-600">·</span>
+                            <span className="text-zinc-400">Ya manejan agenda / Descartado</span>
                           </div>
                         )}
 
