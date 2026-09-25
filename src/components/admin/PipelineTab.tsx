@@ -26,6 +26,7 @@ import {
   MessageSquare,
   Instagram,
   Facebook,
+  PhoneOff,
 } from 'lucide-react';
 import {
   Lead,
@@ -42,6 +43,7 @@ import {
   getInstagramHandle,
   getStoredScraperSession,
   getScrapeHistory,
+  formatWhatsAppUrl,
 } from '@/lib/scraperService';
 import { ProspectDossierModal } from './ProspectDossierModal';
 
@@ -76,6 +78,7 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
   });
 
   const stages: PipelineStage[] = [
+    'no_answer',
     'prospect',
     'contacted',
     'proposal_sent',
@@ -83,6 +86,16 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
     'in_production',
     'delivered',
   ];
+
+  const formatCoolingTime = (isoDate?: string): string => {
+    if (!isoDate) return 'En enfriamiento';
+    const diffMs = Date.now() - new Date(isoDate).getTime();
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays > 0) return `Enfriando hace ${diffDays}d`;
+    if (diffHours > 0) return `Enfriando hace ${diffHours}h`;
+    return 'Marcado recién';
+  };
 
   const scrollToStage = (index: number) => {
     const stageKey = stages[index];
@@ -296,21 +309,28 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
             const config = STAGE_CONFIG[stageKey];
             const count = filteredLeads.filter((l) => l.stage === stageKey).length;
             const hasActiveLeads = count > 0;
+            const isNoAnswer = stageKey === 'no_answer';
+
             return (
               <button
                 key={stageKey}
                 onClick={() => scrollToStage(idx)}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium transition-all shrink-0 cursor-pointer ${
                   hasActiveLeads
-                    ? 'bg-purple-500/20 text-purple-200 border border-purple-500/40 hover:bg-purple-500/30 shadow-[0_0_12px_rgba(168,85,247,0.15)] font-semibold'
+                    ? isNoAnswer
+                      ? 'bg-rose-500/20 text-rose-200 border border-rose-500/40 hover:bg-rose-500/30 shadow-[0_0_12px_rgba(244,63,94,0.15)] font-semibold'
+                      : 'bg-purple-500/20 text-purple-200 border border-purple-500/40 hover:bg-purple-500/30 shadow-[0_0_12px_rgba(168,85,247,0.15)] font-semibold'
                     : 'bg-white/5 text-zinc-400 border border-white/5 hover:bg-white/10 hover:text-white'
                 }`}
               >
+                {isNoAnswer && <PhoneOff size={12} className={hasActiveLeads ? 'text-rose-400' : 'text-zinc-500'} />}
                 <span>{config.label.split('. ')[1] || config.label}</span>
                 <span
                   className={`text-[10px] font-mono px-1.5 py-0.5 rounded-full ${
                     hasActiveLeads
-                      ? 'bg-purple-500 text-white font-bold'
+                      ? isNoAnswer
+                        ? 'bg-rose-500 text-white font-bold'
+                        : 'bg-purple-500 text-white font-bold'
                       : 'bg-white/10 text-zinc-400'
                   }`}
                 >
@@ -360,8 +380,19 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
               {/* Column Header */}
               <div className="flex items-center justify-between pb-3 border-b border-white/5 mb-3 shrink-0">
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold text-xs text-white">{config.label}</span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/10 text-zinc-300 font-bold">
+                  {stageKey === 'no_answer' && (
+                    <div className="p-1 rounded-md bg-rose-500/20 text-rose-400">
+                      <PhoneOff size={13} />
+                    </div>
+                  )}
+                  <span className={`font-semibold text-xs ${stageKey === 'no_answer' ? 'text-rose-200' : 'text-white'}`}>
+                    {config.label}
+                  </span>
+                  <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold ${
+                    stageKey === 'no_answer'
+                      ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                      : 'bg-white/10 text-zinc-300'
+                  }`}>
                     {stageLeads.length}
                   </span>
                 </div>
@@ -381,11 +412,12 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
               >
                 {stageLeads.length === 0 ? (
                   <div className="py-8 text-center text-xs text-zinc-600 border border-dashed border-white/5 rounded-xl">
-                    Sin cuentas en esta etapa
+                    {stageKey === 'no_answer' ? 'Sin leads en enfriamiento' : 'Sin cuentas en esta etapa'}
                   </div>
                 ) : (
                   stageLeads.map((lead) => {
                     const cleanPhone = lead.phone ? lead.phone.replace(/[^0-9]/g, '') : null;
+                    const waUrl = lead.phone ? formatWhatsAppUrl(lead.phone, '') : null;
                     return (
                       <motion.div
                         key={lead.id}
@@ -395,7 +427,11 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
                         onClick={() => {
                           setSelectedLeadForDetail(lead);
                         }}
-                        className="p-3 rounded-xl bg-[#111116] border border-white/5 hover:border-purple-500/40 hover:bg-[#151520] transition-all shadow-md group relative cursor-pointer flex flex-col gap-2"
+                        className={`p-3 rounded-xl bg-[#111116] border transition-all shadow-md group relative cursor-pointer flex flex-col gap-2 ${
+                          lead.stage === 'no_answer'
+                            ? 'border-rose-500/20 hover:border-rose-500/50 hover:bg-[#181116]'
+                            : 'border-white/5 hover:border-purple-500/40 hover:bg-[#151520]'
+                        }`}
                       >
                         {/* Top: Product Badge + Quick Stage Nav */}
                         <div className="flex items-center justify-between gap-1.5">
@@ -415,8 +451,12 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
                             {stageIndex > 0 && (
                               <button
                                 onClick={() => handleStageMove(lead.id, lead.stage, 'prev')}
-                                className="p-1 rounded-md bg-white/5 hover:bg-white/15 text-zinc-400 hover:text-white transition-colors"
-                                title="Mover etapa anterior"
+                                className={`p-1 rounded-md transition-colors ${
+                                  stageIndex === 1
+                                    ? 'bg-rose-500/10 hover:bg-rose-500/25 text-rose-400 hover:text-rose-200'
+                                    : 'bg-white/5 hover:bg-white/15 text-zinc-400 hover:text-white'
+                                }`}
+                                title={stageIndex === 1 ? 'Mover a No Contestó / Contacto Nulo' : 'Mover etapa anterior'}
                               >
                                 <ArrowLeft size={11} />
                               </button>
@@ -424,14 +464,28 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
                             {stageIndex < stages.length - 1 && (
                               <button
                                 onClick={() => handleStageMove(lead.id, lead.stage, 'next')}
-                                className="p-1 rounded-md bg-purple-500/20 text-purple-300 hover:bg-purple-500/40 transition-colors"
-                                title="Avanzar etapa"
+                                className={`p-1 rounded-md transition-colors ${
+                                  stageIndex === 0
+                                    ? 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/40'
+                                    : 'bg-purple-500/20 text-purple-300 hover:bg-purple-500/40'
+                                }`}
+                                title={stageIndex === 0 ? 'Reactivar a Prospecto / Lead' : 'Avanzar etapa'}
                               >
                                 <ArrowRight size={11} />
                               </button>
                             )}
                           </div>
                         </div>
+
+                        {/* Cold Parking / Cooling Badge */}
+                        {lead.stage === 'no_answer' && (
+                          <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-rose-500/10 border border-rose-500/20 text-[10px] text-rose-300">
+                            <PhoneOff size={11} className="shrink-0 text-rose-400" />
+                            <span className="font-semibold">Sin respuesta</span>
+                            <span className="text-zinc-600">·</span>
+                            <span className="text-zinc-400 font-mono text-[9px]">{formatCoolingTime(lead.lastContactAt)}</span>
+                          </div>
+                        )}
 
                         {/* Bottom Row: Company Name & Rubro + Indicators */}
                         <div className="flex items-start justify-between gap-2">
@@ -449,9 +503,9 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
                             className="flex items-center gap-1.5 shrink-0 pt-0.5"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            {cleanPhone && (
+                            {waUrl && (
                               <a
-                                href={`https://wa.me/${cleanPhone}`}
+                                href={waUrl}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="p-1 rounded-md bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 transition-colors"

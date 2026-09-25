@@ -1,4 +1,5 @@
 export type PipelineStage = 
+  | 'no_answer'         // No contestó / Contacto Nulo (enfriamiento para recontactar luego)
   | 'prospect'          // Lead recién captado / Scrapeado
   | 'contacted'         // Contacto inicial / Diagnóstico
   | 'proposal_sent'     // Propuesta comercial interactiva enviada
@@ -32,6 +33,12 @@ export interface Lead {
 }
 
 export const STAGE_CONFIG: Record<PipelineStage, { label: string; color: string; bg: string; border: string }> = {
+  no_answer: {
+    label: '0. No Contestó / Contacto Nulo',
+    color: 'text-rose-400',
+    bg: 'bg-rose-950/20',
+    border: 'border-rose-500/25',
+  },
   prospect: {
     label: '1. Prospecto / Lead',
     color: 'text-zinc-400',
