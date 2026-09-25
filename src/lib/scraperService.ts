@@ -387,6 +387,7 @@ Devuelve ÚNICAMENTE el bloque JSON sin ningún texto adicional fuera del array.
 /**
 /**
  * Extrae un nombre de contacto amigable y respetuoso del nombre comercial o razón social
+ * Ej: "Consultorio odontológico Doctora Montes" -> "Dra. Montes"
  * Ej: "Dr.Guillermo Krittian ODONTÓLOGO" -> "Dr. Guillermo"
  * Ej: "Dra. Mariana López Consultorio Dental" -> "Dra. Mariana"
  * Ej: "Parrilla Don Julio" -> "Don Julio"
@@ -395,25 +396,101 @@ export const extractFriendlyLeadName = (rawName: string): string => {
   if (!rawName) return '';
   const trimmed = rawName.trim();
 
-  // Detectar títulos profesionales: Dr., Dra., Lic., Odont.
-  const professionalMatch = trimmed.match(/\b(Dr\.|Dra\.|Lic\.|Odont\.)\s*([A-Za-zÁÉÍÓÚáéíóúñÑ]+)/i);
+  // 1. Detectar títulos profesionales con nombre o apellido
+  // Soporta: Dr., Dra., Doctor, Doctora, Odont., Odontólogo, Odontóloga, Lic., Licenciado/a
+  const professionalMatch = trimmed.match(
+    /\b(Dr\.|Doctor|Dra\.|Doctora|Odont\.|Odont[oó]log[oa]|Lic\.|Licenciado|Licenciada)\s*([A-Za-zÁÉÍÓÚáéíóúñÑ]+)(?:\s+([A-Za-zÁÉÍÓÚáéíóúñÑ]+))?/i
+  );
   if (professionalMatch) {
-    const title = professionalMatch[1].charAt(0).toUpperCase() + professionalMatch[1].slice(1).toLowerCase();
-    const name = professionalMatch[2].charAt(0).toUpperCase() + professionalMatch[2].slice(1).toLowerCase();
-    return `${title} ${name}`;
+    let title = professionalMatch[1].toLowerCase();
+    if (title.startsWith('dr') || title.startsWith('doctor') || title.startsWith('odont')) {
+      title = (title.includes('a') || title.endsWith('a')) ? 'Dra.' : 'Dr.';
+    } else if (title.startsWith('lic')) {
+      title = title.includes('a') ? 'Lic.' : 'Lic.';
+    }
+    const namePart1 = professionalMatch[2].charAt(0).toUpperCase() + professionalMatch[2].slice(1).toLowerCase();
+    return `${title} ${namePart1}`;
   }
 
-  // Limpiar sufijos comerciales típicos
+  // 2. Limpiar palabras comerciales genéricas, prefijos y adjetivos que distorsionan el nombre
   const cleanName = trimmed
-    .replace(/\b(ODONT[OÓ]LOGO|ODONTOLOG[IÍ]A|DENTISTA|CL[IÍ]NICA|CONSULTORIO|CENTRO|LAB|ESTUDIO|S\.?R\.?L\.?|S\.?A\.?)\b/gi, '')
+    .replace(/\b(ODONTOL[OÓ]GIC[OA]S?|ODONT[OÓ]LOG[OA]S?|ODONTOLOG[IÍ]A|M[EÉ]DIC[OA]S?|MEDICINA|DENTALES?|DENTISTA|CL[IÍ]NICA|CONSULTORIO|CENTRO|INSTITUTO|LAB|LABORATORIO|ESTUDIO|S\.?R\.?L\.?|S\.?A\.?)\b/gi, '')
+    .replace(/[^A-Za-zÁÉÍÓÚáéíóúñÑ\s]/g, ' ')
     .trim();
 
-  const words = cleanName.split(/\s+/).filter(Boolean);
+  const words = cleanName.split(/\s+/).filter(w => w.length > 1);
   if (words.length > 0) {
-    // Tomar las primeras dos palabras si son razonables
-    return words.slice(0, 2).join(' ');
+    // Si quedan 1 o 2 palabras razonables (ej. "Don Julio", "MV", "Independencia")
+    return words.slice(0, 2).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
   }
   return rawName;
+};
+
+export const extractBusinessShortName = (rawName: string, category: string = ''): string => {
+  if (!rawName) return 'su negocio';
+  const friendly = extractFriendlyLeadName(rawName);
+  if (friendly && (friendly.startsWith('Dr.') || friendly.startsWith('Dra.') || friendly.startsWith('Lic.'))) {
+    return friendly;
+  }
+  // Limpiar sufijos corporativos
+  const clean = rawName
+    .replace(/\b(S\.?R\.?L\.?|S\.?A\.?|S\.?A\.?S\.?|INC\.?)\b/gi, '')
+    .trim();
+  return clean || rawName;
+};
+
+export interface ConversationalPitch {
+  step1: string; // Apertura: Fricción real / Pregunta inocente de alta respuesta
+  step2: string; // Transición: Enganche de venta suave tras recibir confirmación
+}
+
+/**
+ * Genera el argumento conversacional en 2 pasos propuesto por Sebastián:
+ * Paso 1: Gancho inocente como potencial cliente/paciente que experimentó fricción al buscar web/turnos (tasa de respuesta > 85%).
+ * Paso 2: Transición empática y presentación de Dental-IA / CreApp para cuando contestan y confirman el número.
+ */
+export const generateConversationalHookPitch = (prospect: ScrapedProspect): ConversationalPitch => {
+  const isDental = /odont|dent|dient/i.test(`${prospect.category || ''} ${prospect.name || ''} ${prospect.digitalHealth.suggestedSolution || ''}`);
+  const isGastro = /gastronom|restauran|comida|pizz|bar|caf[eé]|hamburgue/i.test(prospect.category || '');
+  const businessTarget = extractBusinessShortName(prospect.name, prospect.category);
+  const city = prospect.city || 'la zona';
+
+  let step1 = '';
+  let step2 = '';
+
+  if (isDental) {
+    step1 = 
+      `Hola, buenas tardes! ¿Es este el WhatsApp de ${businessTarget}?\n\n` +
+      `Quería consultar para sacar un turno pero no encontré ninguna página web ni Instagram oficial, ¿es este el número correcto para agendar?`;
+
+    step2 = 
+      `¡Muchas gracias por responder!\n\n` +
+      `Te cuento con total sinceridad: formo parte de Dental-IA (tecnología para consultorios odontológicos). Justo estaba revisando consultorios con excelente reputación en ${city} y noté en carne propia lo que le cuesta a un paciente nuevo poder agendar rápido o fuera de horario al no tener web ni bot de WhatsApp.\n\n` +
+      `¿No han evaluado automatizar la recepción de turnos por WhatsApp las 24hs? Desarrollamos un asistente con IA que responde dudas frecuentes, filtra prepagas y agenda turnos en el sistema del consultorio de forma 100% automática, para que no pierdan pacientes y ustedes no vivan pendientes del celular todo el día.\n\n` +
+      `¿Te interesaría que te mande una demo interactiva de 2 minutos para ver cómo funcionaría en su propio consultorio, sin ningún compromiso? 📞`;
+  } else if (isGastro) {
+    step1 = 
+      `Hola, buenas tardes! ¿Es este el WhatsApp de ${businessTarget}?\n\n` +
+      `Quería consultar para hacer un pedido / ver la carta pero no encontré página web ni Instagram oficial, ¿es por acá?`;
+
+    step2 = 
+      `¡Muchas gracias por responder!\n\n` +
+      `Te cuento con total sinceridad: formo parte de CreApp Software Lab. Justo estaba viendo locales gastronómicos de gran nivel en ${city} como el de ustedes y noté en carne propia lo que le cuesta a un cliente nuevo pedir directo sin tener una carta web o canal propio.\n\n` +
+      `¿No han evaluado tener su propio canal de pedidos directos a WhatsApp para no pagar el 25-30% de comisiones a aplicaciones como PedidosYa o Rappi? Desarrollamos menús interactivos que envían los pedidos listos a cocina.\n\n` +
+      `¿Te interesaría ver una demo interactiva de 2 minutos de cómo funcionaría para su local, sin compromiso? 🚀`;
+  } else {
+    step1 = 
+      `Hola, buenas tardes! ¿Es este el WhatsApp de ${businessTarget}?\n\n` +
+      `Quería hacerles una consulta sobre sus servicios pero no encontré sitio web directo, ¿es este el número correcto?`;
+
+    step2 = 
+      `¡Muchas gracias por responder!\n\n` +
+      `Te cuento con total sinceridad: formo parte de CreApp Software Lab. Justo estaba revisando empresas con excelente trayectoria en ${city} y noté en carne propia lo difícil que es para un cliente nuevo conocer sus soluciones o cotizar directo al no contar con un sitio web o canal interactivo.\n\n` +
+      `¿No han evaluado incorporar una plataforma web y automatización para captar clientes 24/7 sin depender de responder uno por uno?\n\n` +
+      `¿Te interesaría ver una demo rápida de 2 minutos personalizada para su empresa, sin ningún compromiso? 🚀`;
+  }
+
+  return { step1, step2 };
 };
 
 /**
