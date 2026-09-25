@@ -31,11 +31,13 @@ import {
   Search,
   FileSpreadsheet,
   Trash2,
+  PhoneOff,
 } from 'lucide-react';
 import { 
   ScrapedProspect, 
   generateColdPitchWithAI, 
   generateConversationalHookPitch,
+  generateReactivationPitch,
   getInstagramHandle, 
   formatWhatsAppUrl 
 } from '@/lib/scraperService';
@@ -67,27 +69,35 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
   onCreateProposal,
 }) => {
   const [activeTab, setActiveTab] = useState<'strategy' | 'pitches' | 'audit'>('pitches');
-  const [pitchChannel, setPitchChannel] = useState<'conversational' | 'whatsapp' | 'call' | 'email' | 'visit'>('conversational');
+  const [pitchChannel, setPitchChannel] = useState<'conversational' | 'reactivation' | 'whatsapp' | 'call' | 'email' | 'visit'>(
+    currentStage === 'no_answer' ? 'reactivation' : 'conversational'
+  );
   const [pitchContent, setPitchContent] = useState<string>('');
   const [step1Text, setStep1Text] = useState<string>('');
   const [step2Text, setStep2Text] = useState<string>('');
+  const [reactivationText, setReactivationText] = useState<string>('');
   const [loadingPitch, setLoadingPitch] = useState(false);
-  const [copiedStep, setCopiedStep] = useState<'step1' | 'step2' | 'main' | null>(null);
+  const [copiedStep, setCopiedStep] = useState<'step1' | 'step2' | 'reactivation' | 'main' | null>(null);
 
-  // Cargar pitch inicial al abrir el prospecto
+  // Cargar pitch inicial al abrir el prospecto o cambiar de etapa
   useEffect(() => {
     if (prospect) {
-      loadPitchForChannel(prospect, pitchChannel);
+      const initialChannel = currentStage === 'no_answer' ? 'reactivation' : 'conversational';
+      setPitchChannel(initialChannel);
+      loadPitchForChannel(prospect, initialChannel);
     }
-  }, [prospect, pitchChannel]);
+  }, [prospect, currentStage]);
 
   const loadPitchForChannel = async (
     p: ScrapedProspect,
-    channel: 'conversational' | 'whatsapp' | 'call' | 'email' | 'visit'
+    channel: 'conversational' | 'reactivation' | 'whatsapp' | 'call' | 'email' | 'visit'
   ) => {
     setLoadingPitch(true);
     try {
-      if (channel === 'conversational') {
+      if (channel === 'reactivation') {
+        const text = generateReactivationPitch(p);
+        setReactivationText(text);
+      } else if (channel === 'conversational') {
         const conv = generateConversationalHookPitch(p);
         setStep1Text(conv.step1);
         setStep2Text(conv.step2);
@@ -544,13 +554,43 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
                 {/* Channel / Strategy Selector */}
                 <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-2xl bg-white/5 border border-white/10 w-fit">
                   {[
-                    { id: 'conversational', label: 'Estrategia 2 Pasos (Fricción Real)', icon: Sparkles, badge: 'Recomendado' },
+                    ...(currentStage === 'no_answer'
+                      ? [
+                          {
+                            id: 'reactivation',
+                            label: 'Reactivación (Fuga Real Comprobada)',
+                            icon: PhoneOff,
+                            badge: 'Sin Respuesta',
+                          },
+                          {
+                            id: 'conversational',
+                            label: 'Estrategia 2 Pasos (Fricción Real)',
+                            icon: Sparkles,
+                            badge: '1er Intento',
+                          },
+                        ]
+                      : [
+                          {
+                            id: 'conversational',
+                            label: 'Estrategia 2 Pasos (Fricción Real)',
+                            icon: Sparkles,
+                            badge: 'Recomendado',
+                          },
+                          {
+                            id: 'reactivation',
+                            label: 'Reactivación (Fuga Real)',
+                            icon: PhoneOff,
+                            badge: 'Si no contestó',
+                          },
+                        ]),
                     { id: 'whatsapp', label: 'WhatsApp Directo (Consultivo)', icon: MessageSquare },
                     { id: 'call', label: 'Llamada Fría (Script)', icon: PhoneCall },
                     { id: 'email', label: 'Correo B2B', icon: Mail },
                     { id: 'visit', label: 'Visita al Local', icon: UserCheck },
                   ].map((ch) => {
                     const Icon = ch.icon;
+                    const isSelected = pitchChannel === ch.id;
+                    const isRose = ch.id === 'reactivation';
                     return (
                       <button
                         key={ch.id}
@@ -559,16 +599,22 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
                           loadPitchForChannel(prospect, ch.id as any);
                         }}
                         className={`px-3 py-1.5 rounded-xl font-medium flex items-center gap-1.5 transition-all text-xs ${
-                          pitchChannel === ch.id
-                            ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md font-semibold'
+                          isSelected
+                            ? isRose
+                              ? 'bg-rose-600 text-white shadow-md font-semibold shadow-rose-900/30'
+                              : 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md font-semibold'
                             : 'text-zinc-400 hover:text-white hover:bg-white/5'
                         }`}
                       >
-                        <Icon size={13} className={pitchChannel === ch.id ? 'text-white' : 'text-purple-400'} />
+                        <Icon size={13} className={isSelected ? 'text-white' : isRose ? 'text-rose-400' : 'text-purple-400'} />
                         <span>{ch.label}</span>
                         {ch.badge && (
                           <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
-                            pitchChannel === ch.id ? 'bg-white/20 text-white' : 'bg-purple-500/20 text-purple-300'
+                            isSelected
+                              ? 'bg-white/20 text-white'
+                              : isRose
+                              ? 'bg-rose-500/20 text-rose-300'
+                              : 'bg-purple-500/20 text-purple-300'
                           }`}>
                             {ch.badge}
                           </span>
@@ -578,8 +624,105 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
                   })}
                 </div>
 
-                {/* ESTRATEGIA 2 PASOS (CONVERSACIONAL) */}
-                {pitchChannel === 'conversational' ? (
+                {/* REACTIVACIÓN (FUGA REAL DE TURNO / CONTACTO NULO) */}
+                {pitchChannel === 'reactivation' ? (
+                  <div className="space-y-4">
+                    {/* Alerta de prueba real */}
+                    <div className="p-4 rounded-2xl bg-gradient-to-r from-rose-950/50 via-[#181118] to-purple-950/30 border border-rose-500/30 flex items-start gap-3 shadow-lg">
+                      <div className="p-2.5 rounded-xl bg-rose-500/20 text-rose-300 shrink-0 mt-0.5 border border-rose-500/30">
+                        <PhoneOff size={18} />
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="text-xs font-bold text-white">
+                            Prueba Real y Verídica: Fuga de Atención Demostrada
+                          </h4>
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30">
+                            Evidencia en el propio chat
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-zinc-300 leading-relaxed">
+                          Al no haber recibido respuesta tras el primer contacto, contás con la prueba más contundente e irrefutable: <strong>el consultorio dejó a un potencial paciente sin respuesta en su propio WhatsApp</strong>. Este argumento utiliza esa experiencia real de dolor para demostrar exactamente cómo Dental-IA / CreApp evita que pierdan decenas de turnos y tratamientos al mes.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Card de Mensaje de Reactivación */}
+                    <div className="p-4 rounded-2xl bg-[#09090f] border border-rose-500/25 flex flex-col justify-between gap-3 shadow-xl">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between gap-2 pb-2 border-b border-white/5">
+                          <div className="flex items-center gap-2">
+                            <span className="px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-300 text-[10px] font-mono font-bold">
+                              RE-ENGANCHE
+                            </span>
+                            <span className="text-xs font-bold text-white">
+                              Mensaje de Fuga Real de Turnos
+                            </span>
+                          </div>
+                          <span className="text-[10px] text-zinc-400 font-mono">
+                            Enviar tras 24-72hs sin respuesta
+                          </span>
+                        </div>
+
+                        <p className="text-[10px] text-zinc-400">
+                          🎯 <strong>Objetivo:</strong> Reabrir la conversación apelando a la pérdida de pacientes reales por falta de atención inmediata, invitando a una demo de 2 minutos.
+                        </p>
+
+                        <textarea
+                          rows={8}
+                          value={reactivationText}
+                          onChange={(e) => setReactivationText(e.target.value)}
+                          className="w-full p-3 rounded-xl bg-black/40 border border-white/5 text-zinc-200 text-xs leading-relaxed focus:outline-none focus:border-rose-500 resize-none font-sans"
+                        />
+                      </div>
+
+                      <div className="pt-2 border-t border-white/5 flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleCopyStep('reactivation', reactivationText)}
+                            className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white border border-white/10 flex items-center gap-1.5 transition-colors text-xs"
+                          >
+                            {copiedStep === 'reactivation' ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
+                            <span>{copiedStep === 'reactivation' ? 'Copiado' : 'Copiar Reactivación'}</span>
+                          </button>
+                          <button
+                            onClick={() => loadPitchForChannel(prospect, 'reactivation')}
+                            className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-rose-300 border border-white/10 flex items-center gap-1.5 transition-colors text-xs"
+                            title="Regenerar texto"
+                          >
+                            <RefreshCw size={12} />
+                            <span>Regenerar</span>
+                          </button>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {currentStage === 'no_answer' && onStageChange && (
+                            <button
+                              onClick={() => onStageChange('prospect')}
+                              className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white border border-white/10 flex items-center gap-1.5 transition-colors text-xs font-medium"
+                              title="Reactivar y mover a Prospecto / Lead"
+                            >
+                              <ArrowRight size={12} className="text-emerald-400" />
+                              <span>Mover a Prospectos</span>
+                            </button>
+                          )}
+
+                          {cleanPhone && (
+                            <a
+                              href={formatWhatsAppUrl(prospect.phone || '', reactivationText)}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold flex items-center gap-1.5 shadow-md shadow-emerald-600/20 transition-all text-xs"
+                            >
+                              <Send size={12} />
+                              <span>Enviar Reactivación por WhatsApp</span>
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : pitchChannel === 'conversational' ? (
                   <div className="space-y-4">
                     {/* Strategy info banner */}
                     <div className="p-3.5 rounded-2xl bg-gradient-to-r from-purple-950/40 via-[#12111d] to-indigo-950/30 border border-purple-500/30 flex items-start gap-3">

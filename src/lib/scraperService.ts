@@ -494,6 +494,48 @@ export const generateConversationalHookPitch = (prospect: ScrapedProspect): Conv
 };
 
 /**
+ * Genera el argumento de reactivación para leads en "0. No Contestó / Contacto Nulo".
+ * Enfoque de alta conversión: El dolor del paciente que "no logró comunicarse cuando realmente lo necesitaba".
+ * La falta de respuesta en el propio chat es la prueba real, verídica e irrefutable
+ * de la fuga de turnos y por qué necesitan Dental-IA / CreApp.
+ */
+export const generateReactivationPitch = (prospect: ScrapedProspect): string => {
+  const isDental = /odont|dent|dient/i.test(`${prospect.category || ''} ${prospect.name || ''} ${prospect.digitalHealth.suggestedSolution || ''}`);
+  const isGastro = /gastronom|restauran|comida|pizz|bar|caf[eé]|hamburgue/i.test(prospect.category || '');
+  const friendlyName = extractFriendlyLeadName(prospect.name) || extractBusinessShortName(prospect.name, prospect.category);
+  const city = prospect.city || 'la zona';
+
+  if (isDental) {
+    return (
+      `Hola ${friendlyName}, ¿cómo estás? Te saluda Sebastián nuevamente.\n\n` +
+      `Te escribí hace unos días por acá para consultar por un turno y no tuve respuesta.\n\n` +
+      `Y justamente esto que me pasó a mí es el motivo principal por el que te vuelvo a escribir con total honestidad: lo que acabo de experimentar en carne propia es exactamente lo que le pasa todas las semanas a decenas de pacientes que buscan atención, no reciben respuesta inmediata o fuera de hora, y terminan sacando turno en otro consultorio.\n\n` +
+      `Soy creador de *Dental-IA*. Ayudamos a consultorios y profesionales con excelente reputación en ${city} a resolver esto de raíz: instalamos un asistente inteligente en WhatsApp que responde al instante las dudas frecuentes y agenda turnos en la agenda del consultorio las 24 horas de forma 100% automática.\n\n` +
+      `Si a mí no pudieron responderme por la lógica carga de trabajo del día a día, imaginate cuántos tratamientos y pacientes se les están fugando al mes sin que se den cuenta.\n\n` +
+      `¿Te gustaría que te muestre una *demo interactiva de 2 minutos* para ver cómo solucionar esto definitivamente en tu consultorio? 📞`
+    );
+  }
+
+  if (isGastro) {
+    return (
+      `Hola equipo de ${friendlyName}, ¿cómo están? Les saluda Sebastián de CreApp.\n\n` +
+      `Les escribí hace unos días para consultar por un pedido y no recibí respuesta.\n\n` +
+      `Y precisamente esto que me ocurrió es el motivo por el que les vuelvo a escribir: lo que viví como cliente es exactamente lo que le pasa a comensales que quieren pedirles directo, no reciben respuesta rápida y terminan pidiendo por apps como PedidosYa o Rappi (donde ustedes regalan el 25-30% en comisiones) o se van a la competencia.\n\n` +
+      `En *CreApp Software Lab* desarrollamos sistemas de pedidos automáticos directo a su WhatsApp con panel de comandas en cocina, para que ningún cliente quede sin respuesta y recuperen el 100% de la rentabilidad.\n\n` +
+      `¿Les interesaría ver una *demo interactiva de 2 minutos* de cómo funcionaría para su local, sin ningún compromiso? 🚀`
+    );
+  }
+
+  return (
+    `Hola ${friendlyName}, ¿cómo están? Les saluda Sebastián de CreApp Software Lab.\n\n` +
+    `Les escribí hace unos días para hacerles una consulta sobre sus servicios y no recibí respuesta.\n\n` +
+    `Justamente esto que me ocurrió como potencial cliente es el motivo de este mensaje: en la actualidad, no tener un canal de respuesta automatizado hace que consultas de alto valor queden en el camino y el cliente busque otra alternativa inmediata.\n\n` +
+    `Ayudamos a empresas con gran trayectoria en ${city} a automatizar la captura, calificación y agendamiento de clientes 24/7 para que ninguna oportunidad comercial se pierda por demoras en la atención.\n\n` +
+    `¿Les gustaría coordinar una breve demo interactiva de 2 minutos para ver cómo resolverlo, sin ningún compromiso? 🚀`
+  );
+};
+
+/**
  * Normaliza teléfonos argentinos y limpia emojis/formatos para enlaces nativos de WhatsApp (wa.me)
  */
 export const formatWhatsAppUrl = (phone: string, text: string): string => {
