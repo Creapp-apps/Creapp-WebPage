@@ -1235,38 +1235,38 @@ const ProposalEditor: React.FC = () => {
           )}
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <span style={{ fontSize: '12px', fontWeight: '800', color: brandPrimary, letterSpacing: '3px', textTransform: 'uppercase' }}>
+          <span style={{ fontSize: '13px', fontWeight: '800', color: brandPrimary, letterSpacing: '3px', textTransform: 'uppercase' }}>
             {heroBadge || 'Propuesta Técnica Comercial'}
           </span>
-          <h1 style={{ fontSize: '42px', fontWeight: '950', color: '#0f172a', margin: '15px 0 10px 0', lineHeight: '1.1', letterSpacing: '-1px', textAlign: 'center' }}>
+          <h1 style={{ fontSize: '44px', fontWeight: '950', color: '#0f172a', margin: '15px 0 10px 0', lineHeight: '1.15', letterSpacing: '-1px', textAlign: 'center' }}>
             {heroTitle || 'Desarrollo de Software Integrado'}
           </h1>
           <div style={{ height: '2px', width: '80px', backgroundColor: `${brandPrimary}44`, margin: '20px auto' }}></div>
-          <p style={{ fontSize: '14px', color: '#475569', lineHeight: '1.6', maxWidth: '560px', fontWeight: '300', textAlign: 'center' }}>
+          <p style={{ fontSize: '16px', color: '#475569', lineHeight: '1.65', maxWidth: '580px', fontWeight: '300', textAlign: 'center' }}>
             {description}
           </p>
         </div>
         <div style={{ display: 'flex', gap: '60px', justifyContent: 'center', width: '100%' }}>
           <div style={{ textAlign: 'center' }}>
-            <p style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1.5px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '5px' }}>Preparado para</p>
-            <p style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>{clientLegalData.company_name || clientName}</p>
+            <p style={{ fontSize: '11px', color: '#94a3b8', letterSpacing: '1.5px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '5px' }}>Preparado para</p>
+            <p style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a' }}>{clientLegalData.company_name || clientName}</p>
             {clientLegalData.tax_id && (
-              <p style={{ fontSize: '10px', color: '#64748b', fontWeight: '600', marginTop: '2px' }}>CUIT: {clientLegalData.tax_id}</p>
+              <p style={{ fontSize: '12px', color: '#64748b', fontWeight: '600', marginTop: '2px' }}>CUIT: {clientLegalData.tax_id}</p>
             )}
           </div>
           <div style={{ textAlign: 'center' }}>
-            <p style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1.5px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '5px' }}>Fecha</p>
-            <p style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>{date}</p>
+            <p style={{ fontSize: '11px', color: '#94a3b8', letterSpacing: '1.5px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '5px' }}>Fecha</p>
+            <p style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a' }}>{date}</p>
           </div>
           <div style={{ textAlign: 'center' }}>
-            <p style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1.5px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '5px' }}>Ubicación</p>
-            <p style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>{location}</p>
+            <p style={{ fontSize: '11px', color: '#94a3b8', letterSpacing: '1.5px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '5px' }}>Ubicación</p>
+            <p style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a' }}>{location}</p>
           </div>
         </div>
       </div>
       <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #e2e8f0', paddingTop: '25px' }}>
-        <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold' }}>CreAPP Software & Automation</span>
-        <span style={{ fontSize: '10px', color: '#94a3b8' }}>Dossier Oficial de Propuesta</span>
+        <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 'bold' }}>CreAPP Software & Automation</span>
+        <span style={{ fontSize: '12px', color: '#94a3b8' }}>Dossier Oficial de Propuesta</span>
       </div>
     </div>
   );
@@ -1276,41 +1276,35 @@ const ProposalEditor: React.FC = () => {
     const totalVisibleExclusions = exclusions.slice(0, 6).length;
     const totalItemsPage2 = totalVisibleInclusions + totalVisibleExclusions;
 
-    let p2Gap = '15px';
-    let p2CardPadding = '12px';
-    let p2TitleMarginTop = '15px';
-    let p2MainGap = '20px';
-    let p2DescriptionSize = '10px';
+    let p2Gap = '12px';
+    let p2CardPadding = '12px 14px';
+    let p2TitleMarginTop = '16px';
+    let p2MainGap = '16px';
+    let p2DescriptionSize = '13px';
     let p2TitleSize = '28px';
-    let p2SubTitleSize = '11px';
+    let p2SubTitleSize = '13.5px';
+    let p2ItemTitleSize = '13.5px';
     let p2TextGap = '4px';
 
     if (totalItemsPage2 > 10) {
       p2Gap = '8px';
-      p2CardPadding = '8px';
-      p2TitleMarginTop = '4px';
-      p2MainGap = '8px';
-      p2DescriptionSize = '9px';
-      p2TitleSize = '20px';
-      p2SubTitleSize = '10px';
-      p2TextGap = '2px';
-    } else if (totalItemsPage2 > 8) {
-      p2Gap = '10px';
-      p2CardPadding = '10px';
-      p2TitleMarginTop = '8px';
-      p2MainGap = '14px';
-      p2DescriptionSize = '9.5px';
-      p2TitleSize = '24px';
-      p2SubTitleSize = '10.5px';
+      p2CardPadding = '10px 12px';
+      p2TitleMarginTop = '10px';
+      p2MainGap = '10px';
+      p2DescriptionSize = '12px';
+      p2TitleSize = '26px';
+      p2SubTitleSize = '12.5px';
+      p2ItemTitleSize = '12.5px';
       p2TextGap = '3px';
-    } else if (totalItemsPage2 < 7) {
-      p2Gap = '20px';
-      p2CardPadding = '14px';
-      p2TitleMarginTop = '25px';
-      p2MainGap = '30px';
-      p2DescriptionSize = '11px';
+    } else if (totalItemsPage2 <= 6) {
+      p2Gap = '16px';
+      p2CardPadding = '16px 18px';
+      p2TitleMarginTop = '24px';
+      p2MainGap = '24px';
+      p2DescriptionSize = '14.5px';
       p2TitleSize = '32px';
-      p2SubTitleSize = '12px';
+      p2SubTitleSize = '15px';
+      p2ItemTitleSize = '15px';
       p2TextGap = '6px';
     }
 
@@ -1318,10 +1312,10 @@ const ProposalEditor: React.FC = () => {
       <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '25px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
-            <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
-            <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{heroTitle ? heroTitle.toUpperCase() : 'CBKR APP V2'}</span>
+            <span style={{ fontSize: '15px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
+            <span style={{ fontSize: '11px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{heroTitle ? heroTitle.toUpperCase() : 'CBKR APP V2'}</span>
           </div>
-          <span style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>PROJECT_SCOPE // 02</span>
+          <span style={{ fontSize: '11px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>PROJECT_SCOPE // 02</span>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: p2MainGap }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -1351,10 +1345,10 @@ const ProposalEditor: React.FC = () => {
                     <div style={{ color: brandPrimary, display: 'flex', alignItems: 'center' }}>
                       <IconResolver name={inc.icon_name || 'CheckCircle2'} className="w-4 h-4" />
                     </div>
-                    <h4 style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', margin: '0', textTransform: 'uppercase' }}>{inc.title || 'Entregable'}</h4>
+                    <h4 style={{ fontSize: p2ItemTitleSize, fontWeight: '800', color: '#0f172a', margin: '0', textTransform: 'uppercase' }}>{inc.title || 'Entregable'}</h4>
                   </div>
-                  <p style={{ fontSize: p2DescriptionSize, color: '#475569', margin: '0', lineHeight: '1.4', fontWeight: '300' }}>{inc.description || 'Descripción del alcance.'}</p>
-                  {inc.tooltip && <p style={{ fontSize: '9px', color: '#94a3b8', margin: '2px 0 0 0', fontStyle: 'italic' }}>{inc.tooltip}</p>}
+                  <p style={{ fontSize: p2DescriptionSize, color: '#475569', margin: '0', lineHeight: '1.45', fontWeight: '300' }}>{inc.description || 'Descripción del alcance.'}</p>
+                  {inc.tooltip && <p style={{ fontSize: '11.5px', color: '#94a3b8', margin: '2px 0 0 0', fontStyle: 'italic' }}>{inc.tooltip}</p>}
                 </div>
               );
             })}
@@ -1388,9 +1382,9 @@ const ProposalEditor: React.FC = () => {
                         <div style={{ color: '#e11d48', display: 'flex', alignItems: 'center' }}>
                           <IconResolver name="XCircle" className="w-4 h-4" />
                         </div>
-                        <h4 style={{ fontSize: '11px', fontWeight: '850', color: '#9f1239', margin: '0', textTransform: 'uppercase' }}>{exc.title || 'Exclusión'}</h4>
+                        <h4 style={{ fontSize: p2ItemTitleSize, fontWeight: '850', color: '#9f1239', margin: '0', textTransform: 'uppercase' }}>{exc.title || 'Exclusión'}</h4>
                       </div>
-                      <p style={{ fontSize: p2DescriptionSize, color: '#b91c1c', margin: '0', lineHeight: '1.4', fontWeight: '300' }}>{exc.tooltip || 'No incluido en el presupuesto base.'}</p>
+                      <p style={{ fontSize: p2DescriptionSize, color: '#b91c1c', margin: '0', lineHeight: '1.45', fontWeight: '300' }}>{exc.tooltip || 'No incluido en el presupuesto base.'}</p>
                     </div>
                   );
                 })}
@@ -1398,7 +1392,7 @@ const ProposalEditor: React.FC = () => {
             </div>
           )}
         </div>
-        <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
+        <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '12px', color: '#94a3b8' }}>
           <span>Propuesta Comercial | {clientName}</span>
           <span>{getPageFooter('alcance')}</span>
         </div>
@@ -1411,18 +1405,18 @@ const ProposalEditor: React.FC = () => {
     const isCompact = (milestones && milestones.length >= 4) || (payments && payments.length >= 4);
     return (
       <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: isCompact ? '15px' : '25px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: isCompact ? '16px' : '22px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
-            <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
-            <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{heroTitle ? heroTitle.toUpperCase() : 'CBKR APP V2'}</span>
+            <span style={{ fontSize: '15px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
+            <span style={{ fontSize: '11px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{heroTitle ? heroTitle.toUpperCase() : 'CBKR APP V2'}</span>
           </div>
-          <span style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>PROJECT_ROADMAP // 02</span>
+          <span style={{ fontSize: '11px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>PROJECT_ROADMAP // 02</span>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: isCompact ? '8px' : '20px' }}>
-          <h1 style={{ fontSize: isCompact ? '24px' : '28px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: isCompact ? '12px' : '20px' }}>
+          <h1 style={{ fontSize: isCompact ? '26px' : '30px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
             CRONOGRAMA DE FASES & <span style={{ fontStyle: 'italic', color: brandPrimary }}>ENTREGAS</span>
           </h1>
-          <p style={{ fontSize: isCompact ? '10px' : '11px', color: '#475569', lineHeight: '1.35', fontWeight: '300', margin: '0' }}>
+          <p style={{ fontSize: isCompact ? '13px' : '14.5px', color: '#475569', lineHeight: '1.45', fontWeight: '300', margin: '0' }}>
             {(() => {
               const meth = methodology || DEFAULT_METHODOLOGY;
               const text = meth.phases_intro ?? DEFAULT_METHODOLOGY.phases_intro;
@@ -1437,35 +1431,35 @@ const ProposalEditor: React.FC = () => {
             })()}
           </p>
           <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: '2px', marginBottom: '2px' }}>
-            <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Estructura de Sprints Mensuales</span>
+            <span style={{ fontSize: '11.5px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Estructura de Sprints Mensuales</span>
             <div style={{ flexGrow: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: isCompact ? '6px' : '15px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: isCompact ? '8px' : '16px' }}>
             {milestones && milestones.map((m, i) => (
-              <div key={m.id || i} style={{ display: 'flex', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', minHeight: isCompact ? '68px' : '95px', boxSizing: 'border-box' }}>
-                <div style={{ width: isCompact ? '65px' : '80px', flexShrink: 0, flexGrow: 0, backgroundColor: '#000000', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: '#ffffff', gap: '2px', boxSizing: 'border-box' }}>
-                  <span style={{ fontSize: '8px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.8 }}>Fase</span>
-                  <span style={{ fontSize: isCompact ? '16px' : '20px', fontWeight: '950' }}>{i + 1}</span>
+              <div key={m.id || i} style={{ display: 'flex', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', minHeight: isCompact ? '82px' : '105px', boxSizing: 'border-box' }}>
+                <div style={{ width: isCompact ? '75px' : '90px', flexShrink: 0, flexGrow: 0, backgroundColor: '#000000', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: '#ffffff', gap: '2px', boxSizing: 'border-box' }}>
+                  <span style={{ fontSize: '10px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.8 }}>Fase</span>
+                  <span style={{ fontSize: isCompact ? '22px' : '28px', fontWeight: '950' }}>{i + 1}</span>
                 </div>
-                <div style={{ flexGrow: 1, flexShrink: 1, minWidth: 0, padding: isCompact ? '6px 12px' : '15px 20px', display: 'flex', flexDirection: 'column', gap: '3px', justifyContent: 'center', boxSizing: 'border-box' }}>
-                  <h4 style={{ fontSize: isCompact ? '11px' : '12px', fontWeight: '900', color: '#0f172a', margin: '0', textTransform: 'uppercase' }}>{m.title}</h4>
-                  <p style={{ fontSize: isCompact ? '9px' : '10px', color: '#475569', lineHeight: '1.2', margin: '0', fontWeight: '300' }}>
+                <div style={{ flexGrow: 1, flexShrink: 1, minWidth: 0, padding: isCompact ? '8px 14px' : '14px 20px', display: 'flex', flexDirection: 'column', gap: '4px', justifyContent: 'center', boxSizing: 'border-box' }}>
+                  <h4 style={{ fontSize: isCompact ? '13.5px' : '15px', fontWeight: '900', color: '#0f172a', margin: '0', textTransform: 'uppercase' }}>{m.title}</h4>
+                  <p style={{ fontSize: isCompact ? '12px' : '13.5px', color: '#475569', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
                     {m.description || 'Sin descripción de entregables.'}
                   </p>
                 </div>
-                <div style={{ width: isCompact ? '105px' : '120px', flexShrink: 0, flexGrow: 0, borderLeft: '1px solid #e2e8f0', padding: isCompact ? '6px 10px' : '15px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '2px', backgroundColor: '#fafafa', boxSizing: 'border-box' }}>
-                  <span style={{ fontSize: '7px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Hito Control</span>
-                  <span style={{ fontSize: isCompact ? '9px' : '10px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', textAlign: 'center', lineHeight: '1.1' }}>
+                <div style={{ width: isCompact ? '115px' : '135px', flexShrink: 0, flexGrow: 0, borderLeft: '1px solid #e2e8f0', padding: isCompact ? '8px 12px' : '14px 16px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '3px', backgroundColor: '#fafafa', boxSizing: 'border-box' }}>
+                  <span style={{ fontSize: '9px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Hito Control</span>
+                  <span style={{ fontSize: isCompact ? '11px' : '13px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', textAlign: 'center', lineHeight: '1.2' }}>
                     {m.control_milestone || 'VERIFICACIÓN'}
                   </span>
                 </div>
                 {!methodology?.hide_milestone_prices && (
-                  <div style={{ width: isCompact ? '105px' : '120px', flexShrink: 0, flexGrow: 0, borderLeft: '1px solid #e2e8f0', padding: isCompact ? '6px 10px' : '15px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '2px', backgroundColor: '#fafafa', boxSizing: 'border-box' }}>
-                    <span style={{ fontSize: '7px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Inversión</span>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}>
-                      <span style={{ fontSize: isCompact ? '13px' : '14px', fontWeight: '950', color: '#000000', lineHeight: '1.1' }}>${formatMilestonePrice(m.price)}</span>
-                      <span style={{ fontSize: '8px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', lineHeight: '1.1' }}>{currency}</span>
+                  <div style={{ width: isCompact ? '115px' : '135px', flexShrink: 0, flexGrow: 0, borderLeft: '1px solid #e2e8f0', padding: isCompact ? '8px 12px' : '14px 16px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '3px', backgroundColor: '#fafafa', boxSizing: 'border-box' }}>
+                    <span style={{ fontSize: '9px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Inversión</span>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '3px' }}>
+                      <span style={{ fontSize: isCompact ? '16px' : '18.5px', fontWeight: '950', color: '#000000', lineHeight: '1.1' }}>${formatMilestonePrice(m.price)}</span>
+                      <span style={{ fontSize: '10px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', lineHeight: '1.1' }}>{currency}</span>
                     </div>
                   </div>
                 )}
@@ -1475,21 +1469,21 @@ const ProposalEditor: React.FC = () => {
 
           {infrastructureCosts && infrastructureCosts.length > 0 && (
             <div style={{ marginTop: '2px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '4px' }}>
-                <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Costos de Infraestructura Asociados</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '6px' }}>
+                <span style={{ fontSize: '11.5px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Costos de Infraestructura Asociados</span>
                 <div style={{ flexGrow: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
               </div>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                 {infrastructureCosts.map((infra, idx) => (
-                  <div key={idx} style={{ flex: '1 1 180px', padding: '5px 10px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '9px' }}>
+                  <div key={idx} style={{ flex: '1 1 200px', padding: '7px 12px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                       <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{infra.provider}</span>
                       {infra.is_optional && (
-                        <span style={{ fontSize: '7px', padding: '1px 4px', backgroundColor: '#fef3c7', color: '#d97706', borderRadius: '4px', fontWeight: '900', letterSpacing: '0.5px' }}>OPCIONAL</span>
+                        <span style={{ fontSize: '9px', padding: '1px 5px', backgroundColor: '#fef3c7', color: '#d97706', borderRadius: '4px', fontWeight: '900', letterSpacing: '0.5px' }}>OPCIONAL</span>
                       )}
                       <span style={{ color: '#64748b' }}> — {infra.title}</span>
                     </div>
-                    <span style={{ fontWeight: 'bold', color: brandPrimary, flexShrink: 0, marginLeft: '10px' }}>{infra.monthly_cost}</span>
+                    <span style={{ fontWeight: 'bold', color: brandPrimary, flexShrink: 0, marginLeft: '10px', fontSize: '12.5px' }}>{infra.monthly_cost}</span>
                   </div>
                 ))}
               </div>
@@ -1498,20 +1492,20 @@ const ProposalEditor: React.FC = () => {
 
           {payments && payments.length > 0 && (
             <div style={{ marginTop: '4px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '6px' }}>
-                <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Esquema de Pagos / Hitos de Financiamiento</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '8px' }}>
+                <span style={{ fontSize: '11.5px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Esquema de Pagos / Hitos de Financiamiento</span>
                 <div style={{ flexGrow: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${payments.length}, minmax(0, 1fr))`, gap: payments.length > 3 ? '8px' : '10px', width: '100%' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${payments.length}, minmax(0, 1fr))`, gap: payments.length > 3 ? '10px' : '12px', width: '100%' }}>
                 {payments.map((p, idx) => (
-                  <div key={idx} style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: payments.length > 3 ? '8px 10px' : '10px 12px', display: 'flex', flexDirection: 'column', gap: '4px', boxSizing: 'border-box' }}>
+                  <div key={idx} style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: payments.length > 3 ? '10px 12px' : '12px 14px', display: 'flex', flexDirection: 'column', gap: '5px', boxSizing: 'border-box' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '4px' }}>
-                      <span style={{ fontSize: payments.length > 3 ? '8.5px' : '9px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', lineHeight: '1.2' }}>{p.label}</span>
-                      <span style={{ fontSize: payments.length > 3 ? '11px' : '12px', fontWeight: '950', color: brandPrimary, flexShrink: 0 }}>{p.percentage}</span>
+                      <span style={{ fontSize: payments.length > 3 ? '11px' : '12.5px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', lineHeight: '1.2' }}>{p.label}</span>
+                      <span style={{ fontSize: payments.length > 3 ? '15px' : '18px', fontWeight: '950', color: brandPrimary, flexShrink: 0 }}>{p.percentage}</span>
                     </div>
-                    <span style={{ fontSize: payments.length > 3 ? '8px' : '9px', color: '#475569', fontWeight: '300', lineHeight: '1.3' }}>{p.description}</span>
+                    <span style={{ fontSize: payments.length > 3 ? '11px' : '12.5px', color: '#475569', fontWeight: '300', lineHeight: '1.4' }}>{p.description}</span>
                     {p.tooltip && (
-                      <span style={{ fontSize: payments.length > 3 ? '7.5px' : '8px', color: '#94a3b8', fontStyle: 'italic', lineHeight: '1.3', marginTop: '2px' }}>{p.tooltip}</span>
+                      <span style={{ fontSize: payments.length > 3 ? '9.5px' : '11px', color: '#94a3b8', fontStyle: 'italic', lineHeight: '1.3', marginTop: '2px' }}>{p.tooltip}</span>
                     )}
                   </div>
                 ))}
@@ -1519,7 +1513,7 @@ const ProposalEditor: React.FC = () => {
             </div>
           )}
         </div>
-        <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
+        <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '12px', color: '#94a3b8' }}>
           <span>Presupuesto Consolidado: <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{formatTotalValue(totalValue)} TOTAL</span></span>
           <span>{getPageFooter('hitos')}</span>
         </div>
@@ -1533,25 +1527,25 @@ const ProposalEditor: React.FC = () => {
       <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '25px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
-            <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
-            <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{heroTitle ? heroTitle.toUpperCase() : 'CBKR APP V2'}</span>
+            <span style={{ fontSize: '15px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
+            <span style={{ fontSize: '11px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{heroTitle ? heroTitle.toUpperCase() : 'CBKR APP V2'}</span>
           </div>
-          <span style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>TIME_ESTIMATION // MES 1 Y 2</span>
+          <span style={{ fontSize: '11px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>TIME_ESTIMATION // MES 1 Y 2</span>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: '15px' }}>
-          <h1 style={{ fontSize: '28px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
+          <h1 style={{ fontSize: '30px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
             DESGLOSE DE HORAS — <span style={{ fontStyle: 'italic', color: brandPrimary }}>SEMANAS 1 A 8</span>
           </h1>
-          <p style={{ fontSize: '11px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
+          <p style={{ fontSize: '14px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
             {(methodology || DEFAULT_METHODOLOGY).weekly_breakdown_intro_1_8 || DEFAULT_METHODOLOGY.weekly_breakdown_intro_1_8}
           </p>
           <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
             <thead>
               <tr style={{ backgroundColor: '#0f172a', color: '#ffffff' }}>
-                <th style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '900', textAlign: 'left', letterSpacing: '1px', width: '10%' }}>SEMANA</th>
-                <th style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '900', textAlign: 'left', letterSpacing: '1px', width: '25%' }}>HITO / TAREA</th>
-                <th style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '900', textAlign: 'left', letterSpacing: '1px', width: '50%' }}>DETALLE TÉCNICO DE IMPLEMENTACIÓN</th>
-                <th style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '900', textAlign: 'right', letterSpacing: '1px', width: '15%', color: brandSecondary }}>ESFUERZO</th>
+                <th style={{ padding: '12px 14px', fontSize: '11px', fontWeight: '900', textAlign: 'left', letterSpacing: '1px', width: '10%' }}>SEMANA</th>
+                <th style={{ padding: '12px 14px', fontSize: '11px', fontWeight: '900', textAlign: 'left', letterSpacing: '1px', width: '25%' }}>HITO / TAREA</th>
+                <th style={{ padding: '12px 14px', fontSize: '11px', fontWeight: '900', textAlign: 'left', letterSpacing: '1px', width: '50%' }}>DETALLE TÉCNICO DE IMPLEMENTACIÓN</th>
+                <th style={{ padding: '12px 14px', fontSize: '11px', fontWeight: '900', textAlign: 'right', letterSpacing: '1px', width: '15%', color: brandSecondary }}>ESFUERZO</th>
               </tr>
             </thead>
             <tbody>
@@ -1559,25 +1553,25 @@ const ProposalEditor: React.FC = () => {
                 if (item.type === 'milestone') {
                   return (
                     <tr key={item.id} style={{ backgroundColor: '#f1f5f9' }}>
-                      <td style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '800', color: '#0f172a' }}>{item.id}</td>
-                      <td colSpan={2} style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase' }}>{item.title}</td>
-                      <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: '900', color: '#0f172a', textAlign: 'right' }}>{item.hours} hs</td>
+                      <td style={{ padding: '10px 14px', fontSize: '11.5px', fontWeight: '800', color: '#0f172a' }}>{item.id}</td>
+                      <td colSpan={2} style={{ padding: '10px 14px', fontSize: '11.5px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase' }}>{item.title}</td>
+                      <td style={{ padding: '10px 14px', fontSize: '12px', fontWeight: '900', color: '#0f172a', textAlign: 'right' }}>{item.hours} hs</td>
                     </tr>
                   );
                 }
                 return (
                   <tr key={item.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                    <td style={{ padding: '10px 12px', fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>{item.id}</td>
-                    <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: '800', color: '#0f172a' }}>{item.title}</td>
-                    <td style={{ padding: '10px 12px', fontSize: '10px', color: '#475569', lineHeight: '1.4', fontWeight: '300' }}>{item.detail}</td>
-                    <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: 'bold', color: brandSecondary, textAlign: 'right' }}>{item.hours} hs</td>
+                    <td style={{ padding: '10px 14px', fontSize: '12px', color: '#64748b', fontWeight: 'bold' }}>{item.id}</td>
+                    <td style={{ padding: '10px 14px', fontSize: '12.5px', fontWeight: '800', color: '#0f172a' }}>{item.title}</td>
+                    <td style={{ padding: '10px 14px', fontSize: '12px', color: '#475569', lineHeight: '1.45', fontWeight: '300' }}>{item.detail}</td>
+                    <td style={{ padding: '10px 14px', fontSize: '12px', fontWeight: 'bold', color: brandSecondary, textAlign: 'right' }}>{item.hours} hs</td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
         </div>
-        <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
+        <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '12px', color: '#94a3b8' }}>
           <span>CREAPP // ACCUMULATED_HOURS_80</span>
           <span>{getPageFooter('sem1-6')}</span>
         </div>
@@ -1591,25 +1585,25 @@ const ProposalEditor: React.FC = () => {
       <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '25px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
-            <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
-            <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{heroTitle ? heroTitle.toUpperCase() : 'CBKR APP V2'}</span>
+            <span style={{ fontSize: '15px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
+            <span style={{ fontSize: '11px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{heroTitle ? heroTitle.toUpperCase() : 'CBKR APP V2'}</span>
           </div>
-          <span style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>TIME_ESTIMATION // MES 3 Y 4</span>
+          <span style={{ fontSize: '11px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>TIME_ESTIMATION // MES 3 Y 4</span>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: '15px' }}>
-          <h1 style={{ fontSize: '28px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
+          <h1 style={{ fontSize: '30px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
             DESGLOSE DE HORAS — <span style={{ fontStyle: 'italic', color: brandPrimary }}>SEMANAS 9 A 16</span>
           </h1>
-          <p style={{ fontSize: '11px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
+          <p style={{ fontSize: '14px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
             {(methodology || DEFAULT_METHODOLOGY).weekly_breakdown_intro_9_16 || DEFAULT_METHODOLOGY.weekly_breakdown_intro_9_16}
           </p>
           <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
             <thead>
               <tr style={{ backgroundColor: '#0f172a', color: '#ffffff' }}>
-                <th style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '900', textAlign: 'left', letterSpacing: '1px', width: '10%' }}>SEMANA</th>
-                <th style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '900', textAlign: 'left', letterSpacing: '1px', width: '25%' }}>HITO / TAREA</th>
-                <th style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '900', textAlign: 'left', letterSpacing: '1px', width: '50%' }}>DETALLE TÉCNICO DE IMPLEMENTACIÓN</th>
-                <th style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '900', textAlign: 'right', letterSpacing: '1px', width: '15%', color: brandSecondary }}>ESFUERZO</th>
+                <th style={{ padding: '12px 14px', fontSize: '11px', fontWeight: '900', textAlign: 'left', letterSpacing: '1px', width: '10%' }}>SEMANA</th>
+                <th style={{ padding: '12px 14px', fontSize: '11px', fontWeight: '900', textAlign: 'left', letterSpacing: '1px', width: '25%' }}>HITO / TAREA</th>
+                <th style={{ padding: '12px 14px', fontSize: '11px', fontWeight: '900', textAlign: 'left', letterSpacing: '1px', width: '50%' }}>DETALLE TÉCNICO DE IMPLEMENTACIÓN</th>
+                <th style={{ padding: '12px 14px', fontSize: '11px', fontWeight: '900', textAlign: 'right', letterSpacing: '1px', width: '15%', color: brandSecondary }}>ESFUERZO</th>
               </tr>
             </thead>
             <tbody>
@@ -1617,25 +1611,25 @@ const ProposalEditor: React.FC = () => {
                 if (item.type === 'milestone') {
                   return (
                     <tr key={item.id} style={{ backgroundColor: '#f1f5f9' }}>
-                      <td style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '800', color: '#0f172a' }}>{item.id}</td>
-                      <td colSpan={2} style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase' }}>{item.title}</td>
-                      <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: '900', color: '#0f172a', textAlign: 'right' }}>{item.hours} hs</td>
+                      <td style={{ padding: '10px 14px', fontSize: '11.5px', fontWeight: '800', color: '#0f172a' }}>{item.id}</td>
+                      <td colSpan={2} style={{ padding: '10px 14px', fontSize: '11.5px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase' }}>{item.title}</td>
+                      <td style={{ padding: '10px 14px', fontSize: '12px', fontWeight: '900', color: '#0f172a', textAlign: 'right' }}>{item.hours} hs</td>
                     </tr>
                   );
                 }
                 return (
                   <tr key={item.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                    <td style={{ padding: '10px 12px', fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>{item.id}</td>
-                    <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: '800', color: '#0f172a' }}>{item.title}</td>
-                    <td style={{ padding: '10px 12px', fontSize: '10px', color: '#475569', lineHeight: '1.4', fontWeight: '300' }}>{item.detail}</td>
-                    <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: 'bold', color: brandSecondary, textAlign: 'right' }}>{item.hours} hs</td>
+                    <td style={{ padding: '10px 14px', fontSize: '12px', color: '#64748b', fontWeight: 'bold' }}>{item.id}</td>
+                    <td style={{ padding: '10px 14px', fontSize: '12.5px', fontWeight: '800', color: '#0f172a' }}>{item.title}</td>
+                    <td style={{ padding: '10px 14px', fontSize: '12px', color: '#475569', lineHeight: '1.45', fontWeight: '300' }}>{item.detail}</td>
+                    <td style={{ padding: '10px 14px', fontSize: '12px', fontWeight: 'bold', color: brandSecondary, textAlign: 'right' }}>{item.hours} hs</td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
         </div>
-        <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
+        <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '12px', color: '#94a3b8' }}>
           <span>CREAPP // ESTIMATED_HOURS_160_TOTAL</span>
           <span>{getPageFooter('sem9-16')}</span>
         </div>
@@ -1646,44 +1640,45 @@ const ProposalEditor: React.FC = () => {
   const renderPage6 = () => {
     const meth = methodology || DEFAULT_METHODOLOGY;
     const clientNameReplacer = (text: string) => (text || '').replace('{client_name}', clientName || 'el cliente');
+    const pillars = getPillars(meth, brandPrimary, brandSecondary);
+    const isCompact = !meth.hide_weekly_schedule && pillars.length >= 4;
 
     return (
       <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '25px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
-            <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
-            <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{heroTitle ? heroTitle.toUpperCase() : 'CBKR APP V2'}</span>
+            <span style={{ fontSize: '15px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
+            <span style={{ fontSize: '11px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{heroTitle ? heroTitle.toUpperCase() : 'CBKR APP V2'}</span>
           </div>
-          <span style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>AGILE_METHODOLOGY // 04</span>
+          <span style={{ fontSize: '11px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>AGILE_METHODOLOGY // 04</span>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: '20px' }}>
-          <h1 style={{ fontSize: '28px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
+          <h1 style={{ fontSize: '30px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
             METODOLOGÍA DE TRABAJO & <span style={{ fontStyle: 'italic', color: brandPrimary }}>PLAN DE ACCIÓN</span>
           </h1>
-          <p style={{ fontSize: '11px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
+          <p style={{ fontSize: '14.5px', color: '#475569', lineHeight: '1.55', fontWeight: '300', margin: '0' }}>
             {meth.intro_text || DEFAULT_METHODOLOGY.intro_text}
           </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: meth.hide_weekly_schedule ? '16px' : (getPillars(meth, brandPrimary, brandSecondary).length >= 4 ? '10px' : '15px'), marginTop: '5px' }}>
-            {getPillars(meth, brandPrimary, brandSecondary).map((pillar, idx) => {
+          <div style={{ display: 'flex', flexDirection: 'column', gap: meth.hide_weekly_schedule ? '16px' : (isCompact ? '10px' : '15px'), marginTop: '5px' }}>
+            {pillars.map((pillar, idx) => {
               const mainColor = pillar.color || (idx % 2 === 0 ? brandPrimary : brandSecondary);
-              const isCompact = !meth.hide_weekly_schedule && getPillars(meth, brandPrimary, brandSecondary).length >= 4;
               return (
                 <div
                   key={pillar.id || idx}
                   style={{
-                    padding: meth.hide_weekly_schedule ? '18px 22px' : (isCompact ? '12px 16px' : '18px 20px'),
+                    padding: meth.hide_weekly_schedule ? '20px 24px' : (isCompact ? '14px 18px' : '18px 22px'),
                     borderRadius: '12px',
                     backgroundColor: `${mainColor}0A`,
                     border: `1px solid ${mainColor}33`,
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '4px'
+                    gap: '6px'
                   }}
                 >
-                  <h4 style={{ fontSize: '10px', fontWeight: '900', color: mainColor, margin: '0', letterSpacing: '1.5px', textTransform: 'uppercase' }}>
+                  <h4 style={{ fontSize: '13.5px', fontWeight: '900', color: mainColor, margin: '0', letterSpacing: '1.2px', textTransform: 'uppercase' }}>
                     {pillar.title}
                   </h4>
-                  <p style={{ fontSize: meth.hide_weekly_schedule ? '11px' : (isCompact ? '10px' : '11px'), color: '#475569', lineHeight: '1.5', margin: '0', fontWeight: '300' }}>
+                  <p style={{ fontSize: meth.hide_weekly_schedule ? '13.5px' : (isCompact ? '12px' : '13px'), color: '#475569', lineHeight: '1.5', margin: '0', fontWeight: '300' }}>
                     {clientNameReplacer(pillar.description)}
                   </p>
                 </div>
@@ -1691,39 +1686,39 @@ const ProposalEditor: React.FC = () => {
             })}
 
             {!meth.hide_weekly_schedule && (
-              <div style={{ padding: '20px', borderRadius: '12px', border: '1px solid #0f172a', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ padding: '20px', borderRadius: '12px', border: '1px solid #0f172a', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 <div>
-                  <h5 style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                  <h5 style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0', letterSpacing: '1px', textTransform: 'uppercase' }}>
                     {meth.schedule_monday_title || DEFAULT_METHODOLOGY.schedule_monday_title}
                   </h5>
-                  <h6 style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', margin: '0 0 2px 0', textTransform: 'uppercase' }}>
+                  <h6 style={{ fontSize: '13.5px', fontWeight: '800', color: '#0f172a', margin: '0 0 2px 0', textTransform: 'uppercase' }}>
                     {meth.schedule_monday_subtitle || DEFAULT_METHODOLOGY.schedule_monday_subtitle}
                   </h6>
-                  <p style={{ fontSize: '10px', color: '#475569', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
+                  <p style={{ fontSize: '12.5px', color: '#475569', lineHeight: '1.45', margin: '0', fontWeight: '300' }}>
                     {clientNameReplacer(meth.schedule_monday_text || DEFAULT_METHODOLOGY.schedule_monday_text)}
                   </p>
                 </div>
                 <div style={{ height: '1px', backgroundColor: '#e2e8f0' }}></div>
                 <div>
-                  <h5 style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                  <h5 style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0', letterSpacing: '1px', textTransform: 'uppercase' }}>
                     {meth.schedule_tuesday_title || DEFAULT_METHODOLOGY.schedule_tuesday_title}
                   </h5>
-                  <h6 style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', margin: '0 0 2px 0', textTransform: 'uppercase' }}>
+                  <h6 style={{ fontSize: '13.5px', fontWeight: '800', color: '#0f172a', margin: '0 0 2px 0', textTransform: 'uppercase' }}>
                     {meth.schedule_tuesday_subtitle || DEFAULT_METHODOLOGY.schedule_tuesday_subtitle}
                   </h6>
-                  <p style={{ fontSize: '10px', color: '#475569', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
+                  <p style={{ fontSize: '12.5px', color: '#475569', lineHeight: '1.45', margin: '0', fontWeight: '300' }}>
                     {clientNameReplacer(meth.schedule_tuesday_text || DEFAULT_METHODOLOGY.schedule_tuesday_text)}
                   </p>
                 </div>
                 <div style={{ height: '1px', backgroundColor: '#e2e8f0' }}></div>
                 <div>
-                  <h5 style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                  <h5 style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0', letterSpacing: '1px', textTransform: 'uppercase' }}>
                     {meth.schedule_friday_title || DEFAULT_METHODOLOGY.schedule_friday_title}
                   </h5>
-                  <h6 style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', margin: '0 0 2px 0', textTransform: 'uppercase' }}>
+                  <h6 style={{ fontSize: '13.5px', fontWeight: '800', color: '#0f172a', margin: '0 0 2px 0', textTransform: 'uppercase' }}>
                     {meth.schedule_friday_subtitle || DEFAULT_METHODOLOGY.schedule_friday_subtitle}
                   </h6>
-                  <p style={{ fontSize: '10px', color: '#475569', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
+                  <p style={{ fontSize: '12.5px', color: '#475569', lineHeight: '1.45', margin: '0', fontWeight: '300' }}>
                     {clientNameReplacer(meth.schedule_friday_text || DEFAULT_METHODOLOGY.schedule_friday_text)}
                   </p>
                 </div>
@@ -1731,7 +1726,7 @@ const ProposalEditor: React.FC = () => {
             )}
           </div>
         </div>
-        <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
+        <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '12px', color: '#94a3b8' }}>
           <span>Propuesta Comercial | {clientName}</span>
           <span>{getPageFooter('metodologia')}</span>
         </div>
@@ -1836,23 +1831,23 @@ const ProposalEditor: React.FC = () => {
       }}>
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '8px', marginBottom: '14px' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', alignItems: 'flex-start' }}>
-            <span style={{ fontSize: '11px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
-            <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
+            <span style={{ fontSize: '15px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
+            <span style={{ fontSize: '11px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>
               {heroTitle ? heroTitle.toUpperCase() : (selectedProductId ? selectedProductId.toUpperCase() + ' PLATFORM' : 'SOFTWARE LAB')}
             </span>
           </div>
-          <span style={{ fontSize: '8.5px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>
+          <span style={{ fontSize: '11px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>
             SERVICE_AGREEMENT // PÁG. 1 DE 2
           </span>
         </div>
 
         {/* Title & Description */}
         <div style={{ marginBottom: '12px' }}>
-          <h1 style={{ fontSize: '22px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
+          <h1 style={{ fontSize: '26px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
             CONTRATO DE SERVICIO & <span style={{ fontStyle: 'italic', color: brandPrimary }}>LICENCIA SAAS</span>
           </h1>
-          <p style={{ fontSize: '9.5px', color: '#475569', lineHeight: '1.45', fontWeight: '300', margin: '4px 0 0 0' }}>
+          <p style={{ fontSize: '13px', color: '#475569', lineHeight: '1.45', fontWeight: '300', margin: '4px 0 0 0' }}>
             {contractDescription || getCreappProductPreset(selectedProductId).contract_description}
           </p>
         </div>
@@ -1860,13 +1855,13 @@ const ProposalEditor: React.FC = () => {
         {/* Proemio / Comparecencia */}
         {header ? (
           <div style={{
-            fontSize: '9.5px',
+            fontSize: '12px',
             color: '#1e293b',
-            lineHeight: '1.55',
+            lineHeight: '1.6',
             backgroundColor: '#f8fafc',
             borderRadius: '10px',
             border: '1px solid #e2e8f0',
-            padding: '12px 16px',
+            padding: '14px 18px',
             marginBottom: '14px',
             whiteSpace: 'pre-wrap',
             fontFamily: 'system-ui, -apple-system, sans-serif'
@@ -1880,7 +1875,7 @@ const ProposalEditor: React.FC = () => {
           {part1Clauses.map((clause, idx) => (
             <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <div style={{
-                fontSize: '10px',
+                fontSize: '13px',
                 fontWeight: '900',
                 color: '#0f172a',
                 letterSpacing: '0.4px',
@@ -1889,13 +1884,13 @@ const ProposalEditor: React.FC = () => {
                 alignItems: 'baseline',
                 gap: '6px'
               }}>
-                <span style={{ color: brandPrimary, fontWeight: '900', fontSize: '11px' }}>§</span>
+                <span style={{ color: brandPrimary, fontWeight: '900', fontSize: '14px' }}>§</span>
                 <span>{clause.title}</span>
               </div>
               <p style={{
-                fontSize: '9.5px',
+                fontSize: '12px',
                 color: '#334155',
-                lineHeight: '1.6',
+                lineHeight: '1.65',
                 textAlign: 'justify',
                 margin: '0',
                 fontFamily: 'system-ui, -apple-system, sans-serif',
@@ -1908,7 +1903,7 @@ const ProposalEditor: React.FC = () => {
         </div>
 
         {/* Footer */}
-        <div style={{ position: 'absolute', bottom: '30px', left: '65px', right: '65px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '12px', fontSize: '9px', color: '#94a3b8' }}>
+        <div style={{ position: 'absolute', bottom: '30px', left: '65px', right: '65px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '12px', fontSize: '12px', color: '#94a3b8' }}>
           <span>Contrato de Servicio | {clientName}</span>
           <span>{getPageFooter('legal')}</span>
         </div>
@@ -1955,23 +1950,23 @@ const ProposalEditor: React.FC = () => {
       }}>
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '8px', marginBottom: '14px' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', alignItems: 'flex-start' }}>
-            <span style={{ fontSize: '11px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
-            <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
+            <span style={{ fontSize: '15px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
+            <span style={{ fontSize: '11px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>
               {heroTitle ? heroTitle.toUpperCase() : (selectedProductId ? selectedProductId.toUpperCase() + ' PLATFORM' : 'SOFTWARE LAB')}
             </span>
           </div>
-          <span style={{ fontSize: '8.5px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>
+          <span style={{ fontSize: '11px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>
             SERVICE_AGREEMENT // PÁG. 2 DE 2
           </span>
         </div>
 
         {/* Title */}
         <div style={{ marginBottom: '12px' }}>
-          <h1 style={{ fontSize: '22px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
+          <h1 style={{ fontSize: '26px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
             TÉRMINOS GENERALES & <span style={{ fontStyle: 'italic', color: brandPrimary }}>FIRMAS</span>
           </h1>
-          <p style={{ fontSize: '9.5px', color: '#475569', lineHeight: '1.45', fontWeight: '300', margin: '4px 0 0 0' }}>
+          <p style={{ fontSize: '13px', color: '#475569', lineHeight: '1.45', fontWeight: '300', margin: '4px 0 0 0' }}>
             Soporte técnico, confidencialidad de datos, vigencia contractual y suscripción fehaciente.
           </p>
         </div>
@@ -1981,7 +1976,7 @@ const ProposalEditor: React.FC = () => {
           {part2Clauses.map((clause, idx) => (
             <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
               <div style={{
-                fontSize: '9.5px',
+                fontSize: '12.5px',
                 fontWeight: '900',
                 color: '#0f172a',
                 letterSpacing: '0.4px',
@@ -1990,11 +1985,11 @@ const ProposalEditor: React.FC = () => {
                 alignItems: 'baseline',
                 gap: '5px'
               }}>
-                <span style={{ color: brandPrimary, fontWeight: '900', fontSize: '10.5px' }}>§</span>
+                <span style={{ color: brandPrimary, fontWeight: '900', fontSize: '13.5px' }}>§</span>
                 <span>{clause.title}</span>
               </div>
               <p style={{
-                fontSize: '9px',
+                fontSize: '11.5px',
                 color: '#334155',
                 lineHeight: '1.55',
                 textAlign: 'justify',
@@ -2020,26 +2015,26 @@ const ProposalEditor: React.FC = () => {
           gap: '10px'
         }}>
           <div>
-            <span style={{ fontSize: '7.5px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Tarifa Mensual</span>
-            <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a' }}>{totalValue || serviceDetails?.recurring_fee || '$350 USD / mes'}</span>
+            <span style={{ fontSize: '9.5px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Tarifa Mensual</span>
+            <span style={{ fontSize: '14.5px', fontWeight: '900', color: '#0f172a' }}>{totalValue || serviceDetails?.recurring_fee || '$350 USD / mes'}</span>
           </div>
           <div>
-            <span style={{ fontSize: '7.5px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Disponibilidad SLA</span>
-            <span style={{ fontSize: '12px', fontWeight: '900', color: '#059669' }}>{serviceDetails?.sla_uptime || '99.5% Uptime'}</span>
+            <span style={{ fontSize: '9.5px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Disponibilidad SLA</span>
+            <span style={{ fontSize: '14.5px', fontWeight: '900', color: '#059669' }}>{serviceDetails?.sla_uptime || '99.5% Uptime'}</span>
           </div>
           <div>
-            <span style={{ fontSize: '7.5px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Vigencia Inicial</span>
-            <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a' }}>{serviceDetails?.min_term_months || serviceDetails?.minimum_commitment || '6 Meses'}</span>
+            <span style={{ fontSize: '9.5px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Vigencia Inicial</span>
+            <span style={{ fontSize: '14.5px', fontWeight: '900', color: '#0f172a' }}>{serviceDetails?.min_term_months || serviceDetails?.minimum_commitment || '6 Meses'}</span>
           </div>
           <div>
-            <span style={{ fontSize: '7.5px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Jurisdicción</span>
-            <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a' }}>{location || 'Buenos Aires, ARG'}</span>
+            <span style={{ fontSize: '9.5px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Jurisdicción</span>
+            <span style={{ fontSize: '14.5px', fontWeight: '900', color: '#0f172a' }}>{location || 'Buenos Aires, ARG'}</span>
           </div>
         </div>
 
         {/* Cierre Formal */}
         <div style={{
-          fontSize: '8.5px',
+          fontSize: '11px',
           color: '#475569',
           fontStyle: 'italic',
           lineHeight: '1.45',
@@ -2054,42 +2049,42 @@ const ProposalEditor: React.FC = () => {
         {/* Firmas a 3 columnas */}
         <div style={{ display: 'flex', gap: '16px' }}>
           <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '5px' }}>
-            <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '1px' }}>Por CreAPP Software Lab</p>
+            <p style={{ fontSize: '10px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '1px' }}>Por CreAPP Software Lab</p>
             <div style={{ height: '56px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0', padding: '5px' }}>
               <img src="/firmaseba.png" alt="Firma Seba" style={{ height: '100%', objectFit: 'contain' }} />
             </div>
-            <div style={{ fontSize: '9px' }}>
+            <div style={{ fontSize: '11px' }}>
               <p style={{ fontWeight: '800', color: '#0f172a' }}>Sebastián Maza</p>
-              <p style={{ color: '#64748b', fontSize: '8px' }}>Chief Technology Officer</p>
+              <p style={{ color: '#64748b', fontSize: '10px' }}>Chief Technology Officer</p>
             </div>
           </div>
           {(methodology?.show_facundo_signature ?? true) && (
             <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '5px' }}>
-              <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '1px' }}>Por CreAPP Software Lab</p>
+              <p style={{ fontSize: '10px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '1px' }}>Por CreAPP Software Lab</p>
               <div style={{ height: '56px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1', padding: '5px' }}>
               </div>
-              <div style={{ fontSize: '9px' }}>
+              <div style={{ fontSize: '11px' }}>
                 <p style={{ fontWeight: '800', color: '#0f172a' }}>Facundo Marceca</p>
-                <p style={{ color: '#64748b', fontSize: '8px' }}>Project Manager</p>
+                <p style={{ color: '#64748b', fontSize: '10px' }}>Project Manager</p>
               </div>
             </div>
           )}
           <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '5px' }}>
-            <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '1px' }}>
+            <p style={{ fontSize: '10px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '1px' }}>
               Por {clientLegalData.company_name || clientName || 'EL CLIENTE'}
             </p>
-            <div style={{ height: '56px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1', color: '#94a3b8', fontSize: '9px', textAlign: 'center' }}>
+            <div style={{ height: '56px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1', color: '#94a3b8', fontSize: '12px', textAlign: 'center' }}>
               Pendiente de Firma
             </div>
-            <div style={{ fontSize: '9px' }}>
+            <div style={{ fontSize: '11px' }}>
               <p style={{ fontWeight: '800', color: '#0f172a' }}>
                 {clientLegalData.representative_name || '________________________'}
               </p>
-              <p style={{ color: '#64748b', fontSize: '8px' }}>
+              <p style={{ color: '#64748b', fontSize: '10px' }}>
                 {clientLegalData.representative_role || 'Representante Autorizado'}
               </p>
               {(clientLegalData.representative_dni || clientLegalData.tax_id) && (
-                <p style={{ color: '#94a3b8', fontSize: '7.5px', marginTop: '1px' }}>
+                <p style={{ color: '#94a3b8', fontSize: '9.5px', marginTop: '1px' }}>
                   {clientLegalData.representative_dni ? `DNI: ${clientLegalData.representative_dni}` : `CUIT: ${clientLegalData.tax_id}`}
                 </p>
               )}
@@ -2098,7 +2093,7 @@ const ProposalEditor: React.FC = () => {
         </div>
 
         {/* Footer */}
-        <div style={{ position: 'absolute', bottom: '30px', left: '65px', right: '65px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '12px', fontSize: '9px', color: '#94a3b8' }}>
+        <div style={{ position: 'absolute', bottom: '30px', left: '65px', right: '65px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '12px', fontSize: '12px', color: '#94a3b8' }}>
           <span>Contrato de Servicio | {clientLegalData.company_name || clientName}</span>
           <span>{getPageFooter('legal2')}</span>
         </div>
@@ -2125,27 +2120,27 @@ const ProposalEditor: React.FC = () => {
       : cleanTotal;
 
     // Tipografía adaptativa
-    let fontSize = '9.8px';
-    let lineHeight = '1.65';
+    let fontSize = '12px';
+    let lineHeight = '1.6';
     let padding = '18px 22px';
-    let minContractHeight = '220px';
-    let maxContractHeight = '315px';
+    let minContractHeight = '230px';
+    let maxContractHeight = '325px';
 
     if (textLength > 2800) {
-      fontSize = '8px';
-      lineHeight = '1.38';
-      padding = '12px 16px';
-      maxContractHeight = '370px';
-    } else if (textLength > 2100) {
-      fontSize = '8.6px';
-      lineHeight = '1.48';
+      fontSize = '10px';
+      lineHeight = '1.42';
       padding = '14px 18px';
-      maxContractHeight = '340px';
-    } else if (textLength > 1400) {
-      fontSize = '9.2px';
-      lineHeight = '1.55';
+      maxContractHeight = '375px';
+    } else if (textLength > 2100) {
+      fontSize = '10.8px';
+      lineHeight = '1.48';
       padding = '16px 20px';
-      maxContractHeight = '325px';
+      maxContractHeight = '350px';
+    } else if (textLength > 1400) {
+      fontSize = '11.5px';
+      lineHeight = '1.55';
+      padding = '18px 22px';
+      maxContractHeight = '335px';
     }
 
     return (
@@ -2170,22 +2165,22 @@ const ProposalEditor: React.FC = () => {
           marginBottom: '6px'
         }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
-            <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
-            <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>
+            <span style={{ fontSize: '15px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
+            <span style={{ fontSize: '11px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>
               {heroTitle ? heroTitle.toUpperCase() : 'DEVELOPMENT LAB'}
             </span>
           </div>
-          <span style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>
+          <span style={{ fontSize: '11px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>
             LEGAL_AGREEMENT // 05
           </span>
         </div>
 
         {/* 2. Título & Introducción */}
         <div style={{ marginBottom: '6px' }}>
-          <h1 style={{ fontSize: '22px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
+          <h1 style={{ fontSize: '26px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
             CONTRATO Y <span style={{ fontStyle: 'italic', color: brandPrimary }}>FIRMAS</span>
           </h1>
-          <p style={{ fontSize: '9.5px', color: '#475569', lineHeight: '1.35', fontWeight: '300', margin: '2px 0 0 0' }}>
+          <p style={{ fontSize: '13px', color: '#475569', lineHeight: '1.45', fontWeight: '300', margin: '2px 0 0 0' }}>
             {contractDescription || 'Acuerdo formal que establece las bases y condiciones legales para la ejecución del proyecto de desarrollo de software detallado en esta propuesta.'}
           </p>
         </div>
@@ -2211,7 +2206,7 @@ const ProposalEditor: React.FC = () => {
 
         {/* 4. Ficha Ejecutiva del Proyecto (Grid de 4 Métricas Clave) */}
         <div style={{
-          padding: '9px 14px',
+          padding: '10px 14px',
           backgroundColor: '#f8fafc',
           borderRadius: '10px',
           border: '1px solid #e2e8f0',
@@ -2220,38 +2215,38 @@ const ProposalEditor: React.FC = () => {
           gap: '10px'
         }}>
           <div>
-            <span style={{ fontSize: '7.5px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Inversión Total</span>
-            <span style={{ fontSize: '11.5px', fontWeight: '900', color: '#0f172a', display: 'block', marginTop: '1px' }}>
+            <span style={{ fontSize: '9.5px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Inversión Total</span>
+            <span style={{ fontSize: '14.5px', fontWeight: '900', color: '#0f172a', display: 'block', marginTop: '1px' }}>
               {cleanTotal}
             </span>
-            <span style={{ fontSize: '7.5px', color: '#64748b' }}>Esquema por hitos</span>
+            <span style={{ fontSize: '9.5px', color: '#64748b' }}>Esquema por hitos</span>
           </div>
           <div>
-            <span style={{ fontSize: '7.5px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Garantía Técnica</span>
-            <span style={{ fontSize: '11.5px', fontWeight: '900', color: '#059669', display: 'block', marginTop: '1px' }}>
+            <span style={{ fontSize: '9.5px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Garantía Técnica</span>
+            <span style={{ fontSize: '14.5px', fontWeight: '900', color: '#059669', display: 'block', marginTop: '1px' }}>
               30 Días Cobertura
             </span>
-            <span style={{ fontSize: '7.5px', color: '#64748b' }}>Resolución incidencias</span>
+            <span style={{ fontSize: '9.5px', color: '#64748b' }}>Resolución incidencias</span>
           </div>
           <div>
-            <span style={{ fontSize: '7.5px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Metodología</span>
-            <span style={{ fontSize: '11.5px', fontWeight: '900', color: '#0f172a', display: 'block', marginTop: '1px' }}>
+            <span style={{ fontSize: '9.5px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Metodología</span>
+            <span style={{ fontSize: '14.5px', fontWeight: '900', color: '#0f172a', display: 'block', marginTop: '1px' }}>
               Sprints Ágiles
             </span>
-            <span style={{ fontSize: '7.5px', color: '#64748b' }}>Entregas continuas</span>
+            <span style={{ fontSize: '9.5px', color: '#64748b' }}>Entregas continuas</span>
           </div>
           <div>
-            <span style={{ fontSize: '7.5px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Jurisdicción</span>
-            <span style={{ fontSize: '11.5px', fontWeight: '900', color: '#0f172a', display: 'block', marginTop: '1px' }}>
+            <span style={{ fontSize: '9.5px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Jurisdicción</span>
+            <span style={{ fontSize: '14.5px', fontWeight: '900', color: '#0f172a', display: 'block', marginTop: '1px' }}>
               {location || 'Buenos Aires, ARG'}
             </span>
-            <span style={{ fontSize: '7.5px', color: '#64748b' }}>Ley N° 25.506 & CCCN</span>
+            <span style={{ fontSize: '9.5px', color: '#64748b' }}>Ley N° 25.506 & CCCN</span>
           </div>
         </div>
 
-        {/* 5. Esquema de Desembolsos & Hitos Comerciales (Llena con alto valor comercial) */}
+        {/* 5. Esquema de Desembolsos & Hitos Comerciales */}
         <div style={{
-          padding: '10px 14px',
+          padding: '12px 14px',
           backgroundColor: '#ffffff',
           borderRadius: '10px',
           border: '1px solid #e2e8f0',
@@ -2260,21 +2255,21 @@ const ProposalEditor: React.FC = () => {
           gap: '12px',
           boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
         }}>
-          <div style={{ borderLeft: `3px solid ${brandPrimary}`, paddingLeft: '8px' }}>
-            <span style={{ fontSize: '8px', fontWeight: '900', color: brandPrimary, textTransform: 'uppercase', display: 'block' }}>Hito 1 · Anticipo Inicial ({halfFormatted})</span>
-            <p style={{ fontSize: '8.5px', color: '#334155', margin: '2px 0 0 0', lineHeight: '1.35', fontWeight: '500' }}>
+          <div style={{ borderLeft: `3px solid ${brandPrimary}`, paddingLeft: '10px' }}>
+            <span style={{ fontSize: '11px', fontWeight: '900', color: brandPrimary, textTransform: 'uppercase', display: 'block' }}>Hito 1 · Anticipo Inicial ({halfFormatted})</span>
+            <p style={{ fontSize: '11px', color: '#334155', margin: '3px 0 0 0', lineHeight: '1.4', fontWeight: '500' }}>
               Firma del acuerdo y reserva de squad técnico. Inicio inmediato de arquitectura, modelado y prototipo UI.
             </p>
           </div>
-          <div style={{ borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
-            <span style={{ fontSize: '8px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', display: 'block' }}>Hito 2 · Pase a Producción ({halfFormatted})</span>
-            <p style={{ fontSize: '8.5px', color: '#334155', margin: '2px 0 0 0', lineHeight: '1.35', fontWeight: '500' }}>
+          <div style={{ borderLeft: '3px solid #0f172a', paddingLeft: '10px' }}>
+            <span style={{ fontSize: '11px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', display: 'block' }}>Hito 2 · Pase a Producción ({halfFormatted})</span>
+            <p style={{ fontSize: '11px', color: '#334155', margin: '3px 0 0 0', lineHeight: '1.4', fontWeight: '500' }}>
               Auditoría y aprobación en entorno Staging. Despliegue en salones, capacitación y entrega de accesos finales.
             </p>
           </div>
-          <div style={{ borderLeft: '3px solid #059669', paddingLeft: '8px' }}>
-            <span style={{ fontSize: '8px', fontWeight: '900', color: '#059669', textTransform: 'uppercase', display: 'block' }}>Abono Operativo & SLA ({monthlyFeeFormatted})</span>
-            <p style={{ fontSize: '8.5px', color: '#334155', margin: '2px 0 0 0', lineHeight: '1.35', fontWeight: '500' }}>
+          <div style={{ borderLeft: '3px solid #059669', paddingLeft: '10px' }}>
+            <span style={{ fontSize: '11px', fontWeight: '900', color: '#059669', textTransform: 'uppercase', display: 'block' }}>Abono Operativo & SLA ({monthlyFeeFormatted})</span>
+            <p style={{ fontSize: '11px', color: '#334155', margin: '3px 0 0 0', lineHeight: '1.4', fontWeight: '500' }}>
               Soporte de incidentes, guardias operativas en salones y mantenimiento continuo a partir del día 30 post-lanzamiento.
             </p>
           </div>
@@ -2282,30 +2277,30 @@ const ProposalEditor: React.FC = () => {
 
         {/* 6. Protocolo de Validez Jurídica y Consentimiento Digital */}
         <div style={{
-          padding: '8px 12px',
+          padding: '10px 14px',
           backgroundColor: '#f8fafc',
           borderRadius: '8px',
           border: '1px dashed #cbd5e1',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: '10px'
+          gap: '12px'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '13px' }}>🔒</span>
-            <span style={{ fontSize: '8.5px', color: '#475569', lineHeight: '1.35' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '16px' }}>🔒</span>
+            <span style={{ fontSize: '11px', color: '#475569', lineHeight: '1.4' }}>
               <strong style={{ color: '#0f172a' }}>Consentimiento & Eficacia Jurídica: </strong>
               Las partes reconocen plena validez legal a las firmas digitales aquí estampadas conforme a la Ley N° 25.506 y Art. 288 del CCCN. Cada suscripción certifica IP de origen, sello temporal UTC y huella criptográfica inmutable.
             </span>
           </div>
           <span style={{
-            fontSize: '8px',
+            fontSize: '10px',
             fontFamily: 'monospace',
             color: brandPrimary,
             fontWeight: 'bold',
             backgroundColor: '#ffffff',
             border: '1px solid #e2e8f0',
-            padding: '3px 8px',
+            padding: '4px 10px',
             borderRadius: '4px',
             whiteSpace: 'nowrap'
           }}>
@@ -2317,42 +2312,42 @@ const ProposalEditor: React.FC = () => {
         <div>
           <div style={{ display: 'flex', gap: '16px' }}>
             <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', margin: '0 0 2px 0' }}>Por CreAPP Software Lab</p>
+              <p style={{ fontSize: '10px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', margin: '0 0 2px 0' }}>Por CreAPP Software Lab</p>
               <div style={{ height: '62px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0', padding: '6px' }}>
                 <img src="/firmaseba.png" alt="Firma Seba" style={{ height: '100%', objectFit: 'contain' }} />
               </div>
-              <div style={{ fontSize: '9.5px', marginTop: '2px' }}>
+              <div style={{ fontSize: '12px', marginTop: '2px' }}>
                 <p style={{ fontWeight: '800', color: '#0f172a', margin: '0' }}>Sebastián Maza</p>
-                <p style={{ color: '#64748b', fontSize: '8px', margin: '1px 0 0 0' }}>Chief Technology Officer</p>
+                <p style={{ color: '#64748b', fontSize: '10px', margin: '1px 0 0 0' }}>Chief Technology Officer</p>
               </div>
             </div>
             {(methodology?.show_facundo_signature ?? true) && (
               <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', margin: '0 0 2px 0' }}>Por CreAPP Software Lab</p>
+                <p style={{ fontSize: '10px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', margin: '0 0 2px 0' }}>Por CreAPP Software Lab</p>
                 <div style={{ height: '62px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1', padding: '6px' }}>
                 </div>
-                <div style={{ fontSize: '9.5px', marginTop: '2px' }}>
+                <div style={{ fontSize: '12px', marginTop: '2px' }}>
                   <p style={{ fontWeight: '800', color: '#0f172a', margin: '0' }}>Facundo Marceca</p>
-                  <p style={{ color: '#64748b', fontSize: '8px', margin: '1px 0 0 0' }}>Project Manager</p>
+                  <p style={{ color: '#64748b', fontSize: '10px', margin: '1px 0 0 0' }}>Project Manager</p>
                 </div>
               </div>
             )}
             <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', margin: '0 0 2px 0' }}>
+              <p style={{ fontSize: '10px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', margin: '0 0 2px 0' }}>
                 Por {clientLegalData.company_name || clientName || 'EL CLIENTE'}
               </p>
-              <div style={{ height: '62px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1', color: '#94a3b8', fontSize: '9px', textAlign: 'center' }}>
+              <div style={{ height: '62px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1', color: '#94a3b8', fontSize: '12px', textAlign: 'center' }}>
                 Pendiente de Firma
               </div>
-              <div style={{ fontSize: '9.5px', marginTop: '2px' }}>
+              <div style={{ fontSize: '12px', marginTop: '2px' }}>
                 <p style={{ fontWeight: '800', color: '#0f172a', margin: '0' }}>
                   {clientLegalData.representative_name || '________________________'}
                 </p>
-                <p style={{ color: '#64748b', fontSize: '8px', margin: '1px 0 0 0' }}>
+                <p style={{ color: '#64748b', fontSize: '10px', margin: '1px 0 0 0' }}>
                   {clientLegalData.representative_role || 'Representante Autorizado'}
                 </p>
                 {(clientLegalData.representative_dni || clientLegalData.tax_id) && (
-                  <p style={{ color: '#94a3b8', fontSize: '7.5px', margin: '1px 0 0 0' }}>
+                  <p style={{ color: '#94a3b8', fontSize: '9.5px', margin: '1px 0 0 0' }}>
                     {clientLegalData.representative_dni ? `DNI: ${clientLegalData.representative_dni}` : `CUIT: ${clientLegalData.tax_id}`}
                   </p>
                 )}
@@ -2367,7 +2362,7 @@ const ProposalEditor: React.FC = () => {
             borderTop: '1px solid #f1f5f9',
             paddingTop: '8px',
             marginTop: '8px',
-            fontSize: '9px',
+            fontSize: '12px',
             color: '#94a3b8'
           }}>
             <span>Propuesta Comercial | {clientLegalData.company_name || clientName}</span>
@@ -6253,545 +6248,22 @@ const ProposalEditor: React.FC = () => {
         style={{ width: '794px', color: '#0f172a', fontFamily: 'system-ui, -apple-system, sans-serif', backgroundColor: '#ffffff' }}
       >
         {/* PÁGINA 1: Portada */}
-        {!isPageHidden('portada') && (
-          <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
-            <div style={{ position: 'absolute', top: '0', left: '0', right: '0', height: '8px', background: `linear-gradient(to right, ${brandPrimary}, ${brandSecondary})` }}></div>
-            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', flexGrow: 1, gap: '65px', marginTop: '20px', textAlign: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '30px', justifyContent: 'center', minHeight: '110px' }}>
-                {proposalType === 'service' ? (
-                  clientLogoUrl && (
-                    <img
-                      src={clientLogoUrl}
-                      alt={heroTitle || "Logo Producto"}
-                      style={{
-                        height: `${125 * (clientLogoScale / 100)}px`,
-                        maxHeight: '170px',
-                        maxWidth: '320px',
-                        objectFit: 'contain'
-                      }}
-                    />
-                  )
-                ) : (
-                  <>
-                    <img src={creappLogoOfficial} alt="CreAPP Logo" style={{ height: '105px', objectFit: 'contain' }} />
-                    {clientLogoUrl && (
-                      <>
-                        <span style={{ fontSize: '24px', fontWeight: '900', color: '#cbd5e1' }}>✕</span>
-                        <img
-                          src={clientLogoUrl}
-                          alt="Logo Cliente"
-                          style={{
-                            height: `${105 * (clientLogoScale / 100)}px`,
-                            maxHeight: '160px',
-                            maxWidth: '260px',
-                            objectFit: 'contain'
-                          }}
-                        />
-                      </>
-                    )}
-                  </>
-                )}
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <span style={{ fontSize: '12px', fontWeight: '800', color: brandPrimary, letterSpacing: '3px', textTransform: 'uppercase' }}>
-                  {heroBadge || 'Propuesta Técnica Comercial'}
-                </span>
-                <h1 style={{ fontSize: '42px', fontWeight: '950', color: '#0f172a', margin: '15px 0 10px 0', lineHeight: '1.1', letterSpacing: '-1px', textAlign: 'center' }}>
-                  {heroTitle || 'Desarrollo de Software Integrado'}
-                </h1>
-                <div style={{ height: '2px', width: '80px', backgroundColor: `${brandPrimary}44`, margin: '20px auto' }}></div>
-                <p style={{ fontSize: '14px', color: '#475569', lineHeight: '1.6', maxWidth: '560px', fontWeight: '300', textAlign: 'center' }}>
-                  {description}
-                </p>
-              </div>
-              <div style={{ display: 'flex', gap: '60px', justifyContent: 'center', width: '100%' }}>
-                <div style={{ textAlign: 'center' }}>
-                  <p style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1.5px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '5px' }}>Preparado para</p>
-                  <p style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>{clientLegalData.company_name || clientName}</p>
-                  {clientLegalData.tax_id && (
-                    <p style={{ fontSize: '10px', color: '#64748b', fontWeight: '600', marginTop: '2px' }}>CUIT: {clientLegalData.tax_id}</p>
-                  )}
-                </div>
-                <div style={{ textAlign: 'center' }}>
-                  <p style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1.5px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '5px' }}>Fecha</p>
-                  <p style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>{date}</p>
-                </div>
-                <div style={{ textAlign: 'center' }}>
-                  <p style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1.5px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '5px' }}>Ubicación</p>
-                  <p style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>{location}</p>
-                </div>
-              </div>
-            </div>
-            <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #e2e8f0', paddingTop: '25px' }}>
-              <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold' }}>CreAPP Software & Automation</span>
-              <span style={{ fontSize: '10px', color: '#94a3b8' }}>Dossier Oficial de Propuesta</span>
-            </div>
-          </div>
-        )}
+        {!isPageHidden('portada') && renderPage1()}
 
         {/* PÁGINA 2: Alcance y Entregables */}
-        {!isPageHidden('alcance') && (
-          <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
-            {(() => {
-              const totalVisibleInclusions = inclusions.slice(0, 6).length;
-              const totalVisibleExclusions = exclusions.slice(0, 6).length;
-              const totalItemsPage2 = totalVisibleInclusions + totalVisibleExclusions;
-
-              let p2Gap = '15px';
-              let p2CardPadding = '12px';
-              let p2TitleMarginTop = '15px';
-              let p2MainGap = '20px';
-              let p2DescriptionSize = '10px';
-              let p2TitleSize = '28px';
-              let p2SubTitleSize = '11px';
-              let p2TextGap = '4px';
-
-              if (totalItemsPage2 > 10) {
-                p2Gap = '8px';
-                p2CardPadding = '8px';
-                p2TitleMarginTop = '4px';
-                p2MainGap = '8px';
-                p2DescriptionSize = '9px';
-                p2TitleSize = '20px';
-                p2SubTitleSize = '10px';
-                p2TextGap = '2px';
-              } else if (totalItemsPage2 > 8) {
-                p2Gap = '10px';
-                p2CardPadding = '10px';
-                p2TitleMarginTop = '8px';
-                p2MainGap = '14px';
-                p2DescriptionSize = '9.5px';
-                p2TitleSize = '24px';
-                p2SubTitleSize = '10.5px';
-                p2TextGap = '3px';
-              } else if (totalItemsPage2 < 7) {
-                p2Gap = '20px';
-                p2CardPadding = '14px';
-                p2TitleMarginTop = '25px';
-                p2MainGap = '30px';
-                p2DescriptionSize = '11px';
-                p2TitleSize = '32px';
-                p2SubTitleSize = '12px';
-                p2TextGap = '6px';
-              }
-
-              return (
-                <>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '25px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
-                      <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
-                      <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{heroTitle ? heroTitle.toUpperCase() : 'CBKR APP V2'}</span>
-                    </div>
-                    <span style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>PROJECT_SCOPE // 02</span>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: p2MainGap }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <h1 style={{ fontSize: p2TitleSize, fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
-                        Alcance & <span style={{ fontStyle: 'italic', color: brandPrimary }}>Entregables</span>
-                      </h1>
-                      <p style={{ fontSize: p2SubTitleSize, color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
-                        {(methodology || DEFAULT_METHODOLOGY).scope_intro || DEFAULT_METHODOLOGY.scope_intro}
-                      </p>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: p2Gap, width: '100%' }}>
-                      {inclusions.slice(0, 6).map((inc, index) => {
-                        const totalVisible = inclusions.slice(0, 6).length;
-                        const isLastAndOdd = totalVisible % 2 !== 0 && index === totalVisible - 1;
-                        return (
-                          <div key={index} style={{
-                            padding: p2CardPadding,
-                            borderRadius: '12px',
-                            border: '1px solid #f1f5f9',
-                            backgroundColor: '#f8fafc',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: p2TextGap,
-                            gridColumn: isLastAndOdd ? 'span 2' : 'auto'
-                          }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <div style={{ color: brandPrimary, display: 'flex', alignItems: 'center' }}>
-                                <IconResolver name={inc.icon_name || 'CheckCircle2'} className="w-4 h-4" />
-                              </div>
-                              <h4 style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', margin: '0', textTransform: 'uppercase' }}>{inc.title || 'Entregable'}</h4>
-                            </div>
-                            <p style={{ fontSize: p2DescriptionSize, color: '#475569', margin: '0', lineHeight: '1.4', fontWeight: '300' }}>{inc.description || 'Descripción del alcance.'}</p>
-                            {inc.tooltip && <p style={{ fontSize: '9px', color: '#94a3b8', margin: '2px 0 0 0', fontStyle: 'italic' }}>{inc.tooltip}</p>}
-                          </div>
-                        );
-                      })}
-                    </div>
-                    {exclusions.length > 0 && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: p2MainGap === '8px' ? '4px' : '10px', marginTop: p2TitleMarginTop }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <h1 style={{ fontSize: p2TitleSize, fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
-                            Fuera de <span style={{ fontStyle: 'italic', color: '#e11d48' }}>Alcance</span>
-                          </h1>
-                          <p style={{ fontSize: p2SubTitleSize, color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
-                            {(methodology || DEFAULT_METHODOLOGY).exclusions_intro || DEFAULT_METHODOLOGY.exclusions_intro}
-                          </p>
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: p2Gap, width: '100%' }}>
-                          {exclusions.slice(0, 6).map((exc, index) => {
-                            const totalVisible = exclusions.slice(0, 6).length;
-                            const isLastAndOdd = totalVisible % 2 !== 0 && index === totalVisible - 1;
-                            return (
-                              <div key={index} style={{
-                                padding: p2CardPadding,
-                                borderRadius: '12px',
-                                border: '1px solid #ffe4e6',
-                                backgroundColor: '#fff5f5',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: p2TextGap,
-                                gridColumn: isLastAndOdd ? 'span 2' : 'auto'
-                              }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                  <div style={{ color: '#e11d48', display: 'flex', alignItems: 'center' }}>
-                                    <IconResolver name="XCircle" className="w-4 h-4" />
-                                  </div>
-                                  <h4 style={{ fontSize: '11px', fontWeight: '850', color: '#9f1239', margin: '0', textTransform: 'uppercase' }}>{exc.title || 'Exclusión'}</h4>
-                                </div>
-                                <p style={{ fontSize: p2DescriptionSize, color: '#b91c1c', margin: '0', lineHeight: '1.4', fontWeight: '300' }}>{exc.tooltip || 'No incluido en el presupuesto base.'}</p>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
-                    <span>Propuesta Comercial | {clientName}</span>
-                    <span>Página 2 de 7</span>
-                  </div>
-                </>
-              );
-            })()}
-          </div>
-        )}
+        {!isPageHidden('alcance') && renderPage2()}
 
         {/* PÁGINA 3: Cronograma de Fases & Entregas */}
-        {!isPageHidden('hitos') && (
-          <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: (milestones && milestones.length >= 4) || (payments && payments.length >= 4) ? '15px' : '25px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
-                <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
-                <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{heroTitle ? heroTitle.toUpperCase() : 'CBKR APP V2'}</span>
-              </div>
-              <span style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>PROJECT_ROADMAP // 02</span>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: (milestones && milestones.length >= 4) || (payments && payments.length >= 4) ? '8px' : '20px' }}>
-              <h1 style={{ fontSize: (milestones && milestones.length >= 4) || (payments && payments.length >= 4) ? '24px' : '28px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
-                CRONOGRAMA DE FASES & <span style={{ fontStyle: 'italic', color: brandPrimary }}>ENTREGAS</span>
-              </h1>
-              <p style={{ fontSize: (milestones && milestones.length >= 4) || (payments && payments.length >= 4) ? '10px' : '11px', color: '#475569', lineHeight: '1.35', fontWeight: '300', margin: '0' }}>
-                {(() => {
-                  const meth = methodology || DEFAULT_METHODOLOGY;
-                  const text = meth.phases_intro ?? DEFAULT_METHODOLOGY.phases_intro;
-                  if (text === DEFAULT_METHODOLOGY.phases_intro) {
-                    return (
-                      <>
-                        El plan de esfuerzo comprende un periodo de <span style={{ fontWeight: 'bold', color: '#0f172a' }}>4 meses</span> (16 sprints semanales). Cada fase mensual concluye con un hito de control funcional y estético auditado antes de la liberación del siguiente incremento de software.
-                      </>
-                    );
-                  }
-                  return text;
-                })()}
-              </p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: '2px', marginBottom: '2px' }}>
-                <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Estructura de Sprints Mensuales</span>
-                <div style={{ flexGrow: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: (milestones && milestones.length >= 4) || (payments && payments.length >= 4) ? '6px' : '15px' }}>
-                {milestones && milestones.map((m, i) => (
-                  <div key={m.id || i} style={{ display: 'flex', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', minHeight: milestones && milestones.length >= 4 ? '68px' : '95px', boxSizing: 'border-box' }}>
-                    <div style={{ width: milestones && milestones.length >= 4 ? '65px' : '80px', flexShrink: 0, flexGrow: 0, backgroundColor: '#000000', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: '#ffffff', gap: '2px', boxSizing: 'border-box' }}>
-                      <span style={{ fontSize: '8px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.8 }}>Fase</span>
-                      <span style={{ fontSize: milestones && milestones.length >= 4 ? '16px' : '20px', fontWeight: '950' }}>{i + 1}</span>
-                    </div>
-                    <div style={{ flexGrow: 1, flexShrink: 1, minWidth: 0, padding: milestones && milestones.length >= 4 ? '6px 12px' : '15px 20px', display: 'flex', flexDirection: 'column', gap: '3px', justifyContent: 'center', boxSizing: 'border-box' }}>
-                      <h4 style={{ fontSize: milestones && milestones.length >= 4 ? '11px' : '12px', fontWeight: '900', color: '#0f172a', margin: '0', textTransform: 'uppercase' }}>{m.title}</h4>
-                      <p style={{ fontSize: milestones && milestones.length >= 4 ? '9px' : '10px', color: '#475569', lineHeight: '1.2', margin: '0', fontWeight: '300' }}>
-                        {m.description || 'Sin descripción de entregables.'}
-                      </p>
-                    </div>
-                    <div style={{ width: milestones && milestones.length >= 4 ? '105px' : '120px', flexShrink: 0, flexGrow: 0, borderLeft: '1px solid #e2e8f0', padding: milestones && milestones.length >= 4 ? '6px 10px' : '15px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '2px', backgroundColor: '#fafafa', boxSizing: 'border-box' }}>
-                      <span style={{ fontSize: '7px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Hito Control</span>
-                      <span style={{ fontSize: milestones && milestones.length >= 4 ? '9px' : '10px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', textAlign: 'center', lineHeight: '1.1' }}>
-                        {m.control_milestone || 'VERIFICACIÓN'}
-                      </span>
-                    </div>
-                    {!methodology?.hide_milestone_prices && (
-                      <div style={{ width: milestones && milestones.length >= 4 ? '105px' : '120px', flexShrink: 0, flexGrow: 0, borderLeft: '1px solid #e2e8f0', padding: milestones && milestones.length >= 4 ? '6px 10px' : '15px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '2px', backgroundColor: '#fafafa', boxSizing: 'border-box' }}>
-                        <span style={{ fontSize: '7px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Inversión</span>
-                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}>
-                          <span style={{ fontSize: milestones && milestones.length >= 4 ? '13px' : '14px', fontWeight: '950', color: '#000000', lineHeight: '1.1' }}>${formatMilestonePrice(m.price)}</span>
-                          <span style={{ fontSize: '8px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', lineHeight: '1.1' }}>{methodology?.currency || getCurrencyFromTotal(totalValue) || 'USD'}</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-              {infrastructureCosts && infrastructureCosts.length > 0 && (
-                <div style={{ marginTop: '2px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '4px' }}>
-                    <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Costos de Infraestructura Asociados</span>
-                    <div style={{ flexGrow: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
-                  </div>
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    {infrastructureCosts.map((infra, idx) => (
-                      <div key={idx} style={{ flex: '1 1 180px', padding: '5px 10px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '9px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                          <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{infra.provider}</span>
-                          {infra.is_optional && (
-                            <span style={{ fontSize: '7px', padding: '1px 4px', backgroundColor: '#fef3c7', color: '#d97706', borderRadius: '4px', fontWeight: '900', letterSpacing: '0.5px' }}>OPCIONAL</span>
-                          )}
-                          <span style={{ color: '#64748b' }}> — {infra.title}</span>
-                        </div>
-                        <span style={{ fontWeight: 'bold', color: brandPrimary, flexShrink: 0, marginLeft: '10px' }}>{infra.monthly_cost}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {payments && payments.length > 0 && (
-                <div style={{ marginTop: '4px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '6px' }}>
-                    <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Esquema de Pagos / Hitos de Financiamiento</span>
-                    <div style={{ flexGrow: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: `repeat(${payments.length}, minmax(0, 1fr))`, gap: payments.length > 3 ? '8px' : '10px', width: '100%' }}>
-                    {payments.map((p, idx) => (
-                      <div key={idx} style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: payments.length > 3 ? '8px 10px' : '10px 12px', display: 'flex', flexDirection: 'column', gap: '4px', boxSizing: 'border-box' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '4px' }}>
-                          <span style={{ fontSize: payments.length > 3 ? '8.5px' : '9px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', lineHeight: '1.2' }}>{p.label}</span>
-                          <span style={{ fontSize: payments.length > 3 ? '11px' : '12px', fontWeight: '950', color: brandPrimary, flexShrink: 0 }}>{p.percentage}</span>
-                        </div>
-                        <span style={{ fontSize: payments.length > 3 ? '8px' : '9px', color: '#475569', fontWeight: '300', lineHeight: '1.3' }}>{p.description}</span>
-                        {p.tooltip && (
-                          <span style={{ fontSize: payments.length > 3 ? '7.5px' : '8px', color: '#94a3b8', fontStyle: 'italic', lineHeight: '1.3', marginTop: '2px' }}>{p.tooltip}</span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-            <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
-              <span>Presupuesto Consolidado: <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{formatTotalValue(totalValue)} TOTAL</span></span>
-              <span>Página 3 de 7</span>
-            </div>
-          </div>
-        )}
+        {!isPageHidden('hitos') && renderPage3()}
 
         {/* PÁGINA 4: Desglose de Horas — Semanas 1 a 8 */}
-        {!isPageHidden('sem1-6') && (
-          <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '25px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
-                <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
-                <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{heroTitle ? heroTitle.toUpperCase() : 'CBKR APP V2'}</span>
-              </div>
-              <span style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>TIME_ESTIMATION // MES 1 Y 2</span>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: '15px' }}>
-              <h1 style={{ fontSize: '28px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
-                DESGLOSE DE HORAS — <span style={{ fontStyle: 'italic', color: brandPrimary }}>SEMANAS 1 A 8</span>
-              </h1>
-              <p style={{ fontSize: '11px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
-                {(methodology || DEFAULT_METHODOLOGY).weekly_breakdown_intro_1_8 || DEFAULT_METHODOLOGY.weekly_breakdown_intro_1_8}
-              </p>
-              <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
-                <thead>
-                  <tr style={{ backgroundColor: '#0f172a', color: '#ffffff' }}>
-                    <th style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '900', textAlign: 'left', letterSpacing: '1px', width: '10%' }}>SEMANA</th>
-                    <th style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '900', textAlign: 'left', letterSpacing: '1px', width: '25%' }}>HITO / TAREA</th>
-                    <th style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '900', textAlign: 'left', letterSpacing: '1px', width: '50%' }}>DETALLE TÉCNICO DE IMPLEMENTACIÓN</th>
-                    <th style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '900', textAlign: 'right', letterSpacing: '1px', width: '15%', color: brandSecondary }}>ESFUERZO</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(weeklyBreakdown && weeklyBreakdown.length >= 10 ? weeklyBreakdown.slice(0, 10) : DEFAULT_WEEKLY_BREAKDOWN.slice(0, 10)).map((item: any) => {
-                    if (item.type === 'milestone') {
-                      return (
-                        <tr key={item.id} style={{ backgroundColor: '#f1f5f9' }}>
-                          <td style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '800', color: '#0f172a' }}>{item.id}</td>
-                          <td colSpan={2} style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase' }}>{item.title}</td>
-                          <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: '900', color: '#0f172a', textAlign: 'right' }}>{item.hours} hs</td>
-                        </tr>
-                      );
-                    }
-                    return (
-                      <tr key={item.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                        <td style={{ padding: '10px 12px', fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>{item.id}</td>
-                        <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: '800', color: '#0f172a' }}>{item.title}</td>
-                        <td style={{ padding: '10px 12px', fontSize: '10px', color: '#475569', lineHeight: '1.4', fontWeight: '300' }}>{item.detail}</td>
-                        <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: 'bold', color: brandSecondary, textAlign: 'right' }}>{item.hours} hs</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-            <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
-              <span>CREAPP // ACCUMULATED_HOURS_80</span>
-              <span>Página 4 de 7</span>
-            </div>
-          </div>
-        )}
+        {!isPageHidden('sem1-6') && renderPage4()}
 
         {/* PÁGINA 5: Desglose de Horas — Semanas 9 a 16 */}
-        {!isPageHidden('sem9-16') && (
-          <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '25px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
-                <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
-                <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{heroTitle ? heroTitle.toUpperCase() : 'CBKR APP V2'}</span>
-              </div>
-              <span style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>TIME_ESTIMATION // MES 3 Y 4</span>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: '15px' }}>
-              <h1 style={{ fontSize: '28px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
-                DESGLOSE DE HORAS — <span style={{ fontStyle: 'italic', color: brandPrimary }}>SEMANAS 9 A 16</span>
-              </h1>
-              <p style={{ fontSize: '11px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
-                {(methodology || DEFAULT_METHODOLOGY).weekly_breakdown_intro_9_16 || DEFAULT_METHODOLOGY.weekly_breakdown_intro_9_16}
-              </p>
-              <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
-                <thead>
-                  <tr style={{ backgroundColor: '#0f172a', color: '#ffffff' }}>
-                    <th style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '900', textAlign: 'left', letterSpacing: '1px', width: '10%' }}>SEMANA</th>
-                    <th style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '900', textAlign: 'left', letterSpacing: '1px', width: '25%' }}>HITO / TAREA</th>
-                    <th style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '900', textAlign: 'left', letterSpacing: '1px', width: '50%' }}>DETALLE TÉCNICO DE IMPLEMENTACIÓN</th>
-                    <th style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '900', textAlign: 'right', letterSpacing: '1px', width: '15%', color: brandSecondary }}>ESFUERZO</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(weeklyBreakdown && weeklyBreakdown.length >= 20 ? weeklyBreakdown.slice(10, 20) : DEFAULT_WEEKLY_BREAKDOWN.slice(10, 20)).map((item: any) => {
-                    if (item.type === 'milestone') {
-                      return (
-                        <tr key={item.id} style={{ backgroundColor: '#f1f5f9' }}>
-                          <td style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '800', color: '#0f172a' }}>{item.id}</td>
-                          <td colSpan={2} style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase' }}>{item.title}</td>
-                          <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: '900', color: '#0f172a', textAlign: 'right' }}>{item.hours} hs</td>
-                        </tr>
-                      );
-                    }
-                    return (
-                      <tr key={item.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                        <td style={{ padding: '10px 12px', fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>{item.id}</td>
-                        <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: '800', color: '#0f172a' }}>{item.title}</td>
-                        <td style={{ padding: '10px 12px', fontSize: '10px', color: '#475569', lineHeight: '1.4', fontWeight: '300' }}>{item.detail}</td>
-                        <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: 'bold', color: brandSecondary, textAlign: 'right' }}>{item.hours} hs</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-            <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
-              <span>CREAPP // ESTIMATED_HOURS_160_TOTAL</span>
-              <span>Página 5 de 7</span>
-            </div>
-          </div>
-        )}
+        {!isPageHidden('sem9-16') && renderPage5()}
 
         {/* PÁGINA 6: Metodología de Trabajo & Plan de Acción */}
-        {!isPageHidden('metodologia') && (() => {
-          const meth = methodology || DEFAULT_METHODOLOGY;
-          const clientNameReplacer = (text: string) => (text || '').replace('{client_name}', clientName || 'el cliente');
-          return (
-            <div style={{ width: '794px', height: '1123px', padding: '80px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', backgroundColor: '#ffffff', position: 'relative' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '25px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
-                  <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
-                  <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{heroTitle ? heroTitle.toUpperCase() : 'CBKR APP V2'}</span>
-                </div>
-                <span style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>AGILE_METHODOLOGY // 04</span>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: '20px' }}>
-                <h1 style={{ fontSize: '28px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
-                  METODOLOGÍA DE TRABAJO & <span style={{ fontStyle: 'italic', color: brandPrimary }}>PLAN DE ACCIÓN</span>
-                </h1>
-                <p style={{ fontSize: '11px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
-                  {meth.intro_text || DEFAULT_METHODOLOGY.intro_text}
-                </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: meth.hide_weekly_schedule ? '16px' : (getPillars(meth, brandPrimary, brandSecondary).length >= 4 ? '10px' : '15px'), marginTop: '5px' }}>
-                  {getPillars(meth, brandPrimary, brandSecondary).map((pillar, idx) => {
-                    const mainColor = pillar.color || (idx % 2 === 0 ? brandPrimary : brandSecondary);
-                    const isCompact = !meth.hide_weekly_schedule && getPillars(meth, brandPrimary, brandSecondary).length >= 4;
-                    return (
-                      <div
-                        key={pillar.id || idx}
-                        style={{
-                          padding: meth.hide_weekly_schedule ? '18px 22px' : (isCompact ? '12px 16px' : '18px 20px'),
-                          borderRadius: '12px',
-                          backgroundColor: `${mainColor}0A`,
-                          border: `1px solid ${mainColor}33`,
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '4px'
-                        }}
-                      >
-                        <h4 style={{ fontSize: '10px', fontWeight: '900', color: mainColor, margin: '0', letterSpacing: '1.5px', textTransform: 'uppercase' }}>
-                          {pillar.title}
-                        </h4>
-                        <p style={{ fontSize: meth.hide_weekly_schedule ? '11px' : (isCompact ? '10px' : '11px'), color: '#475569', lineHeight: '1.5', margin: '0', fontWeight: '300' }}>
-                          {clientNameReplacer(pillar.description)}
-                        </p>
-                      </div>
-                    );
-                  })}
-
-                  {!meth.hide_weekly_schedule && (
-                    <div style={{ padding: '20px', borderRadius: '12px', border: '1px solid #0f172a', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                      <div>
-                        <h5 style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0', letterSpacing: '1px', textTransform: 'uppercase' }}>
-                          {meth.schedule_monday_title || DEFAULT_METHODOLOGY.schedule_monday_title}
-                        </h5>
-                        <h6 style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', margin: '0 0 2px 0', textTransform: 'uppercase' }}>
-                          {meth.schedule_monday_subtitle || DEFAULT_METHODOLOGY.schedule_monday_subtitle}
-                        </h6>
-                        <p style={{ fontSize: '10px', color: '#475569', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
-                          {clientNameReplacer(meth.schedule_monday_text || DEFAULT_METHODOLOGY.schedule_monday_text)}
-                        </p>
-                      </div>
-                      <div style={{ height: '1px', backgroundColor: '#e2e8f0' }}></div>
-                      <div>
-                        <h5 style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0', letterSpacing: '1px', textTransform: 'uppercase' }}>
-                          {meth.schedule_tuesday_title || DEFAULT_METHODOLOGY.schedule_tuesday_title}
-                        </h5>
-                        <h6 style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', margin: '0 0 2px 0', textTransform: 'uppercase' }}>
-                          {meth.schedule_tuesday_subtitle || DEFAULT_METHODOLOGY.schedule_tuesday_subtitle}
-                        </h6>
-                        <p style={{ fontSize: '10px', color: '#475569', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
-                          {clientNameReplacer(meth.schedule_tuesday_text || DEFAULT_METHODOLOGY.schedule_tuesday_text)}
-                        </p>
-                      </div>
-                      <div style={{ height: '1px', backgroundColor: '#e2e8f0' }}></div>
-                      <div>
-                        <h5 style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0', letterSpacing: '1px', textTransform: 'uppercase' }}>
-                          {meth.schedule_friday_title || DEFAULT_METHODOLOGY.schedule_friday_title}
-                        </h5>
-                        <h6 style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', margin: '0 0 2px 0', textTransform: 'uppercase' }}>
-                          {meth.schedule_friday_subtitle || DEFAULT_METHODOLOGY.schedule_friday_subtitle}
-                        </h6>
-                        <p style={{ fontSize: '10px', color: '#475569', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
-                          {clientNameReplacer(meth.schedule_friday_text || DEFAULT_METHODOLOGY.schedule_friday_text)}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
-                <span>Propuesta Comercial | {clientName}</span>
-                <span>Página 6 de 7</span>
-              </div>
-            </div>
-          );
-        })()}
+        {!isPageHidden('metodologia') && renderPage6()}
 
         {/* PÁGINA LEGAL: Contrato y Firmas */}
         {proposalType === 'service' ? (

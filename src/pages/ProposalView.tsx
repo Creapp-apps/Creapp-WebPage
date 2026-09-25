@@ -2063,14 +2063,14 @@ const ProposalView: React.FC = () => {
 
             {/* Título y Descripción */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <span style={{ fontSize: '12px', fontWeight: '800', color: brandPrimary, letterSpacing: '3px', textTransform: 'uppercase' }}>
+              <span style={{ fontSize: '13.5px', fontWeight: '800', color: brandPrimary, letterSpacing: '3px', textTransform: 'uppercase' }}>
                 {proposal.hero_badge || 'Propuesta Técnica Comercial'}
               </span>
-              <h1 style={{ fontSize: '42px', fontWeight: '950', color: '#0f172a', margin: '15px 0 10px 0', lineHeight: '1.1', letterSpacing: '-1px', textAlign: 'center' }}>
+              <h1 style={{ fontSize: '44px', fontWeight: '950', color: '#0f172a', margin: '15px 0 10px 0', lineHeight: '1.1', letterSpacing: '-1px', textAlign: 'center' }}>
                 {proposal.hero_title || 'Desarrollo de Software Integrado'}
               </h1>
               <div style={{ height: '2px', width: '80px', backgroundColor: `${brandPrimary}44`, margin: '20px auto' }}></div>
-              <p style={{ fontSize: '14px', color: '#475569', lineHeight: '1.6', maxWidth: '560px', fontWeight: '300', textAlign: 'center' }}>
+              <p style={{ fontSize: '16px', color: '#475569', lineHeight: '1.65', maxWidth: '580px', fontWeight: '300', textAlign: 'center' }}>
                 {proposal.description}
               </p>
             </div>
@@ -2078,31 +2078,31 @@ const ProposalView: React.FC = () => {
             {/* Metadatos */}
             <div style={{ display: 'flex', gap: '60px', justifyContent: 'center', width: '100%' }}>
               <div style={{ textAlign: 'center' }}>
-                <p style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1.5px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '5px' }}>Preparado para</p>
-                <p style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>
+                <p style={{ fontSize: '11px', color: '#94a3b8', letterSpacing: '1.5px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '5px' }}>Preparado para</p>
+                <p style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a' }}>
                   {proposal.methodology?.client_legal_data?.company_name || proposal.client_name}
                 </p>
                 {proposal.methodology?.client_legal_data?.tax_id && (
-                  <p style={{ fontSize: '10px', color: '#64748b', fontWeight: '600', marginTop: '2px' }}>
+                  <p style={{ fontSize: '12px', color: '#64748b', fontWeight: '600', marginTop: '2px' }}>
                     CUIT: {proposal.methodology.client_legal_data.tax_id}
                   </p>
                 )}
               </div>
               <div style={{ textAlign: 'center' }}>
-                <p style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1.5px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '5px' }}>Fecha</p>
-                <p style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>{proposal.date}</p>
+                <p style={{ fontSize: '11px', color: '#94a3b8', letterSpacing: '1.5px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '5px' }}>Fecha</p>
+                <p style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a' }}>{proposal.date}</p>
               </div>
               <div style={{ textAlign: 'center' }}>
-                <p style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1.5px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '5px' }}>Ubicación</p>
-                <p style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>{proposal.location}</p>
+                <p style={{ fontSize: '11px', color: '#94a3b8', letterSpacing: '1.5px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '5px' }}>Ubicación</p>
+                <p style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a' }}>{proposal.location}</p>
               </div>
             </div>
           </div>
           
           {/* Footer Fijo Portada */}
           <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #e2e8f0', paddingTop: '25px' }}>
-            <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold' }}>CreAPP Software & Automation</span>
-            <span style={{ fontSize: '10px', color: '#94a3b8' }}>{isServiceProposal ? 'Contrato Oficial de Servicio' : 'Dossier Oficial de Propuesta'}</span>
+            <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 'bold' }}>CreAPP Software & Automation</span>
+            <span style={{ fontSize: '12px', color: '#94a3b8' }}>{isServiceProposal ? 'Contrato Oficial de Servicio' : 'Dossier Oficial de Propuesta'}</span>
           </div>
         </div>
         )}
@@ -2117,40 +2117,40 @@ const ProposalView: React.FC = () => {
 
             // Intelligent spacing criteria to dynamically balance page density
             let p2Gap = '15px';
-            let p2CardPadding = '12px';
+            let p2CardPadding = '14px';
             let p2TitleMarginTop = '15px';
             let p2MainGap = '20px';
-            let p2DescriptionSize = '10px';
+            let p2DescriptionSize = '13.5px';
             let p2TitleSize = '28px';
-            let p2SubTitleSize = '11px';
-            let p2TextGap = '4px';
+            let p2SubTitleSize = '13.5px';
+            let p2TextGap = '5px';
 
             if (totalItemsPage2 > 10) {
               p2Gap = '8px';
-              p2CardPadding = '8px';
+              p2CardPadding = '10px';
               p2TitleMarginTop = '4px';
               p2MainGap = '8px';
-              p2DescriptionSize = '9px';
-              p2TitleSize = '20px';
-              p2SubTitleSize = '10px';
-              p2TextGap = '2px';
+              p2DescriptionSize = '12px';
+              p2TitleSize = '24px';
+              p2SubTitleSize = '12px';
+              p2TextGap = '3px';
             } else if (totalItemsPage2 > 8) {
               p2Gap = '10px';
-              p2CardPadding = '10px';
+              p2CardPadding = '12px';
               p2TitleMarginTop = '8px';
               p2MainGap = '14px';
-              p2DescriptionSize = '9.5px';
-              p2TitleSize = '24px';
-              p2SubTitleSize = '10.5px';
-              p2TextGap = '3px';
+              p2DescriptionSize = '12.5px';
+              p2TitleSize = '26px';
+              p2SubTitleSize = '12.5px';
+              p2TextGap = '4px';
             } else if (totalItemsPage2 < 7) {
               p2Gap = '20px';
-              p2CardPadding = '14px';
+              p2CardPadding = '16px';
               p2TitleMarginTop = '25px';
               p2MainGap = '30px';
-              p2DescriptionSize = '11px';
+              p2DescriptionSize = '14.5px';
               p2TitleSize = '32px';
-              p2SubTitleSize = '12px';
+              p2SubTitleSize = '15px';
               p2TextGap = '6px';
             }
 
@@ -2159,10 +2159,10 @@ const ProposalView: React.FC = () => {
                 {/* Header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '25px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
-                    <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
-                    <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{proposal.hero_title ? proposal.hero_title.toUpperCase() : 'CBKR APP V2'}</span>
+                    <span style={{ fontSize: '13px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
+                    <span style={{ fontSize: '9px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{proposal.hero_title ? proposal.hero_title.toUpperCase() : 'CBKR APP V2'}</span>
                   </div>
-                  <span style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>PROJECT_SCOPE // 02</span>
+                  <span style={{ fontSize: '11px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>PROJECT_SCOPE // 02</span>
                 </div>
 
                 {/* Contenido */}
@@ -2195,10 +2195,10 @@ const ProposalView: React.FC = () => {
                             <div style={{ color: brandPrimary, display: 'flex', alignItems: 'center' }}>
                               <IconResolver name={inc.icon_name || 'CheckCircle2'} className="w-4 h-4" />
                             </div>
-                            <h4 style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', margin: '0', textTransform: 'uppercase' }}>{inc.title || 'Entregable'}</h4>
+                            <h4 style={{ fontSize: totalItemsPage2 > 10 ? '12px' : '13.5px', fontWeight: '800', color: '#0f172a', margin: '0', textTransform: 'uppercase' }}>{inc.title || 'Entregable'}</h4>
                           </div>
-                          <p style={{ fontSize: p2DescriptionSize, color: '#475569', margin: '0', lineHeight: '1.4', fontWeight: '300' }}>{inc.description || 'Descripción del alcance.'}</p>
-                          {inc.tooltip && <p style={{ fontSize: '9px', color: '#94a3b8', margin: '2px 0 0 0', fontStyle: 'italic' }}>{inc.tooltip}</p>}
+                          <p style={{ fontSize: p2DescriptionSize, color: '#475569', margin: '0', lineHeight: '1.45', fontWeight: '300' }}>{inc.description || 'Descripción del alcance.'}</p>
+                          {inc.tooltip && <p style={{ fontSize: '11.5px', color: '#94a3b8', margin: '2px 0 0 0', fontStyle: 'italic' }}>{inc.tooltip}</p>}
                         </div>
                       );
                     })}
@@ -2233,9 +2233,9 @@ const ProposalView: React.FC = () => {
                                 <div style={{ color: '#e11d48', display: 'flex', alignItems: 'center' }}>
                                   <IconResolver name="XCircle" className="w-4 h-4" />
                                 </div>
-                                <h4 style={{ fontSize: '11px', fontWeight: '850', color: '#9f1239', margin: '0', textTransform: 'uppercase' }}>{exc.title || 'Exclusión'}</h4>
+                                <h4 style={{ fontSize: totalItemsPage2 > 10 ? '12px' : '13.5px', fontWeight: '850', color: '#9f1239', margin: '0', textTransform: 'uppercase' }}>{exc.title || 'Exclusión'}</h4>
                               </div>
-                              <p style={{ fontSize: p2DescriptionSize, color: '#b91c1c', margin: '0', lineHeight: '1.4', fontWeight: '300' }}>{exc.tooltip || 'No incluido en el presupuesto base.'}</p>
+                              <p style={{ fontSize: p2DescriptionSize, color: '#b91c1c', margin: '0', lineHeight: '1.45', fontWeight: '300' }}>{exc.tooltip || 'No incluido en el presupuesto base.'}</p>
                             </div>
                           );
                         })}
@@ -2245,7 +2245,7 @@ const ProposalView: React.FC = () => {
                 </div>
 
                 {/* Footer Fijo */}
-                <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
+                <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '12px', color: '#94a3b8' }}>
                   <span>Propuesta Comercial | {proposal.client_name}</span>
                   <span>Página {getPrintPageNumber('alcance')} de {totalPrintPages}</span>
                 </div>
@@ -2261,10 +2261,10 @@ const ProposalView: React.FC = () => {
           {/* Header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '25px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
-              <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
-              <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{proposal.hero_title ? proposal.hero_title.toUpperCase() : (isServiceProposal ? 'STACKED SAAS' : 'CBKR APP V2')}</span>
+              <span style={{ fontSize: '13px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
+              <span style={{ fontSize: '9px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{proposal.hero_title ? proposal.hero_title.toUpperCase() : (isServiceProposal ? 'STACKED SAAS' : 'CBKR APP V2')}</span>
             </div>
-            <span style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>
+            <span style={{ fontSize: '11px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>
               {isServiceProposal ? 'SERVICE_PLAN_SLA // 02' : 'PROJECT_ROADMAP // 02'}
             </span>
           </div>
@@ -2276,18 +2276,18 @@ const ProposalView: React.FC = () => {
                 PLAN DE SERVICIO & <span style={{ fontStyle: 'italic', color: brandPrimary }}>ACUERDO SLA</span>
               </h1>
 
-              <p style={{ fontSize: '11px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
+              <p style={{ fontSize: '13.5px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
                 Acuerdo de nivel de servicio (SLA), condiciones comerciales de suscripción y licenciamiento de software en la nube para la plataforma {serviceDetails.plan_name || 'Stacked'}.
               </p>
 
               {/* Bloque Principal del Plan */}
               <div style={{ border: '2px solid #0f172a', borderRadius: '16px', padding: '24px', backgroundColor: '#f8fafc', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <span style={{ fontSize: '9px', fontWeight: '900', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Plan Contratado</span>
-                  <h3 style={{ fontSize: '20px', fontWeight: '950', color: '#0f172a', margin: '0', textTransform: 'uppercase' }}>
+                  <span style={{ fontSize: '11px', fontWeight: '900', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Plan Contratado</span>
+                  <h3 style={{ fontSize: '22px', fontWeight: '950', color: '#0f172a', margin: '0', textTransform: 'uppercase' }}>
                     {serviceDetails.plan_name || 'Stacked Business Cloud'}
                   </h3>
-                  <div style={{ display: 'flex', gap: '15px', marginTop: '4px', fontSize: '10px', color: '#475569' }}>
+                  <div style={{ display: 'flex', gap: '15px', marginTop: '4px', fontSize: '12px', color: '#475569' }}>
                     <span>Plazo mínimo: <strong style={{ color: '#0f172a' }}>{serviceDetails.min_term_months || '6 meses'}</strong></span>
                     <span>•</span>
                     <span>Renovación: <strong style={{ color: '#0f172a' }}>{serviceDetails.auto_renew !== false ? 'Automática' : 'Manual'}</strong></span>
@@ -2300,10 +2300,10 @@ const ProposalView: React.FC = () => {
                   </div>
                 </div>
                 <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
-                  <span style={{ fontSize: '8px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                  <span style={{ fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px' }}>
                     Abono {serviceDetails.billing_frequency === 'annual' ? 'Anual' : serviceDetails.billing_frequency === 'quarterly' ? 'Trimestral' : 'Mensual'}
                   </span>
-                  <div style={{ fontSize: '28px', fontWeight: '950', color: '#0f172a' }}>
+                  <div style={{ fontSize: '30px', fontWeight: '950', color: '#0f172a' }}>
                     {serviceDetails.recurring_fee || proposal.total_value}
                   </div>
                 </div>
@@ -2311,67 +2311,67 @@ const ProposalView: React.FC = () => {
 
               {/* Matriz de Niveles de Servicio SLA */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: '6px', marginBottom: '2px' }}>
-                <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Métricas y Garantías Operativas (SLA)</span>
+                <span style={{ fontSize: '11px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Métricas y Garantías Operativas (SLA)</span>
                 <div style={{ flexGrow: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div style={{ padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0', backgroundColor: '#ffffff' }}>
-                  <span style={{ fontSize: '8px', fontWeight: '900', color: '#64748b', letterSpacing: '1px', textTransform: 'uppercase' }}>Disponibilidad Garantizada</span>
-                  <p style={{ fontSize: '24px', fontWeight: '950', color: '#059669', margin: '4px 0 2px 0' }}>{serviceDetails.sla_uptime || '99.5%'}</p>
-                  <p style={{ fontSize: '9.5px', color: '#64748b', margin: '0', lineHeight: '1.3' }}>Uptime medido mensualmente en clusters de base de datos y servidores cloud.</p>
+                  <span style={{ fontSize: '10px', fontWeight: '900', color: '#64748b', letterSpacing: '1px', textTransform: 'uppercase' }}>Disponibilidad Garantizada</span>
+                  <p style={{ fontSize: '26px', fontWeight: '950', color: '#059669', margin: '4px 0 2px 0' }}>{serviceDetails.sla_uptime || '99.5%'}</p>
+                  <p style={{ fontSize: '11.5px', color: '#64748b', margin: '0', lineHeight: '1.3' }}>Uptime medido mensualmente en clusters de base de datos y servidores cloud.</p>
                 </div>
                 <div style={{ padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0', backgroundColor: '#ffffff' }}>
-                  <span style={{ fontSize: '8px', fontWeight: '900', color: '#64748b', letterSpacing: '1px', textTransform: 'uppercase' }}>Canales de Atención</span>
-                  <p style={{ fontSize: '13px', fontWeight: '900', color: '#0f172a', margin: '8px 0 4px 0' }}>{serviceDetails.support_channels || 'WhatsApp Prioritario + Tickets'}</p>
-                  <p style={{ fontSize: '9.5px', color: '#64748b', margin: '0', lineHeight: '1.3' }}>Soporte técnico directo con el equipo de ingeniería de CreAPP.</p>
+                  <span style={{ fontSize: '10px', fontWeight: '900', color: '#64748b', letterSpacing: '1px', textTransform: 'uppercase' }}>Canales de Atención</span>
+                  <p style={{ fontSize: '15px', fontWeight: '900', color: '#0f172a', margin: '8px 0 4px 0' }}>{serviceDetails.support_channels || 'WhatsApp Prioritario + Tickets'}</p>
+                  <p style={{ fontSize: '11.5px', color: '#64748b', margin: '0', lineHeight: '1.3' }}>Soporte técnico directo con el equipo de ingeniería de CreAPP.</p>
                 </div>
                 <div style={{ padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0', backgroundColor: '#ffffff' }}>
-                  <span style={{ fontSize: '8px', fontWeight: '900', color: '#64748b', letterSpacing: '1px', textTransform: 'uppercase' }}>Tiempo de Respuesta - Prioridad 1 (Crítico)</span>
-                  <p style={{ fontSize: '16px', fontWeight: '950', color: '#d97706', margin: '6px 0 2px 0' }}>{serviceDetails.response_time_critical || '< 2 horas'}</p>
-                  <p style={{ fontSize: '9.5px', color: '#64748b', margin: '0', lineHeight: '1.3' }}>Fallas completas de servicio o indisponibilidad que bloqueen la operación comercial.</p>
+                  <span style={{ fontSize: '10px', fontWeight: '900', color: '#64748b', letterSpacing: '1px', textTransform: 'uppercase' }}>Tiempo de Respuesta - Prioridad 1 (Crítico)</span>
+                  <p style={{ fontSize: '18px', fontWeight: '950', color: '#d97706', margin: '6px 0 2px 0' }}>{serviceDetails.response_time_critical || '< 2 horas'}</p>
+                  <p style={{ fontSize: '11.5px', color: '#64748b', margin: '0', lineHeight: '1.3' }}>Fallas completas de servicio o indisponibilidad que bloqueen la operación comercial.</p>
                 </div>
                 <div style={{ padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0', backgroundColor: '#ffffff' }}>
-                  <span style={{ fontSize: '8px', fontWeight: '900', color: '#64748b', letterSpacing: '1px', textTransform: 'uppercase' }}>Tiempo de Respuesta - Prioridad 2 (Normal)</span>
-                  <p style={{ fontSize: '16px', fontWeight: '950', color: '#2563eb', margin: '6px 0 2px 0' }}>{serviceDetails.response_time_normal || '< 12 horas hábiles'}</p>
-                  <p style={{ fontSize: '9.5px', color: '#64748b', margin: '0', lineHeight: '1.3' }}>Consultas de configuración, soporte operativo o incidentes no bloqueantes.</p>
+                  <span style={{ fontSize: '10px', fontWeight: '900', color: '#64748b', letterSpacing: '1px', textTransform: 'uppercase' }}>Tiempo de Respuesta - Prioridad 2 (Normal)</span>
+                  <p style={{ fontSize: '18px', fontWeight: '950', color: '#2563eb', margin: '6px 0 2px 0' }}>{serviceDetails.response_time_normal || '< 12 horas hábiles'}</p>
+                  <p style={{ fontSize: '11.5px', color: '#64748b', margin: '0', lineHeight: '1.3' }}>Consultas de configuración, soporte operativo o incidentes no bloqueantes.</p>
                 </div>
               </div>
 
               {/* Límites de la suscripción */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: '6px', marginBottom: '2px' }}>
-                <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Límites y Capacidades Asignadas</span>
+                <span style={{ fontSize: '11px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Límites y Capacidades Asignadas</span>
                 <div style={{ flexGrow: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
                 <div style={{ padding: '12px', borderRadius: '10px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
-                  <span style={{ fontSize: '8px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>Usuarios / Accesos</span>
-                  <p style={{ fontSize: '11px', fontWeight: '900', color: '#0f172a', margin: '3px 0 0 0' }}>{serviceDetails.limits?.users || 'Ilimitados'}</p>
+                  <span style={{ fontSize: '9.5px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>Usuarios / Accesos</span>
+                  <p style={{ fontSize: '13px', fontWeight: '900', color: '#0f172a', margin: '3px 0 0 0' }}>{serviceDetails.limits?.users || 'Ilimitados'}</p>
                 </div>
                 <div style={{ padding: '12px', borderRadius: '10px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
-                  <span style={{ fontSize: '8px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>Sucursales / Salones</span>
-                  <p style={{ fontSize: '11px', fontWeight: '900', color: '#0f172a', margin: '3px 0 0 0' }}>{serviceDetails.limits?.branches || 'Hasta 3 sucursales'}</p>
+                  <span style={{ fontSize: '9.5px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>Sucursales / Salones</span>
+                  <p style={{ fontSize: '13px', fontWeight: '900', color: '#0f172a', margin: '3px 0 0 0' }}>{serviceDetails.limits?.branches || 'Hasta 3 sucursales'}</p>
                 </div>
                 <div style={{ padding: '12px', borderRadius: '10px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
-                  <span style={{ fontSize: '8px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>Almacenamiento Cloud</span>
-                  <p style={{ fontSize: '11px', fontWeight: '900', color: '#0f172a', margin: '3px 0 0 0' }}>{serviceDetails.limits?.storage || '50 GB'}</p>
+                  <span style={{ fontSize: '9.5px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>Almacenamiento Cloud</span>
+                  <p style={{ fontSize: '13px', fontWeight: '900', color: '#0f172a', margin: '3px 0 0 0' }}>{serviceDetails.limits?.storage || '50 GB'}</p>
                 </div>
               </div>
 
               {serviceDetails.limits?.custom_notes && (
-                <div style={{ padding: '10px 14px', borderRadius: '8px', backgroundColor: '#f1f5f9', fontSize: '9.5px', color: '#475569', lineHeight: '1.4' }}>
+                <div style={{ padding: '10px 14px', borderRadius: '8px', backgroundColor: '#f1f5f9', fontSize: '11px', color: '#475569', lineHeight: '1.4' }}>
                   <strong style={{ color: '#0f172a' }}>Nota adicional: </strong>{serviceDetails.limits.custom_notes}
                 </div>
               )}
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: (proposal.milestones && proposal.milestones.length >= 4) || (proposal.payments && proposal.payments.length >= 4) ? '8px' : '20px' }}>
-              <h1 style={{ fontSize: (proposal.milestones && proposal.milestones.length >= 4) || (proposal.payments && proposal.payments.length >= 4) ? '24px' : '28px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
+              <h1 style={{ fontSize: (proposal.milestones && proposal.milestones.length >= 4) || (proposal.payments && proposal.payments.length >= 4) ? '26px' : '30px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
                 CRONOGRAMA DE FASES & <span style={{ fontStyle: 'italic', color: brandPrimary }}>ENTREGAS</span>
               </h1>
 
-              <p style={{ fontSize: (proposal.milestones && proposal.milestones.length >= 4) || (proposal.payments && proposal.payments.length >= 4) ? '10px' : '11px', color: '#475569', lineHeight: '1.35', fontWeight: '300', margin: '0' }}>
+              <p style={{ fontSize: (proposal.milestones && proposal.milestones.length >= 4) || (proposal.payments && proposal.payments.length >= 4) ? '13px' : '14.5px', color: '#475569', lineHeight: '1.35', fontWeight: '300', margin: '0' }}>
                 {(() => {
                   const meth = proposal.methodology || DEFAULT_METHODOLOGY;
                   const text = meth.phases_intro ?? DEFAULT_METHODOLOGY.phases_intro;
@@ -2387,36 +2387,36 @@ const ProposalView: React.FC = () => {
               </p>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: '2px', marginBottom: '2px' }}>
-                <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Estructura de Sprints Mensuales</span>
+                <span style={{ fontSize: '11.5px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Estructura de Sprints Mensuales</span>
                 <div style={{ flexGrow: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
               </div>
 
               {/* Listado de Fases (Fase 1 a 4) */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: (proposal.milestones && proposal.milestones.length >= 4) || (proposal.payments && proposal.payments.length >= 4) ? '6px' : '15px' }}>
                 {proposal.milestones && proposal.milestones.map((m, i) => (
-                  <div key={m.id || i} style={{ display: 'flex', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', minHeight: proposal.milestones && proposal.milestones.length >= 4 ? '68px' : '95px', boxSizing: 'border-box' }}>
-                    <div style={{ width: proposal.milestones && proposal.milestones.length >= 4 ? '65px' : '80px', flexShrink: 0, flexGrow: 0, backgroundColor: '#000000', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: '#ffffff', gap: '2px', boxSizing: 'border-box' }}>
-                      <span style={{ fontSize: '8px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.8 }}>Fase</span>
-                      <span style={{ fontSize: proposal.milestones && proposal.milestones.length >= 4 ? '16px' : '20px', fontWeight: '950' }}>{i + 1}</span>
+                  <div key={m.id || i} style={{ display: 'flex', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', minHeight: proposal.milestones && proposal.milestones.length >= 4 ? '82px' : '105px', boxSizing: 'border-box' }}>
+                    <div style={{ width: proposal.milestones && proposal.milestones.length >= 4 ? '75px' : '90px', flexShrink: 0, flexGrow: 0, backgroundColor: '#000000', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: '#ffffff', gap: '2px', boxSizing: 'border-box' }}>
+                      <span style={{ fontSize: '9px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.8 }}>Fase</span>
+                      <span style={{ fontSize: proposal.milestones && proposal.milestones.length >= 4 ? '22px' : '28px', fontWeight: '950' }}>{i + 1}</span>
                     </div>
-                    <div style={{ flexGrow: 1, flexShrink: 1, minWidth: 0, padding: proposal.milestones && proposal.milestones.length >= 4 ? '6px 12px' : '15px 20px', display: 'flex', flexDirection: 'column', gap: '3px', justifyContent: 'center', boxSizing: 'border-box' }}>
-                      <h4 style={{ fontSize: proposal.milestones && proposal.milestones.length >= 4 ? '11px' : '12px', fontWeight: '900', color: '#0f172a', margin: '0', textTransform: 'uppercase' }}>{m.title}</h4>
-                      <p style={{ fontSize: proposal.milestones && proposal.milestones.length >= 4 ? '9px' : '10px', color: '#475569', lineHeight: '1.2', margin: '0', fontWeight: '300' }}>
+                    <div style={{ flexGrow: 1, flexShrink: 1, minWidth: 0, padding: proposal.milestones && proposal.milestones.length >= 4 ? '8px 14px' : '16px 22px', display: 'flex', flexDirection: 'column', gap: '4px', justifyContent: 'center', boxSizing: 'border-box' }}>
+                      <h4 style={{ fontSize: proposal.milestones && proposal.milestones.length >= 4 ? '13.5px' : '15px', fontWeight: '900', color: '#0f172a', margin: '0', textTransform: 'uppercase' }}>{m.title}</h4>
+                      <p style={{ fontSize: proposal.milestones && proposal.milestones.length >= 4 ? '12px' : '13.5px', color: '#475569', lineHeight: '1.3', margin: '0', fontWeight: '300' }}>
                         {m.description || 'Sin descripción de entregables.'}
                       </p>
                     </div>
-                    <div style={{ width: proposal.milestones && proposal.milestones.length >= 4 ? '105px' : '120px', flexShrink: 0, flexGrow: 0, borderLeft: '1px solid #e2e8f0', padding: proposal.milestones && proposal.milestones.length >= 4 ? '6px 10px' : '15px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '2px', backgroundColor: '#fafafa', boxSizing: 'border-box' }}>
-                      <span style={{ fontSize: '7px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Hito Control</span>
-                      <span style={{ fontSize: proposal.milestones && proposal.milestones.length >= 4 ? '9px' : '10px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', textAlign: 'center', lineHeight: '1.1' }}>
+                    <div style={{ width: proposal.milestones && proposal.milestones.length >= 4 ? '120px' : '135px', flexShrink: 0, flexGrow: 0, borderLeft: '1px solid #e2e8f0', padding: proposal.milestones && proposal.milestones.length >= 4 ? '8px 12px' : '16px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '2px', backgroundColor: '#fafafa', boxSizing: 'border-box' }}>
+                      <span style={{ fontSize: '9px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Hito Control</span>
+                      <span style={{ fontSize: proposal.milestones && proposal.milestones.length >= 4 ? '11px' : '13px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', textAlign: 'center', lineHeight: '1.2' }}>
                         {m.control_milestone || 'VERIFICACIÓN'}
                       </span>
                     </div>
                     {!proposal.methodology?.hide_milestone_prices && (
-                      <div style={{ width: proposal.milestones && proposal.milestones.length >= 4 ? '105px' : '120px', flexShrink: 0, flexGrow: 0, borderLeft: '1px solid #e2e8f0', padding: proposal.milestones && proposal.milestones.length >= 4 ? '6px 10px' : '15px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '2px', backgroundColor: '#fafafa', boxSizing: 'border-box' }}>
-                        <span style={{ fontSize: '7px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Inversión</span>
-                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}>
-                          <span style={{ fontSize: proposal.milestones && proposal.milestones.length >= 4 ? '13px' : '14px', fontWeight: '950', color: '#000000', lineHeight: '1.1' }}>${formatMilestonePrice(m.price)}</span>
-                          <span style={{ fontSize: '8px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', lineHeight: '1.1' }}>{proposal.methodology?.currency || ((proposal.total_value || '').toLowerCase().includes('ars') ? 'ARS' : 'USD')}</span>
+                      <div style={{ width: proposal.milestones && proposal.milestones.length >= 4 ? '120px' : '135px', flexShrink: 0, flexGrow: 0, borderLeft: '1px solid #e2e8f0', padding: proposal.milestones && proposal.milestones.length >= 4 ? '8px 12px' : '16px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '2px', backgroundColor: '#fafafa', boxSizing: 'border-box' }}>
+                        <span style={{ fontSize: '9px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Inversión</span>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '3px' }}>
+                          <span style={{ fontSize: proposal.milestones && proposal.milestones.length >= 4 ? '16px' : '18.5px', fontWeight: '950', color: '#000000', lineHeight: '1.1' }}>${formatMilestonePrice(m.price)}</span>
+                          <span style={{ fontSize: '10px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', lineHeight: '1.1' }}>{proposal.methodology?.currency || ((proposal.total_value || '').toLowerCase().includes('ars') ? 'ARS' : 'USD')}</span>
                         </div>
                       </div>
                     )}
@@ -2428,16 +2428,16 @@ const ProposalView: React.FC = () => {
               {proposal.infrastructure_costs && proposal.infrastructure_costs.length > 0 && (
                 <div style={{ marginTop: '2px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '4px' }}>
-                    <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Costos de Infraestructura Asociados</span>
+                    <span style={{ fontSize: '11px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Costos de Infraestructura Asociados</span>
                     <div style={{ flexGrow: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
                   </div>
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                     {proposal.infrastructure_costs.map((infra, idx) => (
-                      <div key={idx} style={{ flex: '1 1 180px', padding: '5px 10px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '9px' }}>
+                      <div key={idx} style={{ flex: '1 1 180px', padding: '6px 12px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                           <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{infra.provider}</span>
                           {infra.is_optional && (
-                            <span style={{ fontSize: '7px', padding: '1px 4px', backgroundColor: '#fef3c7', color: '#d97706', borderRadius: '4px', fontWeight: '900', letterSpacing: '0.5px' }}>OPCIONAL</span>
+                            <span style={{ fontSize: '9px', padding: '1px 5px', backgroundColor: '#fef3c7', color: '#d97706', borderRadius: '4px', fontWeight: '900', letterSpacing: '0.5px' }}>OPCIONAL</span>
                           )}
                           <span style={{ color: '#64748b' }}> — {infra.title}</span>
                         </div>
@@ -2451,19 +2451,19 @@ const ProposalView: React.FC = () => {
               {proposal.payments && proposal.payments.length > 0 && (
                 <div style={{ marginTop: '4px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '6px' }}>
-                    <span style={{ fontSize: '9px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Esquema de Pagos / Hitos de Financiamiento</span>
+                    <span style={{ fontSize: '11px', fontWeight: '800', color: '#64748b', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Esquema de Pagos / Hitos de Financiamiento</span>
                     <div style={{ flexGrow: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: `repeat(${proposal.payments.length}, minmax(0, 1fr))`, gap: proposal.payments.length > 3 ? '8px' : '10px', width: '100%' }}>
                     {proposal.payments.map((p, idx) => (
-                      <div key={idx} style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: proposal.payments.length > 3 ? '8px 10px' : '10px 12px', display: 'flex', flexDirection: 'column', gap: '4px', boxSizing: 'border-box' }}>
+                      <div key={idx} style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: proposal.payments.length > 3 ? '10px 12px' : '12px 14px', display: 'flex', flexDirection: 'column', gap: '4px', boxSizing: 'border-box' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '4px' }}>
-                          <span style={{ fontSize: proposal.payments.length > 3 ? '8.5px' : '9px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', lineHeight: '1.2' }}>{p.label}</span>
-                          <span style={{ fontSize: proposal.payments.length > 3 ? '11px' : '12px', fontWeight: '950', color: brandPrimary, flexShrink: 0 }}>{p.percentage}</span>
+                          <span style={{ fontSize: proposal.payments.length > 3 ? '11px' : '12.5px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', lineHeight: '1.2' }}>{p.label}</span>
+                          <span style={{ fontSize: proposal.payments.length > 3 ? '15px' : '18px', fontWeight: '950', color: brandPrimary, flexShrink: 0 }}>{p.percentage}</span>
                         </div>
-                        <span style={{ fontSize: proposal.payments.length > 3 ? '8px' : '9px', color: '#475569', fontWeight: '300', lineHeight: '1.3' }}>{p.description}</span>
+                        <span style={{ fontSize: proposal.payments.length > 3 ? '11px' : '12.5px', color: '#475569', fontWeight: '300', lineHeight: '1.35' }}>{p.description}</span>
                         {p.tooltip && (
-                          <span style={{ fontSize: proposal.payments.length > 3 ? '7.5px' : '8px', color: '#94a3b8', fontStyle: 'italic', lineHeight: '1.3', marginTop: '2px' }}>{p.tooltip}</span>
+                          <span style={{ fontSize: proposal.payments.length > 3 ? '9.5px' : '11px', color: '#94a3b8', fontStyle: 'italic', lineHeight: '1.3', marginTop: '2px' }}>{p.tooltip}</span>
                         )}
                       </div>
                     ))}
@@ -2474,7 +2474,7 @@ const ProposalView: React.FC = () => {
           )}
 
           {/* Footer Fijo */}
-          <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
+          <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '12px', color: '#94a3b8' }}>
             <span>
               {isServiceProposal ? (
                 <>Abono de Servicio: <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{serviceDetails.recurring_fee || proposal.total_value}</span></>
@@ -2493,19 +2493,19 @@ const ProposalView: React.FC = () => {
           {/* Header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '25px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
-              <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
-              <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{proposal.hero_title ? proposal.hero_title.toUpperCase() : 'CBKR APP V2'}</span>
+              <span style={{ fontSize: '13px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
+              <span style={{ fontSize: '9px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{proposal.hero_title ? proposal.hero_title.toUpperCase() : 'CBKR APP V2'}</span>
             </div>
-            <span style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>TIME_ESTIMATION // MES 1 Y 2</span>
+            <span style={{ fontSize: '11px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>TIME_ESTIMATION // MES 1 Y 2</span>
           </div>
 
           {/* Contenido */}
           <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: '15px' }}>
-            <h1 style={{ fontSize: '28px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
+            <h1 style={{ fontSize: '30px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
               DESGLOSE DE HORAS — <span style={{ fontStyle: 'italic', color: brandPrimary }}>SEMANAS 1 A 8</span>
             </h1>
 
-            <p style={{ fontSize: '11px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
+            <p style={{ fontSize: '14px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
               {(proposal.methodology || DEFAULT_METHODOLOGY).weekly_breakdown_intro_1_8 || DEFAULT_METHODOLOGY.weekly_breakdown_intro_1_8}
             </p>
 
@@ -2513,10 +2513,10 @@ const ProposalView: React.FC = () => {
             <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
               <thead>
                 <tr style={{ backgroundColor: '#0f172a', color: '#ffffff' }}>
-                  <th style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '900', textAlign: 'left', letterSpacing: '1px', width: '10%' }}>SEMANA</th>
-                  <th style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '900', textAlign: 'left', letterSpacing: '1px', width: '25%' }}>HITO / TAREA</th>
-                  <th style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '900', textAlign: 'left', letterSpacing: '1px', width: '50%' }}>DETALLE TÉCNICO DE IMPLEMENTACIÓN</th>
-                  <th style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '900', textAlign: 'right', letterSpacing: '1px', width: '15%', color: brandSecondary }}>ESFUERZO</th>
+                  <th style={{ padding: '10px 12px', fontSize: '11px', fontWeight: '900', textAlign: 'left', letterSpacing: '1px', width: '10%' }}>SEMANA</th>
+                  <th style={{ padding: '10px 12px', fontSize: '11px', fontWeight: '900', textAlign: 'left', letterSpacing: '1px', width: '25%' }}>HITO / TAREA</th>
+                  <th style={{ padding: '10px 12px', fontSize: '11px', fontWeight: '900', textAlign: 'left', letterSpacing: '1px', width: '50%' }}>DETALLE TÉCNICO DE IMPLEMENTACIÓN</th>
+                  <th style={{ padding: '10px 12px', fontSize: '11px', fontWeight: '900', textAlign: 'right', letterSpacing: '1px', width: '15%', color: brandSecondary }}>ESFUERZO</th>
                 </tr>
               </thead>
               <tbody>
@@ -2524,18 +2524,18 @@ const ProposalView: React.FC = () => {
                   if (item.type === 'milestone') {
                     return (
                       <tr key={item.id} style={{ backgroundColor: '#f1f5f9' }}>
-                        <td style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '800', color: '#0f172a' }}>{item.id}</td>
-                        <td colSpan={2} style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase' }}>{item.title}</td>
-                        <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: '900', color: '#0f172a', textAlign: 'right' }}>{parseFloat(item.hours).toFixed(1)} hs</td>
+                        <td style={{ padding: '10px 12px', fontSize: '11px', fontWeight: '800', color: '#0f172a' }}>{item.id}</td>
+                        <td colSpan={2} style={{ padding: '10px 12px', fontSize: '11px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase' }}>{item.title}</td>
+                        <td style={{ padding: '10px 12px', fontSize: '12.5px', fontWeight: '900', color: '#0f172a', textAlign: 'right' }}>{parseFloat(item.hours).toFixed(1)} hs</td>
                       </tr>
                     );
                   }
                   return (
                     <tr key={item.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                      <td style={{ padding: '10px 12px', fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>{item.id}</td>
-                      <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: '800', color: '#0f172a' }}>{item.title}</td>
-                      <td style={{ padding: '10px 12px', fontSize: '10px', color: '#475569', lineHeight: '1.4', fontWeight: '300' }}>{item.detail || item.desc}</td>
-                      <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: 'bold', color: brandSecondary, textAlign: 'right' }}>{parseFloat(item.hours).toFixed(1)} hs</td>
+                      <td style={{ padding: '10px 12px', fontSize: '11.5px', color: '#64748b', fontWeight: 'bold' }}>{item.id}</td>
+                      <td style={{ padding: '10px 12px', fontSize: '12px', fontWeight: '800', color: '#0f172a' }}>{item.title}</td>
+                      <td style={{ padding: '10px 12px', fontSize: '11.5px', color: '#475569', lineHeight: '1.4', fontWeight: '300' }}>{item.detail || item.desc}</td>
+                      <td style={{ padding: '10px 12px', fontSize: '12px', fontWeight: 'bold', color: brandSecondary, textAlign: 'right' }}>{parseFloat(item.hours).toFixed(1)} hs</td>
                     </tr>
                   );
                 })}
@@ -2544,7 +2544,7 @@ const ProposalView: React.FC = () => {
           </div>
 
           {/* Footer Fijo */}
-          <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
+          <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '12px', color: '#94a3b8' }}>
             <span>CREAPP // ACCUMULATED_HOURS_80</span>
             <span>Página {getPrintPageNumber('sem1-6')} de {totalPrintPages}</span>
           </div>
@@ -2557,19 +2557,19 @@ const ProposalView: React.FC = () => {
           {/* Header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '25px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
-              <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
-              <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{proposal.hero_title ? proposal.hero_title.toUpperCase() : 'CBKR APP V2'}</span>
+              <span style={{ fontSize: '13px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
+              <span style={{ fontSize: '9px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{proposal.hero_title ? proposal.hero_title.toUpperCase() : 'CBKR APP V2'}</span>
             </div>
-            <span style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>TIME_ESTIMATION // MES 3 Y 4</span>
+            <span style={{ fontSize: '11px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>TIME_ESTIMATION // MES 3 Y 4</span>
           </div>
 
           {/* Contenido */}
           <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: '15px' }}>
-            <h1 style={{ fontSize: '28px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
+            <h1 style={{ fontSize: '30px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
               DESGLOSE DE HORAS — <span style={{ fontStyle: 'italic', color: brandPrimary }}>SEMANAS 9 A 16</span>
             </h1>
 
-            <p style={{ fontSize: '11px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
+            <p style={{ fontSize: '14px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
               {(proposal.methodology || DEFAULT_METHODOLOGY).weekly_breakdown_intro_9_16 || DEFAULT_METHODOLOGY.weekly_breakdown_intro_9_16}
             </p>
 
@@ -2577,10 +2577,10 @@ const ProposalView: React.FC = () => {
             <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
               <thead>
                 <tr style={{ backgroundColor: '#0f172a', color: '#ffffff' }}>
-                  <th style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '900', textAlign: 'left', letterSpacing: '1px', width: '10%' }}>SEMANA</th>
-                  <th style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '900', textAlign: 'left', letterSpacing: '1px', width: '25%' }}>HITO / TAREA</th>
-                  <th style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '900', textAlign: 'left', letterSpacing: '1px', width: '50%' }}>DETALLE TÉCNICO DE IMPLEMENTACIÓN</th>
-                  <th style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '900', textAlign: 'right', letterSpacing: '1px', width: '15%', color: brandSecondary }}>ESFUERZO</th>
+                  <th style={{ padding: '10px 12px', fontSize: '11px', fontWeight: '900', textAlign: 'left', letterSpacing: '1px', width: '10%' }}>SEMANA</th>
+                  <th style={{ padding: '10px 12px', fontSize: '11px', fontWeight: '900', textAlign: 'left', letterSpacing: '1px', width: '25%' }}>HITO / TAREA</th>
+                  <th style={{ padding: '10px 12px', fontSize: '11px', fontWeight: '900', textAlign: 'left', letterSpacing: '1px', width: '50%' }}>DETALLE TÉCNICO DE IMPLEMENTACIÓN</th>
+                  <th style={{ padding: '10px 12px', fontSize: '11px', fontWeight: '900', textAlign: 'right', letterSpacing: '1px', width: '15%', color: brandSecondary }}>ESFUERZO</th>
                 </tr>
               </thead>
               <tbody>
@@ -2588,18 +2588,18 @@ const ProposalView: React.FC = () => {
                   if (item.type === 'milestone') {
                     return (
                       <tr key={item.id} style={{ backgroundColor: '#f1f5f9' }}>
-                        <td style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '800', color: '#0f172a' }}>{item.id}</td>
-                        <td colSpan={2} style={{ padding: '10px 12px', fontSize: '9px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase' }}>{item.title}</td>
-                        <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: '900', color: '#0f172a', textAlign: 'right' }}>{parseFloat(item.hours).toFixed(1)} hs</td>
+                        <td style={{ padding: '10px 12px', fontSize: '11px', fontWeight: '800', color: '#0f172a' }}>{item.id}</td>
+                        <td colSpan={2} style={{ padding: '10px 12px', fontSize: '11px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase' }}>{item.title}</td>
+                        <td style={{ padding: '10px 12px', fontSize: '12.5px', fontWeight: '900', color: '#0f172a', textAlign: 'right' }}>{parseFloat(item.hours).toFixed(1)} hs</td>
                       </tr>
                     );
                   }
                   return (
                     <tr key={item.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                      <td style={{ padding: '10px 12px', fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>{item.id}</td>
-                      <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: '800', color: '#0f172a' }}>{item.title}</td>
-                      <td style={{ padding: '10px 12px', fontSize: '10px', color: '#475569', lineHeight: '1.4', fontWeight: '300' }}>{item.detail || item.desc}</td>
-                      <td style={{ padding: '10px 12px', fontSize: '10px', fontWeight: 'bold', color: brandSecondary, textAlign: 'right' }}>{parseFloat(item.hours).toFixed(1)} hs</td>
+                      <td style={{ padding: '10px 12px', fontSize: '11.5px', color: '#64748b', fontWeight: 'bold' }}>{item.id}</td>
+                      <td style={{ padding: '10px 12px', fontSize: '12px', fontWeight: '800', color: '#0f172a' }}>{item.title}</td>
+                      <td style={{ padding: '10px 12px', fontSize: '11.5px', color: '#475569', lineHeight: '1.4', fontWeight: '300' }}>{item.detail || item.desc}</td>
+                      <td style={{ padding: '10px 12px', fontSize: '12px', fontWeight: 'bold', color: brandSecondary, textAlign: 'right' }}>{parseFloat(item.hours).toFixed(1)} hs</td>
                     </tr>
                   );
                 })}
@@ -2608,7 +2608,7 @@ const ProposalView: React.FC = () => {
           </div>
 
           {/* Footer Fijo */}
-          <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
+          <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '12px', color: '#94a3b8' }}>
             <span>CREAPP // ESTIMATED_HOURS_160_TOTAL</span>
             <span>Página {getPrintPageNumber('sem9-16')} de {totalPrintPages}</span>
           </div>
@@ -2621,23 +2621,23 @@ const ProposalView: React.FC = () => {
           {/* Header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '25px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
-              <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
-              <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{proposal.hero_title ? proposal.hero_title.toUpperCase() : 'CBKR APP V2'}</span>
+              <span style={{ fontSize: '13px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
+              <span style={{ fontSize: '9px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{proposal.hero_title ? proposal.hero_title.toUpperCase() : 'CBKR APP V2'}</span>
             </div>
-            <span style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>AGILE_METHODOLOGY // 04</span>
+            <span style={{ fontSize: '11px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>AGILE_METHODOLOGY // 04</span>
           </div>
 
           {/* Contenido */}
           <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, gap: '20px' }}>
-            <h1 style={{ fontSize: '28px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
+            <h1 style={{ fontSize: '30px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
               METODOLOGÍA DE TRABAJO & <span style={{ fontStyle: 'italic', color: brandPrimary }}>PLAN DE ACCIÓN</span>
             </h1>
 
-            <p style={{ fontSize: '11px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
+            <p style={{ fontSize: '14.5px', color: '#475569', lineHeight: '1.5', fontWeight: '300', margin: '0' }}>
               {(proposal.methodology || DEFAULT_METHODOLOGY).intro_text || DEFAULT_METHODOLOGY.intro_text}
             </p>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: proposal.methodology?.hide_weekly_schedule ? '16px' : (getPillars(proposal.methodology, brandPrimary, brandSecondary).length >= 4 ? '10px' : '15px'), marginTop: '5px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: proposal.methodology?.hide_weekly_schedule ? '18px' : (getPillars(proposal.methodology, brandPrimary, brandSecondary).length >= 4 ? '12px' : '16px'), marginTop: '5px' }}>
               {getPillars(proposal.methodology, brandPrimary, brandSecondary).map((pillar, idx) => {
                 const mainColor = pillar.color || (idx % 2 === 0 ? brandPrimary : brandSecondary);
                 const isCompact = !proposal.methodology?.hide_weekly_schedule && getPillars(proposal.methodology, brandPrimary, brandSecondary).length >= 4;
@@ -2645,19 +2645,19 @@ const ProposalView: React.FC = () => {
                   <div
                     key={pillar.id || idx}
                     style={{
-                      padding: proposal.methodology?.hide_weekly_schedule ? '18px 22px' : (isCompact ? '12px 16px' : '18px 20px'),
+                      padding: proposal.methodology?.hide_weekly_schedule ? '20px 24px' : (isCompact ? '14px 18px' : '20px 22px'),
                       borderRadius: '12px',
                       backgroundColor: `${mainColor}0A`,
                       border: `1px solid ${mainColor}33`,
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: '4px'
+                      gap: '5px'
                     }}
                   >
-                    <h4 style={{ fontSize: '10px', fontWeight: '900', color: mainColor, margin: '0', letterSpacing: '1.5px', textTransform: 'uppercase' }}>
+                    <h4 style={{ fontSize: '13.5px', fontWeight: '900', color: mainColor, margin: '0', letterSpacing: '1.5px', textTransform: 'uppercase' }}>
                       {pillar.title}
                     </h4>
-                    <p style={{ fontSize: proposal.methodology?.hide_weekly_schedule ? '11px' : (isCompact ? '10px' : '11px'), color: '#475569', lineHeight: '1.5', margin: '0', fontWeight: '300' }}>
+                    <p style={{ fontSize: proposal.methodology?.hide_weekly_schedule ? '13.5px' : (isCompact ? '12px' : '13.5px'), color: '#475569', lineHeight: '1.5', margin: '0', fontWeight: '300' }}>
                       {(pillar.description || '').replace(/\{client_name\}/g, proposal.client_name || 'el cliente')}
                     </p>
                   </div>
@@ -2668,19 +2668,19 @@ const ProposalView: React.FC = () => {
               {!proposal.methodology?.hide_weekly_schedule && (
                 <div style={{ padding: '20px', borderRadius: '12px', border: '1px solid #0f172a', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <div>
-                    <h5 style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                    <h5 style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0', letterSpacing: '1px', textTransform: 'uppercase' }}>
                       {(() => {
                         const meth = proposal.methodology || DEFAULT_METHODOLOGY;
                         return meth.schedule_monday_title || DEFAULT_METHODOLOGY.schedule_monday_title;
                       })()}
                     </h5>
-                    <h6 style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', margin: '0 0 2px 0', textTransform: 'uppercase' }}>
+                    <h6 style={{ fontSize: '13.5px', fontWeight: '800', color: '#0f172a', margin: '0 0 2px 0', textTransform: 'uppercase' }}>
                       {(() => {
                         const meth = proposal.methodology || DEFAULT_METHODOLOGY;
                         return meth.schedule_monday_subtitle || DEFAULT_METHODOLOGY.schedule_monday_subtitle;
                       })()}
                     </h6>
-                    <p style={{ fontSize: '10px', color: '#475569', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
+                    <p style={{ fontSize: '12px', color: '#475569', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
                       {(() => {
                         const meth = proposal.methodology || DEFAULT_METHODOLOGY;
                         return (meth.schedule_monday_text || DEFAULT_METHODOLOGY.schedule_monday_text).replace('{client_name}', proposal.client_name || 'el cliente');
@@ -2691,19 +2691,19 @@ const ProposalView: React.FC = () => {
                   <div style={{ height: '1px', backgroundColor: '#e2e8f0' }}></div>
                   
                   <div>
-                    <h5 style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                    <h5 style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0', letterSpacing: '1px', textTransform: 'uppercase' }}>
                       {(() => {
                         const meth = proposal.methodology || DEFAULT_METHODOLOGY;
                         return meth.schedule_tuesday_title || DEFAULT_METHODOLOGY.schedule_tuesday_title;
                       })()}
                     </h5>
-                    <h6 style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', margin: '0 0 2px 0', textTransform: 'uppercase' }}>
+                    <h6 style={{ fontSize: '13.5px', fontWeight: '800', color: '#0f172a', margin: '0 0 2px 0', textTransform: 'uppercase' }}>
                       {(() => {
                         const meth = proposal.methodology || DEFAULT_METHODOLOGY;
                         return meth.schedule_tuesday_subtitle || DEFAULT_METHODOLOGY.schedule_tuesday_subtitle;
                       })()}
                     </h6>
-                    <p style={{ fontSize: '10px', color: '#475569', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
+                    <p style={{ fontSize: '12px', color: '#475569', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
                       {(() => {
                         const meth = proposal.methodology || DEFAULT_METHODOLOGY;
                         return (meth.schedule_tuesday_text || DEFAULT_METHODOLOGY.schedule_tuesday_text).replace('{client_name}', proposal.client_name || 'el cliente');
@@ -2714,19 +2714,19 @@ const ProposalView: React.FC = () => {
                   <div style={{ height: '1px', backgroundColor: '#e2e8f0' }}></div>
 
                   <div>
-                    <h5 style={{ fontSize: '10px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                    <h5 style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0', letterSpacing: '1px', textTransform: 'uppercase' }}>
                       {(() => {
                         const meth = proposal.methodology || DEFAULT_METHODOLOGY;
                         return meth.schedule_friday_title || DEFAULT_METHODOLOGY.schedule_friday_title;
                       })()}
                     </h5>
-                    <h6 style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', margin: '0 0 2px 0', textTransform: 'uppercase' }}>
+                    <h6 style={{ fontSize: '13.5px', fontWeight: '800', color: '#0f172a', margin: '0 0 2px 0', textTransform: 'uppercase' }}>
                       {(() => {
                         const meth = proposal.methodology || DEFAULT_METHODOLOGY;
                         return meth.schedule_friday_subtitle || DEFAULT_METHODOLOGY.schedule_friday_subtitle;
                       })()}
                     </h6>
-                    <p style={{ fontSize: '10px', color: '#475569', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
+                    <p style={{ fontSize: '12px', color: '#475569', lineHeight: '1.4', margin: '0', fontWeight: '300' }}>
                       {(() => {
                         const meth = proposal.methodology || DEFAULT_METHODOLOGY;
                         return (meth.schedule_friday_text || DEFAULT_METHODOLOGY.schedule_friday_text).replace('{client_name}', proposal.client_name || 'el cliente');
@@ -2739,7 +2739,7 @@ const ProposalView: React.FC = () => {
             </div>
 
             {/* Footer Fijo */}
-            <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '10px', color: '#94a3b8' }}>
+            <div style={{ position: 'absolute', bottom: '60px', left: '80px', right: '80px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '20px', fontSize: '12px', color: '#94a3b8' }}>
               <span>Propuesta Comercial | {proposal.client_name}</span>
               <span>Página {getPrintPageNumber('metodologia')} de {totalPrintPages}</span>
             </div>
@@ -2831,22 +2831,22 @@ const ProposalView: React.FC = () => {
                   {/* Header */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '8px', marginBottom: '14px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', alignItems: 'flex-start' }}>
-                      <span style={{ fontSize: '11px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
-                      <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>
+                      <span style={{ fontSize: '13px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
+                      <span style={{ fontSize: '9px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>
                         {proposal.hero_title ? proposal.hero_title.toUpperCase() : 'PLATAFORMA SAAS'}
                       </span>
                     </div>
-                    <span style={{ fontSize: '8.5px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>
+                    <span style={{ fontSize: '11px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>
                       SERVICE_AGREEMENT // PÁG. 1 DE 2
                     </span>
                   </div>
 
                   {/* Title & Description */}
                   <div style={{ marginBottom: '12px' }}>
-                    <h1 style={{ fontSize: '22px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
+                    <h1 style={{ fontSize: '26px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
                       CONTRATO DE SERVICIO & <span style={{ fontStyle: 'italic', color: brandPrimary }}>LICENCIA SAAS</span>
                     </h1>
-                    <p style={{ fontSize: '9.5px', color: '#475569', lineHeight: '1.45', fontWeight: '300', margin: '4px 0 0 0' }}>
+                    <p style={{ fontSize: '13px', color: '#475569', lineHeight: '1.45', fontWeight: '300', margin: '4px 0 0 0' }}>
                       {proposal.contract_description || STACKED_CONTRACT_DESCRIPTION}
                     </p>
                   </div>
@@ -2854,13 +2854,13 @@ const ProposalView: React.FC = () => {
                   {/* Proemio */}
                   {header ? (
                     <div style={{
-                      fontSize: '9.5px',
+                      fontSize: '12px',
                       color: '#1e293b',
-                      lineHeight: '1.55',
+                      lineHeight: '1.6',
                       backgroundColor: '#f8fafc',
                       borderRadius: '10px',
                       border: '1px solid #e2e8f0',
-                      padding: '12px 16px',
+                      padding: '14px 18px',
                       marginBottom: '14px',
                       whiteSpace: 'pre-wrap',
                       fontFamily: 'system-ui, -apple-system, sans-serif'
@@ -2874,7 +2874,7 @@ const ProposalView: React.FC = () => {
                     {part1Clauses.map((clause, idx) => (
                       <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <div style={{
-                          fontSize: '10px',
+                          fontSize: '12px',
                           fontWeight: '900',
                           color: '#0f172a',
                           letterSpacing: '0.4px',
@@ -2885,8 +2885,8 @@ const ProposalView: React.FC = () => {
                         }}>
                           <span style={{
                             display: 'inline-block',
-                            width: '5px',
-                            height: '5px',
+                            width: '6px',
+                            height: '6px',
                             borderRadius: '50%',
                             backgroundColor: brandPrimary,
                             verticalAlign: 'middle',
@@ -2895,7 +2895,7 @@ const ProposalView: React.FC = () => {
                           <span>{clause.title}</span>
                         </div>
                         <p style={{
-                          fontSize: '9.5px',
+                          fontSize: '11.5px',
                           color: '#334155',
                           lineHeight: '1.6',
                           margin: '0',
@@ -2909,7 +2909,7 @@ const ProposalView: React.FC = () => {
                   </div>
 
                   {/* Footer */}
-                  <div style={{ position: 'absolute', bottom: '30px', left: '65px', right: '65px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '12px', fontSize: '9px', color: '#94a3b8' }}>
+                  <div style={{ position: 'absolute', bottom: '30px', left: '65px', right: '65px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '12px', fontSize: '12px', color: '#94a3b8' }}>
                     <span>Contrato de Servicio | {company}</span>
                     <span>Página {getPrintPageNumber('legal')} de {totalPrintPages}</span>
                   </div>
@@ -2998,22 +2998,22 @@ const ProposalView: React.FC = () => {
                   {/* Header */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #0f172a', paddingBottom: '8px', marginBottom: '14px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', alignItems: 'flex-start' }}>
-                      <span style={{ fontSize: '11px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
-                      <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>
+                      <span style={{ fontSize: '13px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
+                      <span style={{ fontSize: '9px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>
                         {proposal.hero_title ? proposal.hero_title.toUpperCase() : 'STACKED PLATFORM'}
                       </span>
                     </div>
-                    <span style={{ fontSize: '8.5px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>
+                    <span style={{ fontSize: '11px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>
                       SERVICE_AGREEMENT // PÁG. 2 DE 2
                     </span>
                   </div>
 
                   {/* Title */}
                   <div style={{ marginBottom: '12px' }}>
-                    <h1 style={{ fontSize: '22px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
+                    <h1 style={{ fontSize: '26px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
                       TÉRMINOS GENERALES & <span style={{ fontStyle: 'italic', color: brandPrimary }}>FIRMAS</span>
                     </h1>
-                    <p style={{ fontSize: '9.5px', color: '#475569', lineHeight: '1.45', fontWeight: '300', margin: '4px 0 0 0' }}>
+                    <p style={{ fontSize: '13px', color: '#475569', lineHeight: '1.45', fontWeight: '300', margin: '4px 0 0 0' }}>
                       Soporte técnico, confidencialidad de datos, vigencia contractual y suscripción fehaciente.
                     </p>
                   </div>
@@ -3023,7 +3023,7 @@ const ProposalView: React.FC = () => {
                     {part2Clauses.map((clause, idx) => (
                       <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                         <div style={{
-                          fontSize: '9.5px',
+                          fontSize: '11.5px',
                           fontWeight: '900',
                           color: '#0f172a',
                           letterSpacing: '0.4px',
@@ -3032,11 +3032,11 @@ const ProposalView: React.FC = () => {
                           alignItems: 'baseline',
                           gap: '5px'
                         }}>
-                          <span style={{ color: brandPrimary, fontWeight: '900', fontSize: '10.5px' }}>§</span>
+                          <span style={{ color: brandPrimary, fontWeight: '900', fontSize: '12px' }}>§</span>
                           <span>{clause.title}</span>
                         </div>
                         <p style={{
-                          fontSize: '9px',
+                          fontSize: '11px',
                           color: '#334155',
                           lineHeight: '1.55',
                           textAlign: 'justify',
@@ -3062,26 +3062,26 @@ const ProposalView: React.FC = () => {
                     gap: '10px'
                   }}>
                     <div>
-                      <span style={{ fontSize: '7.5px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Tarifa Mensual</span>
-                      <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a' }}>{serviceDetails?.recurring_fee || proposal.total_value || '$350 USD / mes'}</span>
+                      <span style={{ fontSize: '9.5px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Tarifa Mensual</span>
+                      <span style={{ fontSize: '14.5px', fontWeight: '900', color: '#0f172a' }}>{serviceDetails?.recurring_fee || proposal.total_value || '$350 USD / mes'}</span>
                     </div>
                     <div>
-                      <span style={{ fontSize: '7.5px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Disponibilidad SLA</span>
-                      <span style={{ fontSize: '12px', fontWeight: '900', color: '#059669' }}>{serviceDetails?.sla_uptime || '99.5% Uptime'}</span>
+                      <span style={{ fontSize: '9.5px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Disponibilidad SLA</span>
+                      <span style={{ fontSize: '14.5px', fontWeight: '900', color: '#059669' }}>{serviceDetails?.sla_uptime || '99.5% Uptime'}</span>
                     </div>
                     <div>
-                      <span style={{ fontSize: '7.5px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Vigencia Inicial</span>
-                      <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a' }}>{serviceDetails?.min_term_months || serviceDetails?.minimum_commitment || '6 Meses'}</span>
+                      <span style={{ fontSize: '9.5px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Vigencia Inicial</span>
+                      <span style={{ fontSize: '14.5px', fontWeight: '900', color: '#0f172a' }}>{serviceDetails?.min_term_months || serviceDetails?.minimum_commitment || '6 Meses'}</span>
                     </div>
                     <div>
-                      <span style={{ fontSize: '7.5px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Jurisdicción</span>
-                      <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a' }}>{proposal.location || 'Buenos Aires, ARG'}</span>
+                      <span style={{ fontSize: '9.5px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Jurisdicción</span>
+                      <span style={{ fontSize: '14.5px', fontWeight: '900', color: '#0f172a' }}>{proposal.location || 'Buenos Aires, ARG'}</span>
                     </div>
                   </div>
 
                   {/* Cierre Formal */}
                   <div style={{
-                    fontSize: '8.5px',
+                    fontSize: '11px',
                     color: '#475569',
                     fontStyle: 'italic',
                     lineHeight: '1.45',
@@ -3096,28 +3096,28 @@ const ProposalView: React.FC = () => {
                   {/* Firmas */}
                   <div style={{ display: 'flex', gap: '16px' }}>
                     <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                      <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '1px' }}>Por CreAPP Software Lab</p>
+                      <p style={{ fontSize: '10px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '1px' }}>Por CreAPP Software Lab</p>
                       <div style={{ height: '56px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0', padding: '5px' }}>
                         <img src="/firmaseba.png" alt="Firma Seba" style={{ height: '100%', objectFit: 'contain' }} />
                       </div>
-                      <div style={{ fontSize: '9px' }}>
+                      <div style={{ fontSize: '12px' }}>
                         <p style={{ fontWeight: '800', color: '#0f172a' }}>Sebastián Maza</p>
-                        <p style={{ color: '#64748b', fontSize: '8px' }}>Chief Technology Officer</p>
+                        <p style={{ color: '#64748b', fontSize: '10px' }}>Chief Technology Officer</p>
                       </div>
                     </div>
                     {(proposal.methodology?.show_facundo_signature ?? true) && (
                       <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                        <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '1px' }}>Por CreAPP Software Lab</p>
+                        <p style={{ fontSize: '10px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '1px' }}>Por CreAPP Software Lab</p>
                         <div style={{ height: '56px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1', padding: '5px' }}>
                         </div>
-                        <div style={{ fontSize: '9px' }}>
+                        <div style={{ fontSize: '12px' }}>
                           <p style={{ fontWeight: '800', color: '#0f172a' }}>Facundo Marceca</p>
-                          <p style={{ color: '#64748b', fontSize: '8px' }}>Project Manager</p>
+                          <p style={{ color: '#64748b', fontSize: '10px' }}>Project Manager</p>
                         </div>
                       </div>
                     )}
                     <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                      <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '1px' }}>
+                      <p style={{ fontSize: '10px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '1px' }}>
                         Por {legal?.company_name || proposal.client_name}
                       </p>
                       {clientSignature ? (
@@ -3125,15 +3125,15 @@ const ProposalView: React.FC = () => {
                           <img src={clientSignature} alt="Firma Cliente" style={{ height: '100%', objectFit: 'contain' }} />
                         </div>
                       ) : (
-                        <div style={{ height: '56px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1', color: '#94a3b8', fontSize: '9px', textAlign: 'center' }}>
+                        <div style={{ height: '56px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1', color: '#94a3b8', fontSize: '12px', textAlign: 'center' }}>
                           Pendiente de Firma
                         </div>
                       )}
-                      <div style={{ fontSize: '9px' }}>
+                      <div style={{ fontSize: '12px' }}>
                         <p style={{ fontWeight: '800', color: '#0f172a' }}>{clientRepName || legal?.representative_name || '________________________'}</p>
-                        <p style={{ color: '#64748b', fontSize: '8px' }}>{clientRole || legal?.representative_role || 'Representante Autorizado'}</p>
+                        <p style={{ color: '#64748b', fontSize: '10px' }}>{clientRole || legal?.representative_role || 'Representante Autorizado'}</p>
                         {(clientDNI || legal?.representative_dni || legal?.tax_id) && (
-                          <p style={{ color: '#94a3b8', fontSize: '7.5px', marginTop: '1px' }}>
+                          <p style={{ color: '#94a3b8', fontSize: '9px', marginTop: '1px' }}>
                             {clientDNI ? `DNI: ${clientDNI}` : (legal?.representative_dni ? `DNI: ${legal.representative_dni}` : `CUIT: ${legal?.tax_id}`)}
                           </p>
                         )}
@@ -3142,7 +3142,7 @@ const ProposalView: React.FC = () => {
                   </div>
 
                   {/* Footer */}
-                  <div style={{ position: 'absolute', bottom: '30px', left: '65px', right: '65px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '12px', fontSize: '9px', color: '#94a3b8' }}>
+                  <div style={{ position: 'absolute', bottom: '30px', left: '65px', right: '65px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '12px', fontSize: '12px', color: '#94a3b8' }}>
                     <span>Contrato de Servicio | {legal?.company_name || proposal.client_name}</span>
                     <span>Página {getPrintPageNumber('legal2')} de {totalPrintPages}</span>
                   </div>
@@ -3191,27 +3191,27 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
 
             const textLength = rawContract.length;
 
-            let fontSize = '9.8px';
+            let fontSize = '12px';
             let lineHeight = '1.65';
             let padding = '18px 22px';
-            let minContractHeight = '220px';
-            let maxContractHeight = '315px';
+            let minContractHeight = '230px';
+            let maxContractHeight = '325px';
 
             if (textLength > 2800) {
-              fontSize = '8px';
-              lineHeight = '1.38';
+              fontSize = '10px';
+              lineHeight = '1.45';
               padding = '12px 16px';
-              maxContractHeight = '370px';
+              maxContractHeight = '380px';
             } else if (textLength > 2100) {
-              fontSize = '8.6px';
-              lineHeight = '1.48';
+              fontSize = '10.8px';
+              lineHeight = '1.5';
               padding = '14px 18px';
-              maxContractHeight = '340px';
+              maxContractHeight = '350px';
             } else if (textLength > 1400) {
-              fontSize = '9.2px';
-              lineHeight = '1.55';
+              fontSize = '11.5px';
+              lineHeight = '1.58';
               padding = '16px 20px';
-              maxContractHeight = '325px';
+              maxContractHeight = '335px';
             }
 
             return (
@@ -3236,20 +3236,20 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
                   marginBottom: '6px'
                 }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
-                    <span style={{ fontSize: '12px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
-                    <span style={{ fontSize: '8px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{proposal.hero_title ? proposal.hero_title.toUpperCase() : 'DEVELOPMENT LAB'}</span>
+                    <span style={{ fontSize: '13px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
+                    <span style={{ fontSize: '9px', fontWeight: '800', color: brandPrimary, letterSpacing: '1.2px', lineHeight: '1' }}>{proposal.hero_title ? proposal.hero_title.toUpperCase() : 'DEVELOPMENT LAB'}</span>
                   </div>
-                  <span style={{ fontSize: '9px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>
+                  <span style={{ fontSize: '11px', color: '#94a3b8', letterSpacing: '1px', fontWeight: 'bold', fontFamily: 'monospace' }}>
                     LEGAL_AGREEMENT // 05
                   </span>
                 </div>
 
                 {/* 2. Título & Introducción */}
                 <div style={{ marginBottom: '6px' }}>
-                  <h1 style={{ fontSize: '22px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
+                  <h1 style={{ fontSize: '26px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
                     CONTRATO Y <span style={{ fontStyle: 'italic', color: brandPrimary }}>FIRMAS</span>
                   </h1>
-                  <p style={{ fontSize: '9.5px', color: '#475569', lineHeight: '1.35', fontWeight: '300', margin: '2px 0 0 0' }}>
+                  <p style={{ fontSize: '13px', color: '#475569', lineHeight: '1.4', fontWeight: '300', margin: '2px 0 0 0' }}>
                     {proposal.contract_description || 'Acuerdo formal que establece las bases y condiciones legales para la ejecución del proyecto de desarrollo de software detallado en esta propuesta.'}
                   </p>
                 </div>
@@ -3275,47 +3275,47 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
 
                 {/* 4. Ficha Ejecutiva del Proyecto (Grid de 4 Métricas Clave) */}
                 <div style={{
-                  padding: '9px 14px',
+                  padding: '10px 16px',
                   backgroundColor: '#f8fafc',
                   borderRadius: '10px',
                   border: '1px solid #e2e8f0',
                   display: 'grid',
                   gridTemplateColumns: 'repeat(4, 1fr)',
-                  gap: '10px'
+                  gap: '12px'
                 }}>
                   <div>
-                    <span style={{ fontSize: '7.5px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Inversión Total</span>
-                    <span style={{ fontSize: '11.5px', fontWeight: '900', color: '#0f172a', display: 'block', marginTop: '1px' }}>
+                    <span style={{ fontSize: '9.5px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Inversión Total</span>
+                    <span style={{ fontSize: '14.5px', fontWeight: '900', color: '#0f172a', display: 'block', marginTop: '1px' }}>
                       {cleanTotal}
                     </span>
-                    <span style={{ fontSize: '7.5px', color: '#64748b' }}>Esquema por hitos</span>
+                    <span style={{ fontSize: '9.5px', color: '#64748b' }}>Esquema por hitos</span>
                   </div>
                   <div>
-                    <span style={{ fontSize: '7.5px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Garantía Técnica</span>
-                    <span style={{ fontSize: '11.5px', fontWeight: '900', color: '#059669', display: 'block', marginTop: '1px' }}>
+                    <span style={{ fontSize: '9.5px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Garantía Técnica</span>
+                    <span style={{ fontSize: '14.5px', fontWeight: '900', color: '#059669', display: 'block', marginTop: '1px' }}>
                       30 Días Cobertura
                     </span>
-                    <span style={{ fontSize: '7.5px', color: '#64748b' }}>Resolución incidencias</span>
+                    <span style={{ fontSize: '9.5px', color: '#64748b' }}>Resolución incidencias</span>
                   </div>
                   <div>
-                    <span style={{ fontSize: '7.5px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Metodología</span>
-                    <span style={{ fontSize: '11.5px', fontWeight: '900', color: '#0f172a', display: 'block', marginTop: '1px' }}>
+                    <span style={{ fontSize: '9.5px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Metodología</span>
+                    <span style={{ fontSize: '14.5px', fontWeight: '900', color: '#0f172a', display: 'block', marginTop: '1px' }}>
                       Sprints Ágiles
                     </span>
-                    <span style={{ fontSize: '7.5px', color: '#64748b' }}>Entregas continuas</span>
+                    <span style={{ fontSize: '9.5px', color: '#64748b' }}>Entregas continuas</span>
                   </div>
                   <div>
-                    <span style={{ fontSize: '7.5px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Jurisdicción</span>
-                    <span style={{ fontSize: '11.5px', fontWeight: '900', color: '#0f172a', display: 'block', marginTop: '1px' }}>
+                    <span style={{ fontSize: '9.5px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Jurisdicción</span>
+                    <span style={{ fontSize: '14.5px', fontWeight: '900', color: '#0f172a', display: 'block', marginTop: '1px' }}>
                       {proposal.location || 'Buenos Aires, ARG'}
                     </span>
-                    <span style={{ fontSize: '7.5px', color: '#64748b' }}>Ley N° 25.506 & CCCN</span>
+                    <span style={{ fontSize: '9.5px', color: '#64748b' }}>Ley N° 25.506 & CCCN</span>
                   </div>
                 </div>
 
                 {/* 5. Esquema de Desembolsos & Hitos Comerciales (Llena con alto valor comercial) */}
                 <div style={{
-                  padding: '10px 14px',
+                  padding: '12px 16px',
                   backgroundColor: '#ffffff',
                   borderRadius: '10px',
                   border: '1px solid #e2e8f0',
@@ -3325,20 +3325,20 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
                   boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
                 }}>
                   <div style={{ borderLeft: `3px solid ${brandPrimary}`, paddingLeft: '8px' }}>
-                    <span style={{ fontSize: '8px', fontWeight: '900', color: brandPrimary, textTransform: 'uppercase', display: 'block' }}>Hito 1 · Anticipo Inicial ({halfFormatted})</span>
-                    <p style={{ fontSize: '8.5px', color: '#334155', margin: '2px 0 0 0', lineHeight: '1.35', fontWeight: '500' }}>
+                    <span style={{ fontSize: '11px', fontWeight: '900', color: brandPrimary, textTransform: 'uppercase', display: 'block' }}>Hito 1 · Anticipo Inicial ({halfFormatted})</span>
+                    <p style={{ fontSize: '11px', color: '#334155', margin: '3px 0 0 0', lineHeight: '1.4', fontWeight: '500' }}>
                       Firma del acuerdo y reserva de squad técnico. Inicio inmediato de arquitectura, modelado y prototipo UI.
                     </p>
                   </div>
                   <div style={{ borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
-                    <span style={{ fontSize: '8px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', display: 'block' }}>Hito 2 · Pase a Producción ({halfFormatted})</span>
-                    <p style={{ fontSize: '8.5px', color: '#334155', margin: '2px 0 0 0', lineHeight: '1.35', fontWeight: '500' }}>
+                    <span style={{ fontSize: '11px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', display: 'block' }}>Hito 2 · Pase a Producción ({halfFormatted})</span>
+                    <p style={{ fontSize: '11px', color: '#334155', margin: '3px 0 0 0', lineHeight: '1.4', fontWeight: '500' }}>
                       Auditoría y aprobación en entorno Staging. Despliegue en salones, capacitación y entrega de accesos finales.
                     </p>
                   </div>
                   <div style={{ borderLeft: '3px solid #059669', paddingLeft: '8px' }}>
-                    <span style={{ fontSize: '8px', fontWeight: '900', color: '#059669', textTransform: 'uppercase', display: 'block' }}>Abono Operativo & SLA ({monthlyFeeFormatted})</span>
-                    <p style={{ fontSize: '8.5px', color: '#334155', margin: '2px 0 0 0', lineHeight: '1.35', fontWeight: '500' }}>
+                    <span style={{ fontSize: '11px', fontWeight: '900', color: '#059669', textTransform: 'uppercase', display: 'block' }}>Abono Operativo & SLA ({monthlyFeeFormatted})</span>
+                    <p style={{ fontSize: '11px', color: '#334155', margin: '3px 0 0 0', lineHeight: '1.4', fontWeight: '500' }}>
                       Soporte de incidentes, guardias operativas en salones y mantenimiento continuo a partir del día 30 post-lanzamiento.
                     </p>
                   </div>
@@ -3346,7 +3346,7 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
 
                 {/* 6. Protocolo de Validez Jurídica y Consentimiento Digital */}
                 <div style={{
-                  padding: '8px 12px',
+                  padding: '10px 14px',
                   backgroundColor: '#f8fafc',
                   borderRadius: '8px',
                   border: '1px dashed #cbd5e1',
@@ -3356,20 +3356,20 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
                   gap: '10px'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '13px' }}>🔒</span>
-                    <span style={{ fontSize: '8.5px', color: '#475569', lineHeight: '1.35' }}>
+                    <span style={{ fontSize: '16px' }}>🔒</span>
+                    <span style={{ fontSize: '11px', color: '#475569', lineHeight: '1.4' }}>
                       <strong style={{ color: '#0f172a' }}>Consentimiento & Eficacia Jurídica: </strong>
                       Las partes reconocen plena validez legal a las firmas digitales aquí estampadas conforme a la Ley N° 25.506 y Art. 288 del CCCN. Cada suscripción certifica IP de origen, sello temporal UTC y huella criptográfica inmutable.
                     </span>
                   </div>
                   <span style={{
-                    fontSize: '8px',
+                    fontSize: '10px',
                     fontFamily: 'monospace',
                     color: brandPrimary,
                     fontWeight: 'bold',
                     backgroundColor: '#ffffff',
                     border: '1px solid #e2e8f0',
-                    padding: '3px 8px',
+                    padding: '4px 10px',
                     borderRadius: '4px',
                     whiteSpace: 'nowrap'
                   }}>
@@ -3381,41 +3381,41 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
                 <div>
                   <div style={{ display: 'flex', gap: '16px' }}>
                     <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', margin: '0 0 2px 0' }}>Por CreAPP Software Lab</p>
+                      <p style={{ fontSize: '10px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', margin: '0 0 2px 0' }}>Por CreAPP Software Lab</p>
                       <div style={{ height: '62px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0', padding: '6px' }}>
                         <img src="/firmaseba.png" alt="Firma Seba" style={{ height: '100%', objectFit: 'contain' }} />
                       </div>
-                      <div style={{ fontSize: '9.5px', marginTop: '2px' }}>
+                      <div style={{ fontSize: '12px', marginTop: '2px' }}>
                         <p style={{ fontWeight: '800', color: '#0f172a', margin: '0' }}>Sebastián Maza</p>
-                        <p style={{ color: '#64748b', fontSize: '8px', margin: '1px 0 0 0' }}>Chief Technology Officer</p>
+                        <p style={{ color: '#64748b', fontSize: '10px', margin: '1px 0 0 0' }}>Chief Technology Officer</p>
                       </div>
                     </div>
                     {(proposal.methodology?.show_facundo_signature ?? true) && (
                       <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', margin: '0 0 2px 0' }}>Por CreAPP Software Lab</p>
+                        <p style={{ fontSize: '10px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', margin: '0 0 2px 0' }}>Por CreAPP Software Lab</p>
                         <div style={{ height: '62px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1', padding: '6px' }}>
                         </div>
-                        <div style={{ fontSize: '9.5px', marginTop: '2px' }}>
+                        <div style={{ fontSize: '12px', marginTop: '2px' }}>
                           <p style={{ fontWeight: '800', color: '#0f172a', margin: '0' }}>Facundo Marceca</p>
-                          <p style={{ color: '#64748b', fontSize: '8px', margin: '1px 0 0 0' }}>Project Manager</p>
+                          <p style={{ color: '#64748b', fontSize: '10px', margin: '1px 0 0 0' }}>Project Manager</p>
                         </div>
                       </div>
                     )}
                     <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <p style={{ fontSize: '8px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', margin: '0 0 2px 0' }}>Por {proposal.client_name}</p>
+                      <p style={{ fontSize: '10px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', margin: '0 0 2px 0' }}>Por {proposal.client_name}</p>
                       {clientSignature ? (
                         <div style={{ height: '62px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0', padding: '6px' }}>
                           <img src={clientSignature} alt="Firma Cliente" style={{ height: '100%', objectFit: 'contain' }} />
                         </div>
                       ) : (
-                        <div style={{ height: '62px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1', color: '#94a3b8', fontSize: '9px', textAlign: 'center' }}>
+                        <div style={{ height: '62px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1', color: '#94a3b8', fontSize: '12px', textAlign: 'center' }}>
                           Pendiente de Firma
                         </div>
                       )}
-                      <div style={{ fontSize: '9.5px', marginTop: '2px' }}>
+                      <div style={{ fontSize: '12px', marginTop: '2px' }}>
                         <p style={{ fontWeight: '800', color: '#0f172a', margin: '0' }}>{clientRepName || '________________________'}</p>
-                        <p style={{ color: '#64748b', fontSize: '8px', margin: '1px 0 0 0' }}>{clientRole || 'Representante Autorizado'}</p>
-                        {clientDNI && <p style={{ color: '#94a3b8', fontSize: '7.5px', margin: '1px 0 0 0' }}>DNI: {clientDNI}</p>}
+                        <p style={{ color: '#64748b', fontSize: '10px', margin: '1px 0 0 0' }}>{clientRole || 'Representante Autorizado'}</p>
+                        {clientDNI && <p style={{ color: '#94a3b8', fontSize: '9px', margin: '1px 0 0 0' }}>DNI: {clientDNI}</p>}
                       </div>
                     </div>
                   </div>
@@ -3426,7 +3426,7 @@ Este contrato entra en vigencia a partir de la firma del presente documento el d
                     borderTop: '1px solid #f1f5f9',
                     paddingTop: '8px',
                     marginTop: '8px',
-                    fontSize: '9px',
+                    fontSize: '12px',
                     color: '#94a3b8'
                   }}>
                     <span>Propuesta Comercial | {proposal.client_name}</span>
