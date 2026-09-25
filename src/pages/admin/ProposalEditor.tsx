@@ -2119,35 +2119,30 @@ const ProposalEditor: React.FC = () => {
       ? formatCurrencyDisplay(methodology.monthly_fee, activeLegalCurrency)
       : cleanTotal;
 
-    // Tipografía adaptativa
-    let fontSize = '12px';
-    let lineHeight = '1.6';
-    let padding = '18px 22px';
-    let minContractHeight = '230px';
-    let maxContractHeight = '325px';
+    // Tipografía adaptativa sin recorte artificial
+    let fontSize = '11px';
+    let lineHeight = '1.45';
+    let padding = '12px 16px';
 
-    if (textLength > 2800) {
+    if (textLength > 2400) {
+      fontSize = '9px';
+      lineHeight = '1.35';
+      padding = '8px 12px';
+    } else if (textLength > 1800) {
+      fontSize = '9.5px';
+      lineHeight = '1.38';
+      padding = '10px 14px';
+    } else if (textLength > 1200) {
       fontSize = '10px';
       lineHeight = '1.42';
-      padding = '14px 18px';
-      maxContractHeight = '375px';
-    } else if (textLength > 2100) {
-      fontSize = '10.8px';
-      lineHeight = '1.48';
-      padding = '16px 20px';
-      maxContractHeight = '350px';
-    } else if (textLength > 1400) {
-      fontSize = '11.5px';
-      lineHeight = '1.55';
-      padding = '18px 22px';
-      maxContractHeight = '335px';
+      padding = '10px 14px';
     }
 
     return (
       <div style={{
         width: '794px',
         height: '1123px',
-        padding: '38px 60px 26px 60px',
+        padding: '30px 60px 20px 60px',
         display: 'flex',
         flexDirection: 'column',
         boxSizing: 'border-box',
@@ -2161,8 +2156,8 @@ const ProposalEditor: React.FC = () => {
           justifyContent: 'space-between',
           alignItems: 'baseline',
           borderBottom: '2px solid #0f172a',
-          paddingBottom: '8px',
-          marginBottom: '6px'
+          paddingBottom: '6px',
+          marginBottom: '4px'
         }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
             <span style={{ fontSize: '15px', fontWeight: '900', color: '#0f172a', letterSpacing: '1.5px', lineHeight: '1' }}>CREAPP</span>
@@ -2176,16 +2171,16 @@ const ProposalEditor: React.FC = () => {
         </div>
 
         {/* 2. Título & Introducción */}
-        <div style={{ marginBottom: '6px' }}>
-          <h1 style={{ fontSize: '26px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
+        <div style={{ marginBottom: '4px' }}>
+          <h1 style={{ fontSize: '24px', fontWeight: '950', color: '#0f172a', letterSpacing: '-0.5px', textTransform: 'uppercase', margin: '0' }}>
             CONTRATO Y <span style={{ fontStyle: 'italic', color: brandPrimary }}>FIRMAS</span>
           </h1>
-          <p style={{ fontSize: '13px', color: '#475569', lineHeight: '1.45', fontWeight: '300', margin: '2px 0 0 0' }}>
+          <p style={{ fontSize: '12px', color: '#475569', lineHeight: '1.4', fontWeight: '300', margin: '2px 0 0 0' }}>
             {contractDescription || 'Acuerdo formal que establece las bases y condiciones legales para la ejecución del proyecto de desarrollo de software detallado en esta propuesta.'}
           </p>
         </div>
 
-        {/* 3. Cuerpo del Contrato */}
+        {/* 3. Cuerpo del Contrato (Completo, sin recorte ni scroll) */}
         <div style={{
           fontSize,
           color: '#334155',
@@ -2196,17 +2191,15 @@ const ProposalEditor: React.FC = () => {
           backgroundColor: '#f8fafc',
           borderRadius: '12px',
           border: '1px solid #e2e8f0',
-          minHeight: minContractHeight,
-          maxHeight: maxContractHeight,
-          overflowY: 'auto',
-          textAlign: 'justify'
+          textAlign: 'justify',
+          boxSizing: 'border-box'
         }}>
           {processedText}
         </div>
 
         {/* 4. Ficha Ejecutiva del Proyecto (Grid de 4 Métricas Clave) */}
         <div style={{
-          padding: '10px 14px',
+          padding: '7px 14px',
           backgroundColor: '#f8fafc',
           borderRadius: '10px',
           border: '1px solid #e2e8f0',
@@ -2215,92 +2208,92 @@ const ProposalEditor: React.FC = () => {
           gap: '10px'
         }}>
           <div>
-            <span style={{ fontSize: '9.5px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Inversión Total</span>
-            <span style={{ fontSize: '14.5px', fontWeight: '900', color: '#0f172a', display: 'block', marginTop: '1px' }}>
+            <span style={{ fontSize: '9px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Inversión Total</span>
+            <span style={{ fontSize: '13.5px', fontWeight: '900', color: '#0f172a', display: 'block', marginTop: '1px' }}>
               {cleanTotal}
             </span>
-            <span style={{ fontSize: '9.5px', color: '#64748b' }}>Esquema por hitos</span>
+            <span style={{ fontSize: '9px', color: '#64748b' }}>Esquema por hitos</span>
           </div>
           <div>
-            <span style={{ fontSize: '9.5px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Garantía Técnica</span>
-            <span style={{ fontSize: '14.5px', fontWeight: '900', color: '#059669', display: 'block', marginTop: '1px' }}>
+            <span style={{ fontSize: '9px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Garantía Técnica</span>
+            <span style={{ fontSize: '13.5px', fontWeight: '900', color: '#059669', display: 'block', marginTop: '1px' }}>
               30 Días Cobertura
             </span>
-            <span style={{ fontSize: '9.5px', color: '#64748b' }}>Resolución incidencias</span>
+            <span style={{ fontSize: '9px', color: '#64748b' }}>Resolución incidencias</span>
           </div>
           <div>
-            <span style={{ fontSize: '9.5px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Metodología</span>
-            <span style={{ fontSize: '14.5px', fontWeight: '900', color: '#0f172a', display: 'block', marginTop: '1px' }}>
+            <span style={{ fontSize: '9px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Metodología</span>
+            <span style={{ fontSize: '13.5px', fontWeight: '900', color: '#0f172a', display: 'block', marginTop: '1px' }}>
               Sprints Ágiles
             </span>
-            <span style={{ fontSize: '9.5px', color: '#64748b' }}>Entregas continuas</span>
+            <span style={{ fontSize: '9px', color: '#64748b' }}>Entregas continuas</span>
           </div>
           <div>
-            <span style={{ fontSize: '9.5px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Jurisdicción</span>
-            <span style={{ fontSize: '14.5px', fontWeight: '900', color: '#0f172a', display: 'block', marginTop: '1px' }}>
+            <span style={{ fontSize: '9px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Jurisdicción</span>
+            <span style={{ fontSize: '13.5px', fontWeight: '900', color: '#0f172a', display: 'block', marginTop: '1px' }}>
               {location || 'Buenos Aires, ARG'}
             </span>
-            <span style={{ fontSize: '9.5px', color: '#64748b' }}>Ley N° 25.506 & CCCN</span>
+            <span style={{ fontSize: '9px', color: '#64748b' }}>Ley N° 25.506 & CCCN</span>
           </div>
         </div>
 
         {/* 5. Esquema de Desembolsos & Hitos Comerciales */}
         <div style={{
-          padding: '12px 14px',
+          padding: '8px 14px',
           backgroundColor: '#ffffff',
           borderRadius: '10px',
           border: '1px solid #e2e8f0',
           display: 'grid',
           gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: '12px',
+          gap: '10px',
           boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
         }}>
-          <div style={{ borderLeft: `3px solid ${brandPrimary}`, paddingLeft: '10px' }}>
-            <span style={{ fontSize: '11px', fontWeight: '900', color: brandPrimary, textTransform: 'uppercase', display: 'block' }}>Hito 1 · Anticipo Inicial ({halfFormatted})</span>
-            <p style={{ fontSize: '11px', color: '#334155', margin: '3px 0 0 0', lineHeight: '1.4', fontWeight: '500' }}>
-              Firma del acuerdo y reserva de squad técnico. Inicio inmediato de arquitectura, modelado y prototipo UI.
+          <div style={{ borderLeft: `3px solid ${brandPrimary}`, paddingLeft: '8px' }}>
+            <span style={{ fontSize: '10.5px', fontWeight: '900', color: brandPrimary, textTransform: 'uppercase', display: 'block' }}>Hito 1 · Anticipo ({halfFormatted})</span>
+            <p style={{ fontSize: '10px', color: '#334155', margin: '2px 0 0 0', lineHeight: '1.35', fontWeight: '500' }}>
+              Firma y reserva de squad técnico. Inicio de arquitectura, modelado y prototipo UI.
             </p>
           </div>
-          <div style={{ borderLeft: '3px solid #0f172a', paddingLeft: '10px' }}>
-            <span style={{ fontSize: '11px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', display: 'block' }}>Hito 2 · Pase a Producción ({halfFormatted})</span>
-            <p style={{ fontSize: '11px', color: '#334155', margin: '3px 0 0 0', lineHeight: '1.4', fontWeight: '500' }}>
-              Auditoría y aprobación en entorno Staging. Despliegue en salones, capacitación y entrega de accesos finales.
+          <div style={{ borderLeft: '3px solid #0f172a', paddingLeft: '8px' }}>
+            <span style={{ fontSize: '10.5px', fontWeight: '900', color: '#0f172a', textTransform: 'uppercase', display: 'block' }}>Hito 2 · Pase a Prod ({halfFormatted})</span>
+            <p style={{ fontSize: '10px', color: '#334155', margin: '2px 0 0 0', lineHeight: '1.35', fontWeight: '500' }}>
+              Auditoría en Staging. Despliegue en salones, capacitación y entrega de accesos.
             </p>
           </div>
-          <div style={{ borderLeft: '3px solid #059669', paddingLeft: '10px' }}>
-            <span style={{ fontSize: '11px', fontWeight: '900', color: '#059669', textTransform: 'uppercase', display: 'block' }}>Abono Operativo & SLA ({monthlyFeeFormatted})</span>
-            <p style={{ fontSize: '11px', color: '#334155', margin: '3px 0 0 0', lineHeight: '1.4', fontWeight: '500' }}>
-              Soporte de incidentes, guardias operativas en salones y mantenimiento continuo a partir del día 30 post-lanzamiento.
+          <div style={{ borderLeft: '3px solid #059669', paddingLeft: '8px' }}>
+            <span style={{ fontSize: '10.5px', fontWeight: '900', color: '#059669', textTransform: 'uppercase', display: 'block' }}>Abono SLA ({monthlyFeeFormatted})</span>
+            <p style={{ fontSize: '10px', color: '#334155', margin: '2px 0 0 0', lineHeight: '1.35', fontWeight: '500' }}>
+              Soporte de incidentes, guardias y mantenimiento continuo post-lanzamiento.
             </p>
           </div>
         </div>
 
         {/* 6. Protocolo de Validez Jurídica y Consentimiento Digital */}
         <div style={{
-          padding: '10px 14px',
+          padding: '6px 12px',
           backgroundColor: '#f8fafc',
           borderRadius: '8px',
           border: '1px dashed #cbd5e1',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: '12px'
+          gap: '10px'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '16px' }}>🔒</span>
-            <span style={{ fontSize: '11px', color: '#475569', lineHeight: '1.4' }}>
-              <strong style={{ color: '#0f172a' }}>Consentimiento & Eficacia Jurídica: </strong>
-              Las partes reconocen plena validez legal a las firmas digitales aquí estampadas conforme a la Ley N° 25.506 y Art. 288 del CCCN. Cada suscripción certifica IP de origen, sello temporal UTC y huella criptográfica inmutable.
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '14px' }}>🔒</span>
+            <span style={{ fontSize: '10px', color: '#475569', lineHeight: '1.35' }}>
+              <strong style={{ color: '#0f172a' }}>Consentimiento Jurídico: </strong>
+              Plena validez legal a las firmas digitales conforme a la Ley N° 25.506 y Art. 288 CCCN. Cada suscripción certifica IP, sello temporal UTC y huella criptográfica.
             </span>
           </div>
           <span style={{
-            fontSize: '10px',
+            fontSize: '9.5px',
             fontFamily: 'monospace',
             color: brandPrimary,
             fontWeight: 'bold',
             backgroundColor: '#ffffff',
             border: '1px solid #e2e8f0',
-            padding: '4px 10px',
+            padding: '3px 8px',
             borderRadius: '4px',
             whiteSpace: 'nowrap'
           }}>
@@ -2311,43 +2304,43 @@ const ProposalEditor: React.FC = () => {
         {/* 7. Bloque de Firmas y Footer */}
         <div>
           <div style={{ display: 'flex', gap: '16px' }}>
-            <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <p style={{ fontSize: '10px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', margin: '0 0 2px 0' }}>Por CreAPP Software Lab</p>
-              <div style={{ height: '62px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0', padding: '6px' }}>
+            <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <p style={{ fontSize: '9.5px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', margin: '0 0 2px 0' }}>Por CreAPP Software Lab</p>
+              <div style={{ height: '52px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', padding: '4px' }}>
                 <img src="/firmaseba.png" alt="Firma Seba" style={{ height: '100%', objectFit: 'contain' }} />
               </div>
-              <div style={{ fontSize: '12px', marginTop: '2px' }}>
+              <div style={{ fontSize: '11.5px', marginTop: '1px' }}>
                 <p style={{ fontWeight: '800', color: '#0f172a', margin: '0' }}>Sebastián Maza</p>
-                <p style={{ color: '#64748b', fontSize: '10px', margin: '1px 0 0 0' }}>Chief Technology Officer</p>
+                <p style={{ color: '#64748b', fontSize: '9.5px', margin: '1px 0 0 0' }}>Chief Technology Officer</p>
               </div>
             </div>
             {(methodology?.show_facundo_signature ?? true) && (
-              <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <p style={{ fontSize: '10px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', margin: '0 0 2px 0' }}>Por CreAPP Software Lab</p>
-                <div style={{ height: '62px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1', padding: '6px' }}>
+              <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <p style={{ fontSize: '9.5px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', margin: '0 0 2px 0' }}>Por CreAPP Software Lab</p>
+                <div style={{ height: '52px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1', padding: '4px' }}>
                 </div>
-                <div style={{ fontSize: '12px', marginTop: '2px' }}>
+                <div style={{ fontSize: '11.5px', marginTop: '1px' }}>
                   <p style={{ fontWeight: '800', color: '#0f172a', margin: '0' }}>Facundo Marceca</p>
-                  <p style={{ color: '#64748b', fontSize: '10px', margin: '1px 0 0 0' }}>Project Manager</p>
+                  <p style={{ color: '#64748b', fontSize: '9.5px', margin: '1px 0 0 0' }}>Project Manager</p>
                 </div>
               </div>
             )}
-            <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <p style={{ fontSize: '10px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', margin: '0 0 2px 0' }}>
+            <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <p style={{ fontSize: '9.5px', color: '#94a3b8', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', margin: '0 0 2px 0' }}>
                 Por {clientLegalData.company_name || clientName || 'EL CLIENTE'}
               </p>
-              <div style={{ height: '62px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1', color: '#94a3b8', fontSize: '12px', textAlign: 'center' }}>
+              <div style={{ height: '52px', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1', color: '#94a3b8', fontSize: '11.5px', textAlign: 'center' }}>
                 Pendiente de Firma
               </div>
-              <div style={{ fontSize: '12px', marginTop: '2px' }}>
+              <div style={{ fontSize: '11.5px', marginTop: '1px' }}>
                 <p style={{ fontWeight: '800', color: '#0f172a', margin: '0' }}>
                   {clientLegalData.representative_name || '________________________'}
                 </p>
-                <p style={{ color: '#64748b', fontSize: '10px', margin: '1px 0 0 0' }}>
+                <p style={{ color: '#64748b', fontSize: '9.5px', margin: '1px 0 0 0' }}>
                   {clientLegalData.representative_role || 'Representante Autorizado'}
                 </p>
                 {(clientLegalData.representative_dni || clientLegalData.tax_id) && (
-                  <p style={{ color: '#94a3b8', fontSize: '9.5px', margin: '1px 0 0 0' }}>
+                  <p style={{ color: '#94a3b8', fontSize: '9px', margin: '1px 0 0 0' }}>
                     {clientLegalData.representative_dni ? `DNI: ${clientLegalData.representative_dni}` : `CUIT: ${clientLegalData.tax_id}`}
                   </p>
                 )}
@@ -2355,14 +2348,13 @@ const ProposalEditor: React.FC = () => {
             </div>
           </div>
 
-          {/* 8. Footer */}
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
             borderTop: '1px solid #f1f5f9',
-            paddingTop: '8px',
-            marginTop: '8px',
-            fontSize: '12px',
+            paddingTop: '6px',
+            marginTop: '6px',
+            fontSize: '11.5px',
             color: '#94a3b8'
           }}>
             <span>Propuesta Comercial | {clientLegalData.company_name || clientName}</span>
