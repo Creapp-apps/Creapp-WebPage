@@ -14,6 +14,8 @@ interface ProposalVideoPlayerProps {
   milestones: any[];
   payments: any[];
   totalValue: number | string;
+  monthlyFee?: number | string;
+  videoBadgeText?: string;
   clientLogoUrl?: string;
   clientLogoScale?: number;
   videoLogoScale?: number;
@@ -33,6 +35,8 @@ export const ProposalVideoPlayer: React.FC<ProposalVideoPlayerProps> = ({
   milestones,
   payments,
   totalValue,
+  monthlyFee,
+  videoBadgeText,
   clientLogoUrl = '',
   clientLogoScale = 100,
   videoLogoScale,
@@ -86,6 +90,8 @@ export const ProposalVideoPlayer: React.FC<ProposalVideoPlayerProps> = ({
           milestones,
           payments,
           totalValue: numericTotal,
+          monthlyFee,
+          videoBadgeText,
           clientLogoUrl,
           clientLogoScale,
           videoLogoScale: effectiveLogoScale,
@@ -169,6 +175,8 @@ export const ProposalVideoPlayer: React.FC<ProposalVideoPlayerProps> = ({
             milestones,
             payments,
             totalValue: numericTotal,
+            monthlyFee,
+            videoBadgeText,
             clientLogoUrl,
             clientLogoScale,
             videoLogoScale: effectiveLogoScale,

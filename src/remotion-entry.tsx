@@ -23,6 +23,7 @@ const RemotionRoot: React.FC = () => {
           milestones: [],
           payments: [],
           totalValue: 5000,
+          monthlyFee: 5000,
           clientLogoUrl: ""
         }}
       />
@@ -44,6 +45,7 @@ const RemotionRoot: React.FC = () => {
           milestones: [],
           payments: [],
           totalValue: 5000,
+          monthlyFee: 5000,
           clientLogoUrl: ""
         }}
       />

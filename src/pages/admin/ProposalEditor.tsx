@@ -1029,6 +1029,8 @@ const ProposalEditor: React.FC = () => {
           milestones,
           payments,
           totalValue: parseProposalNumericValue(totalValue),
+          monthlyFee: parseProposalNumericValue(methodology?.monthly_fee || serviceDetails?.recurring_fee || totalValue),
+          videoBadgeText: methodology?.video_badge_text,
           clientLogoUrl,
           clientLogoScale: videoLogoScale,
           videoLogoScale: videoLogoScale,
@@ -5959,6 +5961,60 @@ const ProposalEditor: React.FC = () => {
               </div>
             </div>
 
+            {/* Configuración del Badge Inferior en Video */}
+            <div className="glass rounded-2xl p-5 border border-white/5 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-xs font-display font-black text-white uppercase tracking-wider">
+                    Badge Inferior del Presupuesto
+                  </h4>
+                  <p className="text-[10px] text-slate-400 mt-0.5">
+                    Subtítulo en cápsula bajo el monto total. Reemplaza al anterior "Desarrollo Llave en Mano".
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <input
+                  type="text"
+                  value={
+                    methodology?.video_badge_text !== undefined
+                      ? methodology.video_badge_text
+                      : `Mantenimiento mensual: $${cleanNumberString(methodology?.monthly_fee || serviceDetails?.recurring_fee || totalValue) || '1.750.000'} / mes`
+                  }
+                  onChange={(e) => {
+                    setMethodology((prev: any) => ({
+                      ...(prev || DEFAULT_METHODOLOGY),
+                      video_badge_text: e.target.value,
+                    }));
+                  }}
+                  placeholder="Ej: Mantenimiento mensual: $1.750.000 / mes"
+                  className="w-full bg-[#090d16] border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-primary/50"
+                />
+              </div>
+
+              <div className="flex items-center justify-between text-[10px] text-slate-400">
+                <span>
+                  💡 Puedes editarlo libremente o dejarlo en blanco para ocultar el badge.
+                </span>
+                {methodology?.video_badge_text !== undefined && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMethodology((prev: any) => {
+                        const copy = { ...(prev || DEFAULT_METHODOLOGY) };
+                        delete copy.video_badge_text;
+                        return copy;
+                      });
+                    }}
+                    className="text-primary hover:underline font-bold whitespace-nowrap ml-2 cursor-pointer"
+                  >
+                    Restablecer
+                  </button>
+                )}
+              </div>
+            </div>
+
             <div className="glass rounded-2xl p-5 border border-primary/10">
               <div className="flex items-center gap-2 mb-3">
                 <Film size={16} className="text-primary" />
@@ -6031,6 +6087,8 @@ const ProposalEditor: React.FC = () => {
                     milestones={milestones as any[]}
                     payments={payments as any[]}
                     totalValue={parseProposalNumericValue(totalValue)}
+                    monthlyFee={parseProposalNumericValue(methodology?.monthly_fee || serviceDetails?.recurring_fee || totalValue)}
+                    videoBadgeText={methodology?.video_badge_text}
                     clientLogoUrl={clientLogoUrl}
                     clientLogoScale={videoLogoScale}
                     videoLogoScale={videoLogoScale}

@@ -43,6 +43,8 @@ interface ProposalVideoCompositionProps {
   milestones: Milestone[];
   payments: Payment[];
   totalValue: number | string;
+  monthlyFee?: number | string;
+  videoBadgeText?: string;
   clientLogoUrl?: string;
   clientLogoScale?: number;
   videoLogoScale?: number;
@@ -146,6 +148,8 @@ export const ProposalVideoComposition: React.FC<ProposalVideoCompositionProps> =
   milestones = [],
   payments = [],
   totalValue = 0,
+  monthlyFee,
+  videoBadgeText,
   clientLogoUrl = '',
   clientLogoScale = 100,
   videoLogoScale = 140,
@@ -297,6 +301,8 @@ export const ProposalVideoComposition: React.FC<ProposalVideoCompositionProps> =
           slideBgStyle={slideBgStyle}
           aspectRatio={aspectRatio}
           currency={currency}
+          monthlyFee={monthlyFee}
+          videoBadgeText={videoBadgeText}
         />
       </Sequence>
 
@@ -2198,7 +2204,19 @@ const FinancialsSlide: React.FC<{
   slideBgStyle: React.CSSProperties;
   aspectRatio?: '16:9' | '9:16';
   currency?: string;
-}> = ({ totalValue, payments, primaryColor, secondaryColor, slideBgStyle, aspectRatio = '16:9', currency = 'ARS' }) => {
+  monthlyFee?: number | string;
+  videoBadgeText?: string;
+}> = ({
+  totalValue,
+  payments,
+  primaryColor,
+  secondaryColor,
+  slideBgStyle,
+  aspectRatio = '16:9',
+  currency = 'ARS',
+  monthlyFee,
+  videoBadgeText,
+}) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
@@ -2206,6 +2224,17 @@ const FinancialsSlide: React.FC<{
   const numericTotal = typeof totalValue === 'number' && !isNaN(totalValue) && totalValue > 0
     ? totalValue
     : parseProposalNumericValue(totalValue);
+
+  const effectiveMonthlyFee = typeof monthlyFee === 'number' && !isNaN(monthlyFee) && monthlyFee > 0
+    ? monthlyFee
+    : (monthlyFee ? parseProposalNumericValue(monthlyFee) : numericTotal);
+
+  const formattedFee = effectiveMonthlyFee > 0
+    ? effectiveMonthlyFee.toLocaleString('es-AR')
+    : numericTotal.toLocaleString('es-AR');
+
+  const defaultBadgeText = `Mantenimiento mensual: $${formattedFee} / mes`;
+  const effectiveBadgeText = videoBadgeText !== undefined ? videoBadgeText : defaultBadgeText;
 
   // Slide is 180 frames. Exit transition starts at frame 165.
   const entrance = spring({ frame, fps, config: { damping: 12, stiffness: 100 } });
@@ -2333,20 +2362,22 @@ const FinancialsSlide: React.FC<{
           <h3 style={{ fontSize: isVertical ? (displayPayments.length > 3 ? '76px' : '90px') : '64px', fontWeight: 950, color: '#ffffff', margin: 0, letterSpacing: '-2px', fontFamily: 'monospace' }}>
             {currency === 'ARS' ? 'ARS' : 'US$'} {Math.round(interpolate(spring({ frame: frame - 25, fps, config: { damping: 22, stiffness: 50 } }), [0, 1], [0, numericTotal])).toLocaleString('es-AR')}
           </h3>
-          <div style={{
-            padding: isVertical ? (displayPayments.length > 3 ? '10px 24px' : '14px 32px') : '6px 16px',
-            borderRadius: '20px',
-            background: `${primaryColor}15`,
-            border: `1px solid ${primaryColor}30`,
-            fontSize: isVertical ? (displayPayments.length > 3 ? '18px' : '22px') : '12px',
-            fontWeight: 'bold',
-            color: primaryColor,
-            letterSpacing: '1.5px',
-            textTransform: 'uppercase',
-            marginTop: isVertical ? '8px' : '8px'
-          }}>
-            Desarrollo Llave en Mano
-          </div>
+          {effectiveBadgeText ? (
+            <div style={{
+              padding: isVertical ? (displayPayments.length > 3 ? '10px 24px' : '14px 32px') : '7px 22px',
+              borderRadius: '20px',
+              background: `${primaryColor}15`,
+              border: `1px solid ${primaryColor}35`,
+              fontSize: isVertical ? (displayPayments.length > 3 ? '18px' : '22px') : '13px',
+              fontWeight: 700,
+              color: primaryColor,
+              letterSpacing: '0.4px',
+              marginTop: isVertical ? '8px' : '8px',
+              boxShadow: `0 0 20px ${primaryColor}15`
+            }}>
+              {effectiveBadgeText}
+            </div>
+          ) : null}
         </div>
 
         {/* Payment roadmap Horizontal / Vertical Stack */}
