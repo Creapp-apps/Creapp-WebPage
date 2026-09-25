@@ -54,7 +54,7 @@ interface ProposalVideoCompositionProps {
 }
 
 // Helper to format currency
-const formatPrice = (value: number, currency: string = 'USD') => {
+const formatPrice = (value: number, currency: string = 'ARS') => {
   const formattedVal = Math.round(value).toLocaleString('es-AR');
   const displayCurrency = currency === 'ARS' ? 'ARS' : currency === 'USD' ? 'US$' : currency;
   return `${displayCurrency} ${formattedVal}`;
@@ -150,7 +150,7 @@ export const ProposalVideoComposition: React.FC<ProposalVideoCompositionProps> =
   clientLogoScale = 100,
   videoLogoScale = 140,
   aspectRatio = '16:9',
-  currency = 'USD',
+  currency = 'ARS',
   pillars = [],
   methodologyIntro = '',
   hideWeeklySchedule = false,
@@ -2198,7 +2198,7 @@ const FinancialsSlide: React.FC<{
   slideBgStyle: React.CSSProperties;
   aspectRatio?: '16:9' | '9:16';
   currency?: string;
-}> = ({ totalValue, payments, primaryColor, secondaryColor, slideBgStyle, aspectRatio = '16:9', currency = 'USD' }) => {
+}> = ({ totalValue, payments, primaryColor, secondaryColor, slideBgStyle, aspectRatio = '16:9', currency = 'ARS' }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 

@@ -36,7 +36,7 @@ export const ProposalVideoPlayer: React.FC<ProposalVideoPlayerProps> = ({
   clientLogoUrl = '',
   clientLogoScale = 100,
   videoLogoScale,
-  currency = 'USD',
+  currency = 'ARS',
   pillars = [],
   methodologyIntro = '',
   hideWeeklySchedule = false,

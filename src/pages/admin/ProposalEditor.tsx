@@ -296,6 +296,7 @@ const DEFAULT_WEEKLY_BREAKDOWN = [
 const DEFAULT_METHODOLOGY = {
   currency: 'ARS',
   legal_currency: 'ARS',
+  video_currency: 'ARS',
   intro_text: "Implementamos un proceso de desarrollo iterativo para asegurar lanzamientos predecibles y la validación constante de la usabilidad de la interfaz por parte del cliente.",
   scope_intro: "Detalle técnico del desarrollo y los entregables comprometidos para la ejecución del proyecto.",
   exclusions_intro: "Aspectos, integraciones y requerimientos no contemplados en el desarrollo de la presente propuesta.",
@@ -582,6 +583,23 @@ const ProposalEditor: React.FC = () => {
     }));
   };
 
+  // Divisa para el Video Comercial (Slide de Presupuesto):
+  // 100% coincidente por defecto con la divisa configurada en el Contrato (activeLegalCurrency).
+  // Si el usuario decide personalizarla específicamente en la pestaña de Video, usa methodology.video_currency.
+  const activeVideoCurrency: 'USD' | 'ARS' = (() => {
+    if (methodology?.video_currency === 'ARS' || methodology?.video_currency === 'USD') {
+      return methodology.video_currency;
+    }
+    return activeLegalCurrency || 'ARS';
+  })();
+
+  const handleVideoCurrencyChange = (newCurr: 'USD' | 'ARS') => {
+    setMethodology((prev: any) => ({
+      ...(prev || DEFAULT_METHODOLOGY),
+      video_currency: newCurr,
+    }));
+  };
+
   const milestoneSum = useMemo(() => {
     return (milestones || []).reduce((acc, m) => {
       const num = parseFloat((m.price || '').replace(/[^0-9.]/g, ''));
@@ -861,10 +879,12 @@ const ProposalEditor: React.FC = () => {
         const detectedMilestoneCurr = proposal.methodology.currency || (
           rawTotal.toLowerCase().includes('ars') ? 'ARS' : 'USD'
         );
+        const detectedVideoCurr = proposal.methodology.video_currency || detectedLegalCurr;
         setMethodology({
           ...proposal.methodology,
           currency: detectedMilestoneCurr,
           legal_currency: detectedLegalCurr,
+          video_currency: detectedVideoCurr,
         });
         if (proposal.methodology.client_logo_scale !== undefined) {
           setClientLogoScale(Number(proposal.methodology.client_logo_scale) || 100);
@@ -890,6 +910,7 @@ const ProposalEditor: React.FC = () => {
           ...DEFAULT_METHODOLOGY,
           currency: rawTotal.toLowerCase().includes('ars') ? 'ARS' : 'USD',
           legal_currency: detectedLegalCurr,
+          video_currency: detectedLegalCurr,
         });
         setClientLogoScale(100);
         setClientLegalData({
@@ -1011,7 +1032,7 @@ const ProposalEditor: React.FC = () => {
           clientLogoUrl,
           clientLogoScale: videoLogoScale,
           videoLogoScale: videoLogoScale,
-          currency: methodology?.currency || getCurrencyFromTotal(totalValue) || 'ARS',
+          currency: activeVideoCurrency,
           pillars: getPillars(methodology, brandPrimary, brandSecondary),
           methodologyIntro: methodology?.intro_text,
           hideWeeklySchedule: methodology?.hide_weekly_schedule,
@@ -1116,6 +1137,8 @@ const ProposalEditor: React.FC = () => {
           service_details: finalServiceDetails,
           product_id: selectedProductId,
           client_legal_data: clientLegalData,
+          legal_currency: activeLegalCurrency,
+          video_currency: activeVideoCurrency,
         },
       };
 
@@ -5875,6 +5898,67 @@ const ProposalEditor: React.FC = () => {
               </div>
             </div>
 
+            {/* Selector de Divisa para el Video Comercial */}
+            <div className="glass rounded-2xl p-5 border border-white/5 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h4 className="text-xs font-display font-black text-white uppercase tracking-wider">
+                    Divisa del Presupuesto en Video
+                  </h4>
+                  <p className="text-[10px] text-slate-400 mt-0.5">
+                    Moneda expresada en la diapositiva final de Inversión y Pagos.
+                  </p>
+                </div>
+                <div className="flex items-center gap-1.5 bg-[#090d16] border border-white/10 p-1 rounded-xl shadow-inner">
+                  <button
+                    type="button"
+                    onClick={() => handleVideoCurrencyChange('ARS')}
+                    className={`px-3 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                      activeVideoCurrency === 'ARS'
+                        ? 'bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 shadow-sm'
+                        : 'text-slate-400 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    $ ARS
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleVideoCurrencyChange('USD')}
+                    className={`px-3 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                      activeVideoCurrency === 'USD'
+                        ? 'bg-primary/25 text-primary border border-primary/40 shadow-sm'
+                        : 'text-slate-400 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    $ USD
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-white/[0.03] border border-white/10 text-[10px] text-slate-300 leading-relaxed flex items-center justify-between">
+                <span>
+                  {(!methodology?.video_currency || methodology?.video_currency === activeLegalCurrency) ? (
+                    <>
+                      🔗 <strong>Sincronizado con Contrato:</strong> Coincide 100% con la divisa legal seleccionada (<strong>{activeLegalCurrency}</strong>).
+                    </>
+                  ) : (
+                    <>
+                      ⚡ <strong>Divisa personalizada:</strong> Expresado en <strong>{activeVideoCurrency}</strong> (Contrato en {activeLegalCurrency}).
+                    </>
+                  )}
+                </span>
+                {methodology?.video_currency && methodology.video_currency !== activeLegalCurrency && (
+                  <button
+                    type="button"
+                    onClick={() => handleVideoCurrencyChange(activeLegalCurrency)}
+                    className="ml-2 text-primary hover:underline font-bold whitespace-nowrap cursor-pointer"
+                  >
+                    Sincronizar a {activeLegalCurrency}
+                  </button>
+                )}
+              </div>
+            </div>
+
             <div className="glass rounded-2xl p-5 border border-primary/10">
               <div className="flex items-center gap-2 mb-3">
                 <Film size={16} className="text-primary" />
@@ -5905,10 +5989,37 @@ const ProposalEditor: React.FC = () => {
           <div className="space-y-4 lg:sticky lg:top-[90px] h-[calc(100vh-140px)] flex flex-col">
             {activeEditorTab === 'video' ? (
               <div className="glass rounded-2xl p-4 border border-white/5 flex-1 flex flex-col">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Presentación Dinámica (Video Remotion)</span>
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                  <div>
+                    <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Presentación Dinámica (Video Remotion)</span>
+                    <p className="text-[10px] text-slate-600">Previsualización animada 16:9 y 9:16 en tiempo real.</p>
+                  </div>
+                  <div className="flex items-center gap-1.5 bg-[#090d16] border border-white/10 px-2.5 py-1 rounded-xl shadow-inner">
+                    <span className="text-[9px] font-mono font-bold text-slate-400 uppercase tracking-wider">Divisa Video:</span>
+                    <button
+                      type="button"
+                      onClick={() => handleVideoCurrencyChange('ARS')}
+                      className={`px-2 py-0.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                        activeVideoCurrency === 'ARS'
+                          ? 'bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 shadow-sm'
+                          : 'text-slate-400 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      $ ARS
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleVideoCurrencyChange('USD')}
+                      className={`px-2 py-0.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                        activeVideoCurrency === 'USD'
+                          ? 'bg-primary/25 text-primary border border-primary/40 shadow-sm'
+                          : 'text-slate-400 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      $ USD
+                    </button>
+                  </div>
                 </div>
-                <p className="text-[10px] text-slate-600 mb-4">Previsualización animada 16:9 en tiempo real.</p>
                 <div className="flex-1 flex items-center justify-center bg-black/20 rounded-xl p-4 overflow-hidden">
                   <ProposalVideoPlayer
                     clientName={clientName}
@@ -5923,7 +6034,7 @@ const ProposalEditor: React.FC = () => {
                     clientLogoUrl={clientLogoUrl}
                     clientLogoScale={videoLogoScale}
                     videoLogoScale={videoLogoScale}
-                    currency={methodology?.currency || getCurrencyFromTotal(totalValue) || 'ARS'}
+                    currency={activeVideoCurrency}
                     pillars={getPillars(methodology, brandPrimary, brandSecondary)}
                     methodologyIntro={methodology?.intro_text}
                     hideWeeklySchedule={methodology?.hide_weekly_schedule}
