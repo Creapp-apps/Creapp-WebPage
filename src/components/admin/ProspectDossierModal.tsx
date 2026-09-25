@@ -32,6 +32,9 @@ import {
   FileSpreadsheet,
   Trash2,
   PhoneOff,
+  ChevronLeft,
+  ChevronRight,
+  Filter,
 } from 'lucide-react';
 import { 
   ScrapedProspect, 
@@ -43,6 +46,7 @@ import {
   formatWhatsAppUrl,
   PlaceReview,
   fetchPlaceReviews,
+  getReviewTimeRange,
 } from '@/lib/scraperService';
 import { PipelineStage, STAGE_CONFIG } from '@/lib/pipelineService';
 
@@ -88,6 +92,13 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
   const [loadingReviews, setLoadingReviews] = useState(false);
   const [copiedReviewIdx, setCopiedReviewIdx] = useState<number | null>(null);
 
+  // Filtros y paginación para el modal de reseñas
+  const [timeFilter, setTimeFilter] = useState<'all' | 'recent' | 'mid' | 'old'>('all');
+  const [ratingFilter, setRatingFilter] = useState<'all' | '5' | '4' | '3_or_less'>('all');
+  const [searchReviewText, setSearchReviewText] = useState<string>('');
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const reviewsPerPage = 4;
+
   const handleCopyReview = (text: string, idx: number) => {
     navigator.clipboard.writeText(text);
     setCopiedReviewIdx(idx);
@@ -108,8 +119,10 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
         const cached = localStorage.getItem(cacheKey);
         if (cached) {
           const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed) && parsed.length > 0) {
+          // Si el caché tiene un catálogo extendido (> 5) o el prospecto tiene pocas reseñas registradas
+          if (Array.isArray(parsed) && (parsed.length > 5 || (prospect.reviewCount || 0) <= 5)) {
             setReviewsList(parsed);
+            setCurrentPage(1);
             return;
           }
         }
@@ -120,17 +133,47 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
     try {
       const revs = await fetchPlaceReviews(prospect, force);
       setReviewsList(revs);
+      setCurrentPage(1);
     } catch (e) {
       console.warn("Error cargando reseñas:", e);
     }
     setLoadingReviews(false);
   };
 
+  // Filtrado y paginación de reseñas
+  const filteredReviews = reviewsList.filter((rev) => {
+    if (timeFilter !== 'all') {
+      const range = getReviewTimeRange(rev.relativeTime);
+      if (range !== timeFilter) return false;
+    }
+    if (ratingFilter === '5' && rev.rating !== 5) return false;
+    if (ratingFilter === '4' && rev.rating !== 4) return false;
+    if (ratingFilter === '3_or_less' && rev.rating > 3) return false;
+
+    if (searchReviewText.trim()) {
+      const q = searchReviewText.toLowerCase();
+      const matchesAuthor = rev.authorName.toLowerCase().includes(q);
+      const matchesText = rev.text.toLowerCase().includes(q);
+      if (!matchesAuthor && !matchesText) return false;
+    }
+    return true;
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filteredReviews.length / reviewsPerPage));
+  const paginatedReviews = filteredReviews.slice(
+    (currentPage - 1) * reviewsPerPage,
+    currentPage * reviewsPerPage
+  );
+
   // Cargar pitch inicial al abrir el prospecto o cambiar de etapa
   useEffect(() => {
     if (prospect) {
       setShowReviewsToast(false);
       setReviewsList([]);
+      setTimeFilter('all');
+      setRatingFilter('all');
+      setSearchReviewText('');
+      setCurrentPage(1);
       const initialChannel = currentStage === 'no_answer' ? 'reactivation' : 'conversational';
       setPitchChannel(initialChannel);
       loadPitchForChannel(prospect, initialChannel);
@@ -999,7 +1042,7 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.92, y: 15 }}
                 transition={{ type: "spring", stiffness: 350, damping: 28 }}
-                className="relative w-full max-w-lg bg-[#0e0e17] border border-amber-500/30 rounded-2xl shadow-2xl shadow-amber-950/40 overflow-hidden flex flex-col h-[650px] max-h-[82vh] my-auto"
+                className="relative w-full max-w-xl sm:max-w-2xl bg-[#0e0e17] border border-amber-500/30 rounded-2xl shadow-2xl shadow-amber-950/40 overflow-hidden flex flex-col h-[670px] max-h-[85vh] my-auto"
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* TOAST HEADER */}
@@ -1022,8 +1065,13 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
                             ⚡ En Caché Local (0 costo)
                           </span>
                         )}
+                        {reviewsList.length > 0 && !loadingReviews && (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 text-zinc-400 border border-white/10 font-mono">
+                            {reviewsList.length} disponibles
+                          </span>
+                        )}
                       </h3>
-                      <p className="text-[11px] text-zinc-400 truncate max-w-[260px] sm:max-w-[300px]">
+                      <p className="text-[11px] text-zinc-400 truncate max-w-[260px] sm:max-w-[340px]">
                         {prospect.name}
                       </p>
                     </div>
@@ -1049,12 +1097,111 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
                   </div>
                 </div>
 
+                {/* FILTERS & SEARCH TOOLBAR */}
+                <div className="px-4 py-2.5 bg-black/30 border-b border-white/5 space-y-2 shrink-0">
+                  {/* Row 1: Antiquity and Rating Filters */}
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    {/* Antiquity / Date Filter */}
+                    <div className="flex items-center gap-1">
+                      <span className="text-[10px] uppercase font-bold text-zinc-500 mr-1 flex items-center gap-1">
+                        <Filter size={10} /> Fecha:
+                      </span>
+                      {[
+                        { id: 'all', label: 'Todas' },
+                        { id: 'recent', label: '≤ 1 mes' },
+                        { id: 'mid', label: '1-3 meses' },
+                        { id: 'old', label: '+3 meses' },
+                      ].map((item) => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => {
+                            setTimeFilter(item.id as any);
+                            setCurrentPage(1);
+                          }}
+                          className={`px-2 py-0.5 rounded-md text-[10px] font-semibold transition-all ${
+                            timeFilter === item.id
+                              ? 'bg-amber-500/25 text-amber-300 border border-amber-500/40 shadow-xs'
+                              : 'bg-white/5 text-zinc-400 hover:text-zinc-200 hover:bg-white/10 border border-white/5'
+                          }`}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Rating Stars Filter */}
+                    <div className="flex items-center gap-1">
+                      <span className="text-[10px] uppercase font-bold text-zinc-500 mr-1">Calificación:</span>
+                      {[
+                        { id: 'all', label: '★ Todas' },
+                        { id: '5', label: '5 ★' },
+                        { id: '4', label: '4 ★' },
+                        { id: '3_or_less', label: '≤ 3 ★' },
+                      ].map((item) => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => {
+                            setRatingFilter(item.id as any);
+                            setCurrentPage(1);
+                          }}
+                          className={`px-2 py-0.5 rounded-md text-[10px] font-semibold transition-all ${
+                            ratingFilter === item.id
+                              ? 'bg-purple-500/25 text-purple-300 border border-purple-500/40 shadow-xs'
+                              : 'bg-white/5 text-zinc-400 hover:text-zinc-200 hover:bg-white/10 border border-white/5'
+                          }`}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Row 2: Search Input and Counter */}
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="relative flex-1">
+                      <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-500" />
+                      <input
+                        type="text"
+                        value={searchReviewText}
+                        onChange={(e) => {
+                          setSearchReviewText(e.target.value);
+                          setCurrentPage(1);
+                        }}
+                        placeholder="Buscar por palabra clave (ej: atención, demora, turnos, odontóloga)..."
+                        className="w-full pl-8 pr-3 py-1 bg-black/50 border border-white/10 rounded-lg text-[11px] text-white placeholder-zinc-500 focus:outline-none focus:border-amber-500/40 transition-colors"
+                      />
+                      {searchReviewText && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSearchReviewText('');
+                            setCurrentPage(1);
+                          }}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white"
+                        >
+                          <X size={11} />
+                        </button>
+                      )}
+                    </div>
+                    <div className="text-[10px] text-zinc-400 font-mono shrink-0">
+                      {filteredReviews.length} {filteredReviews.length === 1 ? 'opinión' : 'opiniones'}
+                    </div>
+                  </div>
+                </div>
+
                 {/* HELPFUL PROSPECTING TIP */}
-                <div className="px-4 py-2 bg-amber-500/5 border-b border-amber-500/10 flex items-center gap-2 text-[11px] text-amber-300/80 shrink-0">
-                  <Sparkles size={13} className="shrink-0 text-amber-400" />
-                  <span>
-                    Opiniones públicas para citar dolores reales o elogios en tus llamadas y mensajes.
-                  </span>
+                <div className="px-4 py-1.5 bg-amber-500/5 border-b border-amber-500/10 flex items-center justify-between gap-2 text-[10px] text-amber-300/80 shrink-0">
+                  <div className="flex items-center gap-1.5">
+                    <Sparkles size={12} className="shrink-0 text-amber-400" />
+                    <span>Cita testimonios y dolores reales de pacientes en tu llamado o mensaje.</span>
+                  </div>
+                  {totalPages > 1 && (
+                    <span className="text-zinc-400 font-medium">
+                      Página {currentPage} de {totalPages}
+                    </span>
+                  )}
                 </div>
 
                 {/* REVIEWS LIST BODY */}
@@ -1073,8 +1220,25 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
                       <Star size={28} className="mx-auto text-zinc-600" />
                       <p className="text-xs text-zinc-400">No se encontraron opiniones públicas registradas para este comercio.</p>
                     </div>
+                  ) : filteredReviews.length === 0 ? (
+                    <div className="py-10 text-center space-y-2.5">
+                      <Filter size={24} className="mx-auto text-zinc-600" />
+                      <p className="text-xs text-zinc-400">No hay opiniones que coincidan con los filtros seleccionados.</p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTimeFilter('all');
+                          setRatingFilter('all');
+                          setSearchReviewText('');
+                          setCurrentPage(1);
+                        }}
+                        className="text-[11px] px-3 py-1 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500/30 transition-all font-semibold"
+                      >
+                        Restablecer filtros
+                      </button>
+                    </div>
                   ) : (
-                    reviewsList.map((rev, idx) => (
+                    paginatedReviews.map((rev, idx) => (
                       <div
                         key={idx}
                         className="p-3.5 rounded-xl bg-white/[0.03] border border-white/5 hover:border-amber-500/20 transition-all space-y-2 group/rev"
@@ -1089,8 +1253,15 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
                                 {rev.authorName}
                               </div>
                               {rev.relativeTime && (
-                                <div className="text-[10px] text-zinc-500">
-                                  {rev.relativeTime}
+                                <div className="text-[10px] text-zinc-500 flex items-center gap-1.5">
+                                  <span>{rev.relativeTime}</span>
+                                  <span className="text-[9px] px-1 py-0.2 rounded bg-white/5 text-zinc-400 border border-white/5">
+                                    {getReviewTimeRange(rev.relativeTime) === 'recent'
+                                      ? 'Reciente'
+                                      : getReviewTimeRange(rev.relativeTime) === 'mid'
+                                      ? '1 a 3 meses'
+                                      : 'Histórica'}
+                                  </span>
                                 </div>
                               )}
                             </div>
@@ -1129,24 +1300,69 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
                   )}
                 </div>
 
-                {/* TOAST FOOTER */}
-                <div className="p-3 bg-black/40 border-t border-white/10 flex items-center justify-between gap-3 text-xs shrink-0">
+                {/* TOAST FOOTER WITH PAGINATION */}
+                <div className="p-3 bg-black/40 border-t border-white/10 flex items-center justify-between gap-2 text-xs shrink-0">
                   <a
                     href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
                       `${prospect.name} ${prospect.address || ''} ${prospect.city || ''}`
                     )}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-amber-400/80 hover:text-amber-300 flex items-center gap-1 font-medium transition-colors"
+                    className="text-amber-400/80 hover:text-amber-300 flex items-center gap-1 font-medium transition-colors text-[11px]"
                   >
-                    <span>Ver en Google Maps</span>
-                    <ExternalLink size={12} />
+                    <span>Ver en Maps</span>
+                    <ExternalLink size={11} />
                   </a>
+
+                  {/* Pagination Controls */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                        className="px-2 py-1 rounded bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:pointer-events-none text-zinc-300 text-[11px] font-medium transition-colors flex items-center gap-0.5"
+                      >
+                        <ChevronLeft size={13} />
+                        <span className="hidden sm:inline">Anterior</span>
+                      </button>
+
+                      <div className="flex items-center gap-1">
+                        {[...Array(totalPages)].map((_, pageIdx) => {
+                          const pageNum = pageIdx + 1;
+                          return (
+                            <button
+                              key={pageNum}
+                              type="button"
+                              onClick={() => setCurrentPage(pageNum)}
+                              className={`w-6 h-6 rounded text-[11px] font-bold transition-all ${
+                                currentPage === pageNum
+                                  ? 'bg-amber-500 text-black shadow-sm shadow-amber-500/40'
+                                  : 'bg-white/5 text-zinc-400 hover:text-white hover:bg-white/10'
+                              }`}
+                            >
+                              {pageNum}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                        disabled={currentPage === totalPages}
+                        className="px-2 py-1 rounded bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:pointer-events-none text-zinc-300 text-[11px] font-medium transition-colors flex items-center gap-0.5"
+                      >
+                        <span className="hidden sm:inline">Siguiente</span>
+                        <ChevronRight size={13} />
+                      </button>
+                    </div>
+                  )}
 
                   <button
                     type="button"
                     onClick={() => setShowReviewsToast(false)}
-                    className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white text-xs font-semibold transition-colors"
+                    className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white text-xs font-semibold transition-colors shrink-0"
                   >
                     Cerrar
                   </button>

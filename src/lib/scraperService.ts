@@ -611,10 +611,29 @@ export interface PlaceReview {
 }
 
 /**
- * Obtiene o sintetiza las opiniones de Google Maps para un prospecto.
+ * Categoriza la antigüedad de una opinión para filtros rápidos en la UI.
+ */
+export const getReviewTimeRange = (relativeTime?: string): 'recent' | 'mid' | 'old' => {
+  if (!relativeTime) return 'recent';
+  const lower = relativeTime.toLowerCase();
+  // Menos de 1 mes: días, semanas, 1 mes, un mes
+  if (lower.includes('día') || lower.includes('dia') || lower.includes('semana') || lower.includes('1 mes') || lower.includes('un mes')) {
+    return 'recent';
+  }
+  // 1 a 3 meses: 2 meses, 3 meses
+  if (lower.includes('2 mes') || lower.includes('dos mes') || lower.includes('3 mes') || lower.includes('tres mes')) {
+    return 'mid';
+  }
+  // Más de 3 meses: 4, 5, 6, 7, 8, 9, 10, 11 meses, año, años
+  return 'old';
+};
+
+/**
+ * Obtiene o sintetiza un catálogo amplio de opiniones de Google Maps para un prospecto.
  * 1. Intenta consultar Google Places Details API vía el endpoint proxy interno.
- * 2. Si no hay reseñas directas o fue generado por Gemini, sintetiza con Gemini opiniones fieles
- *    a su puntuación y rubro (mencionando atención profesional, turnos, pedidos, etc.)
+ * 2. Si no hay suficientes reseñas directas o fue generado por Gemini, sintetiza un catálogo
+ *    extenso de entre 12 y 16 opiniones distribuidas cronológicamente (recientes, intermedias y antiguas).
+ * 3. Cachea en localStorage para 0 consumo de saldo en aperturas sucesivas.
  */
 export const fetchPlaceReviews = async (
   prospect: ScrapedProspect,
@@ -622,13 +641,14 @@ export const fetchPlaceReviews = async (
 ): Promise<PlaceReview[]> => {
   const cacheKey = `creapp_reviews_${prospect.id || encodeURIComponent((prospect.name || '').trim().toLowerCase())}`;
 
-  // 0. Si ya están en caché local y no se forzó recarga, retornar inmediatamente (0 llamadas a API, 0 costo)
+  // 0. Si ya están en caché local y no se forzó recarga, retornar inmediatamente
+  // Si el caché tiene más de 5 reseñas o el negocio tiene <= 5 opiniones en total, reutilizar
   if (!forceRefresh && typeof window !== 'undefined') {
     try {
       const cached = localStorage.getItem(cacheKey);
       if (cached) {
         const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed) && (parsed.length > 5 || (prospect.reviewCount || 0) <= 5)) {
           return parsed;
         }
       }
@@ -651,6 +671,8 @@ export const fetchPlaceReviews = async (
   const mapsKey = getGoogleMapsApiKey();
   const geminiKey = getGeminiApiKey();
 
+  let placesReviews: PlaceReview[] = [];
+
   // 1. Intentar consultar endpoint de reviews de Google Places si tiene place_id real
   if (prospect.id && !prospect.id.startsWith('prospect-') && !prospect.id.startsWith('place-')) {
     try {
@@ -661,43 +683,55 @@ export const fetchPlaceReviews = async (
       );
       const data = await res.json();
       if (data.success && data.reviews && data.reviews.length > 0) {
-        const reviews = data.reviews.map((r: any) => ({
+        placesReviews = data.reviews.map((r: any) => ({
           authorName: r.author_name || 'Paciente / Cliente',
           rating: r.rating || 5,
           text: r.text || '',
           relativeTime: r.relative_time_description || 'Reciente',
           profilePhotoUrl: r.profile_photo_url,
         }));
-        saveToCache(reviews);
-        return reviews;
       }
     } catch (e) {
       console.warn("Error fetching reviews from Google Places API:", e);
     }
   }
 
-  // 2. Si no hay reseñas oficiales directas, sintetizar opiniones realistas con Gemini
+  // Si Google Places ya trajo más de 8 reseñas (raro porque Google suele dar max 5), guardamos y retornamos
+  if (placesReviews.length >= 10) {
+    saveToCache(placesReviews);
+    return placesReviews;
+  }
+
+  // 2. Si no hay suficientes reseñas oficiales (Google da max 5), enriquecer con archivo cronológico realista vía Gemini
   if (geminiKey) {
     try {
       const ai = new GoogleGenAI({ apiKey: geminiKey });
       const prompt = `
-Actúa como un extractor de opiniones y reseñas de Google Maps para el siguiente comercio:
+Actúa como un extractor e historiador de opiniones de Google Maps para el siguiente comercio:
 - Nombre: ${prospect.name}
 - Rubro: ${prospect.category}
 - Ciudad: ${prospect.city}
-- Calificación: ${prospect.rating} estrellas (${prospect.reviewCount} opiniones)
+- Calificación Promedio: ${prospect.rating} estrellas (${prospect.reviewCount} opiniones totales)
 
-Genera un listado de entre 3 y 5 opiniones representativas, realistas y verosímiles en español de Argentina que concuerden con su calificación promedio (${prospect.rating} estrellas).
-Si es odontología o salud, incluye comentarios típicos de pacientes sobre la calidez profesional, dificultad para comunicarse por teléfono o conseguir turnos fuera de hora, y la atención en el consultorio.
-Si es gastronomía o comercio, incluye comentarios sobre la calidad de la comida, atención y pedidos.
+Genera un catálogo cronológico completo y variado de entre 12 y 16 opiniones representativas y verosímiles en español de Argentina.
+La distribución temporal es OBLIGATORIA para que funcionen los filtros de la aplicación:
+- 4 o 5 opiniones de menos de 1 mes: usa valores como "hace 5 días", "hace 1 semana", "hace 2 semanas", "hace 3 semanas", "hace 1 mes".
+- 4 o 5 opiniones de 1 a 3 meses: usa valores como "hace 2 meses", "hace 3 meses".
+- 4 o 5 opiniones de más de 3 meses: usa valores como "hace 4 meses", "hace 6 meses", "hace 8 meses", "hace 1 año".
+
+Distribución de estrellas y contenido:
+- Concuerda con su calificación promedio (${prospect.rating} estrellas).
+- La mayoría de 5 y 4 estrellas elogiando la calidez profesional, tratamientos y dedicación.
+- Incluye 2 o 3 opiniones de 3 estrellas (o menos si el promedio es bajo) señalando fricciones reales: dificultad para comunicarse por teléfono en horario pico, demoras para conseguir turnos por no tener sistema online o WhatsApp automatizado, etc.
+- Nombres variados de personas reales.
 
 Devuelve ÚNICAMENTE un JSON con esta estructura exacta sin explicaciones adicionales:
 [
   {
-    "authorName": "Nombre Apellido",
-    "rating": 4,
+    "authorName": "Nombre y Apellido",
+    "rating": 5,
     "relativeTime": "hace 2 semanas",
-    "text": "Comentario realista del paciente o cliente..."
+    "text": "Opinión realista y verosímil..."
   }
 ]
 `;
@@ -706,15 +740,17 @@ Devuelve ÚNICAMENTE un JSON con esta estructura exacta sin explicaciones adicio
         contents: prompt,
         config: {
           responseMimeType: "application/json",
-          temperature: 0.5,
+          temperature: 0.6,
         },
       });
 
       if (response.text) {
         const parsed = JSON.parse(response.text.trim());
         if (Array.isArray(parsed) && parsed.length > 0) {
-          saveToCache(parsed);
-          return parsed;
+          // Si teníamos reseñas reales de Google Places, colocarlas al principio
+          const combined = [...placesReviews, ...parsed.filter(p => !placesReviews.some(r => r.text === p.text))];
+          saveToCache(combined);
+          return combined;
         }
       }
     } catch (e) {
@@ -722,49 +758,137 @@ Devuelve ÚNICAMENTE un JSON con esta estructura exacta sin explicaciones adicio
     }
   }
 
-  // 3. Fallback inteligente
+  // 3. Fallback inteligente amplio (12 opiniones con distribución temporal real)
   const isDental = /odont|dent|dient/i.test(`${prospect.category} ${prospect.name}`);
   let fallbackList: PlaceReview[] = [];
   if (isDental) {
     fallbackList = [
+      // Menos de 1 mes
       {
         authorName: 'Mariana Gómez',
-        rating: Math.round(prospect.rating || 4),
-        relativeTime: 'hace 3 semanas',
-        text: 'Excelente profesional y trato muy humano. El único detalle es que a veces cuesta bastante comunicarse por teléfono para pedir o cambiar un turno.',
+        rating: Math.round(prospect.rating || 5),
+        relativeTime: 'hace 1 semana',
+        text: 'Excelente profesional y trato muy humano. El consultorio es impecable y te transmiten mucha tranquilidad.',
       },
+      {
+        authorName: 'Martín Bustamante',
+        rating: 4,
+        relativeTime: 'hace 2 semanas',
+        text: 'Muy buena atención odontológica. Lo único a mejorar es que cuesta comunicarse por teléfono para pedir o cambiar un turno.',
+      },
+      {
+        authorName: 'Sofía Carrizo',
+        rating: 5,
+        relativeTime: 'hace 3 semanas',
+        text: 'Fui por una urgencia y me atendieron en el acto con una amabilidad increíble. ¡Súper agradecida!',
+      },
+      {
+        authorName: 'Gonzalo Fernández',
+        rating: 5,
+        relativeTime: 'hace 1 mes',
+        text: 'Impecable la higiene y el instrumental. La odontóloga te explica cada paso con mucha paciencia.',
+      },
+      // 1 a 3 meses
       {
         authorName: 'Carlos Benítez',
         rating: 5,
         relativeTime: 'hace 2 meses',
-        text: 'Muy conforme con la atención del consultorio y los tratamientos. Impecable la higiene y la dedicación.',
+        text: 'Muy conforme con los tratamientos de conducto y la limpieza. Sin dolor y muy atentos.',
       },
       {
-        authorName: 'Lucía Fernández',
+        authorName: 'Lucía Rossi',
+        rating: 5,
+        relativeTime: 'hace 2 meses',
+        text: 'Le tengo fobia al dentista de toda la vida y acá lograron que no sienta nada de miedo. 100% recomendables.',
+      },
+      {
+        authorName: 'Esteban Méndez',
         rating: 3,
-        relativeTime: 'hace 4 meses',
-        text: 'La atención es de primera, pero tuve que llamar varias veces en distintos días para que me respondan sobre los turnos.',
+        relativeTime: 'hace 3 meses',
+        text: 'La atención de los doctores es de primera, pero llamé 3 veces en distintos días para coordinar el turno y no atendían.',
+      },
+      {
+        authorName: 'Valeria Domínguez',
+        rating: 4,
+        relativeTime: 'hace 3 meses',
+        text: 'Muy buen nivel profesional en la zona. Estaría genial que incorporen WhatsApp para gestionar turnos fuera de hora.',
+      },
+      // Más de 3 meses
+      {
+        authorName: 'Nicolás Acuña',
+        rating: 5,
+        relativeTime: 'hace 5 meses',
+        text: 'Hice mi tratamiento de ortodoncia acá y los resultados fueron excelentes. Grandes profesionales.',
+      },
+      {
+        authorName: 'Florencia Morales',
+        rating: 5,
+        relativeTime: 'hace 6 meses',
+        text: 'Llevé a mis dos hijos y la odontopediatra tiene una paciencia infinita. No lloraron en ningún momento.',
+      },
+      {
+        authorName: 'Jorge Peralta',
+        rating: 4,
+        relativeTime: 'hace 8 meses',
+        text: 'Muy prolijo todo. Precios acordes y muy buena predisposición del equipo.',
+      },
+      {
+        authorName: 'Camila Villalba',
+        rating: 5,
+        relativeTime: 'hace 1 año',
+        text: 'Hace más de tres años que me atiendo acá y jamás tuve un problema. Siempre puntuales y atentos.',
       },
     ];
   } else {
     fallbackList = [
       {
-        authorName: 'Cliente verificado',
-        rating: Math.round(prospect.rating || 4),
-        relativeTime: 'hace 1 mes',
-        text: `Muy buena atención y servicio en ${prospect.name}. Estaría genial que tengan un canal web o WhatsApp directo para consultas rápidas.`,
+        authorName: 'Lucas Romero',
+        rating: Math.round(prospect.rating || 5),
+        relativeTime: 'hace 1 semana',
+        text: `Excelente servicio en ${prospect.name}. Muy amables y atentos a cada detalle.`,
       },
       {
-        authorName: 'Vecino de la zona',
+        authorName: 'Mariela Quiroga',
+        rating: 4,
+        relativeTime: 'hace 2 semanas',
+        text: 'Muy buena experiencia en general. Estaría bueno que tengan un canal web directo para ver promociones y consultar.',
+      },
+      {
+        authorName: 'Javier Navarro',
         rating: 5,
+        relativeTime: 'hace 1 mes',
+        text: 'Calidad superior. Todo impecable y entregado en tiempo y forma.',
+      },
+      {
+        authorName: 'Paula Soria',
+        rating: 5,
+        relativeTime: 'hace 2 meses',
+        text: 'Atención de 10. Siempre dispuestos a dar una mano con las dudas.',
+      },
+      {
+        authorName: 'Sebastián Vera',
+        rating: 3,
         relativeTime: 'hace 3 meses',
-        text: `Excelente calidad. Totalmente recomendable en la zona.`,
+        text: 'El servicio es bueno, pero a veces tardan en contestar mensajes o llamadas.',
+      },
+      {
+        authorName: 'Andrea Beltrán',
+        rating: 5,
+        relativeTime: 'hace 6 meses',
+        text: 'Súper recomendables en la zona. Los mejores en su rubro.',
+      },
+      {
+        authorName: 'Federico Silva',
+        rating: 5,
+        relativeTime: 'hace 1 año',
+        text: 'Clientes de toda la vida. La calidad nunca bajó.',
       },
     ];
   }
 
-  saveToCache(fallbackList);
-  return fallbackList;
+  const finalCombined = [...placesReviews, ...fallbackList.filter(f => !placesReviews.some(r => r.text === f.text))];
+  saveToCache(finalCombined);
+  return finalCombined;
 };
 
 /**
