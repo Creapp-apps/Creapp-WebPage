@@ -242,6 +242,39 @@ export default defineConfig(({ mode }) => {
                 res.writeHead(500, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ error: 'Error consultando Google Places', details: err?.message }));
               }
+            } else if (req.url?.startsWith('/api/places/reviews') && req.method === 'GET') {
+              try {
+                const urlObj = new URL(req.url, 'http://localhost');
+                const placeId = urlObj.searchParams.get('place_id');
+                const key = urlObj.searchParams.get('key') || env.GOOGLE_MAPS_API_KEY;
+
+                if (!placeId || !key) {
+                  res.writeHead(200, { 'Content-Type': 'application/json' });
+                  res.end(JSON.stringify({ success: false, reviews: [] }));
+                  return;
+                }
+
+                const detRes = await fetch(
+                  `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(
+                    placeId
+                  )}&fields=name,rating,user_ratings_total,reviews,url&language=es&key=${key}`
+                );
+                const detData = await detRes.json();
+                const reviews = detData.result?.reviews || [];
+                const url = detData.result?.url || '';
+
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ 
+                  success: true, 
+                  reviews, 
+                  url, 
+                  rating: detData.result?.rating, 
+                  total: detData.result?.user_ratings_total 
+                }));
+              } catch (err: any) {
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, error: err?.message, reviews: [] }));
+              }
             } else {
               next();
             }

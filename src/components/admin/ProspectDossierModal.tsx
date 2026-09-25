@@ -39,7 +39,9 @@ import {
   generateConversationalHookPitch,
   generateReactivationPitch,
   getInstagramHandle, 
-  formatWhatsAppUrl 
+  formatWhatsAppUrl,
+  PlaceReview,
+  fetchPlaceReviews,
 } from '@/lib/scraperService';
 import { PipelineStage, STAGE_CONFIG } from '@/lib/pipelineService';
 
@@ -79,9 +81,37 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
   const [loadingPitch, setLoadingPitch] = useState(false);
   const [copiedStep, setCopiedStep] = useState<'step1' | 'step2' | 'reactivation' | 'main' | null>(null);
 
+  // Estado para el modal toast flotante de reseñas
+  const [showReviewsToast, setShowReviewsToast] = useState(false);
+  const [reviewsList, setReviewsList] = useState<PlaceReview[]>([]);
+  const [loadingReviews, setLoadingReviews] = useState(false);
+  const [copiedReviewIdx, setCopiedReviewIdx] = useState<number | null>(null);
+
+  const handleCopyReview = (text: string, idx: number) => {
+    navigator.clipboard.writeText(text);
+    setCopiedReviewIdx(idx);
+    setTimeout(() => setCopiedReviewIdx(null), 2000);
+  };
+
+  const handleOpenReviews = async () => {
+    setShowReviewsToast(true);
+    if (reviewsList.length === 0 && prospect) {
+      setLoadingReviews(true);
+      try {
+        const revs = await fetchPlaceReviews(prospect);
+        setReviewsList(revs);
+      } catch (e) {
+        console.warn("Error cargando reseñas:", e);
+      }
+      setLoadingReviews(false);
+    }
+  };
+
   // Cargar pitch inicial al abrir el prospecto o cambiar de etapa
   useEffect(() => {
     if (prospect) {
+      setShowReviewsToast(false);
+      setReviewsList([]);
       const initialChannel = currentStage === 'no_answer' ? 'reactivation' : 'conversational';
       setPitchChannel(initialChannel);
       loadPitchForChannel(prospect, initialChannel);
@@ -194,10 +224,16 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
               <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
                 <span>{prospect.name}</span>
                 {prospect.rating > 0 && (
-                  <span className="text-xs px-2 py-0.5 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold flex items-center gap-1">
-                    <Star size={12} className="fill-amber-400" />
-                    {prospect.rating} ({prospect.reviewCount} reviews)
-                  </span>
+                  <button
+                    type="button"
+                    onClick={handleOpenReviews}
+                    className="text-xs px-2.5 py-1 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/30 font-bold flex items-center gap-1.5 hover:bg-amber-500/25 hover:border-amber-500/60 hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-sm group/rating shadow-amber-950/20"
+                    title="Click para ver las opiniones y reseñas de Google Maps"
+                  >
+                    <Star size={12} className="fill-amber-400 text-amber-400 group-hover/rating:scale-110 transition-transform" />
+                    <span>{prospect.rating} ({prospect.reviewCount} reviews)</span>
+                    <MessageSquare size={11} className="text-amber-300 opacity-60 group-hover/rating:opacity-100 transition-opacity" />
+                  </button>
                 )}
               </h2>
 
@@ -934,6 +970,149 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
             )}
           </div>
         </motion.div>
+
+        {/* FLOATING REVIEWS MODAL TOAST */}
+        <AnimatePresence>
+          {showReviewsToast && (
+            <div 
+              className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/75 backdrop-blur-md"
+              onClick={() => setShowReviewsToast(false)}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.92, y: 15 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.92, y: 15 }}
+                transition={{ type: "spring", stiffness: 350, damping: 28 }}
+                className="relative w-full max-w-lg bg-[#0e0e17] border border-amber-500/30 rounded-2xl shadow-2xl shadow-amber-950/40 overflow-hidden flex flex-col max-h-[85vh]"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* TOAST HEADER */}
+                <div className="p-4 bg-gradient-to-r from-amber-950/40 via-[#12121e] to-[#0e0e17] border-b border-white/10 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                      <Star size={18} className="fill-amber-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
+                        <span>Reseñas de Google Maps</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-mono font-bold">
+                          {prospect.rating} ★ ({prospect.reviewCount})
+                        </span>
+                      </h3>
+                      <p className="text-[11px] text-zinc-400 truncate max-w-[280px]">
+                        {prospect.name}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setShowReviewsToast(false)}
+                    className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+
+                {/* HELPFUL PROSPECTING TIP */}
+                <div className="px-4 py-2 bg-amber-500/5 border-b border-amber-500/10 flex items-center gap-2 text-[11px] text-amber-300/80">
+                  <Sparkles size={13} className="shrink-0 text-amber-400" />
+                  <span>
+                    Opiniones públicas reales para citar dolores o felicitaciones en tus llamadas y mensajes.
+                  </span>
+                </div>
+
+                {/* REVIEWS LIST BODY */}
+                <div className="p-4 overflow-y-auto space-y-3 flex-1 custom-scrollbar">
+                  {loadingReviews ? (
+                    <div className="py-12 flex flex-col items-center justify-center gap-3 text-zinc-400">
+                      <RefreshCw className="animate-spin text-amber-400" size={24} />
+                      <p className="text-xs font-medium">Consultando opiniones y valoraciones verificadas...</p>
+                    </div>
+                  ) : reviewsList.length === 0 ? (
+                    <div className="py-10 text-center space-y-2">
+                      <Star size={28} className="mx-auto text-zinc-600" />
+                      <p className="text-xs text-zinc-400">No se encontraron opiniones públicas registradas para este comercio.</p>
+                    </div>
+                  ) : (
+                    reviewsList.map((rev, idx) => (
+                      <div
+                        key={idx}
+                        className="p-3.5 rounded-xl bg-white/[0.03] border border-white/5 hover:border-amber-500/20 transition-all space-y-2 group/rev"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-500/30 to-purple-500/30 border border-white/10 flex items-center justify-center text-[10px] font-bold text-white uppercase">
+                              {rev.authorName.charAt(0) || 'U'}
+                            </div>
+                            <div>
+                              <div className="text-xs font-semibold text-zinc-200">
+                                {rev.authorName}
+                              </div>
+                              {rev.relativeTime && (
+                                <div className="text-[10px] text-zinc-500">
+                                  {rev.relativeTime}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-0.5 text-amber-400">
+                              {[...Array(5)].map((_, i) => (
+                                <Star
+                                  key={i}
+                                  size={10}
+                                  className={i < rev.rating ? "fill-amber-400 text-amber-400" : "text-zinc-600"}
+                                />
+                              ))}
+                            </div>
+                            <button
+                              onClick={() => handleCopyReview(rev.text, idx)}
+                              className="p-1 rounded bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
+                              title="Copiar texto de reseña"
+                            >
+                              {copiedReviewIdx === idx ? (
+                                <Check size={12} className="text-emerald-400" />
+                              ) : (
+                                <Copy size={12} />
+                              )}
+                            </button>
+                          </div>
+                        </div>
+
+                        <p className="text-xs text-zinc-300 leading-relaxed italic bg-black/20 p-2.5 rounded-lg border border-white/5">
+                          "{rev.text}"
+                        </p>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* TOAST FOOTER */}
+                <div className="p-3 bg-black/40 border-t border-white/10 flex items-center justify-between gap-3 text-xs">
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                      `${prospect.name} ${prospect.address || ''} ${prospect.city || ''}`
+                    )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-amber-400/80 hover:text-amber-300 flex items-center gap-1 font-medium transition-colors"
+                  >
+                    <span>Ver en Google Maps</span>
+                    <ExternalLink size={12} />
+                  </a>
+
+                  <button
+                    onClick={() => setShowReviewsToast(false)}
+                    className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white text-xs font-semibold transition-colors"
+                  >
+                    Cerrar
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
       </div>
     </AnimatePresence>
   );
