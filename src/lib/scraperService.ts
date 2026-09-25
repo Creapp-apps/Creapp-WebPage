@@ -535,6 +535,73 @@ export const generateReactivationPitch = (prospect: ScrapedProspect): string => 
   );
 };
 
+/**
+ * Genera el guion de llamada telefónica (30-45 segundos).
+ * Enfoque de alta conversión:
+ * Si el consultorio/negocio no tiene sitio web (o fue descubierto buscando en Google),
+ * se posiciona desde la perspectiva empática del nuevo vecino de la zona que los buscó en Google,
+ * dudó de si el teléfono era real por no tener web/WhatsApp directo,
+ * y usa esa fricción real como gancho capcioso irrefutable para demostrar la pérdida de pacientes/clientes.
+ */
+export const generatePhoneCallPitch = (prospect: ScrapedProspect): string => {
+  const isDental = /odont|dent|dient/i.test(`${prospect.category || ''} ${prospect.name || ''} ${prospect.digitalHealth.suggestedSolution || ''}`);
+  const isGastro = /gastronom|restauran|comida|pizz|bar|caf[eé]|hamburgue/i.test(prospect.category || '');
+  const friendlyName = extractFriendlyLeadName(prospect.name) || extractBusinessShortName(prospect.name, prospect.category);
+  const city = prospect.city || 'la zona';
+
+  if (isDental) {
+    return (
+      `📞 GUION DE LLAMADA TELEFÓNICA (Enfoque: Nuevo Vecino & Dolor de Búsqueda):\n\n` +
+      `1. Apertura y Confirmación:\n` +
+      `— "Hola, buen día, ¿hablo con el consultorio de ${friendlyName}?"\n` +
+      `[Esperar confirmación: "Sí, correcto, acá es."]\n\n` +
+      `2. Gancho de Empatía (El Vecino que buscó en Google):\n` +
+      `— "¡Hola! ¿Cómo va? Mi nombre es Sebastián. Te consulto porque me recomendaron el consultorio, recién me mudé acá a la zona de ${city}, y pude encontrar este teléfono recién después de buscarlos un rato en Google... la verdad no sabía si era el teléfono real o no, porque no les encontré página web ni canal directo de WhatsApp."\n` +
+      `[Esperar respuesta: "Ah sí, claro, somos nosotros, ¿en qué te podemos ayudar?"]\n\n` +
+      `3. Argumento de Venta Capcioso (Dolor Real de Fuga de Pacientes):\n` +
+      `— "Buenísimo. Te cuento con total sinceridad: justamente por eso te llamo. Me di cuenta en carne propia de lo difícil que se le hace a un paciente contactarlos para consultar un turno o sacarse una duda. Si a mí, que venía con recomendación directa, me costó encontrarlos y no pude agendar o consultar por WhatsApp en el momento, imaginate la cantidad de personas de ${city} que buscan atención fuera de hora o llaman cuando ustedes están atendiendo en el sillón y, al no tener respuesta inmediata, terminan yéndose al consultorio de al lado."\n\n` +
+      `4. Propuesta de Valor (Dental-IA):\n` +
+      `— "Soy desarrollador de Dental-IA. Ayudamos a consultorios odontológicos en ${city} a resolver esto de raíz instalando un asistente inteligente en su WhatsApp que responde consultas frecuentes, filtra urgencias y agenda turnos las 24 hs de forma 100% automática, sin que ustedes pierdan tiempo al teléfono."\n\n` +
+      `5. Cierre para Demo Breve:\n` +
+      `— "¿Con quién del consultorio o con el Dr. podría coordinar 5 minutitos esta semana para mostrarles una demo interactiva funcionando en el celular, sin costo ni compromiso?"`
+    );
+  }
+
+  if (isGastro) {
+    return (
+      `📞 GUION DE LLAMADA TELEFÓNICA (Enfoque: Nuevo Vecino & Dolor de Pedido):\n\n` +
+      `1. Apertura y Confirmación:\n` +
+      `— "Hola, buenas tardes, ¿hablo con ${friendlyName}?"\n` +
+      `[Esperar confirmación: "Sí, correcto, acá es."]\n\n` +
+      `2. Gancho de Empatía (El Vecino que buscó en Google):\n` +
+      `— "¡Hola! ¿Cómo estás? Mi nombre es Sebastián. Me recomendaron mucho su lugar, recién me mudé acá a la zona de ${city}, y pude encontrar el teléfono después de buscarlos un rato en Google porque no les encontré carta web directa ni WhatsApp oficial..."\n` +
+      `[Esperar respuesta: "¡Hola! Sí, somos nosotros, ¿qué querías pedir / consultar?"]\n\n` +
+      `3. Argumento Capcioso (Fuga de Comensales y Comisiones):\n` +
+      `— "Excelente. Te cuento con total sinceridad: justamente por eso te llamo. Me di cuenta en carne propia de la fricción que tiene un cliente nuevo para ver la carta y pedirles directo. Si a mí me costó encontrarlos, imaginate la cantidad de pedidos que terminan yéndose a PedidosYa o Rappi (donde ustedes regalan el 25-30% en comisiones) o a otro local de la zona."\n\n` +
+      `4. Propuesta de Valor (CreApp Software Lab):\n` +
+      `— "En CreApp desarrollamos cartas interactivas y canales de pedidos directos a su WhatsApp con comanderas en cocina, para que el cliente pida en 2 clics y ustedes retengan el 100% de la ganancia."\n\n` +
+      `5. Cierre para Demo Breve:\n` +
+      `— "¿Con quién del local o con el encargado podría hablar 5 minutos esta semana para mostrarles una demo rápida sin compromiso?"`
+    );
+  }
+
+  return (
+    `📞 GUION DE LLAMADA TELEFÓNICA (Enfoque: Nuevo Vecino & Dolor de Contacto):\n\n` +
+    `1. Apertura y Confirmación:\n` +
+    `— "Hola, buen día, ¿hablo con ${friendlyName}?"\n` +
+    `[Esperar confirmación: "Sí, correcto, acá es."]\n\n` +
+    `2. Gancho de Empatía (El Cliente que buscó en Google):\n` +
+    `— "¡Hola! ¿Cómo estás? Mi nombre es Sebastián. Me recomendaron sus servicios, recién me instalé acá en la zona de ${city}, y pude dar con este teléfono recién después de buscarlos un buen rato en Google porque no les encontré sitio web directo ni canal ágil..."\n` +
+    `[Esperar respuesta: "Hola Sebastián, sí somos nosotros, ¿en qué te podemos asesorar?"]\n\n` +
+    `3. Argumento Capcioso (Fuga de Clientes por Falta de Canal Digital):\n` +
+    `— "Bárbaro. Te cuento con total honestidad: justamente por eso te llamo. Experimenté en primera persona lo difícil que es para un potencial cliente contactarlos o conocer sus propuestas sin un canal digital ágil. En la actualidad, la mayoría de las consultas se dan fuera de hora comercial y terminan contratando al que primero responde de forma inmediata."\n\n` +
+    `4. Propuesta de Valor (CreApp Software Lab):\n` +
+    `— "En CreApp Software Lab creamos plataformas web y automatizaciones de WhatsApp para que atiendan, coticen y agenden clientes las 24 horas en piloto automático."\n\n` +
+    `5. Cierre para Demo Breve:\n` +
+    `— "¿Con quién de la dirección o responsable comercial podría coordinar 5 minutos esta semana para mostrarles una demo personalizada sin costo?"`
+  );
+};
+
 export interface PlaceReview {
   authorName: string;
   rating: number;

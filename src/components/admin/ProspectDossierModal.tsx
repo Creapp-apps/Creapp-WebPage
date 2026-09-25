@@ -38,6 +38,7 @@ import {
   generateColdPitchWithAI, 
   generateConversationalHookPitch,
   generateReactivationPitch,
+  generatePhoneCallPitch,
   getInstagramHandle, 
   formatWhatsAppUrl,
   PlaceReview,
@@ -132,13 +133,8 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
         setStep1Text(conv.step1);
         setStep2Text(conv.step2);
       } else if (channel === 'call') {
-        setPitchContent(
-          `📞 GUION DE LLAMADA TELEFÓNICA (30 Segundos):\n\n` +
-          `1. Apertura: "Hola, ¿cómo estás? Te llamo rápido de CreApp Software Lab. Estuvimos viendo la excelente reputación que tienen en Google Maps en ${p.city} con más de ${p.reviewCount} reseñas..."\n` +
-          `2. Gancho: "Notamos que hoy no cuentan con un sistema directo de pedidos/reservas propio, y que probablemente estén perdiendo clientes o pagando comisiones altas a intermediarios."\n` +
-          `3. Propuesta de Valor: "Desarrollamos una plataforma exclusiva para que sus clientes pidan en 2 clics directo por WhatsApp o web, ahorrándose todas las comisiones."\n` +
-          `4. Cierre: "¿Con quién podría conversar 5 minutos esta semana para mostrarles una demo personalizada sin costo?"`
-        );
+        const text = generatePhoneCallPitch(p);
+        setPitchContent(text);
       } else if (channel === 'visit') {
         setPitchContent(
           `🚶 GUION DE VISITA PRESENCIAL AL LOCAL:\n\n` +
@@ -884,7 +880,7 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
                       </div>
                     ) : (
                       <textarea
-                        rows={11}
+                        rows={pitchChannel === 'call' ? 18 : 11}
                         value={pitchContent}
                         onChange={(e) => setPitchContent(e.target.value)}
                         placeholder="Redactando mensaje para el lead..."
