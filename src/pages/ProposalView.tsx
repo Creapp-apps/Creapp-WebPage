@@ -753,9 +753,10 @@ const ProposalView: React.FC = () => {
       setPdfSuccessUrl(url);
       setIsConfirmed(true);
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to generate and upload contract:", error);
-      alert("Hubo un error al procesar el contrato. Por favor, intente nuevamente.");
+      const detail = error?.message ? ` (${error.message})` : '';
+      alert(`Hubo un error al procesar el contrato${detail}. Por favor, intente nuevamente o comuníquese con el equipo comercial.`);
     } finally {
       setIsGeneratingPDF(false);
     }
