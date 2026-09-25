@@ -385,60 +385,164 @@ Devuelve ÚNICAMENTE el bloque JSON sin ningún texto adicional fuera del array.
 };
 
 /**
+/**
+ * Extrae un nombre de contacto amigable y respetuoso del nombre comercial o razón social
+ * Ej: "Dr.Guillermo Krittian ODONTÓLOGO" -> "Dr. Guillermo"
+ * Ej: "Dra. Mariana López Consultorio Dental" -> "Dra. Mariana"
+ * Ej: "Parrilla Don Julio" -> "Don Julio"
+ */
+export const extractFriendlyLeadName = (rawName: string): string => {
+  if (!rawName) return '';
+  const trimmed = rawName.trim();
+
+  // Detectar títulos profesionales: Dr., Dra., Lic., Odont.
+  const professionalMatch = trimmed.match(/\b(Dr\.|Dra\.|Lic\.|Odont\.)\s*([A-Za-zÁÉÍÓÚáéíóúñÑ]+)/i);
+  if (professionalMatch) {
+    const title = professionalMatch[1].charAt(0).toUpperCase() + professionalMatch[1].slice(1).toLowerCase();
+    const name = professionalMatch[2].charAt(0).toUpperCase() + professionalMatch[2].slice(1).toLowerCase();
+    return `${title} ${name}`;
+  }
+
+  // Limpiar sufijos comerciales típicos
+  const cleanName = trimmed
+    .replace(/\b(ODONT[OÓ]LOGO|ODONTOLOG[IÍ]A|DENTISTA|CL[IÍ]NICA|CONSULTORIO|CENTRO|LAB|ESTUDIO|S\.?R\.?L\.?|S\.?A\.?)\b/gi, '')
+    .trim();
+
+  const words = cleanName.split(/\s+/).filter(Boolean);
+  if (words.length > 0) {
+    // Tomar las primeras dos palabras si son razonables
+    return words.slice(0, 2).join(' ');
+  }
+  return rawName;
+};
+
+/**
+ * Normaliza teléfonos argentinos y limpia emojis/formatos para enlaces nativos de WhatsApp (wa.me)
+ */
+export const formatWhatsAppUrl = (phone: string, text: string): string => {
+  let cleanPhone = (phone || '').replace(/[^0-9]/g, '');
+
+  // Normalización para teléfonos de Argentina:
+  // Si empieza con 54 (código país) pero le falta el 9 para celular (ej. 54 11 7133-5176 -> 541171335176)
+  if (cleanPhone.startsWith('54') && !cleanPhone.startsWith('549') && cleanPhone.length >= 12) {
+    cleanPhone = '549' + cleanPhone.slice(2);
+  } else if (cleanPhone.startsWith('11') && cleanPhone.length === 10) {
+    cleanPhone = '549' + cleanPhone;
+  } else if (cleanPhone.startsWith('15') && cleanPhone.length === 10) {
+    cleanPhone = '54911' + cleanPhone.slice(2);
+  }
+
+  // 1. Convertir negritas de Markdown (**texto**) al estándar nativo de WhatsApp (*texto*)
+  let waText = text.replace(/\*\*(.*?)\*\*/g, '*$1*');
+
+  // 2. Limpiar Selectores de Variación Unicode (\uFE0E y \uFE0F) que en WhatsApp Web se renderizan como cajas vacías / notdef
+  // Por ejemplo, transforma ⭐️ (\u2B50\uFE0F) en ⭐ pura (\u2B50)
+  waText = waText.replace(/[\uFE0E\uFE0F]/g, '');
+
+  // 3. Normalizar emojis que suelen fallar en desktop/web por versiones 100% universales
+  waText = waText.replace(/🗓/g, '📅'); // Calendario universal
+
+  return cleanPhone
+    ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(waText)}`
+    : `https://wa.me/?text=${encodeURIComponent(waText)}`;
+};
+
+/**
  * Generador de Pitch personalizado por WhatsApp / Email
+ * Enfoque cercano, consultivo y amigable (Sebastián de CreApp / Dental IA)
  */
 export const generateColdPitchWithAI = async (
   prospect: ScrapedProspect,
   channel: 'whatsapp' | 'email' | 'linkedin' = 'whatsapp'
 ): Promise<string> => {
+  const isDental = /odont|dent|dient/i.test(`${prospect.category || ''} ${prospect.name || ''} ${prospect.digitalHealth.suggestedSolution || ''}`);
+  const friendlyName = extractFriendlyLeadName(prospect.name) || prospect.name;
+  const productName = isDental ? 'Dental-IA' : (prospect.digitalHealth.suggestedSolution || 'CreApp Software Lab');
+  const categoryEmoji = isDental ? '🦷' : (/gastronom|restauran|comida|pizz|bar/i.test(prospect.category) ? '🍽️' : '🚀');
+  const clientEntity = isDental ? 'pacientes' : 'clientes';
+  const placeEntity = isDental ? 'consultorio' : 'negocio';
+  const appointmentEntity = isDental ? 'turnos' : 'consultas y reservas';
+  const targetAudience = isDental ? 'los odontólogos' : 'negocios de tu rubro';
+
   const apiKey = getGeminiApiKey();
 
   if (apiKey) {
     try {
       const ai = new GoogleGenAI({ apiKey });
       const prompt = `
-Actúa como el Director Comercial de CreApp (Software Lab & FinTech Hub).
-Redacta un mensaje de primer contacto para prospección comercial en frío por ${channel.toUpperCase()}.
+Actúa como Sebastián, fundador y asesor de soluciones tecnológicas en CreApp Software Lab y creador de Dental IA.
+Tu objetivo es redactar un mensaje de primer contacto para prospección en frío por ${channel.toUpperCase()} dirigido a ${prospect.name}.
 
 Datos del Prospecto:
-- Nombre del Negocio: ${prospect.name}
+- Nombre / Razón Social: ${prospect.name}
+- Nombre sugerido para el saludo: ${friendlyName}
 - Rubro: ${prospect.category}
-- Ciudad: ${prospect.city}
-- Diagnóstico Técnico: ${prospect.digitalHealth.diagnosis}
-- Solución recomendada de CreApp: ${prospect.digitalHealth.suggestedSolution}
-- Sitio web actual: ${prospect.website || 'No posee sitio web'}
-- Fuente de datos: ${prospect.source === 'google_places' ? 'Google Maps' : 'Investigación de Mercado'}
+- Ciudad/Localidad: ${prospect.city || 'su localidad'}
+- Calificación en Google Maps: ${prospect.rating ? `${prospect.rating} estrellas con ${prospect.reviewCount} opiniones` : 'Excelente reputación'}
+- Diagnóstico técnico detectado: ${prospect.digitalHealth.diagnosis}
+- Solución tecnológica recomendada: ${productName}
+- Sitio web actual: ${prospect.website || 'No posee sitio web ni canal automatizado'}
 
-Pautas de tono y estilo:
-1. No suenes a bot ni a vendedor insistente. Sé un consultor de software profesional, empático y directo.
-2. Menciona un dolor específico que detectamos en su negocio (por ejemplo su web desactualizada, comisiones excesivas en apps de terceros o falta de digitalización).
-3. Haz un gancho de curiosidad para mostrarle una demo interactiva o propuesta sin compromiso.
-4. Si es WhatsApp: usa párrafos cortos, emojis profesionales y llamada a la acción clara.
-5. Devuelve SOLO el texto del mensaje listo para enviar.
+ESTILO Y TONO EXIGIDO (IMPRESCINDIBLE):
+- Tono: Muy cercano, amigable, respetuoso y consultivo. HABLA EN PRIMERA PERSONA ("Te saluda Sebastián, de parte de ${productName}"). NUNCA hables en tercera persona corporativa como "el equipo de dirección comercial" ni suenes a bot o spam.
+- Estructura obligatoria del mensaje:
+  1. Saludo cercano: "Hola ${friendlyName}, ¿cómo estás? Te saluda Sebastián, de parte de ${productName} ${categoryEmoji}"
+  2. Elogio sincero: Menciona que estabas revisando ${isDental ? 'consultorios' : 'negocios'} con excelente reputación en ${prospect.city || 'la zona'} vía Google Maps y te llamaron la atención las impecables valoraciones de sus ${clientEntity}. ¡Felicitaciones por ese nivel de servicio! ⭐⭐⭐⭐⭐
+  3. Detección empática del dolor: Notaste que hoy no cuentan con sitio web ni canal digital automatizado para escalar la captación de ${clientEntity} y gestionar su ${placeEntity} de forma más efectiva y menos desgastante, lo que suele hacer que se pierdan ${appointmentEntity} fuera del horario comercial.
+  4. Solución: Comenta sobre *${productName}*, diseñada para que ${targetAudience} puedan automatizar su atención en WhatsApp, responder consultas frecuentes y agendar ${appointmentEntity} las 24 horas de forma autónoma. 🤖
+  5. Oferta de valor sin compromiso: Proponer mostrar una *demo interactiva de 2 minutos* para ver en vivo cómo funcionaría en su propio ${placeEntity}, sin ningún tipo de compromiso. 📞
+  6. Llamada a la acción cálida: "¿Te gustaría que agendemos una videollamada para charlar un poco mas? 📅"
+
+REGLAS DE FORMATO Y EMOJIS (CRÍTICO):
+- Formato de negrita: USA UN SOLO ASTERISCO (*texto*) para negrita nativa de WhatsApp. NO uses doble asterisco (**).
+- Compatibilidad absoluta de emojis: Usa ÚNICAMENTE emojis universales de alta compatibilidad (como ⭐, ${categoryEmoji}, 🤖, 📞, 📅). NUNCA uses emojis extraños ni de Unicode 14/15 que causan cajas vacías o signos de interrogación en WhatsApp.
+- Saltos de línea dobles entre párrafos para que sea ultra legible en el celular.
+- Devuelve ÚNICAMENTE el texto listo para enviar, sin introducciones ni comillas extra.
       `;
 
       const response = await ai.models.generateContent({
         model: 'gemini-3.6-flash',
         contents: prompt,
         config: {
-          temperature: 0.7,
+          temperature: 0.65,
         },
       });
 
       if (response.text) {
-        return response.text.trim();
+        // Limpiar selectores de variación que rompen en WhatsApp Web
+        let cleanedText = response.text.trim().replace(/[\uFE0E\uFE0F]/g, '');
+        cleanedText = cleanedText.replace(/🗓/g, '📅');
+        return cleanedText;
       }
     } catch (e) {
       console.warn("Error calling Gemini API for pitch:", e);
     }
   }
 
-  // Fallback estructurado en base a los datos reales
+  // Fallback estructurado de alta conversión que respeta 100% las directivas
   if (channel === 'whatsapp') {
-    return `¡Hola ${prospect.name}! 👋 Les escribe el equipo de CreApp Software Lab.\n\nEstuvimos analizando comercios de ${prospect.category} en ${prospect.city}. Notamos una oportunidad clave para su operación: ${prospect.digitalHealth.diagnosis}\n\nEn CreApp desarrollamos soluciones como ${prospect.digitalHealth.suggestedSolution} para automatizar procesos y ventas sin fricciones.\n\n¿Les interesaría que les preparemos una demo rápida de 2 minutos para que vean el impacto en su negocio? ¡Saludos!`;
+    return (
+      `Hola ${friendlyName}, ¿cómo estás? Te saluda Sebastián, de parte de ${productName} ${categoryEmoji}\n\n` +
+      `Estaba revisando ${isDental ? 'consultorios' : 'negocios'} con excelente reputación en ${prospect.city || 'la zona'} vía Google Maps y me llamaron mucho la atención las impecables valoraciones de tus ${clientEntity}.\n` +
+      `¡Felicitaciones por ese nivel de servicio! ⭐⭐⭐⭐⭐\n\n` +
+      `Precisamente viendo la calidad de tu trabajo, noté que hoy no contás con un sitio web ni con un canal digital automatizado para escalar la captación de ${clientEntity} y gestionar tu ${placeEntity} de una forma mas efectiva y menos desgastante. Esto suele hacer que se pierdan ${appointmentEntity} de personas que buscan atención fuera del horario comercial o que no reciben respuesta inmediata.\n\n` +
+      `Por eso, queremos comentarte acerca de nuestra plataforma *${productName}*, una solución diseñada para que ${targetAudience} puedan automatizar su atención en WhatsApp, responder consultas frecuentes y agendar ${appointmentEntity} las 24 horas de forma 100% autónoma. 🤖\n\n` +
+      `Me gustaría mostrarte una *demo interactiva de 2 minutos* para que veas en vivo cómo funcionaría en tu ${placeEntity}, sin ningún tipo de compromiso. 📞\n\n` +
+      `¿Te gustaría que agendemos una videollamada para charlar un poco mas? 📅`
+    );
   }
 
-  return `Estimado equipo de ${prospect.name},\n\nDesde CreApp Software Lab nos ponemos en contacto porque identificamos una oportunidad para optimizar su operativa en ${prospect.city}: ${prospect.digitalHealth.diagnosis}.\n\nImplementamos soluciones como ${prospect.digitalHealth.suggestedSolution} para empresas de su sector.\n\nQuedamos a su disposición para coordinar una breve reunión o presentarles una propuesta técnica.\n\nAtentamente,\nEquipo CreApp Innovation Hub`;
+  return (
+    `Estimado/a ${friendlyName},\n\n` +
+    `Te saluda Sebastián, de parte de ${productName}.\n\n` +
+    `Estuve revisando la excelente reputación de ${prospect.name} en ${prospect.city || 'la zona'} en Google Maps, y me impresionaron las valoraciones de tus ${clientEntity}. ¡Felicitaciones por ese nivel de servicio!\n\n` +
+    `Noté que actualmente no disponen de una web propia ni de un canal automatizado 24/7 para canalizar ${appointmentEntity} y consultas frecuentes. Implementamos soluciones de software como *${productName}* para resolver este dolor de forma 100% autónoma.\n\n` +
+    `¿Tendrías 5 minutos para coordinar una breve demo interactiva esta semana?\n\n` +
+    `Quedo a tu total disposición.\n\n` +
+    `Atentamente,\n` +
+    `Sebastián Maza\n` +
+    `Fundador & CTO · CreApp Software Lab`
+  );
 };
 
 export const importProspectToPipeline = (prospect: ScrapedProspect): Lead => {

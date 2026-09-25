@@ -32,7 +32,7 @@ import {
   FileSpreadsheet,
   Trash2,
 } from 'lucide-react';
-import { ScrapedProspect, generateColdPitchWithAI, getInstagramHandle } from '@/lib/scraperService';
+import { ScrapedProspect, generateColdPitchWithAI, getInstagramHandle, formatWhatsAppUrl } from '@/lib/scraperService';
 import { PipelineStage, STAGE_CONFIG } from '@/lib/pipelineService';
 
 interface ProspectDossierModalProps {
@@ -119,14 +119,17 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
   const hasNoWeb = !hasRealWebsite;
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(pitchContent);
+    let textToCopy = pitchContent;
+    if (pitchChannel === 'whatsapp') {
+      textToCopy = textToCopy.replace(/\*\*(.*?)\*\*/g, '*$1*').replace(/[\uFE0E\uFE0F]/g, '').replace(/🗓/g, '📅');
+    }
+    navigator.clipboard.writeText(textToCopy);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   const getEncodedWhatsAppUrl = () => {
-    const text = encodeURIComponent(pitchContent);
-    return `https://wa.me/${cleanPhone}?text=${text}`;
+    return formatWhatsAppUrl(prospect.phone || '', pitchContent);
   };
 
   return (
@@ -556,26 +559,42 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
                 </div>
 
                 {/* Pitch Display Box */}
-                <div className="relative p-5 rounded-2xl bg-[#09090f] border border-purple-500/20 font-mono text-zinc-200 text-xs leading-relaxed whitespace-pre-wrap">
+                <div className="relative p-4 rounded-2xl bg-[#09090f] border border-purple-500/20">
                   {loadingPitch ? (
-                    <div className="py-8 flex flex-col items-center justify-center gap-2 text-zinc-500">
+                    <div className="py-12 flex flex-col items-center justify-center gap-2 text-zinc-500 text-xs">
                       <RefreshCw size={20} className="animate-spin text-purple-400" />
-                      <span>Generando guion persuasivo con Gemini 3.6 Flash...</span>
+                      <span>Generando mensaje personalizado con enfoque consultivo...</span>
                     </div>
                   ) : (
-                    pitchContent
+                    <textarea
+                      rows={11}
+                      value={pitchContent}
+                      onChange={(e) => setPitchContent(e.target.value)}
+                      placeholder="Redactando mensaje para el lead..."
+                      className="w-full bg-transparent text-zinc-200 text-xs leading-relaxed focus:outline-none resize-none font-sans"
+                    />
                   )}
 
                   {/* Actions inside pitch */}
                   {!loadingPitch && (
-                    <div className="mt-4 pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
-                      <button
-                        onClick={handleCopy}
-                        className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white border border-white/10 flex items-center gap-1.5 transition-colors font-sans text-xs"
-                      >
-                        {copied ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
-                        <span>{copied ? 'Copiado al portapapeles' : 'Copiar Guion'}</span>
-                      </button>
+                    <div className="mt-3 pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={handleCopy}
+                          className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white border border-white/10 flex items-center gap-1.5 transition-colors font-sans text-xs"
+                        >
+                          {copied ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
+                          <span>{copied ? 'Copiado al portapapeles' : 'Copiar Guion'}</span>
+                        </button>
+                        <button
+                          onClick={() => loadPitchForChannel(prospect, pitchChannel)}
+                          className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-purple-300 border border-white/10 flex items-center gap-1.5 transition-colors font-sans text-xs"
+                          title="Volver a generar mensaje con IA"
+                        >
+                          <RefreshCw size={12} />
+                          <span>Regenerar con IA</span>
+                        </button>
+                      </div>
 
                       {pitchChannel === 'whatsapp' && cleanPhone && (
                         <a

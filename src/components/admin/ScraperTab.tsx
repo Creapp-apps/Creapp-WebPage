@@ -39,6 +39,7 @@ import {
   ScrapedProspect,
   searchProspects,
   generateColdPitchWithAI,
+  formatWhatsAppUrl,
   importProspectToPipeline,
   getApiStatus,
   setStoredApiKeys,
@@ -335,7 +336,11 @@ export const ScraperTab: React.FC<ScraperTabProps> = ({
   };
 
   const handleCopyPitch = () => {
-    navigator.clipboard.writeText(pitchText);
+    let textToCopy = pitchText;
+    if (pitchChannel === 'whatsapp') {
+      textToCopy = textToCopy.replace(/\*\*(.*?)\*\*/g, '*$1*').replace(/[\uFE0E\uFE0F]/g, '').replace(/🗓/g, '📅');
+    }
+    navigator.clipboard.writeText(textToCopy);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -828,7 +833,7 @@ export const ScraperTab: React.FC<ScraperTabProps> = ({
 
                       {cleanPhone && (
                         <a
-                          href={`https://wa.me/${cleanPhone}`}
+                          href={formatWhatsAppUrl(p.phone, '')}
                           target="_blank"
                           rel="noreferrer"
                           className="px-2.5 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 text-xs flex items-center gap-1.5 transition-colors"
@@ -995,7 +1000,7 @@ export const ScraperTab: React.FC<ScraperTabProps> = ({
                 <div className="flex items-center gap-2">
                   {activePitchProspect.phone && pitchChannel === 'whatsapp' && (
                     <a
-                      href={`https://wa.me/${getCleanPhone(activePitchProspect.phone)}?text=${encodeURIComponent(pitchText)}`}
+                      href={formatWhatsAppUrl(activePitchProspect.phone, pitchText)}
                       target="_blank"
                       rel="noreferrer"
                       className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition-all shadow-md"
