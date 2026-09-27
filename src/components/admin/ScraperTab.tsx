@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Radar,
@@ -34,6 +34,10 @@ import {
   Bookmark,
   Instagram,
   Facebook,
+  ArrowUpDown,
+  Flame,
+  Phone,
+  SlidersHorizontal,
 } from 'lucide-react';
 import {
   ScrapedProspect,
@@ -112,6 +116,164 @@ export const ScraperTab: React.FC<ScraperTabProps> = ({
   const [generatingPitch, setGeneratingPitch] = useState(false);
   const [copied, setCopied] = useState(false);
   const [importedIds, setImportedIds] = useState<Set<string>>(new Set());
+
+  // Buscador interno y filtros avanzados sobre los leads levantados
+  const [internalSearch, setInternalSearch] = useState('');
+  const [filterWeb, setFilterWeb] = useState<'all' | 'without_web' | 'ig_only' | 'with_web'>('all');
+  const [filterCrm, setFilterCrm] = useState<'all' | 'pending' | 'in_crm'>('all');
+  const [filterSolution, setFilterSolution] = useState<string>('all');
+  const [filterHotLeads, setFilterHotLeads] = useState(false);
+  const [filterHighRating, setFilterHighRating] = useState(false);
+  const [filterHasPhone, setFilterHasPhone] = useState(false);
+  const [sortBy, setSortBy] = useState<'default' | 'reviews_desc' | 'rating_desc' | 'name_asc' | 'budget_desc'>('default');
+
+  // Conteos dinámicos para badges / pastillas
+  const counts = useMemo(() => {
+    let withoutWeb = 0;
+    let igOnly = 0;
+    let withWeb = 0;
+    let inCrm = 0;
+    let pendingCrm = 0;
+    let hotLeads = 0;
+    let hasPhone = 0;
+
+    prospects.forEach((p) => {
+      const isIgAsWeb = Boolean(p.website && /instagram\.com/i.test(p.website));
+      const hasRealWeb = Boolean(p.digitalHealth?.hasWebsite && !isIgAsWeb);
+      const isWithoutWeb = !p.digitalHealth?.hasWebsite && !isIgAsWeb;
+
+      if (isWithoutWeb) withoutWeb++;
+      if (isIgAsWeb) igOnly++;
+      if (hasRealWeb) withWeb++;
+
+      if (importedIds.has(p.id)) {
+        inCrm++;
+      } else {
+        pendingCrm++;
+      }
+
+      if ((isWithoutWeb || isIgAsWeb) && (p.reviewCount || 0) >= 50) {
+        hotLeads++;
+      }
+
+      if (p.phone && p.phone.trim().length > 0) {
+        hasPhone++;
+      }
+    });
+
+    return {
+      total: prospects.length,
+      withoutWeb,
+      igOnly,
+      withWeb,
+      inCrm,
+      pendingCrm,
+      hotLeads,
+      hasPhone,
+    };
+  }, [prospects, importedIds]);
+
+  // Colección filtrada y ordenada en tiempo real
+  const filteredProspects = useMemo(() => {
+    return prospects
+      .filter((p) => {
+        // 1. Omnibox search (nombre, rubro, calle, localidad, teléfono, diagnóstico, solución)
+        if (internalSearch.trim()) {
+          const q = internalSearch.toLowerCase().trim();
+          const matchName = p.name?.toLowerCase().includes(q);
+          const matchAddress = p.address?.toLowerCase().includes(q);
+          const matchCity = p.city?.toLowerCase().includes(q);
+          const matchCategory = p.category?.toLowerCase().includes(q);
+          const matchPhone = p.phone?.toLowerCase().includes(q);
+          const matchDiagnosis = p.digitalHealth?.diagnosis?.toLowerCase().includes(q);
+          const matchSolution = p.digitalHealth?.suggestedSolution?.toLowerCase().includes(q);
+          if (!matchName && !matchAddress && !matchCity && !matchCategory && !matchPhone && !matchDiagnosis && !matchSolution) {
+            return false;
+          }
+        }
+
+        const isIgAsWeb = Boolean(p.website && /instagram\.com/i.test(p.website));
+        const hasRealWeb = Boolean(p.digitalHealth?.hasWebsite && !isIgAsWeb);
+        const isWithoutWeb = !p.digitalHealth?.hasWebsite && !isIgAsWeb;
+
+        // 2. Hot leads filter (+50 reseñas y sin web propia o solo IG)
+        if (filterHotLeads) {
+          if (!((isWithoutWeb || isIgAsWeb) && (p.reviewCount || 0) >= 50)) {
+            return false;
+          }
+        }
+
+        // 3. Web presence filter
+        if (filterWeb === 'without_web' && !isWithoutWeb) return false;
+        if (filterWeb === 'ig_only' && !isIgAsWeb) return false;
+        if (filterWeb === 'with_web' && !hasRealWeb) return false;
+
+        // 4. CRM pipeline filter
+        const isImported = importedIds.has(p.id);
+        if (filterCrm === 'pending' && isImported) return false;
+        if (filterCrm === 'in_crm' && !isImported) return false;
+
+        // 5. Suggested Solution filter
+        if (filterSolution !== 'all' && p.digitalHealth?.suggestedSolution !== filterSolution) {
+          return false;
+        }
+
+        // 6. Rating filter
+        if (filterHighRating && (p.rating || 0) < 4.5) return false;
+
+        // 7. Phone filter
+        if (filterHasPhone && (!p.phone || p.phone.trim().length === 0)) return false;
+
+        return true;
+      })
+      .sort((a, b) => {
+        if (sortBy === 'reviews_desc') {
+          return (b.reviewCount || 0) - (a.reviewCount || 0);
+        }
+        if (sortBy === 'rating_desc') {
+          return (b.rating || 0) - (a.rating || 0);
+        }
+        if (sortBy === 'name_asc') {
+          return a.name.localeCompare(b.name);
+        }
+        if (sortBy === 'budget_desc') {
+          return (b.digitalHealth?.estimatedBudget || 0) - (a.digitalHealth?.estimatedBudget || 0);
+        }
+        return 0;
+      });
+  }, [
+    prospects,
+    internalSearch,
+    filterWeb,
+    filterCrm,
+    filterSolution,
+    filterHotLeads,
+    filterHighRating,
+    filterHasPhone,
+    sortBy,
+    importedIds,
+  ]);
+
+  const hasActiveInternalFilters =
+    internalSearch.trim() !== '' ||
+    filterWeb !== 'all' ||
+    filterCrm !== 'all' ||
+    filterSolution !== 'all' ||
+    filterHotLeads ||
+    filterHighRating ||
+    filterHasPhone ||
+    sortBy !== 'default';
+
+  const resetInternalFilters = () => {
+    setInternalSearch('');
+    setFilterWeb('all');
+    setFilterCrm('all');
+    setFilterSolution('all');
+    setFilterHotLeads(false);
+    setFilterHighRating(false);
+    setFilterHasPhone(false);
+    setSortBy('default');
+  };
 
   const checkStatus = async () => {
     try {
@@ -649,7 +811,7 @@ export const ScraperTab: React.FC<ScraperTabProps> = ({
             apiKey={customMapsKey}
             center={geoCenter}
             radiusMeters={radiusMeters}
-            prospects={prospects}
+            prospects={filteredProspects}
             selectedProspect={selectedProspect}
             importedIds={importedIds}
             onCenterChange={(newCenter, addressName) => {
@@ -684,8 +846,255 @@ export const ScraperTab: React.FC<ScraperTabProps> = ({
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {prospects.map((p) => {
+          <div className="space-y-4">
+            {/* BARRA DE BÚSQUEDA INTERNA Y CONTROL DE FILTROS */}
+            <div className="p-4 rounded-2xl bg-[#0e0e12] border border-white/10 shadow-2xl backdrop-blur-xl space-y-3.5">
+              {/* Fila 1: Omnibox de Búsqueda + Selector de Orden + Exportar Filtrados */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                {/* Omnibox Input */}
+                <div className="relative flex-1">
+                  <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-purple-400" />
+                  <input
+                    type="text"
+                    value={internalSearch}
+                    onChange={(e) => setInternalSearch(e.target.value)}
+                    placeholder={`Buscar en los ${prospects.length} leads por nombre, rubro, calle, teléfono o diagnóstico...`}
+                    className="w-full pl-10 pr-9 py-2 rounded-xl bg-white/5 border border-white/10 text-white placeholder-zinc-500 text-xs focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/30 transition-all"
+                  />
+                  {internalSearch && (
+                    <button
+                      onClick={() => setInternalSearch('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                      title="Limpiar búsqueda"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+
+                {/* Ordenar Por Dropdown */}
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-zinc-300">
+                    <ArrowUpDown size={14} className="text-purple-400 shrink-0" />
+                    <span className="text-[11px] text-zinc-500 hidden md:inline">Ordenar:</span>
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as any)}
+                      className="bg-transparent text-xs text-white focus:outline-none cursor-pointer pr-1"
+                    >
+                      <option value="default" className="bg-[#121218] text-white">Por Defecto</option>
+                      <option value="reviews_desc" className="bg-[#121218] text-white">Más Reseñas (Tracción)</option>
+                      <option value="rating_desc" className="bg-[#121218] text-white">Mejor Rating (★)</option>
+                      <option value="name_asc" className="bg-[#121218] text-white">Nombre (A - Z)</option>
+                      <option value="budget_desc" className="bg-[#121218] text-white">Mayor Presupuesto</option>
+                    </select>
+                  </div>
+
+                  {/* Exportar Filtrados Button */}
+                  {filteredProspects.length > 0 && filteredProspects.length !== prospects.length && (
+                    <button
+                      onClick={() => exportProspectsToCSV(filteredProspects, `${searchKeyword}_filtrados`)}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-medium transition-all whitespace-nowrap cursor-pointer"
+                      title="Exportar únicamente los prospectos que cumplen el filtro"
+                    >
+                      <Download size={13} className="text-emerald-400" />
+                      <span>Exportar ({filteredProspects.length})</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Fila 2: Chips / Pastillas de Filtrado Rápido */}
+              <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-white/5">
+                {/* Hot Leads Button */}
+                <button
+                  onClick={() => setFilterHotLeads(!filterHotLeads)}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    filterHotLeads
+                      ? 'bg-amber-500/20 border border-amber-500 text-amber-300 shadow-lg shadow-amber-500/10'
+                      : 'bg-white/5 border border-white/10 text-zinc-400 hover:text-amber-400 hover:bg-white/10'
+                  }`}
+                  title="Negocios con más de 50 reseñas sin web propia"
+                >
+                  <Flame size={13} className={filterHotLeads ? 'text-amber-400 fill-amber-400' : 'text-zinc-500'} />
+                  <span>🔥 Hot Leads</span>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-black/40 font-mono">
+                    {counts.hotLeads}
+                  </span>
+                </button>
+
+                <div className="h-4 w-[1px] bg-white/10 hidden sm:block" />
+
+                {/* Filtro Presencia Web */}
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setFilterWeb('all')}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                      filterWeb === 'all'
+                        ? 'bg-purple-600/30 border border-purple-500 text-purple-200'
+                        : 'bg-white/5 border border-white/5 text-zinc-400 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    <span>Todos ({counts.total})</span>
+                  </button>
+
+                  <button
+                    onClick={() => setFilterWeb(filterWeb === 'without_web' ? 'all' : 'without_web')}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                      filterWeb === 'without_web'
+                        ? 'bg-rose-500/20 border border-rose-500 text-rose-300'
+                        : 'bg-white/5 border border-white/5 text-zinc-400 hover:text-rose-400 hover:bg-white/10'
+                    }`}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+                    <span>Sin Web ({counts.withoutWeb})</span>
+                  </button>
+
+                  <button
+                    onClick={() => setFilterWeb(filterWeb === 'ig_only' ? 'all' : 'ig_only')}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                      filterWeb === 'ig_only'
+                        ? 'bg-pink-500/20 border border-pink-500 text-pink-300'
+                        : 'bg-white/5 border border-white/5 text-zinc-400 hover:text-pink-400 hover:bg-white/10'
+                    }`}
+                  >
+                    <Instagram size={12} className="text-pink-400" />
+                    <span>Solo IG ({counts.igOnly})</span>
+                  </button>
+
+                  <button
+                    onClick={() => setFilterWeb(filterWeb === 'with_web' ? 'all' : 'with_web')}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                      filterWeb === 'with_web'
+                        ? 'bg-emerald-500/20 border border-emerald-500 text-emerald-300'
+                        : 'bg-white/5 border border-white/5 text-zinc-400 hover:text-emerald-400 hover:bg-white/10'
+                    }`}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                    <span>Con Web ({counts.withWeb})</span>
+                  </button>
+                </div>
+
+                <div className="h-4 w-[1px] bg-white/10 hidden sm:block" />
+
+                {/* Filtro Pipeline CRM */}
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setFilterCrm(filterCrm === 'pending' ? 'all' : 'pending')}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                      filterCrm === 'pending'
+                        ? 'bg-indigo-500/20 border border-indigo-500 text-indigo-200'
+                        : 'bg-white/5 border border-white/5 text-zinc-400 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    <span>⚪ Pendientes ({counts.pendingCrm})</span>
+                  </button>
+                  <button
+                    onClick={() => setFilterCrm(filterCrm === 'in_crm' ? 'all' : 'in_crm')}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                      filterCrm === 'in_crm'
+                        ? 'bg-purple-500/20 border border-purple-500 text-purple-200'
+                        : 'bg-white/5 border border-white/5 text-zinc-400 hover:text-purple-300 hover:bg-white/10'
+                    }`}
+                  >
+                    <span>🟣 En CRM ({counts.inCrm})</span>
+                  </button>
+                </div>
+
+                <div className="h-4 w-[1px] bg-white/10 hidden sm:block" />
+
+                {/* Filtro Teléfono */}
+                <button
+                  onClick={() => setFilterHasPhone(!filterHasPhone)}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                    filterHasPhone
+                      ? 'bg-emerald-500/20 border border-emerald-500 text-emerald-300'
+                      : 'bg-white/5 border border-white/5 text-zinc-400 hover:text-white hover:bg-white/10'
+                  }`}
+                  title="Prospectos con teléfono/WhatsApp disponible"
+                >
+                  <Phone size={12} className={filterHasPhone ? 'text-emerald-400' : 'text-zinc-500'} />
+                  <span>Con Teléfono ({counts.hasPhone})</span>
+                </button>
+
+                {/* Filtro Rating */}
+                <button
+                  onClick={() => setFilterHighRating(!filterHighRating)}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                    filterHighRating
+                      ? 'bg-amber-500/20 border border-amber-500 text-amber-300'
+                      : 'bg-white/5 border border-white/5 text-zinc-400 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  <Star size={12} className={filterHighRating ? 'fill-amber-400 text-amber-400' : 'text-zinc-500'} />
+                  <span>★ 4.5+</span>
+                </button>
+
+                {/* Dropdown Solución Sugerida */}
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-xs">
+                  <span className="text-[11px] text-zinc-500">Solución:</span>
+                  <select
+                    value={filterSolution}
+                    onChange={(e) => setFilterSolution(e.target.value)}
+                    className="bg-transparent text-xs text-zinc-300 focus:outline-none cursor-pointer"
+                  >
+                    <option value="all" className="bg-[#121218] text-white">Todas</option>
+                    <option value="Desarrollo a Medida" className="bg-[#121218] text-white">Desarrollo a Medida</option>
+                    <option value="Landing & Growth" className="bg-[#121218] text-white">Landing & Growth</option>
+                    <option value="Stacked SaaS" className="bg-[#121218] text-white">Stacked SaaS</option>
+                    <option value="Dental IA" className="bg-[#121218] text-white">Dental IA</option>
+                    <option value="TrazApp" className="bg-[#121218] text-white">TrazApp</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Fila 3: Barra de Estado / Reset */}
+              <div className="flex items-center justify-between pt-1 text-[11px] text-zinc-400 border-t border-white/5">
+                <div className="flex items-center gap-2">
+                  <span>
+                    Mostrando <strong className="text-white font-mono">{filteredProspects.length}</strong> de{' '}
+                    <span className="font-mono">{prospects.length}</span> prospectos encontrados
+                  </span>
+                  {hasActiveInternalFilters && (
+                    <span className="text-purple-400 font-medium">
+                      (Filtros activos)
+                    </span>
+                  )}
+                </div>
+
+                {hasActiveInternalFilters && (
+                  <button
+                    onClick={resetInternalFilters}
+                    className="flex items-center gap-1 text-purple-400 hover:text-purple-300 transition-colors font-medium cursor-pointer"
+                  >
+                    <RotateCcw size={11} />
+                    <span>Restablecer Filtros</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Empty State de Filtros o Grilla de Resultados */}
+            {filteredProspects.length === 0 ? (
+              <div className="p-12 text-center rounded-2xl border border-white/5 bg-[#0e0e12]/60 backdrop-blur-md space-y-3">
+                <Search size={32} className="mx-auto text-purple-400/60" />
+                <p className="text-sm font-medium text-zinc-300">
+                  No se encontraron prospectos que coincidan con la búsqueda o filtros aplicados
+                </p>
+                <p className="text-xs text-zinc-500 max-w-sm mx-auto">
+                  Prueba modificando las palabras clave o restablece los filtros para ver los {prospects.length} prospectos levantados.
+                </p>
+                <button
+                  onClick={resetInternalFilters}
+                  className="px-4 py-2 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 text-xs font-semibold transition-all inline-flex items-center gap-1.5 cursor-pointer mt-2"
+                >
+                  <RotateCcw size={13} />
+                  <span>Restablecer Filtros ({prospects.length} disponibles)</span>
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {filteredProspects.map((p) => {
               const isImported = importedIds.has(p.id);
               const cleanPhone = getCleanPhone(p.phone);
               const igUrl = p.socialLinks?.instagram || (p.website && /instagram\.com/i.test(p.website) ? p.website : null);
@@ -892,6 +1301,8 @@ export const ScraperTab: React.FC<ScraperTabProps> = ({
                 </motion.div>
               );
             })}
+              </div>
+            )}
           </div>
         )}
       </div>
