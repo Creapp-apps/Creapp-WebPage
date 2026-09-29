@@ -29,6 +29,7 @@ import ContractsTab from '@/components/admin/ContractsTab';
 import ProjectsTab from '@/components/admin/ProjectsTab';
 import SubscriptionsTab from '@/components/admin/SubscriptionsTab';
 import FinancesTab from '@/components/admin/FinancesTab';
+import { useAuth } from '@/context/AuthContext';
 
 const statusColors: Record<string, string> = {
   draft: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
@@ -42,12 +43,16 @@ const statusLabels: Record<string, string> = {
   signed: 'Firmada',
 };
 
+const ADMIN_ONLY_TABS: AdminTab[] = ['subscriptions', 'finances', 'contracts', 'projects'];
+
 const AdminPanel: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { isAdmin } = useAuth();
 
   // Tab activo sincronizado con query params (?tab=...)
-  const initialTab = (searchParams.get('tab') as AdminTab) || 'dashboard';
+  const rawTab = (searchParams.get('tab') as AdminTab) || 'dashboard';
+  const initialTab = (!isAdmin && ADMIN_ONLY_TABS.includes(rawTab)) ? 'pipeline' : rawTab;
   const [activeTab, setActiveTab] = useState<AdminTab>(initialTab);
 
   const [proposals, setProposals] = useState<Proposal[]>([]);
@@ -75,7 +80,23 @@ const AdminPanel: React.FC = () => {
     setLeads(getLeads());
   }, []);
 
+  // Interceptar si un vendedor intenta acceder a un tab restringido por URL
+  useEffect(() => {
+    const currentTabFromUrl = (searchParams.get('tab') as AdminTab) || 'dashboard';
+    if (!isAdmin && ADMIN_ONLY_TABS.includes(currentTabFromUrl)) {
+      setActiveTab('pipeline');
+      setSearchParams({ tab: 'pipeline' });
+    } else if (currentTabFromUrl !== activeTab) {
+      setActiveTab(currentTabFromUrl);
+    }
+  }, [isAdmin, searchParams]);
+
   const handleTabChange = (tab: AdminTab) => {
+    if (!isAdmin && ADMIN_ONLY_TABS.includes(tab)) {
+      setActiveTab('pipeline');
+      setSearchParams({ tab: 'pipeline' });
+      return;
+    }
     setActiveTab(tab);
     setSearchParams({ tab });
   };
@@ -375,17 +396,17 @@ const AdminPanel: React.FC = () => {
         </div>
       )}
 
-      {/* 5. CONTRACTS VIEW */}
-      {activeTab === 'contracts' && <ContractsTab leads={leads} />}
+      {/* 5. CONTRACTS VIEW (SOLO ADMIN) */}
+      {activeTab === 'contracts' && isAdmin && <ContractsTab leads={leads} />}
 
-      {/* 6. CREDENCIALES & PROYECTOS (VAULT) VIEW */}
-      {activeTab === 'projects' && <ProjectsTab />}
+      {/* 6. CREDENCIALES & PROYECTOS (VAULT) VIEW (SOLO ADMIN) */}
+      {activeTab === 'projects' && isAdmin && <ProjectsTab />}
 
-      {/* 7. SUSCRIPCIONES & ABONOS DE CLIENTES */}
-      {activeTab === 'subscriptions' && <SubscriptionsTab leads={leads} />}
+      {/* 7. SUSCRIPCIONES & ABONOS DE CLIENTES (SOLO ADMIN) */}
+      {activeTab === 'subscriptions' && isAdmin && <SubscriptionsTab leads={leads} />}
 
-      {/* 8. FINANZAS & DÉBITOS OPERATIVOS */}
-      {activeTab === 'finances' && <FinancesTab />}
+      {/* 8. FINANZAS & DÉBITOS OPERATIVOS (SOLO ADMIN) */}
+      {activeTab === 'finances' && isAdmin && <FinancesTab />}
 
       {/* MODAL: SELECCIÓN DE PROPUESTA COMERCIAL */}
       <AnimatePresence>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -12,6 +12,7 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Plus,
   ShieldCheck,
   Search,
@@ -21,9 +22,16 @@ import {
   X,
   Repeat,
   WalletCards,
+  Users,
+  Shield,
+  Briefcase,
+  User,
+  Settings,
 } from 'lucide-react';
 import creappLogoOfficial from '@/assets/CREAPP LOGO VECTOR.png';
-import { supabase } from '@/lib/supabaseClient';
+import { useAuth } from '@/context/AuthContext';
+import TeamManagementModal from './TeamManagementModal';
+import UserProfileModal from './UserProfileModal';
 
 export type AdminTab = 
   | 'dashboard'
@@ -67,13 +75,30 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [teamModalOpen, setTeamModalOpen] = useState(false);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const { user, profile, role, isAdmin, signOut } = useAuth();
+
+  // Cerrar dropdown si se hace clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setUserDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await signOut();
     navigate('/admin/login');
   };
 
-  const navGroups: NavGroup[] = [
+  const rawNavGroups: NavGroup[] = [
     {
       category: 'Visión General',
       items: [
@@ -152,12 +177,21 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
     },
   ];
 
+  // Si el usuario es vendedor, ocultamos las categorías de Finanzas, Contratos y Credenciales
+  const navGroups: NavGroup[] = rawNavGroups.filter((g) => {
+    if (isAdmin) return true;
+    return g.category === 'Visión General' || g.category === 'Ventas & Crecimiento';
+  });
+
   // Helper para buscar el título actual del tab
-  const allNavItems = navGroups.flatMap((g) => g.items);
+  const allNavItems = rawNavGroups.flatMap((g) => g.items);
   const currentTabLabel =
     currentTab === 'proposals'
       ? 'Creador de Propuestas de Desarrollo'
       : allNavItems.find((n) => n.id === currentTab)?.label || 'CreApp OS';
+
+  const userDisplayName = profile?.full_name || user?.email?.split('@')[0] || 'Usuario';
+  const userInitials = (profile?.full_name || user?.email || 'U').slice(0, 2).toUpperCase();
 
   return (
     <div className="min-h-screen bg-[#070709] text-zinc-100 flex flex-col font-sans selection:bg-purple-500 selection:text-white">
@@ -168,14 +202,14 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
       </div>
 
       <div className="relative z-10 flex-1 flex overflow-hidden">
-        {/* DESKTOP SIDEBAR */}
+        {/* DESKTOP SIDEBAR (Pinned, 100vh, never cut off) */}
         <aside
-          className={`hidden md:flex flex-col border-r border-white/5 bg-[#0b0b0e]/80 backdrop-blur-xl transition-all duration-300 z-30 ${
+          className={`hidden md:flex flex-col border-r border-white/5 bg-[#0b0b0e]/95 backdrop-blur-xl transition-all duration-300 z-30 h-screen sticky top-0 shrink-0 ${
             collapsed ? 'w-20' : 'w-64'
           }`}
         >
           {/* Logo & Brand */}
-          <div className="h-16 px-4 flex items-center justify-between border-b border-white/5">
+          <div className="h-16 px-4 flex items-center justify-between border-b border-white/5 shrink-0">
             <div
               onClick={() => onTabChange('dashboard')}
               className="flex items-center gap-3 cursor-pointer group overflow-hidden"
@@ -210,7 +244,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
           </div>
 
           {/* Quick Action Button */}
-          <div className="p-3">
+          <div className="p-3 shrink-0">
             <button
               onClick={onCreateProposalClick}
               className={`w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl font-medium text-xs text-white bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 hover:opacity-90 shadow-lg shadow-purple-600/20 transition-all active:scale-[0.98] ${
@@ -223,7 +257,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
             </button>
           </div>
 
-          {/* Categorized Navigation Groups */}
+          {/* Categorized Navigation Groups (Scrollable) */}
           <nav className="flex-1 px-2.5 py-2 space-y-4 overflow-y-auto">
             {navGroups.map((group, groupIdx) => (
               <div key={group.category} className="space-y-1">
@@ -285,26 +319,88 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
             ))}
           </nav>
 
-          {/* User profile & System Status */}
-          <div className="p-3 border-t border-white/5 flex flex-col gap-2">
-            {!collapsed && (
-              <div className="flex items-center justify-between px-2 py-1.5 bg-black/40 rounded-lg border border-white/5 text-[11px]">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-zinc-400 font-mono">Cloud OS Ready</span>
+          {/* User profile & System Status (Pinned at bottom, always visible) */}
+          <div className="p-3 border-t border-white/5 bg-[#08080b] flex flex-col gap-2 shrink-0">
+            {!collapsed ? (
+              <div className="flex flex-col gap-2 p-2.5 bg-white/[0.02] hover:bg-white/[0.04] rounded-xl border border-white/5 text-[11px] transition-colors">
+                <div
+                  onClick={() => setProfileModalOpen(true)}
+                  className="flex items-center justify-between cursor-pointer group"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-purple-600 to-pink-500 flex items-center justify-center text-white text-[10px] font-black shrink-0 shadow-sm">
+                      {userInitials}
+                    </div>
+                    <div className="min-w-0">
+                      <span className="text-white font-semibold truncate block group-hover:text-purple-300 transition-colors">
+                        {userDisplayName}
+                      </span>
+                      <span className="text-[10px] text-zinc-500 truncate font-mono block">
+                        {user?.email}
+                      </span>
+                    </div>
+                  </div>
+                  <span
+                    className={`text-[9px] font-mono px-1.5 py-0.5 rounded border uppercase shrink-0 ${
+                      isAdmin
+                        ? 'bg-purple-500/20 text-purple-300 border-purple-500/30'
+                        : 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+                    }`}
+                  >
+                    {isAdmin ? 'Master' : 'Ventas'}
+                  </span>
                 </div>
-                <span className="text-[10px] text-zinc-500 font-mono">v2.4</span>
+
+                <div className="flex items-center gap-1.5 pt-1 border-t border-white/5">
+                  <button
+                    onClick={() => setProfileModalOpen(true)}
+                    className="flex-1 flex items-center justify-center gap-1 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white text-[10px] font-medium transition-colors"
+                  >
+                    <User size={11} />
+                    <span>Mi Perfil</span>
+                  </button>
+
+                  {isAdmin && (
+                    <button
+                      onClick={() => setTeamModalOpen(true)}
+                      className="flex-1 flex items-center justify-center gap-1 py-1 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 text-[10px] font-medium transition-colors border border-purple-500/20"
+                    >
+                      <Users size={11} />
+                      <span>Equipo</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-2">
+                <button
+                  onClick={() => setProfileModalOpen(true)}
+                  className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-600 to-pink-500 flex items-center justify-center text-white text-xs font-bold shadow-sm"
+                  title={`Mi Perfil (${userDisplayName})`}
+                >
+                  {userInitials}
+                </button>
+                {isAdmin && (
+                  <button
+                    onClick={() => setTeamModalOpen(true)}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg text-zinc-400 hover:text-purple-300 hover:bg-purple-500/10 transition-colors"
+                    title="Gestionar Equipo"
+                  >
+                    <Users size={16} />
+                  </button>
+                )}
               </div>
             )}
 
+            {/* Logout Button */}
             <button
               onClick={handleLogout}
-              className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-zinc-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors ${
+              className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-rose-400/90 hover:text-rose-300 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all ${
                 collapsed ? 'justify-center px-0' : ''
               }`}
               title="Cerrar sesión"
             >
-              <LogOut size={16} className="shrink-0" />
+              <LogOut size={15} className="shrink-0 text-rose-400" />
               {!collapsed && <span>Cerrar Sesión</span>}
             </button>
           </div>
@@ -313,7 +409,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
         {/* MAIN VIEWPORT */}
         <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
           {/* TOP BAR */}
-          <header className="h-16 px-4 sm:px-6 border-b border-white/5 bg-[#0b0b0e]/60 backdrop-blur-md flex items-center justify-between sticky top-0 z-20">
+          <header className="h-16 px-4 sm:px-6 border-b border-white/5 bg-[#0b0b0e]/75 backdrop-blur-md flex items-center justify-between sticky top-0 z-20">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setMobileMenuOpen(true)}
@@ -328,28 +424,44 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                 <span className="text-purple-300 font-semibold bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20">
                   {currentTabLabel}
                 </span>
+                {!isAdmin && (
+                  <span className="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded font-mono">
+                    Acceso Ventas
+                  </span>
+                )}
               </div>
             </div>
 
-            {/* Quick Actions in Header */}
+            {/* Quick Actions & User Menu in Header */}
             <div className="flex items-center gap-2.5">
               <a
                 href="/"
                 target="_blank"
                 rel="noreferrer"
-                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-white bg-white/5 hover:bg-white/10 border border-white/5 transition-colors"
+                className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-white bg-white/5 hover:bg-white/10 border border-white/5 transition-colors"
               >
                 <ExternalLink size={14} />
-                <span>Ver Web CreApp</span>
+                <span>Web CreApp</span>
               </a>
+
+              {isAdmin && (
+                <button
+                  onClick={() => setTeamModalOpen(true)}
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/5 transition-all"
+                  title="Gestionar Equipo & Vendedores"
+                >
+                  <Users size={14} className="text-purple-400" />
+                  <span>Equipo</span>
+                </button>
+              )}
 
               {onCreateLeadClick && (
                 <button
                   onClick={onCreateLeadClick}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-purple-300 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 transition-all"
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-purple-300 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 transition-all"
                 >
                   <Sparkles size={14} />
-                  <span className="hidden sm:inline">+ Prospecto</span>
+                  <span>+ Prospecto</span>
                 </button>
               )}
 
@@ -360,11 +472,110 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                 <Plus size={14} />
                 <span>+ Propuesta</span>
               </button>
+
+              {/* USER PROFILE DROPDOWN MENU */}
+              <div className="relative pl-1" ref={dropdownRef}>
+                <button
+                  onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                  className="flex items-center gap-2 p-1 sm:px-2.5 sm:py-1 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all text-xs font-medium text-white group"
+                >
+                  <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-purple-600 via-indigo-600 to-pink-500 flex items-center justify-center text-white text-[11px] font-black shadow-inner">
+                    {userInitials}
+                  </div>
+                  <div className="hidden md:flex flex-col text-left">
+                    <span className="text-[11px] font-bold text-white leading-tight truncate max-w-[110px]">
+                      {userDisplayName}
+                    </span>
+                    <span className="text-[9px] font-mono text-purple-300 leading-tight">
+                      {isAdmin ? 'Master Admin' : 'Ventas'}
+                    </span>
+                  </div>
+                  <ChevronDown
+                    size={14}
+                    className={`text-zinc-400 transition-transform ${
+                      userDropdownOpen ? 'rotate-180 text-white' : ''
+                    }`}
+                  />
+                </button>
+
+                <AnimatePresence>
+                  {userDropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute right-0 mt-2 w-64 bg-[#0d0d12] border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50 p-2 flex flex-col gap-1 backdrop-blur-2xl"
+                    >
+                      {/* Dropdown Header */}
+                      <div className="p-3 bg-white/[0.02] rounded-xl border border-white/5 flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-600 to-pink-500 flex items-center justify-center text-white text-xs font-black shrink-0">
+                          {userInitials}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-white truncate">{userDisplayName}</p>
+                          <p className="text-[10px] text-zinc-500 font-mono truncate">{user?.email}</p>
+                          <span
+                            className={`inline-block text-[9px] font-mono px-1.5 py-0.2 rounded border uppercase mt-1 ${
+                              isAdmin
+                                ? 'bg-purple-500/20 text-purple-300 border-purple-500/30'
+                                : 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+                            }`}
+                          >
+                            {isAdmin ? 'Master Admin' : 'Vendedor Comercial'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Dropdown Actions */}
+                      <div className="py-1 space-y-0.5">
+                        <button
+                          onClick={() => {
+                            setUserDropdownOpen(false);
+                            setProfileModalOpen(true);
+                          }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-zinc-300 hover:text-white hover:bg-white/5 transition-colors text-left"
+                        >
+                          <User size={15} className="text-purple-400" />
+                          <span>Mi Perfil & Contraseña</span>
+                        </button>
+
+                        {isAdmin && (
+                          <button
+                            onClick={() => {
+                              setUserDropdownOpen(false);
+                              setTeamModalOpen(true);
+                            }}
+                            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-zinc-300 hover:text-white hover:bg-white/5 transition-colors text-left"
+                          >
+                            <Users size={15} className="text-purple-400" />
+                            <span>Gestionar Vendedores</span>
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="h-[1px] bg-white/5 my-0.5" />
+
+                      {/* Logout Action */}
+                      <button
+                        onClick={() => {
+                          setUserDropdownOpen(false);
+                          handleLogout();
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-colors text-left"
+                      >
+                        <LogOut size={15} />
+                        <span>Cerrar Sesión</span>
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
           </header>
 
-          {/* PAGE CONTENT */}
-          <main className={`flex-1 p-4 sm:p-6 lg:p-8 w-full ${currentTab === 'pipeline' ? 'max-w-[1920px] mx-auto' : 'max-w-7xl mx-auto'}`}>
+          {/* MAIN CONTENT AREA */}
+          <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
             {children}
           </main>
         </div>
@@ -385,7 +596,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
               initial={{ x: -280 }}
               animate={{ x: 0 }}
               exit={{ x: -280 }}
-              className="relative w-72 bg-[#0d0d11] border-r border-white/10 flex flex-col p-4 z-10"
+              className="relative w-72 bg-[#0d0d11] border-r border-white/10 flex flex-col p-4 z-10 h-full"
             >
               <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-4">
                 <div className="flex items-center gap-2">
@@ -398,6 +609,26 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                 >
                   <X size={18} />
                 </button>
+              </div>
+
+              {/* Mobile User Card */}
+              <div className="p-3 mb-3 bg-white/5 rounded-2xl border border-white/5 flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-600 to-pink-500 flex items-center justify-center text-white text-xs font-black shrink-0">
+                  {userInitials}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-white truncate">{userDisplayName}</p>
+                  <p className="text-[10px] text-zinc-500 font-mono truncate">{user?.email}</p>
+                  <span
+                    className={`inline-block text-[9px] font-mono px-1.5 py-0.2 rounded border uppercase mt-0.5 ${
+                      isAdmin
+                        ? 'bg-purple-500/20 text-purple-300 border-purple-500/30'
+                        : 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+                    }`}
+                  >
+                    {isAdmin ? 'Master Admin' : 'Ventas'}
+                  </span>
+                </div>
               </div>
 
               <nav className="flex-1 space-y-4 overflow-y-auto">
@@ -438,7 +669,31 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                 ))}
               </nav>
 
-              <div className="pt-4 border-t border-white/10">
+              <div className="pt-4 border-t border-white/10 flex flex-col gap-2">
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setProfileModalOpen(true);
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-zinc-300 hover:text-white bg-white/5"
+                >
+                  <User size={16} />
+                  <span>Mi Perfil</span>
+                </button>
+
+                {isAdmin && (
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      setTeamModalOpen(true);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-purple-300 bg-purple-500/10 border border-purple-500/20"
+                  >
+                    <Users size={16} />
+                    <span>Gestionar Vendedores</span>
+                  </button>
+                )}
+
                 <button
                   onClick={handleLogout}
                   className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-rose-400 hover:bg-rose-500/10"
@@ -451,6 +706,20 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
           </div>
         )}
       </AnimatePresence>
+
+      {/* MODAL MI PERFIL */}
+      <UserProfileModal
+        isOpen={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+      />
+
+      {/* MODAL GESTIÓN DE EQUIPO */}
+      {isAdmin && (
+        <TeamManagementModal
+          isOpen={teamModalOpen}
+          onClose={() => setTeamModalOpen(false)}
+        />
+      )}
     </div>
   );
 };

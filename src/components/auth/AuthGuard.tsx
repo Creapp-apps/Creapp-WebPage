@@ -1,28 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabaseClient';
+import { useAuth, UserRole } from '@/context/AuthContext';
 
 interface AuthGuardProps {
   children: React.ReactNode;
+  allowedRoles?: UserRole[];
 }
 
-const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
-  const [loading, setLoading] = useState(true);
-  const [authenticated, setAuthenticated] = useState(false);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setAuthenticated(!!session);
-      setLoading(false);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setAuthenticated(!!session);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+const AuthGuard: React.FC<AuthGuardProps> = ({ children, allowedRoles }) => {
+  const { user, role, loading } = useAuth();
 
   if (loading) {
     return (
@@ -32,8 +18,13 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
     );
   }
 
-  if (!authenticated) {
+  if (!user) {
     return <Navigate to="/admin/login" replace />;
+  }
+
+  // Si la ruta requiere un rol específico (ej: solo 'admin' en Control Center)
+  if (allowedRoles && !allowedRoles.includes(role)) {
+    return <Navigate to="/admin?tab=pipeline" replace />;
   }
 
   return <>{children}</>;
