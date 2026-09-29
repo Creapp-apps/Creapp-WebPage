@@ -52,20 +52,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchProfile = async (currentUser: User) => {
     try {
-      const { data, error } = await supabase
+      const queryPromise = supabase
         .from('user_profiles')
         .select('*')
         .eq('id', currentUser.id)
         .maybeSingle();
 
+      const timeoutPromise = new Promise<{ data: any; error: any }>((resolve) =>
+        setTimeout(() => resolve({ data: null, error: new Error('Timeout al consultar perfil') }), 2500)
+      );
+
+      const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
+
       if (error) {
-        console.warn('Error fetching profile from user_profiles:', error.message);
+        console.warn('Advertencia al consultar user_profiles:', error.message);
       }
 
       if (data) {
         setProfile(data as UserProfile);
       } else {
-        // Fallback inteligente si la tabla aún no se creó o el registro no existe
         const defaultRole: UserRole = isDefaultAdminEmail(currentUser.email) ? 'admin' : 'vendedor';
         setProfile({
           id: currentUser.id,
@@ -75,7 +80,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
       }
     } catch (err) {
-      console.error('Unexpected error loading user profile:', err);
+      console.warn('Error al cargar perfil:', err);
       const defaultRole: UserRole = isDefaultAdminEmail(currentUser.email) ? 'admin' : 'vendedor';
       setProfile({
         id: currentUser.id,
@@ -88,27 +93,58 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     let isMounted = true;
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!isMounted) return;
-      if (session?.user) {
-        setUser(session.user);
-        fetchProfile(session.user).finally(() => {
-          if (isMounted) setLoading(false);
-        });
-      } else {
-        setUser(null);
-        setProfile(null);
+    // Timeout de seguridad estricto: después de 3 segundos NUNCA dejar la app congelada en loading
+    const safetyTimer = setTimeout(() => {
+      if (isMounted && loading) {
+        console.warn('Safety timeout: desbloqueando loading de AuthGuard.');
         setLoading(false);
       }
-    });
+    }, 3000);
 
+    const initializeAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (!isMounted) return;
+
+        if (error) {
+          console.warn('Error en getSession:', error.message);
+        }
+
+        if (session?.user) {
+          setUser(session.user);
+          await fetchProfile(session.user);
+        } else {
+          setUser(null);
+          setProfile(null);
+        }
+      } catch (err) {
+        console.error('Error al inicializar sesión:', err);
+        if (isMounted) {
+          setUser(null);
+          setProfile(null);
+        }
+      } finally {
+        if (isMounted) {
+          clearTimeout(safetyTimer);
+          setLoading(false);
+        }
+      }
+    };
+
+    initializeAuth();
+
+    // Listener de cambios de auth: NUNCA hacer await síncrono que bloquee el mutex de Supabase
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!isMounted) return;
+
       if (session?.user) {
         setUser(session.user);
-        await fetchProfile(session.user);
+        // Ejecutar en background fuera del ciclo de eventos de auth
+        setTimeout(() => {
+          if (isMounted) fetchProfile(session.user);
+        }, 0);
       } else {
         setUser(null);
         setProfile(null);
@@ -118,6 +154,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     return () => {
       isMounted = false;
+      clearTimeout(safetyTimer);
       subscription.unsubscribe();
     };
   }, []);
@@ -129,23 +166,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setProfile(null);
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.warn('Error al cerrar sesión:', e);
+    } finally {
+      setUser(null);
+      setProfile(null);
+    }
   };
 
-  // Listar todos los usuarios del equipo (solo accesible si se tienen permisos)
+  // Listar todos los usuarios del equipo
   const listUsers = async (): Promise<UserProfile[]> => {
     try {
-      const { data, error } = await supabase
+      const listPromise = supabase
         .from('user_profiles')
         .select('*')
         .order('created_at', { ascending: false });
 
+      const timeoutPromise = new Promise<{ data: any; error: any }>((resolve) =>
+        setTimeout(() => resolve({ data: [], error: new Error('Timeout') }), 3000)
+      );
+
+      const { data, error } = await Promise.race([listPromise, timeoutPromise]);
+
       if (error) throw error;
       return (data || []) as UserProfile[];
     } catch (err) {
-      console.error('Error listing team users:', err);
+      console.warn('Error listing team users:', err);
       return [];
     }
   };
@@ -178,7 +226,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         },
       });
 
-      const { data, error } = await tempClient.auth.signUp({
+      const signUpPromise = tempClient.auth.signUp({
         email,
         password,
         options: {
@@ -189,33 +237,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         },
       });
 
+      const timeoutPromise = new Promise<any>((_, reject) =>
+        setTimeout(() => reject(new Error('Tiempo de espera agotado al conectar con Supabase')), 8000)
+      );
+
+      const { data, error } = await Promise.race([signUpPromise, timeoutPromise]);
+
       if (error) {
         return { success: false, error: error.message };
       }
 
-      // Si se creó el usuario en Auth, aseguramos que tenga registro en user_profiles
-      if (data.user) {
-        await supabase
-          .from('user_profiles')
-          .upsert({
-            id: data.user.id,
-            email: email.trim().toLowerCase(),
-            role: role,
-            full_name: fullName,
-            updated_at: new Date().toISOString(),
-          });
+      // Si se creó en Auth, intentar upsert de perfil de manera no bloqueante
+      if (data?.user) {
+        try {
+          await Promise.race([
+            supabase
+              .from('user_profiles')
+              .upsert({
+                id: data.user.id,
+                email: email.trim().toLowerCase(),
+                role: role,
+                full_name: fullName,
+                updated_at: new Date().toISOString(),
+              }),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000)),
+          ]);
+        } catch (e) {
+          console.warn('Aviso: el trigger de Postgres o upsert falló, pero el usuario se creó en Auth:', e);
+        }
 
-        // Envío de email de bienvenida vía Resend
+        // Envío de email de bienvenida vía Resend (no bloqueante con timeout de 5s)
         try {
           const { sendWelcomeEmail } = await import('@/lib/emailService');
-          await sendWelcomeEmail({
-            email: email.trim().toLowerCase(),
-            fullName,
-            password,
-            role,
-          });
+          await Promise.race([
+            sendWelcomeEmail({
+              email: email.trim().toLowerCase(),
+              fullName,
+              password,
+              role,
+            }),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000)),
+          ]);
         } catch (emailErr) {
-          console.warn('Error enviando email de bienvenida vía Resend:', emailErr);
+          console.warn('Aviso al enviar email vía Resend:', emailErr);
         }
       }
 
