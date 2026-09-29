@@ -15,11 +15,15 @@ import {
   Clock,
   ExternalLink,
   KeyRound,
+  Target,
+  Send,
+  Award,
 } from 'lucide-react';
 import type { Proposal } from '@/lib/proposalTypes';
 import { Lead, STAGE_CONFIG } from '@/lib/pipelineService';
 import { AdminTab } from './AdminLayout';
 import { getFinancialMetrics } from '@/lib/financeService';
+import { useAuth } from '@/context/AuthContext';
 
 interface DashboardTabProps {
   proposals: Proposal[];
@@ -34,21 +38,32 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
   onNavigateTab,
   onCreateProposal,
 }) => {
+  const { isAdmin } = useAuth();
+
   // Cálculos de métricas reales basadas en el estado actual
   const totalPipelineValue = leads.reduce((acc, lead) => acc + (lead.estimatedValue || 0), 0);
   const signedProposals = proposals.filter((p) => p.status === 'signed').length;
   const publishedProposals = proposals.filter((p) => p.status === 'published').length;
   const winRate = proposals.length > 0 ? Math.round((signedProposals / proposals.length) * 100) : 0;
   
-  // MRR recurrente de contratos de suscripción activos
-  const financeMetrics = getFinancialMetrics();
+  // MRR recurrente de contratos de suscripción activos (solo admin)
+  const financeMetrics = isAdmin ? getFinancialMetrics() : { totalMRR: 0, activeSubscriptionsCount: 0 };
   const activeSaaSMRR = financeMetrics.totalMRR;
 
   const qualifiedLeads = leads.filter((l) => l.stage === 'prospect' || l.stage === 'contacted').length;
   const inProductionLead = leads.find((l) => l.stage === 'in_production');
   const avgTicket = leads.length > 0 ? Math.round(totalPipelineValue / leads.length) : 0;
 
-  const kpis = [
+  // Métricas específicas de gestión comercial para Vendedores
+  const newProspectsCount = leads.filter((l) => l.stage === 'prospect').length;
+  const contactedCount = leads.filter((l) => l.stage === 'contacted').length;
+  const proposalsSentCount = leads.filter((l) => l.stage === 'proposal_sent').length;
+  const negotiationCount = leads.filter((l) => l.stage === 'negotiation').length;
+  const inPlayCount = proposalsSentCount + negotiationCount;
+  const wonLeadsCount = leads.filter((l) => l.stage === 'in_production' || l.stage === 'delivered').length;
+
+  // KPIs de Master Admin (Visión Financiera Global y Operaciones)
+  const adminKpis = [
     {
       title: 'Valor Total en Pipeline',
       value: `$${totalPipelineValue.toLocaleString()} USD`,
@@ -83,6 +98,44 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
     },
   ];
 
+  // KPIs para Vendedores (Enfocados en Captación, Embudo y Éxito de Ventas)
+  const sellerKpis = [
+    {
+      title: 'Prospectos en Cartera',
+      value: `${leads.length}`,
+      subtitle: `${newProspectsCount} nuevos sin contactar`,
+      change: 'Base captada',
+      icon: Target,
+      color: 'from-purple-500/20 to-pink-500/20 border-purple-500/30 text-purple-400',
+    },
+    {
+      title: 'En Diagnóstico & Contacto',
+      value: `${contactedCount}`,
+      subtitle: 'Cuentas con reunión o diagnóstico activo',
+      change: contactedCount > 0 ? `${contactedCount} en curso` : 'Al día',
+      icon: Users2,
+      color: 'from-blue-500/20 to-cyan-500/20 border-blue-500/30 text-blue-400',
+    },
+    {
+      title: 'Propuestas & Negociación',
+      value: `${inPlayCount}`,
+      subtitle: `${proposalsSentCount} enviadas • ${negotiationCount} en ajuste`,
+      change: inPlayCount > 0 ? 'En cierre' : 'Sin pendientes',
+      icon: Send,
+      color: 'from-amber-500/20 to-orange-500/20 border-amber-500/30 text-amber-400',
+    },
+    {
+      title: 'Ventas Ganadas (Cierres)',
+      value: `${wonLeadsCount}`,
+      subtitle: `${signedProposals} acuerdos comerciales firmados`,
+      change: wonLeadsCount > 0 ? 'Éxito comercial' : '0 cerradas',
+      icon: Award,
+      color: 'from-emerald-500/20 to-teal-500/20 border-emerald-500/30 text-emerald-400',
+    },
+  ];
+
+  const kpis = isAdmin ? adminKpis : sellerKpis;
+
   return (
     <div className="space-y-8 animate-fadeIn">
       {/* HERO BANNER */}
@@ -93,13 +146,15 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
           <div className="space-y-2 max-w-xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-300 text-xs font-mono">
               <Sparkles size={13} />
-              <span>CreApp Operational OS • Fintech & Software Lab</span>
+              <span>{isAdmin ? 'CreApp Operational OS • Fintech & Software Lab' : 'CreApp Sales OS • Hub Comercial de Captación'}</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
-              Centro de Operaciones y Ventas
+              {isAdmin ? 'Centro de Operaciones y Ventas' : 'Panel de Ventas y Prospección Comercial'}
             </h1>
             <p className="text-sm text-zinc-400 leading-relaxed">
-              Monitorea el ciclo completo: prospección de leads B2B con IA, propuestas interactivas de video, contratos con SLA y desarrollo en producción.
+              {isAdmin
+                ? 'Monitorea el ciclo completo: prospección de leads B2B con IA, propuestas interactivas de video, contratos con SLA y desarrollo en producción.'
+                : 'Monitorea tu cartera de prospectos, gestiona contactos activos y potencia el cierre de ventas y propuestas comerciales.'}
             </p>
           </div>
 
@@ -208,11 +263,15 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
           </div>
         </div>
 
-        {/* Quick Launchpad & Propuestas destacadas */}
+        {/* Quick Launchpad & Acciones comerciales / operacionales */}
         <div className="p-6 rounded-2xl bg-[#0e0e12]/80 border border-white/5 backdrop-blur-md flex flex-col justify-between space-y-4">
           <div>
             <h3 className="text-sm font-semibold text-white mb-1">Accesos Rápidos</h3>
-            <p className="text-xs text-zinc-400 mb-4">Acciones directas para el equipo de ventas y lab</p>
+            <p className="text-xs text-zinc-400 mb-4">
+              {isAdmin
+                ? 'Acciones directas para el equipo de operaciones y ventas'
+                : 'Herramientas de prospección y gestión de clientes'}
+            </p>
 
             <div className="space-y-2">
               <button
@@ -240,7 +299,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
                     <FileSpreadsheet size={16} />
                   </div>
                   <div>
-                    <div className="text-xs font-semibold text-white">Creador de Propuestas de Desarrollo</div>
+                    <div className="text-xs font-semibold text-white">Creador de Propuestas Comerciales</div>
                     <div className="text-[10px] text-zinc-400">Software a medida por hitos, sprints y video pitch</div>
                   </div>
                 </div>
@@ -248,48 +307,76 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
               </button>
 
               <button
-                onClick={() => onNavigateTab('contracts')}
+                onClick={() => onNavigateTab('pipeline')}
                 className="w-full flex items-center justify-between p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-left transition-all group"
               >
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400 group-hover:scale-105 transition-transform">
-                    <FileCheck2 size={16} />
+                  <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 group-hover:scale-105 transition-transform">
+                    <Kanban size={16} />
                   </div>
                   <div>
-                    <div className="text-xs font-semibold text-white">Plantillas de Contrato & SLA</div>
-                    <div className="text-[10px] text-zinc-400">Stacked, TrazApp, Dental-IA y Custom</div>
+                    <div className="text-xs font-semibold text-white">Tablero Pipeline CRM</div>
+                    <div className="text-[10px] text-zinc-400">Seguimiento por etapas Kanban de prospectos</div>
                   </div>
                 </div>
-                <ArrowUpRight size={14} className="text-zinc-500 group-hover:text-amber-400" />
+                <ArrowUpRight size={14} className="text-zinc-500 group-hover:text-emerald-400" />
               </button>
 
-              <button
-                onClick={() => onNavigateTab('projects')}
-                className="w-full flex items-center justify-between p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-left transition-all group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-400 group-hover:scale-105 transition-transform">
-                    <KeyRound size={16} />
-                  </div>
-                  <div>
-                    <div className="text-xs font-semibold text-white">Credenciales & Proyectos (Vault)</div>
-                    <div className="text-[10px] text-zinc-400">Credenciales, repositorios y URLs</div>
-                  </div>
-                </div>
-                <ArrowUpRight size={14} className="text-zinc-500 group-hover:text-indigo-400" />
-              </button>
+              {isAdmin && (
+                <>
+                  <button
+                    onClick={() => onNavigateTab('contracts')}
+                    className="w-full flex items-center justify-between p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-left transition-all group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400 group-hover:scale-105 transition-transform">
+                        <FileCheck2 size={16} />
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold text-white">Plantillas de Contrato & SLA</div>
+                        <div className="text-[10px] text-zinc-400">Stacked, TrazApp, Dental-IA y Custom</div>
+                      </div>
+                    </div>
+                    <ArrowUpRight size={14} className="text-zinc-500 group-hover:text-amber-400" />
+                  </button>
+
+                  <button
+                    onClick={() => onNavigateTab('projects')}
+                    className="w-full flex items-center justify-between p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-left transition-all group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-400 group-hover:scale-105 transition-transform">
+                        <KeyRound size={16} />
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold text-white">Credenciales & Proyectos (Vault)</div>
+                        <div className="text-[10px] text-zinc-400">Credenciales, repositorios y URLs</div>
+                      </div>
+                    </div>
+                    <ArrowUpRight size={14} className="text-zinc-500 group-hover:text-indigo-400" />
+                  </button>
+                </>
+              )}
             </div>
           </div>
 
           <div className="p-3 bg-purple-950/20 rounded-xl border border-purple-500/20 flex items-center gap-3 text-xs">
             <Clock size={16} className="text-purple-400 shrink-0" />
             <span className="text-zinc-300">
-              {inProductionLead ? (
+              {isAdmin ? (
+                inProductionLead ? (
+                  <>
+                    En producción activa: <strong className="text-white">{inProductionLead.company}</strong> ({inProductionLead.productType})
+                  </>
+                ) : (
+                  <>Pipeline operacional listo: Sin entregas críticas pendientes.</>
+                )
+              ) : inPlayCount > 0 ? (
                 <>
-                  En producción activa: <strong className="text-white">{inProductionLead.company}</strong> ({inProductionLead.productType})
+                  Foco comercial activo: <strong className="text-white">{inPlayCount} cuenta{inPlayCount !== 1 ? 's' : ''}</strong> en propuesta o negociación.
                 </>
               ) : (
-                <>Pipeline operacional listo: Sin entregas críticas pendientes.</>
+                <>Cartera comercial al día: Utiliza el Scraper B2B para captar nuevos clientes.</>
               )}
             </span>
           </div>
