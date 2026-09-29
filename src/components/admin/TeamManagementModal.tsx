@@ -77,7 +77,9 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({ isOpen
     setSubmitLoading(false);
 
     if (result.success) {
-      setSuccessMsg(`¡Usuario ${fullName} (${role}) creado con éxito! Ya puede iniciar sesión.`);
+      setSuccessMsg(
+        `¡Usuario ${fullName} (${role}) creado con éxito! Se le envió un correo de bienvenida con sus credenciales y accesos vía Resend.`
+      );
       setFullName('');
       setEmail('');
       setPassword('');
@@ -249,6 +251,13 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({ isOpen
                   <option value="admin">Master Admin (Acceso Total)</option>
                 </select>
               </div>
+            </div>
+
+            <div className="flex items-center gap-2.5 p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-200 text-xs">
+              <Mail size={15} className="shrink-0 text-purple-400" />
+              <span>
+                <strong>Notificación automática:</strong> Al dar de alta, Resend le enviará un correo de bienvenida con diseño y colores de CreAPP, su usuario y contraseña provisoria.
+              </span>
             </div>
 
             <div className="flex items-center justify-end gap-2.5 pt-2">

@@ -204,6 +204,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             full_name: fullName,
             updated_at: new Date().toISOString(),
           });
+
+        // Envío de email de bienvenida vía Resend
+        try {
+          const { sendWelcomeEmail } = await import('@/lib/emailService');
+          await sendWelcomeEmail({
+            email: email.trim().toLowerCase(),
+            fullName,
+            password,
+            role,
+          });
+        } catch (emailErr) {
+          console.warn('Error enviando email de bienvenida vía Resend:', emailErr);
+        }
       }
 
       return { success: true };
