@@ -1144,6 +1144,10 @@ export const ScraperTab: React.FC<ScraperTabProps> = ({
                           <span className="text-pink-400 font-medium flex items-center gap-1">
                             <Instagram size={12} /> Usa Instagram como Web
                           </span>
+                        ) : (p.digitalHealth?.websiteUnlinkedInMaps || (p.digitalHealth?.hasWebsite && p.digitalHealth?.hasWebsiteInMaps === false)) ? (
+                          <span className="text-amber-400 font-medium flex items-center gap-1 truncate max-w-[210px]" title="Posee sitio web oficial pero no está cargado en su ficha de Google Maps">
+                            <AlertTriangle size={12} /> {p.website ? `${p.website} (No en Maps)` : 'Web no vinculada en Maps'}
+                          </span>
                         ) : p.digitalHealth?.hasWebsite ? (
                           <span className="text-emerald-400 font-medium flex items-center gap-1 truncate max-w-[200px]">
                             <CheckCircle size={12} /> {p.website || 'Web Activa'}
@@ -1316,6 +1320,10 @@ export const ScraperTab: React.FC<ScraperTabProps> = ({
         onFocusOnMap={(p) => {
           setSelectedProspect(p);
           setShowRadarMap(true);
+        }}
+        onProspectUpdate={(updated) => {
+          setProspects((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+          setDossierProspect(updated);
         }}
       />
 

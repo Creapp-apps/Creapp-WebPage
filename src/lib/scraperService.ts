@@ -23,6 +23,8 @@ export interface ScrapedProspect {
   lng?: number;
   digitalHealth: {
     hasWebsite: boolean;
+    hasWebsiteInMaps?: boolean;
+    websiteUnlinkedInMaps?: boolean;
     isMobileFriendly: boolean;
     hasSSL: boolean;
     loadSpeed: 'Rápida' | 'Media' | 'Lenta' | 'Crítica' | 'Inexistente';
@@ -198,6 +200,13 @@ Para cada local, evalúa su oportunidad técnica según el portafolio de CreApp:
 - Si es servicios (veterinarias, gimnasios, barberías, estudios) sin web -> Landing & Growth
 - Si requiere software complejo a medida -> Desarrollo a Medida
 
+CRITERIO CRÍTICO DE SITIOS WEB (EVITAR FALSOS POSITIVOS):
+Muchos negocios tienen su propio sitio web oficial (ej: 'odontobienestar.com.ar', portales institucionales de la marca/consultorio) pero su dueño NO lo vinculó en la ficha de Google Maps.
+- Si el local viene con website vacío en Google Maps, pero tú reconoces, sabes o identificas que posee un sitio web oficial propio (dominio institucional real .com / .com.ar / .ar / etc.), completa el campo "website" con esa URL, pon "hasWebsite": true y "hasWebsiteInMaps": false.
+- Si solo tiene Instagram, Facebook o linktree como web, indícalo en "website" o "socialLinks" y pon "hasWebsite": false (usa red social).
+- Si el negocio verdaderamente NO posee ningún sitio web institucional ni software propio en internet, deja "website": "", "hasWebsite": false y "hasWebsiteInMaps": false.
+- Si ya traía website válido en Google Maps, consérvalo, pon "hasWebsite": true y "hasWebsiteInMaps": true.
+
 Devuelve un JSON estrictamente válido con la lista completa respetando los campos originales pero agregando digitalHealth:
 [
   {
@@ -207,7 +216,7 @@ Devuelve un JSON estrictamente válido con la lista completa respetando los camp
     "city": "${city || 'Zona Seleccionada'}",
     "address": "Dirección original",
     "phone": "Teléfono original",
-    "website": "Web original o vacío",
+    "website": "Web original o web oficial descubierta o vacío",
     "rating": 4.5,
     "reviewCount": 100,
     "source": "google_places",
@@ -215,6 +224,8 @@ Devuelve un JSON estrictamente válido con la lista completa respetando los camp
     "lng": -58.123,
     "digitalHealth": {
       "hasWebsite": true o false,
+      "hasWebsiteInMaps": true o false,
+      "websiteUnlinkedInMaps": true o false,
       "isMobileFriendly": false,
       "hasSSL": true o false,
       "loadSpeed": "Rápida" | "Lenta" | "Inexistente",
@@ -240,10 +251,19 @@ Devuelve ÚNICAMENTE el array JSON sin markdown ni explicaciones.
           // Asegurar que lat y lng se conserven desde placesList y extraer redes sociales
           const enrichedWithCoords = parsed.map((p: any, idx: number) => {
             const original = placesList.find(x => x.place_id === p.id || x.name === p.name) || placesList[idx];
-            const rawWeb = p.website || original?.website || '';
+            const rawWeb = (p.website || original?.website || '').trim();
             const socials = extractSocials(rawWeb, p.socialLinks);
             const isSocialAsWebsite = Boolean(socials.instagram || socials.facebook || socials.tiktok);
             const hasRealWebsite = Boolean(rawWeb && !isSocialAsWebsite);
+            
+            // Detectar si la web ya figuraba originalmente en Google Maps
+            const hadWebInOriginalMaps = Boolean(
+              original?.website &&
+              original.website.trim() &&
+              !extractSocials(original.website).instagram &&
+              !extractSocials(original.website).facebook
+            );
+            const isUnlinkedInMaps = Boolean(hasRealWebsite && !hadWebInOriginalMaps);
 
             return {
               ...p,
@@ -256,7 +276,11 @@ Devuelve ÚNICAMENTE el array JSON sin markdown ni explicaciones.
               digitalHealth: {
                 ...p.digitalHealth,
                 hasWebsite: hasRealWebsite,
-                diagnosis: isSocialAsWebsite
+                hasWebsiteInMaps: hadWebInOriginalMaps,
+                websiteUnlinkedInMaps: isUnlinkedInMaps,
+                diagnosis: isUnlinkedInMaps
+                  ? `Cuenta con sitio web oficial (${rawWeb}), pero no está vinculado a su ficha de Google Maps. Los pacientes/clientes que buscan en Maps no acceden directo a su web/agenda.`
+                  : isSocialAsWebsite
                   ? `Utiliza perfil de ${socials.instagram ? 'Instagram' : 'redes'} como canal digital pero carece de sitio web y software propio.`
                   : p.digitalHealth?.diagnosis,
               }
@@ -450,14 +474,92 @@ export interface ConversationalPitch {
  * Paso 2: Transición empática y presentación de Dental-IA / CreApp para cuando contestan y confirman el número.
  */
 export const generateConversationalHookPitch = (prospect: ScrapedProspect): ConversationalPitch => {
-  const isDental = /odont|dent|dient/i.test(`${prospect.category || ''} ${prospect.name || ''} ${prospect.digitalHealth.suggestedSolution || ''}`);
+  const isDental = /odont|dent|dient/i.test(`${prospect.category || ''} ${prospect.name || ''} ${prospect.digitalHealth?.suggestedSolution || ''}`);
   const isGastro = /gastronom|restauran|comida|pizz|bar|caf[eé]|hamburgue/i.test(prospect.category || '');
   const businessTarget = extractBusinessShortName(prospect.name, prospect.category);
   const city = prospect.city || 'la zona';
 
+  const rawWeb = (prospect.website || '').trim();
+  const isIgAsWeb = Boolean(rawWeb && /instagram\.com/i.test(rawWeb));
+  const isFbAsWeb = Boolean(rawWeb && /facebook\.com/i.test(rawWeb));
+  const hasRealWeb = Boolean(rawWeb && !isIgAsWeb && !isFbAsWeb);
+  const isWebUnlinkedInMaps = Boolean(
+    hasRealWeb && (prospect.digitalHealth?.websiteUnlinkedInMaps || !prospect.digitalHealth?.hasWebsiteInMaps)
+  );
+
   let step1 = '';
   let step2 = '';
 
+  // ESCENARIO 1: Tiene web oficial activa pero NO está vinculada en su perfil de Google Maps
+  if (isWebUnlinkedInMaps) {
+    if (isDental) {
+      step1 =
+        `Hola, buenas tardes! ¿Es este el WhatsApp de ${businessTarget}?\n\n` +
+        `Quería consultar para agendar un turno. Los encontré buscando en Google Maps en ${city}, pero vi que la ficha no tiene el enlace directo a su web ni botón para agendar online, ¿es este el número para coordinar?`;
+
+      step2 =
+        `¡Muchas gracias por responder!\n\n` +
+        `Te cuento con total sinceridad: formo parte de Dental-IA (tecnología para consultorios odontológicos). Justo estaba revisando consultorios con excelente reputación en ${city} como el de ustedes y noté que aunque tienen su web oficial (${rawWeb}), al no estar enlazada en Google Maps ni contar con turnos automáticos por WhatsApp, muchos pacientes nuevos se pierden o cuesta coordinar fuera de hora.\n\n` +
+        `¿No han evaluado sincronizar su presencia en Google y su web con un asistente inteligente de WhatsApp las 24hs? Filtra consultas, responde dudas de prepagas y agenda turnos en el sistema del consultorio de forma 100% automática, para que no pierdan pacientes.\n\n` +
+        `¿Te interesaría que te mande una demo interactiva de 2 minutos para ver cómo funcionaría en su propio consultorio, sin ningún compromiso? 📞`;
+    } else if (isGastro) {
+      step1 =
+        `Hola, buenas tardes! ¿Es este el WhatsApp de ${businessTarget}?\n\n` +
+        `Quería consultar para hacer un pedido. Los vi en Google Maps en ${city} pero no encontré el enlace directo a su carta web, ¿es por acá?`;
+
+      step2 =
+        `¡Muchas gracias por responder!\n\n` +
+        `Te cuento con total sinceridad: formo parte de CreApp Software Lab. Noté que tienen su web activa (${rawWeb}), pero al no estar vinculada en su perfil de Google Maps muchos comensales no la encuentran para pedir directo y terminan pidiendo por apps de terceros con comisiones de hasta el 30%.\n\n` +
+        `¿No han evaluado potenciar su canal propio directo con pedidos por WhatsApp automatizados?\n\n` +
+        `¿Les interesaría ver una demo interactiva de 2 minutos de cómo funcionaría para su local, sin compromiso? 🚀`;
+    } else {
+      step1 =
+        `Hola, buenas tardes! ¿Es este el WhatsApp de ${businessTarget}?\n\n` +
+        `Quería hacerles una consulta sobre sus servicios. Los vi en Google Maps en ${city} pero la ficha no tiene el enlace directo a su web, ¿es este el número correcto?`;
+
+      step2 =
+        `¡Muchas gracias por responder!\n\n` +
+        `Te cuento con total sinceridad: formo parte de CreApp Software Lab. Estaba revisando empresas con excelente reputación en ${city} como la de ustedes y vi que cuentan con su web (${rawWeb}), pero al no estar enlazada en Google Maps ni automatizada para consultas inmediatas se pierde tráfico de clientes de alta intención.\n\n` +
+        `¿Han evaluado incorporar automatización para responder y calificar prospectos 24/7 sin demoras?\n\n` +
+        `¿Te interesaría ver una demo rápida de 2 minutos personalizada para su empresa, sin ningún compromiso? 🚀`;
+    }
+    return { step1, step2 };
+  }
+
+  // ESCENARIO 2: Tiene web oficial activa vinculada (Con Web Activa)
+  if (hasRealWeb) {
+    if (isDental) {
+      step1 =
+        `Hola, buenas tardes! ¿Es este el WhatsApp de ${businessTarget}?\n\n` +
+        `Estuve viendo su página web y quería hacer una consulta para agendar un turno, ¿es este el número oficial de atención?`;
+
+      step2 =
+        `¡Muchas gracias por responder!\n\n` +
+        `Te cuento con total sinceridad: formo parte de Dental-IA (tecnología para consultorios odontológicos). Estuve viendo su sitio web (${rawWeb}) y la excelente reputación que tienen en ${city}. Desarrollamos asistentes con IA para consultorios que se integran a WhatsApp y a la web para automatizar la atención las 24hs: responden dudas de tratamientos/prepagas y agendan turnos directamente en su sistema, liberando al equipo de recepción.\n\n` +
+        `¿Te interesaría ver una demo interactiva de 2 minutos de cómo funcionaría en su propio consultorio, sin ningún compromiso? 🚀`;
+    } else if (isGastro) {
+      step1 =
+        `Hola, buenas tardes! ¿Es este el WhatsApp de ${businessTarget}?\n\n` +
+        `Estuve viendo su web y quería hacer una consulta sobre la carta / pedidos, ¿es este el número correcto?`;
+
+      step2 =
+        `¡Muchas gracias por responder!\n\n` +
+        `Te cuento con total sinceridad: formo parte de CreApp Software Lab. Estuve viendo su presencia web (${rawWeb}) y excelente trayectoria en ${city}. Desarrollamos sistemas de pedidos automáticos directo a WhatsApp con comandas en cocina, para agilizar la atención y maximizar la rentabilidad de clientes directos.\n\n` +
+        `¿Les interesaría ver una demo interactiva de 2 minutos de cómo funcionaría para su local, sin compromiso? 🚀`;
+    } else {
+      step1 =
+        `Hola, buenas tardes! ¿Es este el WhatsApp de ${businessTarget}?\n\n` +
+        `Estuve viendo su sitio web y quería hacer una consulta sobre sus servicios, ¿es este el número de contacto?`;
+
+      step2 =
+        `¡Muchas gracias por responder!\n\n` +
+        `Te cuento con total sinceridad: formo parte de CreApp Software Lab. Estuve revisando su sitio web (${rawWeb}) y su excelente trayectoria en ${city}. Desarrollamos automatizaciones e inteligencia artificial para empresas que captan y responden consultas en WhatsApp al instante las 24hs para que ningún cliente potencial quede sin atender.\n\n` +
+        `¿Te interesaría ver una demo rápida de 2 minutos personalizada para su empresa, sin compromiso? 🚀`;
+    }
+    return { step1, step2 };
+  }
+
+  // ESCENARIO 3: Sin sitio web propio (o solo usa redes como Instagram)
   if (isDental) {
     step1 = 
       `Hola, buenas tardes! ¿Es este el WhatsApp de ${businessTarget}?\n\n` +
@@ -937,7 +1039,16 @@ export const generateColdPitchWithAI = async (
   const clientEntity = isDental ? 'pacientes' : 'clientes';
   const placeEntity = isDental ? 'consultorio' : 'negocio';
   const appointmentEntity = isDental ? 'turnos' : 'consultas y reservas';
-  const targetAudience = isDental ? 'los odontólogos' : 'negocios de tu rubro';
+  const rawWeb = (prospect.website || '').trim();
+  const isIgAsWeb = Boolean(rawWeb && /instagram\.com/i.test(rawWeb));
+  const hasRealWeb = Boolean(rawWeb && !isIgAsWeb);
+  const isWebUnlinkedInMaps = Boolean(hasRealWeb && (prospect.digitalHealth?.websiteUnlinkedInMaps || !prospect.digitalHealth?.hasWebsiteInMaps));
+
+  const painPointInstruction = isWebUnlinkedInMaps
+    ? `3. Detección empática de la oportunidad: Notaste que cuentan con sitio web oficial (${rawWeb}), pero que no está vinculado en su ficha de Google Maps ni automatizado con recepción inteligente por WhatsApp 24/7. Esto hace que pacientes/clientes que buscan en Maps no accedan directo y se pierdan ${appointmentEntity} fuera de horario.`
+    : hasRealWeb
+    ? `3. Detección empática de la oportunidad: Estuviste viendo su sitio web (${rawWeb}) y excelente trayectoria. Pero notaste que la atención y reservas aún se coordinan respondiendo mensajes manualmente, lo que suele demorar la respuesta y desgastar al equipo de recepción.`
+    : `3. Detección empática del dolor: Notaste que hoy no cuentan con sitio web ni canal digital automatizado para escalar la captación de ${clientEntity} y gestionar su ${placeEntity} de forma más efectiva y menos desgastante, lo que suele hacer que se pierdan ${appointmentEntity} fuera del horario comercial.`;
 
   const apiKey = getGeminiApiKey();
 
@@ -954,16 +1065,16 @@ Datos del Prospecto:
 - Rubro: ${prospect.category}
 - Ciudad/Localidad: ${prospect.city || 'su localidad'}
 - Calificación en Google Maps: ${prospect.rating ? `${prospect.rating} estrellas con ${prospect.reviewCount} opiniones` : 'Excelente reputación'}
-- Diagnóstico técnico detectado: ${prospect.digitalHealth.diagnosis}
+- Diagnóstico técnico detectado: ${prospect.digitalHealth?.diagnosis || ''}
 - Solución tecnológica recomendada: ${productName}
-- Sitio web actual: ${prospect.website || 'No posee sitio web ni canal automatizado'}
+- Sitio web actual: ${rawWeb ? (isWebUnlinkedInMaps ? `${rawWeb} (No vinculado en Maps)` : rawWeb) : 'No posee sitio web propio ni canal automatizado'}
 
 ESTILO Y TONO EXIGIDO (IMPRESCINDIBLE):
 - Tono: Muy cercano, amigable, respetuoso y consultivo. HABLA EN PRIMERA PERSONA ("Te saluda Sebastián, de parte de ${productName}"). NUNCA hables en tercera persona corporativa como "el equipo de dirección comercial" ni suenes a bot o spam.
 - Estructura obligatoria del mensaje:
   1. Saludo cercano: "Hola ${friendlyName}, ¿cómo estás? Te saluda Sebastián, de parte de ${productName} ${categoryEmoji}"
   2. Elogio sincero: Menciona que estabas revisando ${isDental ? 'consultorios' : 'negocios'} con excelente reputación en ${prospect.city || 'la zona'} vía Google Maps y te llamaron la atención las impecables valoraciones de sus ${clientEntity}. ¡Felicitaciones por ese nivel de servicio! ⭐⭐⭐⭐⭐
-  3. Detección empática del dolor: Notaste que hoy no cuentan con sitio web ni canal digital automatizado para escalar la captación de ${clientEntity} y gestionar su ${placeEntity} de forma más efectiva y menos desgastante, lo que suele hacer que se pierdan ${appointmentEntity} fuera del horario comercial.
+  ${painPointInstruction}
   4. Solución: Comenta sobre *${productName}*, diseñada para que ${targetAudience} puedan automatizar su atención en WhatsApp, responder consultas frecuentes y agendar ${appointmentEntity} las 24 horas de forma autónoma. 🤖
   5. Oferta de valor sin compromiso: Proponer mostrar una *demo interactiva de 2 minutos* para ver en vivo cómo funcionaría en su propio ${placeEntity}, sin ningún tipo de compromiso. 📞
   6. Llamada a la acción cálida: "¿Te gustaría que agendemos una videollamada para charlar un poco mas? 📅"

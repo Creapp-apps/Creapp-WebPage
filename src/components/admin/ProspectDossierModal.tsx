@@ -35,6 +35,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Filter,
+  Edit3,
+  Save,
 } from 'lucide-react';
 import { 
   ScrapedProspect, 
@@ -47,8 +49,11 @@ import {
   PlaceReview,
   fetchPlaceReviews,
   getReviewTimeRange,
+  extractSocials,
+  getStoredScraperSession,
+  saveStoredScraperSession,
 } from '@/lib/scraperService';
-import { PipelineStage, STAGE_CONFIG } from '@/lib/pipelineService';
+import { PipelineStage, STAGE_CONFIG, updateLead } from '@/lib/pipelineService';
 
 interface ProspectDossierModalProps {
   prospect: ScrapedProspect | null;
@@ -61,6 +66,7 @@ interface ProspectDossierModalProps {
   onStageChange?: (newStage: PipelineStage) => void;
   onDeleteLead?: () => void;
   onCreateProposal?: () => void;
+  onProspectUpdate?: (updated: ScrapedProspect) => void;
 }
 
 export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
@@ -74,7 +80,12 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
   onStageChange,
   onDeleteLead,
   onCreateProposal,
+  onProspectUpdate,
 }) => {
+  const [currentProspect, setCurrentProspect] = useState<ScrapedProspect | null>(prospect);
+  const [isEditingWebsite, setIsEditingWebsite] = useState(false);
+  const [websiteInput, setWebsiteInput] = useState('');
+
   const [activeTab, setActiveTab] = useState<'strategy' | 'pitches' | 'audit'>('pitches');
   const [pitchChannel, setPitchChannel] = useState<'conversational' | 'reactivation' | 'whatsapp' | 'call' | 'email' | 'visit'>(
     currentStage === 'no_answer' ? 'reactivation' : 'conversational'
@@ -107,20 +118,20 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
 
   const handleOpenReviews = async (force: boolean = false) => {
     setShowReviewsToast(true);
-    if (!prospect) return;
+    if (!currentProspect) return;
 
     // Si ya están en memoria y no es forzado, no hacemos nada
     if (!force && reviewsList.length > 0) return;
 
     // Verificar primero en localStorage para carga instantánea con 0 lag y 0 costo de API
-    const cacheKey = `creapp_reviews_${prospect.id || encodeURIComponent((prospect.name || '').trim().toLowerCase())}`;
+    const cacheKey = `creapp_reviews_${currentProspect.id || encodeURIComponent((currentProspect.name || '').trim().toLowerCase())}`;
     if (!force && typeof window !== 'undefined') {
       try {
         const cached = localStorage.getItem(cacheKey);
         if (cached) {
           const parsed = JSON.parse(cached);
           // Si el caché tiene un catálogo extendido (> 5) o el prospecto tiene pocas reseñas registradas
-          if (Array.isArray(parsed) && (parsed.length > 5 || (prospect.reviewCount || 0) <= 5)) {
+          if (Array.isArray(parsed) && (parsed.length > 5 || (currentProspect.reviewCount || 0) <= 5)) {
             setReviewsList(parsed);
             setCurrentPage(1);
             return;
@@ -131,7 +142,7 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
 
     setLoadingReviews(true);
     try {
-      const revs = await fetchPlaceReviews(prospect, force);
+      const revs = await fetchPlaceReviews(currentProspect, force);
       setReviewsList(revs);
       setCurrentPage(1);
     } catch (e) {
@@ -165,9 +176,12 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
     currentPage * reviewsPerPage
   );
 
-  // Cargar pitch inicial al abrir el prospecto o cambiar de etapa
+  // Sincronizar prospecto entrante
   useEffect(() => {
     if (prospect) {
+      setCurrentProspect(prospect);
+      setWebsiteInput(prospect.website || '');
+      setIsEditingWebsite(false);
       setShowReviewsToast(false);
       setReviewsList([]);
       setTimeFilter('all');
@@ -215,17 +229,88 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
     setLoadingPitch(false);
   };
 
-  if (!prospect) return null;
+  const handleSaveWebsite = (newUrl: string) => {
+    if (!currentProspect) return;
+    const trimmed = newUrl.trim();
+    const socials = extractSocials(trimmed, currentProspect.socialLinks);
+    const isSocial = Boolean(socials.instagram || socials.facebook || socials.tiktok);
+    const hasReal = Boolean(trimmed && !isSocial);
+    const hadWebInOriginalMaps = Boolean(currentProspect.digitalHealth?.hasWebsiteInMaps);
+    const isUnlinked = Boolean(hasReal && !hadWebInOriginalMaps);
 
-  const cleanPhone = prospect.phone?.replace(/[^0-9]/g, '') || '';
-  const instagramUrl = prospect.socialLinks?.instagram || (prospect.website?.includes('instagram.com') ? prospect.website : undefined);
+    const updatedProspect: ScrapedProspect = {
+      ...currentProspect,
+      website: trimmed,
+      socialLinks: socials,
+      digitalHealth: {
+        ...currentProspect.digitalHealth,
+        hasWebsite: hasReal,
+        websiteUnlinkedInMaps: isUnlinked,
+        loadSpeed: hasReal ? 'Media' : 'Inexistente',
+        diagnosis: hasReal
+          ? (isUnlinked
+              ? `Cuenta con sitio web oficial (${trimmed}), pero no está vinculado a su ficha de Google Maps. Los pacientes/clientes que buscan en Maps no acceden directo a su web/agenda.`
+              : `Sitio web oficial registrado: ${trimmed}. Oportunidad de automatización y conversión con IA.`)
+          : 'Sin sitio web propio. Depende de redes o plataformas intermediarias con altas comisiones.',
+      },
+    };
+
+    setCurrentProspect(updatedProspect);
+    setIsEditingWebsite(false);
+
+    // Regenerar guiones con el prospecto actualizado en tiempo real
+    const conv = generateConversationalHookPitch(updatedProspect);
+    setStep1Text(conv.step1);
+    setStep2Text(conv.step2);
+    setReactivationText(generateReactivationPitch(updatedProspect));
+    loadPitchForChannel(updatedProspect, pitchChannel);
+
+    // Si está en pipeline, persistir en Lead storage
+    if (currentProspect.id) {
+      try {
+        updateLead(currentProspect.id, {
+          website: trimmed,
+          originalProspect: updatedProspect,
+        });
+      } catch (e) {
+        console.warn("Could not update lead in storage", e);
+      }
+    }
+
+    // Si hay sesión de scraper activa, actualizar en memoria
+    try {
+      const session = getStoredScraperSession();
+      if (session && session.prospects) {
+        const idx = session.prospects.findIndex(
+          (p) => p.id === currentProspect.id || p.name === currentProspect.name
+        );
+        if (idx !== -1) {
+          session.prospects[idx] = updatedProspect;
+          saveStoredScraperSession(session);
+        }
+      }
+    } catch (e) {}
+
+    if (onProspectUpdate) {
+      onProspectUpdate(updatedProspect);
+    }
+  };
+
+  if (!currentProspect) return null;
+
+  const cleanPhone = currentProspect.phone?.replace(/[^0-9]/g, '') || '';
+  const instagramUrl = currentProspect.socialLinks?.instagram || (currentProspect.website?.includes('instagram.com') ? currentProspect.website : undefined);
   const igHandle = getInstagramHandle(instagramUrl);
-  const facebookUrl = prospect.socialLinks?.facebook || (prospect.website?.includes('facebook.com') ? prospect.website : undefined);
-  const tiktokUrl = prospect.socialLinks?.tiktok || (prospect.website?.includes('tiktok.com') ? prospect.website : undefined);
-  const isInstagramAsWebsite = Boolean(prospect.website && prospect.website.includes('instagram.com'));
-  const isFacebookAsWebsite = Boolean(prospect.website && prospect.website.includes('facebook.com'));
-  const hasRealWebsite = Boolean(prospect.website && !isInstagramAsWebsite && !isFacebookAsWebsite);
+  const facebookUrl = currentProspect.socialLinks?.facebook || (currentProspect.website?.includes('facebook.com') ? currentProspect.website : undefined);
+  const tiktokUrl = currentProspect.socialLinks?.tiktok || (currentProspect.website?.includes('tiktok.com') ? currentProspect.website : undefined);
+  const isInstagramAsWebsite = Boolean(currentProspect.website && currentProspect.website.includes('instagram.com'));
+  const isFacebookAsWebsite = Boolean(currentProspect.website && currentProspect.website.includes('facebook.com'));
+  const hasRealWebsite = Boolean(currentProspect.website && !isInstagramAsWebsite && !isFacebookAsWebsite);
   const hasNoWeb = !hasRealWebsite;
+  const isWebUnlinkedInMaps = Boolean(
+    hasRealWebsite &&
+    (currentProspect.digitalHealth?.websiteUnlinkedInMaps || !currentProspect.digitalHealth?.hasWebsiteInMaps)
+  );
 
   const handleCopyStep = (step: 'step1' | 'step2' | 'main', text: string) => {
     let textToCopy = text.replace(/\*\*(.*?)\*\*/g, '*$1*').replace(/[\uFE0E\uFE0F]/g, '').replace(/🗓/g, '📅');
@@ -235,7 +320,7 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
   };
 
   const getEncodedWhatsAppUrl = () => {
-    return formatWhatsAppUrl(prospect.phone || '', pitchContent);
+    return formatWhatsAppUrl(currentProspect.phone || '', pitchContent);
   };
 
   return (
@@ -262,7 +347,7 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
             <div className="space-y-1.5 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                  {prospect.category}
+                  {currentProspect.category}
                 </span>
                 <span className="px-2 py-0.5 rounded-md text-[10px] font-mono bg-white/5 text-zinc-400 border border-white/10">
                   Google Maps Verified
@@ -270,6 +355,13 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
                 {hasNoWeb ? (
                   <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center gap-1">
                     <ShieldAlert size={11} /> Sin Sitio Web (Lead Caliente)
+                  </span>
+                ) : isWebUnlinkedInMaps ? (
+                  <span
+                    className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1 shadow-sm shadow-amber-950/30"
+                    title="Tiene sitio web oficial activo pero NO está cargado en su perfil de Google Maps (fuga de pacientes/clientes)"
+                  >
+                    <AlertTriangle size={11} className="text-amber-400" /> Web Activa (No vinculada en Maps)
                   </span>
                 ) : (
                   <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
@@ -279,8 +371,8 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
               </div>
 
               <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
-                <span>{prospect.name}</span>
-                {prospect.rating > 0 && (
+                <span>{currentProspect.name}</span>
+                {currentProspect.rating > 0 && (
                   <button
                     type="button"
                     onClick={handleOpenReviews}
@@ -288,7 +380,7 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
                     title="Click para ver las opiniones y reseñas de Google Maps"
                   >
                     <Star size={12} className="fill-amber-400 text-amber-400 group-hover/rating:scale-110 transition-transform" />
-                    <span>{prospect.rating} ({prospect.reviewCount} reviews)</span>
+                    <span>{currentProspect.rating} ({currentProspect.reviewCount} reviews)</span>
                     <MessageSquare size={11} className="text-amber-300 opacity-60 group-hover/rating:opacity-100 transition-opacity" />
                   </button>
                 )}
@@ -296,7 +388,7 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
 
               <p className="text-xs text-zinc-400 flex items-center gap-1.5">
                 <MapPin size={13} className="text-purple-400 shrink-0" />
-                <span>{prospect.address} • <strong>{prospect.city}</strong></span>
+                <span>{currentProspect.address} • <strong>{currentProspect.city}</strong></span>
               </p>
             </div>
 
@@ -310,14 +402,14 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
 
           {/* QUICK ACTION BAR */}
           <div className="px-6 py-3 bg-[#08080d] border-b border-white/5 flex flex-wrap items-center justify-between gap-3 text-xs">
-            <div className="flex items-center gap-4 text-zinc-400 flex-wrap">
-              {prospect.phone ? (
+            <div className="flex items-center gap-3 text-zinc-400 flex-wrap">
+              {currentProspect.phone ? (
                 <a
                   href={`tel:${cleanPhone}`}
                   className="flex items-center gap-1.5 text-zinc-300 hover:text-purple-400 font-mono transition-colors"
                 >
                   <Phone size={13} className="text-purple-400" />
-                  <span>{prospect.phone}</span>
+                  <span>{currentProspect.phone}</span>
                 </a>
               ) : (
                 <span className="text-zinc-500 flex items-center gap-1">
@@ -325,26 +417,92 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
                 </span>
               )}
 
-              {hasRealWebsite ? (
-                <a
-                  href={prospect.website?.startsWith('http') ? prospect.website : `https://${prospect.website}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center gap-1 text-emerald-400 hover:underline truncate max-w-[200px]"
-                >
-                  <Globe size={13} />
-                  <span>{prospect.website}</span>
-                  <ExternalLink size={10} />
-                </a>
-              ) : isInstagramAsWebsite ? (
-                <span className="text-amber-400 flex items-center gap-1">
-                  <AlertTriangle size={13} /> Usa Instagram como web (Sin software propio)
-                </span>
-              ) : (
-                <span className="text-rose-400 flex items-center gap-1">
-                  <AlertTriangle size={13} /> Sin web registrada
-                </span>
-              )}
+              {/* SECCIÓN INTERACTIVA DE SITIO WEB: VER, EDITAR Y BUSCAR EN GOOGLE */}
+              <div className="flex items-center gap-2 flex-wrap">
+                {isEditingWebsite ? (
+                  <div className="flex items-center gap-1.5 bg-[#141420] border border-purple-500/40 rounded-xl px-2 py-1">
+                    <Globe size={13} className="text-purple-400 shrink-0" />
+                    <input
+                      type="text"
+                      value={websiteInput}
+                      onChange={(e) => setWebsiteInput(e.target.value)}
+                      placeholder="ej: odontobienestar.com.ar"
+                      className="bg-transparent text-white text-xs focus:outline-none w-44"
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleSaveWebsite(websiteInput);
+                        if (e.key === 'Escape') setIsEditingWebsite(false);
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleSaveWebsite(websiteInput)}
+                      className="px-2 py-0.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] transition-colors"
+                    >
+                      Guardar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingWebsite(false)}
+                      className="p-1 text-zinc-400 hover:text-white transition-colors"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    {hasRealWebsite ? (
+                      <a
+                        href={currentProspect.website?.startsWith('http') ? currentProspect.website : `https://${currentProspect.website}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1 text-emerald-400 hover:underline truncate max-w-[200px]"
+                      >
+                        <Globe size={13} />
+                        <span>{currentProspect.website}</span>
+                        <ExternalLink size={10} />
+                      </a>
+                    ) : isInstagramAsWebsite ? (
+                      <span className="text-amber-400 flex items-center gap-1">
+                        <AlertTriangle size={13} /> Usa Instagram como web
+                      </span>
+                    ) : (
+                      <span className="text-rose-400 flex items-center gap-1">
+                        <AlertTriangle size={13} /> Sin web en Maps
+                      </span>
+                    )}
+
+                    {/* Botón Editar o Asignar Web */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setWebsiteInput(currentProspect.website || '');
+                        setIsEditingWebsite(true);
+                      }}
+                      title="Editar o cargar la URL real del sitio web para actualizar el pitch"
+                      className="px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white text-[11px] flex items-center gap-1 border border-white/10 transition-colors"
+                    >
+                      <Edit3 size={11} className="text-purple-400" />
+                      <span>{hasRealWebsite ? 'Editar web' : '+ Cargar web'}</span>
+                    </button>
+
+                    {/* Botón Buscar en Google Web */}
+                    <a
+                      href={`https://www.google.com/search?q=${encodeURIComponent(
+                        `"${currentProspect.name}" ${currentProspect.city || ''} sitio web oficial`
+                      )}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      title="Abrir búsqueda en Google para verificar si este negocio tiene sitio web oficial"
+                      className="px-2 py-1 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 hover:text-purple-200 text-[11px] flex items-center gap-1 border border-purple-500/20 transition-colors"
+                    >
+                      <Search size={11} />
+                      <span>Buscar en Google</span>
+                      <ExternalLink size={9} />
+                    </a>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
@@ -386,7 +544,7 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
                   {onDeleteLead && (
                     <button
                       onClick={() => {
-                        if (confirm(`¿Eliminar este lead de "${prospect.name}" del pipeline?`)) {
+                        if (confirm(`¿Eliminar este lead de "${currentProspect.name}" del pipeline?`)) {
                           onClose();
                           onDeleteLead();
                         }
@@ -466,7 +624,7 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
                 </a>
               ) : (
                 <a
-                  href={`https://www.google.com/search?q=site:instagram.com+"${encodeURIComponent(prospect.name)}"+${encodeURIComponent(prospect.city)}`}
+                  href={`https://www.google.com/search?q=site:instagram.com+"${encodeURIComponent(currentProspect.name)}"+${encodeURIComponent(currentProspect.city)}`}
                   target="_blank"
                   rel="noreferrer"
                   className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-pink-300 border border-white/5 hover:border-pink-500/30 text-xs transition-colors"
@@ -492,7 +650,7 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
                 </a>
               ) : (
                 <a
-                  href={`https://www.google.com/search?q=site:facebook.com+"${encodeURIComponent(prospect.name)}"+${encodeURIComponent(prospect.city)}`}
+                  href={`https://www.google.com/search?q=site:facebook.com+"${encodeURIComponent(currentProspect.name)}"+${encodeURIComponent(currentProspect.city)}`}
                   target="_blank"
                   rel="noreferrer"
                   className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-blue-300 border border-white/5 hover:border-blue-500/30 text-xs transition-colors"
@@ -519,7 +677,7 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
 
             {/* Google Search Link */}
             <a
-              href={`https://www.google.com/search?q="${encodeURIComponent(prospect.name)}"+${encodeURIComponent(prospect.city)}`}
+              href={`https://www.google.com/search?q="${encodeURIComponent(currentProspect.name)}"+${encodeURIComponent(currentProspect.city)}`}
               target="_blank"
               rel="noreferrer"
               className="text-[11px] text-zinc-400 hover:text-purple-300 flex items-center gap-1 transition-colors"
@@ -582,12 +740,12 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
                       Solución CreApp Recomendada
                     </span>
                     <h3 className="text-lg font-bold text-white">
-                      {prospect.digitalHealth.suggestedSolution}
+                      {currentProspect.digitalHealth.suggestedSolution}
                     </h3>
                     <p className="text-zinc-300 text-xs max-w-xl leading-relaxed">
-                      {prospect.category === 'Gastronomía'
+                      {currentProspect.category === 'Gastronomía'
                         ? 'Menú interactivo con pedidos en 2 clics directos a WhatsApp, pasarela de cobro sin comisiones a terceros y panel de despacho en cocina.'
-                        : prospect.category.includes('Dental') || prospect.category.includes('Salud')
+                        : currentProspect.category.includes('Dental') || currentProspect.category.includes('Salud')
                         ? 'Sistema de turnos automáticos 24/7 integrado con WhatsApp IA y recordatorios automatizados para reducir el ausentismo.'
                         : 'Software a medida y landing page orientada a captar clientes locales en su zona de influencia.'}
                     </p>
@@ -802,7 +960,7 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
 
                           {cleanPhone && (
                             <a
-                              href={formatWhatsAppUrl(prospect.phone || '', reactivationText)}
+                              href={formatWhatsAppUrl(currentProspect.phone || '', reactivationText)}
                               target="_blank"
                               rel="noreferrer"
                               className="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold flex items-center gap-1.5 shadow-md shadow-emerald-600/20 transition-all text-xs"
@@ -870,7 +1028,7 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
 
                           {cleanPhone && (
                             <a
-                              href={formatWhatsAppUrl(prospect.phone || '', step1Text)}
+                              href={formatWhatsAppUrl(currentProspect.phone || '', step1Text)}
                               target="_blank"
                               rel="noreferrer"
                               className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold flex items-center gap-1.5 shadow-md shadow-emerald-600/20 transition-all text-xs"
@@ -918,7 +1076,7 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
 
                           {cleanPhone && (
                             <a
-                              href={formatWhatsAppUrl(prospect.phone || '', step2Text)}
+                              href={formatWhatsAppUrl(currentProspect.phone || '', step2Text)}
                               target="_blank"
                               rel="noreferrer"
                               className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold flex items-center gap-1.5 shadow-md shadow-emerald-600/20 transition-all text-xs"
@@ -997,30 +1155,30 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
                     <span>Diagnóstico Detallado de Salud Digital (CreApp AI)</span>
                   </div>
                   <p className="text-zinc-300 leading-relaxed text-xs">
-                    {prospect.digitalHealth.diagnosis}
+                    {currentProspect.digitalHealth.diagnosis}
                   </p>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="p-3.5 rounded-xl bg-black/40 border border-white/5 space-y-1">
                     <span className="text-zinc-500 text-[10px] uppercase font-bold">Velocidad / Rendimiento Web</span>
-                    <div className="text-sm font-bold text-white">{prospect.digitalHealth.loadSpeed}</div>
+                    <div className="text-sm font-bold text-white">{currentProspect.digitalHealth.loadSpeed}</div>
                   </div>
                   <div className="p-3.5 rounded-xl bg-black/40 border border-white/5 space-y-1">
                     <span className="text-zinc-500 text-[10px] uppercase font-bold">Seguridad SSL</span>
-                    <div className={`text-sm font-bold ${prospect.digitalHealth.hasSSL ? 'text-emerald-400' : 'text-rose-400'}`}>
-                      {prospect.digitalHealth.hasSSL ? 'Certificado Activo (HTTPS)' : 'Inexistente o Sin SSL'}
+                    <div className={`text-sm font-bold ${currentProspect.digitalHealth.hasSSL ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      {currentProspect.digitalHealth.hasSSL ? 'Certificado Activo (HTTPS)' : 'Inexistente o Sin SSL'}
                     </div>
                   </div>
                   <div className="p-3.5 rounded-xl bg-black/40 border border-white/5 space-y-1">
                     <span className="text-zinc-500 text-[10px] uppercase font-bold">Optimización Móvil</span>
-                    <div className={`text-sm font-bold ${prospect.digitalHealth.isMobileFriendly ? 'text-emerald-400' : 'text-amber-400'}`}>
-                      {prospect.digitalHealth.isMobileFriendly ? 'Adaptado a Celulares' : 'Fricción en Navegación Móvil'}
+                    <div className={`text-sm font-bold ${currentProspect.digitalHealth.isMobileFriendly ? 'text-emerald-400' : 'text-amber-400'}`}>
+                      {currentProspect.digitalHealth.isMobileFriendly ? 'Adaptado a Celulares' : 'Fricción en Navegación Móvil'}
                     </div>
                   </div>
                   <div className="p-3.5 rounded-xl bg-black/40 border border-white/5 space-y-1">
                     <span className="text-zinc-500 text-[10px] uppercase font-bold">ID Único de Google Places</span>
-                    <div className="text-[11px] font-mono text-zinc-400 truncate">{prospect.id}</div>
+                    <div className="text-[11px] font-mono text-zinc-400 truncate">{currentProspect.id}</div>
                   </div>
                 </div>
               </div>
@@ -1055,7 +1213,7 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
                       <h3 className="text-sm font-bold text-white flex items-center gap-1.5 flex-wrap">
                         <span>Reseñas de Google Maps</span>
                         <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-mono font-bold">
-                          {prospect.rating} ★ ({prospect.reviewCount})
+                          {currentProspect.rating} ★ ({currentProspect.reviewCount})
                         </span>
                         {reviewsList.length > 0 && !loadingReviews && (
                           <span 
@@ -1072,7 +1230,7 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
                         )}
                       </h3>
                       <p className="text-[11px] text-zinc-400 truncate max-w-[260px] sm:max-w-[340px]">
-                        {prospect.name}
+                        {currentProspect.name}
                       </p>
                     </div>
                   </div>
@@ -1304,7 +1462,7 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
                 <div className="p-3 bg-black/40 border-t border-white/10 flex items-center justify-between gap-2 text-xs shrink-0">
                   <a
                     href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                      `${prospect.name} ${prospect.address || ''} ${prospect.city || ''}`
+                      `${currentProspect.name} ${currentProspect.address || ''} ${currentProspect.city || ''}`
                     )}`}
                     target="_blank"
                     rel="noopener noreferrer"

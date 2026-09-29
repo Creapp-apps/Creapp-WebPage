@@ -768,6 +768,16 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
               setSelectedLeadForDetail(null);
               onCreateProposalFromLead(target);
             }}
+            onProspectUpdate={(updated) => {
+              const updatedLeads = updateLead(selectedLeadForDetail.id, {
+                website: updated.website,
+                originalProspect: updated,
+              });
+              onLeadsChange(updatedLeads);
+              setSelectedLeadForDetail((prev) =>
+                prev ? { ...prev, website: updated.website, originalProspect: updated } : null
+              );
+            }}
           />
         )}
       </AnimatePresence>
