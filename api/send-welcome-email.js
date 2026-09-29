@@ -34,7 +34,7 @@ export default async function handler(req, res) {
       });
     }
 
-    const fromEmail = process.env.RESEND_FROM_EMAIL || 'CreAPP <onboarding@resend.dev>';
+    const fromEmail = process.env.RESEND_FROM_EMAIL || 'CreAPP <equipo@creapp.com.ar>';
     const isVendedor = role !== 'admin';
     const roleTitle = isVendedor ? 'Vendedor Comercial (Equipo de Ventas)' : 'Master Admin (Dirección)';
     const loginUrl = 'https://creapp.com.ar/admin/login';

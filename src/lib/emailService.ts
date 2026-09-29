@@ -53,6 +53,7 @@ export const sendWelcomeEmail = async (
 async function sendWelcomeEmailDirectFallback(
   params: WelcomeEmailParams
 ): Promise<{ success: boolean; error?: string }> {
+  try {
     const apiKey = import.meta.env.VITE_RESEND_API_KEY as string;
 
     if (!apiKey) {
@@ -97,7 +98,7 @@ async function sendWelcomeEmailDirectFallback(
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        from: 'CreAPP <onboarding@resend.dev>',
+        from: 'CreAPP <equipo@creapp.com.ar>',
         to: [params.email],
         subject: `👋 ¡Bienvenido al equipo de CreAPP, ${params.fullName}! Tus credenciales`,
         html,
