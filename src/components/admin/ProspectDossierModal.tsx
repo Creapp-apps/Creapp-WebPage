@@ -37,6 +37,13 @@ import {
   Filter,
   Edit3,
   Save,
+  Zap,
+  Gauge,
+  Smartphone,
+  ShieldCheck,
+  Layers,
+  Activity,
+  Share2,
 } from 'lucide-react';
 import { 
   ScrapedProspect, 
@@ -53,6 +60,11 @@ import {
   getStoredScraperSession,
   saveStoredScraperSession,
 } from '@/lib/scraperService';
+import { 
+  runProspectWebAudit, 
+  getStoredWebAudit, 
+  WebAuditReport 
+} from '@/lib/webAuditService';
 import { PipelineStage, STAGE_CONFIG, updateLead } from '@/lib/pipelineService';
 
 interface ProspectDossierModalProps {
@@ -67,6 +79,7 @@ interface ProspectDossierModalProps {
   onDeleteLead?: () => void;
   onCreateProposal?: () => void;
   onProspectUpdate?: (updated: ScrapedProspect) => void;
+  initialTab?: 'strategy' | 'pitches' | 'audit';
 }
 
 export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
@@ -81,12 +94,19 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
   onDeleteLead,
   onCreateProposal,
   onProspectUpdate,
+  initialTab,
 }) => {
   const [currentProspect, setCurrentProspect] = useState<ScrapedProspect | null>(prospect);
   const [isEditingWebsite, setIsEditingWebsite] = useState(false);
   const [websiteInput, setWebsiteInput] = useState('');
 
-  const [activeTab, setActiveTab] = useState<'strategy' | 'pitches' | 'audit'>('pitches');
+  const [activeTab, setActiveTab] = useState<'strategy' | 'pitches' | 'audit'>(initialTab || 'pitches');
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
   const [pitchChannel, setPitchChannel] = useState<'conversational' | 'reactivation' | 'whatsapp' | 'call' | 'email' | 'visit'>(
     currentStage === 'no_answer' ? 'reactivation' : 'conversational'
   );
@@ -109,6 +129,41 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
   const [searchReviewText, setSearchReviewText] = useState<string>('');
   const [currentPage, setCurrentPage] = useState<number>(1);
   const reviewsPerPage = 4;
+
+  // Estado para la Auditoría Web de CreApp
+  const [webAuditReport, setWebAuditReport] = useState<WebAuditReport | null>(null);
+  const [isAuditingWeb, setIsAuditingWeb] = useState(false);
+  const [copiedAuditSummary, setCopiedAuditSummary] = useState(false);
+
+  useEffect(() => {
+    if (!currentProspect) return;
+    const cacheId = currentProspect.website || currentProspect.id;
+    const cached = getStoredWebAudit(cacheId);
+    if (cached) {
+      setWebAuditReport(cached);
+    } else {
+      setWebAuditReport(null);
+    }
+  }, [currentProspect]);
+
+  const handleRunAudit = async (force: boolean = false) => {
+    if (!currentProspect) return;
+    setIsAuditingWeb(true);
+    try {
+      const report = await runProspectWebAudit(currentProspect, currentProspect.website, force);
+      setWebAuditReport(report);
+    } catch (e) {
+      console.warn("Error ejecutando auditoría web:", e);
+    } finally {
+      setIsAuditingWeb(false);
+    }
+  };
+
+  const handleCopyAuditWhatsApp = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedAuditSummary(true);
+    setTimeout(() => setCopiedAuditSummary(false), 2000);
+  };
 
   const handleCopyReview = (text: string, idx: number) => {
     navigator.clipboard.writeText(text);
@@ -312,7 +367,7 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
     (currentProspect.digitalHealth?.websiteUnlinkedInMaps || !currentProspect.digitalHealth?.hasWebsiteInMaps)
   );
 
-  const handleCopyStep = (step: 'step1' | 'step2' | 'main', text: string) => {
+  const handleCopyStep = (step: 'step1' | 'step2' | 'reactivation' | 'main', text: string) => {
     let textToCopy = text.replace(/\*\*(.*?)\*\*/g, '*$1*').replace(/[\uFE0E\uFE0F]/g, '').replace(/🗓/g, '📅');
     navigator.clipboard.writeText(textToCopy);
     setCopiedStep(step);
@@ -375,7 +430,7 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
                 {currentProspect.rating > 0 && (
                   <button
                     type="button"
-                    onClick={handleOpenReviews}
+                    onClick={() => handleOpenReviews()}
                     className="text-xs px-2.5 py-1 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/30 font-bold flex items-center gap-1.5 hover:bg-amber-500/25 hover:border-amber-500/60 hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-sm group/rating shadow-amber-950/20"
                     title="Click para ver las opiniones y reseñas de Google Maps"
                   >
@@ -716,15 +771,29 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
             </button>
 
             <button
-              onClick={() => setActiveTab('audit')}
+              onClick={() => {
+                setActiveTab('audit');
+                if (!webAuditReport && !isAuditingWeb && currentProspect) {
+                  handleRunAudit(false);
+                }
+              }}
               className={`pb-3 px-3 text-xs font-semibold flex items-center gap-2 transition-all border-b-2 ${
                 activeTab === 'audit'
                   ? 'text-purple-400 border-purple-500'
                   : 'text-zinc-400 border-transparent hover:text-zinc-200'
               }`}
             >
-              <FileText size={14} />
-              <span>Auditoría Digital de Gemini</span>
+              <Activity size={14} className={webAuditReport ? 'text-emerald-400' : 'text-purple-400'} />
+              <span>Auditoría Web & CRO</span>
+              {webAuditReport && (
+                <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold ${
+                  webAuditReport.globalScore >= 70 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
+                  webAuditReport.globalScore >= 40 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
+                  'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                }`}>
+                  {webAuditReport.globalScore}/100
+                </span>
+              )}
             </button>
           </div>
 
@@ -1146,41 +1215,296 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
               </div>
             )}
 
-            {/* 3. AUDIT TAB */}
+            {/* 3. AUDIT TAB (Web Performance, Responsive, SEO & CRO) */}
             {activeTab === 'audit' && (
-              <div className="space-y-4">
-                <div className="p-4 rounded-2xl bg-[#101018] border border-white/5 space-y-3">
-                  <div className="flex items-center gap-2 text-purple-400 font-bold">
-                    <Bot size={16} />
-                    <span>Diagnóstico Detallado de Salud Digital (CreApp AI)</span>
+              <div className="space-y-6">
+                {/* ESTADO DE CARGA / ESCANEO */}
+                {isAuditingWeb ? (
+                  <div className="p-8 rounded-2xl bg-[#101018] border border-purple-500/30 text-center space-y-4 shadow-xl">
+                    <div className="w-12 h-12 mx-auto rounded-2xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-400 animate-pulse">
+                      <Gauge size={24} className="animate-spin" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-white">Ejecutando Auditoría Web y de Conversión...</h4>
+                      <p className="text-xs text-zinc-400 mt-1">
+                        Analizando tiempos de carga móviles, Core Web Vitals, maquetación responsive, etiquetas SEO y fricción de contacto.
+                      </p>
+                    </div>
+                    <div className="w-48 h-1.5 bg-white/10 rounded-full mx-auto overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full animate-pulse w-3/4" />
+                    </div>
                   </div>
-                  <p className="text-zinc-300 leading-relaxed text-xs">
-                    {currentProspect.digitalHealth.diagnosis}
-                  </p>
-                </div>
+                ) : !webAuditReport ? (
+                  <div className="p-8 rounded-2xl bg-[#101018] border border-white/5 text-center space-y-4">
+                    <div className="w-12 h-12 mx-auto rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+                      <Activity size={24} />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-white">Sin Auditoría Web Generada Aún</h4>
+                      <p className="text-xs text-zinc-400 max-w-md mx-auto mt-1">
+                        Genera un informe técnico minucioso sobre velocidad de carga, problemas de maquetación, SEO y conversión para usar como gancho de venta.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRunAudit(true)}
+                      className="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center gap-2 mx-auto shadow-lg shadow-purple-600/30 transition-all"
+                    >
+                      <Zap size={14} />
+                      <span>Escanear y Auditar Sitio Web</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {/* AUDIT HEADER: SCORE CARD & ACTIONS */}
+                    <div className="p-5 rounded-2xl bg-gradient-to-br from-[#121220] via-[#0f0f18] to-[#141224] border border-white/10 shadow-xl space-y-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                          {/* GLOBAL SCORE CIRCLE */}
+                          <div className={`w-16 h-16 rounded-2xl flex flex-col items-center justify-center font-mono border shadow-lg ${
+                            webAuditReport.globalScore >= 70
+                              ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-400 shadow-emerald-950/40'
+                              : webAuditReport.globalScore >= 40
+                              ? 'bg-amber-500/10 border-amber-500/40 text-amber-300 shadow-amber-950/40'
+                              : 'bg-rose-500/10 border-rose-500/40 text-rose-400 shadow-rose-950/40'
+                          }`}>
+                            <span className="text-2xl font-black">{webAuditReport.globalScore}</span>
+                            <span className="text-[9px] uppercase tracking-wider text-zinc-400">/ 100</span>
+                          </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="p-3.5 rounded-xl bg-black/40 border border-white/5 space-y-1">
-                    <span className="text-zinc-500 text-[10px] uppercase font-bold">Velocidad / Rendimiento Web</span>
-                    <div className="text-sm font-bold text-white">{currentProspect.digitalHealth.loadSpeed}</div>
-                  </div>
-                  <div className="p-3.5 rounded-xl bg-black/40 border border-white/5 space-y-1">
-                    <span className="text-zinc-500 text-[10px] uppercase font-bold">Seguridad SSL</span>
-                    <div className={`text-sm font-bold ${currentProspect.digitalHealth.hasSSL ? 'text-emerald-400' : 'text-rose-400'}`}>
-                      {currentProspect.digitalHealth.hasSSL ? 'Certificado Activo (HTTPS)' : 'Inexistente o Sin SSL'}
+                          <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h3 className="text-base font-bold text-white">Score de Salud Digital & Web</h3>
+                              <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
+                                webAuditReport.status === 'Excelente'
+                                  ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                                  : webAuditReport.status === 'Aceptable'
+                                  ? 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+                                  : webAuditReport.status === 'Deficiente'
+                                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                                  : 'bg-rose-500/20 text-rose-400 border-rose-500/30'
+                              }`}>
+                                {webAuditReport.status}
+                              </span>
+                            </div>
+                            <p className="text-xs text-zinc-400 mt-0.5 flex items-center gap-1.5 truncate max-w-md">
+                              <Globe size={12} className="text-zinc-500 shrink-0" />
+                              <span className="truncate">{webAuditReport.url}</span>
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* ACCIONES RÁPIDAS */}
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleRunAudit(true)}
+                            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white border border-white/10 transition-colors"
+                            title="Re-ejecutar auditoría completa"
+                          >
+                            <RefreshCw size={14} className={isAuditingWeb ? 'animate-spin' : ''} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleCopyAuditWhatsApp(webAuditReport.commercialOpportunities.clientWhatsAppExecutiveSummary)}
+                            className="px-3 py-2 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/40 text-purple-300 font-semibold text-xs flex items-center gap-1.5 transition-colors"
+                          >
+                            {copiedAuditSummary ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+                            <span>{copiedAuditSummary ? '¡Copiado!' : 'Copiar para WhatsApp'}</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* RESUMEN EJECUTIVO */}
+                      <p className="text-xs text-zinc-300 bg-black/40 p-3.5 rounded-xl border border-white/5 leading-relaxed">
+                        {webAuditReport.summary}
+                      </p>
+                    </div>
+
+                    {/* 4 PILARES TÉCNICOS */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                      {/* 1. PERFORMANCE */}
+                      <div className="p-4 rounded-xl bg-[#0f0f18] border border-white/5 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 text-white font-bold text-xs">
+                            <Zap size={14} className="text-amber-400" />
+                            <span>Velocidad & Rendimiento</span>
+                          </div>
+                          <span className={`text-[11px] font-mono font-bold ${
+                            webAuditReport.performance.score >= 70 ? 'text-emerald-400' :
+                            webAuditReport.performance.score >= 40 ? 'text-amber-300' : 'text-rose-400'
+                          }`}>
+                            {webAuditReport.performance.score}%
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-[11px] bg-black/30 p-2 rounded-lg">
+                          <span className="text-zinc-400">Carga Móvil (LCP):</span>
+                          <span className="font-mono font-bold text-white">
+                            {webAuditReport.performance.loadTimeSeconds > 0 ? `${webAuditReport.performance.loadTimeSeconds}s` : 'Sin web'}
+                          </span>
+                        </div>
+                        <ul className="space-y-1.5 text-[11px] text-zinc-400">
+                          {webAuditReport.performance.issues.map((iss, i) => (
+                            <li key={i} className="flex items-start gap-1.5">
+                              <span className="text-rose-400 font-bold">•</span>
+                              <span>{iss}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      {/* 2. RESPONSIVE & MOBILE */}
+                      <div className="p-4 rounded-xl bg-[#0f0f18] border border-white/5 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 text-white font-bold text-xs">
+                            <Smartphone size={14} className="text-blue-400" />
+                            <span>Mobile & Maquetación</span>
+                          </div>
+                          <span className={`text-[11px] font-mono font-bold ${
+                            webAuditReport.responsive.score >= 70 ? 'text-emerald-400' :
+                            webAuditReport.responsive.score >= 40 ? 'text-amber-300' : 'text-rose-400'
+                          }`}>
+                            {webAuditReport.responsive.score}%
+                          </span>
+                        </div>
+                        <div className="text-[11px] bg-black/30 p-2 rounded-lg text-zinc-300">
+                          {webAuditReport.responsive.diagnostics}
+                        </div>
+                        <ul className="space-y-1.5 text-[11px] text-zinc-400">
+                          {webAuditReport.responsive.issues.map((iss, i) => (
+                            <li key={i} className="flex items-start gap-1.5">
+                              <span className="text-amber-400 font-bold">•</span>
+                              <span>{iss}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      {/* 3. SEO & PRESENCIA LOCAL */}
+                      <div className="p-4 rounded-xl bg-[#0f0f18] border border-white/5 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 text-white font-bold text-xs">
+                            <Search size={14} className="text-emerald-400" />
+                            <span>SEO & Presencia Local</span>
+                          </div>
+                          <span className={`text-[11px] font-mono font-bold ${
+                            webAuditReport.seoAndLocal.score >= 70 ? 'text-emerald-400' :
+                            webAuditReport.seoAndLocal.score >= 40 ? 'text-amber-300' : 'text-rose-400'
+                          }`}>
+                            {webAuditReport.seoAndLocal.score}%
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-[10px]">
+                          <div className="bg-black/30 p-2 rounded-lg flex items-center justify-between">
+                            <span className="text-zinc-400">Seguridad SSL:</span>
+                            <span className={webAuditReport.seoAndLocal.hasSSL ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}>
+                              {webAuditReport.seoAndLocal.hasSSL ? 'HTTPS ✅' : 'No Seguro ❌'}
+                            </span>
+                          </div>
+                          <div className="bg-black/30 p-2 rounded-lg flex items-center justify-between">
+                            <span className="text-zinc-400">Open Graph:</span>
+                            <span className={webAuditReport.seoAndLocal.hasOpenGraph ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}>
+                              {webAuditReport.seoAndLocal.hasOpenGraph ? 'Activo' : 'Inexistente'}
+                            </span>
+                          </div>
+                        </div>
+                        <ul className="space-y-1.5 text-[11px] text-zinc-400">
+                          {webAuditReport.seoAndLocal.issues.map((iss, i) => (
+                            <li key={i} className="flex items-start gap-1.5">
+                              <span className="text-purple-400 font-bold">•</span>
+                              <span>{iss}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      {/* 4. CRO & UX CONVERSION */}
+                      <div className="p-4 rounded-xl bg-[#0f0f18] border border-white/5 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 text-white font-bold text-xs">
+                            <Target size={14} className="text-rose-400" />
+                            <span>Conversión (CRO) & Diseño</span>
+                          </div>
+                          <span className={`text-[11px] font-mono font-bold ${
+                            webAuditReport.conversionUx.score >= 70 ? 'text-emerald-400' :
+                            webAuditReport.conversionUx.score >= 40 ? 'text-amber-300' : 'text-rose-400'
+                          }`}>
+                            {webAuditReport.conversionUx.score}%
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-[10px]">
+                          <div className="bg-black/30 p-2 rounded-lg flex items-center justify-between">
+                            <span className="text-zinc-400">Diseño Visual:</span>
+                            <span className="text-white font-bold truncate">{webAuditReport.conversionUx.designEra}</span>
+                          </div>
+                          <div className="bg-black/30 p-2 rounded-lg flex items-center justify-between">
+                            <span className="text-zinc-400">WhatsApp Directo:</span>
+                            <span className={webAuditReport.conversionUx.hasWhatsAppDirect ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}>
+                              {webAuditReport.conversionUx.hasWhatsAppDirect ? 'Sí ✅' : 'No ❌'}
+                            </span>
+                          </div>
+                        </div>
+                        <ul className="space-y-1.5 text-[11px] text-zinc-400">
+                          {webAuditReport.conversionUx.frictionPoints.map((iss, i) => (
+                            <li key={i} className="flex items-start gap-1.5">
+                              <span className="text-rose-400 font-bold">•</span>
+                              <span>{iss}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+
+                    {/* PROPUESTA DE VALOR / GANCHO COMERCIAL CREAPP */}
+                    <div className="p-5 rounded-2xl bg-gradient-to-r from-purple-950/40 via-[#12111d] to-indigo-950/40 border border-purple-500/30 space-y-3">
+                      <div className="flex items-center gap-2 text-purple-300 font-bold text-xs">
+                        <Sparkles size={15} />
+                        <span>Oportunidad Comercial & Solución CreApp Sugerida</span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div className="p-3 bg-black/40 rounded-xl border border-white/5 space-y-1">
+                          <span className="text-[10px] uppercase font-bold text-zinc-400">Fuga Principal de Clientes</span>
+                          <p className="text-xs text-rose-300 font-medium leading-relaxed">
+                            {webAuditReport.commercialOpportunities.topPainPoint}
+                          </p>
+                        </div>
+                        <div className="p-3 bg-black/40 rounded-xl border border-white/5 space-y-1">
+                          <span className="text-[10px] uppercase font-bold text-zinc-400">Servicio / Pack a Ofrecer</span>
+                          <p className="text-xs text-purple-200 font-bold leading-relaxed">
+                            {webAuditReport.commercialOpportunities.suggestedService}
+                          </p>
+                        </div>
+                        <div className="p-3 bg-black/40 rounded-xl border border-white/5 space-y-1">
+                          <span className="text-[10px] uppercase font-bold text-zinc-400">Impacto Estimado para el Cliente</span>
+                          <p className="text-xs text-emerald-300 font-semibold leading-relaxed">
+                            {webAuditReport.commercialOpportunities.estimatedValueAddition}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* INFORME EJECUTIVO LISTO PARA WHATSAPP */}
+                    <div className="p-4 rounded-xl bg-black/50 border border-white/10 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-zinc-300 font-bold text-xs">
+                          <MessageSquare size={14} className="text-emerald-400" />
+                          <span>Texto de Diagnóstico Gratuito para WhatsApp (Lead Magnet)</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleCopyAuditWhatsApp(webAuditReport.commercialOpportunities.clientWhatsAppExecutiveSummary)}
+                          className="px-3 py-1 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-emerald-300 text-[11px] font-bold flex items-center gap-1.5 transition-colors"
+                        >
+                          {copiedAuditSummary ? <Check size={12} /> : <Copy size={12} />}
+                          <span>{copiedAuditSummary ? '¡Copiado!' : 'Copiar Texto'}</span>
+                        </button>
+                      </div>
+                      <pre className="text-[11px] font-sans text-zinc-300 bg-black/60 p-3.5 rounded-xl border border-white/5 whitespace-pre-wrap leading-relaxed">
+                        {webAuditReport.commercialOpportunities.clientWhatsAppExecutiveSummary}
+                      </pre>
                     </div>
                   </div>
-                  <div className="p-3.5 rounded-xl bg-black/40 border border-white/5 space-y-1">
-                    <span className="text-zinc-500 text-[10px] uppercase font-bold">Optimización Móvil</span>
-                    <div className={`text-sm font-bold ${currentProspect.digitalHealth.isMobileFriendly ? 'text-emerald-400' : 'text-amber-400'}`}>
-                      {currentProspect.digitalHealth.isMobileFriendly ? 'Adaptado a Celulares' : 'Fricción en Navegación Móvil'}
-                    </div>
-                  </div>
-                  <div className="p-3.5 rounded-xl bg-black/40 border border-white/5 space-y-1">
-                    <span className="text-zinc-500 text-[10px] uppercase font-bold">ID Único de Google Places</span>
-                    <div className="text-[11px] font-mono text-zinc-400 truncate">{currentProspect.id}</div>
-                  </div>
-                </div>
+                )}
               </div>
             )}
           </div>

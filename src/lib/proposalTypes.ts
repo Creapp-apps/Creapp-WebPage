@@ -38,6 +38,7 @@ export interface ServiceDetails {
   response_time_critical?: string;
   response_time_normal?: string;
   min_term_months?: string;
+  minimum_commitment?: string;
   auto_renew?: boolean;
   limits?: {
     users?: string;

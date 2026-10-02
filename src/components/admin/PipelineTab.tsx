@@ -200,12 +200,18 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
       source: 'google_places',
       digitalHealth: {
         hasWebsite: hasRealWeb,
+        hasWebsiteInMaps: hasRealWeb,
+        websiteUnlinkedInMaps: false,
+        isMobileFriendly: hasRealWeb,
+        hasSSL: hasRealWeb,
+        loadSpeed: hasRealWeb ? 'Media' : 'Inexistente',
         diagnosis:
           lead.notes ||
           (hasRealWeb
             ? 'Presencia digital operativa con oportunidad de automatización de ventas e IA.'
             : 'Carece de sitio web oficial con embudo de conversión propio. Fuga de prospectos hacia canales desatendidos.'),
-        suggestedSolution: lead.productType || 'Desarrollo a Medida',
+        suggestedSolution: (['Stacked SaaS', 'TrazApp', 'Dental IA', 'Desarrollo a Medida', 'Landing & Growth'].includes(lead.productType) ? lead.productType : 'Desarrollo a Medida') as any,
+        estimatedBudget: lead.estimatedValue || 0,
       },
       socialLinks: {
         instagram: lead.instagram,

@@ -38,6 +38,7 @@ import {
   Flame,
   Phone,
   SlidersHorizontal,
+  Activity,
 } from 'lucide-react';
 import {
   ScrapedProspect,
@@ -82,6 +83,7 @@ export const ScraperTab: React.FC<ScraperTabProps> = ({
 
   // 360 Dossier Modal
   const [dossierProspect, setDossierProspect] = useState<ScrapedProspect | null>(null);
+  const [dossierInitialTab, setDossierInitialTab] = useState<'strategy' | 'pitches' | 'audit'>('strategy');
 
   // Google Maps Radar state
   const [showRadarMap, setShowRadarMap] = useState(true);
@@ -1211,6 +1213,7 @@ export const ScraperTab: React.FC<ScraperTabProps> = ({
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
+                          setDossierInitialTab('strategy');
                           setDossierProspect(p);
                         }}
                         className="px-2.5 py-1.5 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 text-purple-200 border border-purple-500/30 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm"
@@ -1218,6 +1221,19 @@ export const ScraperTab: React.FC<ScraperTabProps> = ({
                       >
                         <Bot size={13} className="text-purple-400" />
                         <span>Ficha 360°</span>
+                      </button>
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDossierInitialTab('audit');
+                          setDossierProspect(p);
+                        }}
+                        className="px-2.5 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm"
+                        title="Auditoría Web Técnica & CRO"
+                      >
+                        <Activity size={13} className="text-emerald-400" />
+                        <span>Auditoría</span>
                       </button>
 
                       {igUrl ? (
@@ -1317,6 +1333,7 @@ export const ScraperTab: React.FC<ScraperTabProps> = ({
         onClose={() => setDossierProspect(null)}
         onImportToPipeline={(p) => handleImportToPipeline(p)}
         isImported={dossierProspect ? importedIds.has(dossierProspect.id) : false}
+        initialTab={dossierInitialTab}
         onFocusOnMap={(p) => {
           setSelectedProspect(p);
           setShowRadarMap(true);

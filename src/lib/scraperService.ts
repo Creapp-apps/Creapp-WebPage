@@ -1039,6 +1039,7 @@ export const generateColdPitchWithAI = async (
   const clientEntity = isDental ? 'pacientes' : 'clientes';
   const placeEntity = isDental ? 'consultorio' : 'negocio';
   const appointmentEntity = isDental ? 'turnos' : 'consultas y reservas';
+  const targetAudience = isDental ? 'profesionales de la salud dental' : 'dueños de negocios y marcas';
   const rawWeb = (prospect.website || '').trim();
   const isIgAsWeb = Boolean(rawWeb && /instagram\.com/i.test(rawWeb));
   const hasRealWeb = Boolean(rawWeb && !isIgAsWeb);
