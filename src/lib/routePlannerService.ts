@@ -18,7 +18,7 @@ export interface VisitRoutePlan {
   originCoords: { lat: number; lng: number };
   destinationAddress: string;
   destinationCoords: { lat: number; lng: number };
-  travelMode: 'DRIVING' | 'WALKING';
+  travelMode: 'DRIVING' | 'WALKING' | 'BICYCLING';
   stops: RouteStop[];
   totalDistanceKm: number;
   totalDurationMin: number;
@@ -84,7 +84,7 @@ export const buildGoogleMapsMultiStopUrl = (
   origin: { lat: number; lng: number } | string,
   destination: { lat: number; lng: number } | string,
   waypoints: Array<{ lat: number; lng: number } | string>,
-  travelMode: 'DRIVING' | 'WALKING' = 'DRIVING'
+  travelMode: 'DRIVING' | 'WALKING' | 'BICYCLING' = 'DRIVING'
 ): string => {
   const formatPoint = (p: { lat: number; lng: number } | string) => {
     if (typeof p === 'string') return encodeURIComponent(p);
@@ -95,7 +95,12 @@ export const buildGoogleMapsMultiStopUrl = (
   const destStr = formatPoint(destination);
   const wpStr = waypoints.map(formatPoint).join('|');
 
-  const modeParam = travelMode === 'WALKING' ? '&travelmode=walking' : '&travelmode=driving';
+  const modeParam =
+    travelMode === 'WALKING'
+      ? '&travelmode=walking'
+      : travelMode === 'BICYCLING'
+      ? '&travelmode=bicycling'
+      : '&travelmode=driving';
 
   return `https://www.google.com/maps/dir/?api=1&origin=${originStr}&destination=${destStr}&waypoints=${wpStr}${modeParam}`;
 };
@@ -108,7 +113,7 @@ export const optimizeStopsByProximity = (
   origin: { lat: number; lng: number },
   destination: { lat: number; lng: number },
   prospects: ScrapedProspect[],
-  travelMode: 'DRIVING' | 'WALKING' = 'DRIVING'
+  travelMode: 'DRIVING' | 'WALKING' | 'BICYCLING' = 'DRIVING'
 ): RouteStop[] => {
   const validProspects = prospects.filter(
     (p) => typeof p.lat === 'number' && typeof p.lng === 'number'
@@ -137,8 +142,8 @@ export const optimizeStopsByProximity = (
   }
 
   // Estimar tiempos y distancias entre cada tramo
-  // Velocidades promedio en ciudad: Auto 25 km/h, Caminando 4.5 km/h
-  const avgSpeedKmH = travelMode === 'WALKING' ? 4.5 : 25;
+  // Velocidades promedio en ciudad: Auto 25 km/h, Bici 16 km/h, Caminando 4.5 km/h
+  const avgSpeedKmH = travelMode === 'WALKING' ? 4.5 : travelMode === 'BICYCLING' ? 16 : 25;
   let prevPos = origin;
 
   return ordered.map((prospect, idx) => {

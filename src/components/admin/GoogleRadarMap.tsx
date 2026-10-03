@@ -9,6 +9,7 @@ import {
   RefreshCw,
   Route,
   Car,
+  Bike,
   Footprints,
   CheckCircle2,
   Clock,
@@ -139,10 +140,10 @@ export const GoogleRadarMap: React.FC<GoogleRadarMapProps> = ({
   // CONFIGURACIÓN DE RUTA DE VISITAS
   const [originAddress, setOriginAddress] = useState<string>('Punto de Partida');
   const [originCoords, setOriginCoords] = useState<{ lat: number; lng: number }>(center);
-  const [destinationAddress, setDestinationAddress] = useState<string>('Punto de Retorno / Fin');
+  const [destinationAddress, setDestinationAddress] = useState<string>('');
   const [destinationCoords, setDestinationCoords] = useState<{ lat: number; lng: number }>(center);
   const [isRoundTrip, setIsRoundTrip] = useState<boolean>(true);
-  const [travelMode, setTravelMode] = useState<'DRIVING' | 'WALKING'>('DRIVING');
+  const [travelMode, setTravelMode] = useState<'DRIVING' | 'WALKING' | 'BICYCLING'>('DRIVING');
 
   // ITINERARIO ACTIVO
   const [routeStops, setRouteStops] = useState<RouteStop[]>([]);
@@ -158,7 +159,7 @@ export const GoogleRadarMap: React.FC<GoogleRadarMapProps> = ({
     if (saved) {
       setOriginAddress(saved.originAddress || 'Punto de Partida');
       setOriginCoords(saved.originCoords || center);
-      setDestinationAddress(saved.destinationAddress || 'Punto de Retorno');
+      setDestinationAddress(saved.destinationAddress || '');
       setDestinationCoords(saved.destinationCoords || center);
       setTravelMode(saved.travelMode || 'DRIVING');
       setRouteStops(saved.stops || []);
@@ -496,7 +497,7 @@ export const GoogleRadarMap: React.FC<GoogleRadarMapProps> = ({
   };
 
   // Geolocalización del navegador
-  const handleCurrentLocation = (target: 'center' | 'origin' = 'center') => {
+  const handleCurrentLocation = (target: 'center' | 'origin' | 'dest' = 'center') => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
@@ -504,6 +505,10 @@ export const GoogleRadarMap: React.FC<GoogleRadarMapProps> = ({
           if (target === 'origin') {
             setOriginCoords(coords);
             reverseGeocode(coords, 'origin');
+          } else if (target === 'dest') {
+            setIsRoundTrip(false);
+            setDestinationCoords(coords);
+            reverseGeocode(coords, 'dest');
           } else {
             mapInstanceRef.current?.panTo(coords);
             centerMarkerRef.current?.setPosition(coords);
@@ -516,6 +521,24 @@ export const GoogleRadarMap: React.FC<GoogleRadarMapProps> = ({
         }
       );
     }
+  };
+
+  const geocodeAddressToCoords = (addressText: string, target: 'origin' | 'dest') => {
+    const gmaps = typeof window !== 'undefined' ? (window as any).google?.maps : null;
+    if (!addressText.trim() || !gmaps?.Geocoder) return;
+
+    const geocoder = new gmaps.Geocoder();
+    geocoder.geocode({ address: addressText }, (results: any, status: string) => {
+      if (status === 'OK' && results && results[0]) {
+        const loc = results[0].geometry.location;
+        const newPos = { lat: loc.lat(), lng: loc.lng() };
+        if (target === 'origin') {
+          setOriginCoords(newPos);
+        } else {
+          setDestinationCoords(newPos);
+        }
+      }
+    });
   };
 
   // ==========================================
@@ -548,13 +571,20 @@ export const GoogleRadarMap: React.FC<GoogleRadarMapProps> = ({
         stopover: true,
       }));
 
+      const gmapsTravelMode =
+        travelMode === 'WALKING'
+          ? gmaps.TravelMode.WALKING
+          : travelMode === 'BICYCLING'
+          ? gmaps.TravelMode.BICYCLING
+          : gmaps.TravelMode.DRIVING;
+
       directionsService.route(
         {
           origin: new gmaps.LatLng(originCoords.lat, originCoords.lng),
           destination: new gmaps.LatLng(dest.lat, dest.lng),
           waypoints,
           optimizeWaypoints: true,
-          travelMode: travelMode === 'WALKING' ? gmaps.TravelMode.WALKING : gmaps.TravelMode.DRIVING,
+          travelMode: gmapsTravelMode,
         },
         (result: any, status: string) => {
           setIsCalculatingRoute(false);
@@ -869,13 +899,17 @@ export const GoogleRadarMap: React.FC<GoogleRadarMapProps> = ({
                     type="text"
                     value={originAddress}
                     onChange={(e) => setOriginAddress(e.target.value)}
+                    onBlur={() => geocodeAddressToCoords(originAddress, 'origin')}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') geocodeAddressToCoords(originAddress, 'origin');
+                    }}
                     placeholder="Dirección de Partida..."
                     className="flex-1 bg-transparent text-white placeholder:text-zinc-500 focus:outline-none text-xs"
                   />
                   <button
                     type="button"
                     onClick={() => handleCurrentLocation('origin')}
-                    title="Usar mi ubicación GPS actual"
+                    title="Usar mi ubicación GPS actual para el Punto A"
                     className="p-1 rounded text-zinc-400 hover:text-emerald-400 transition-colors"
                   >
                     <Navigation size={13} />
@@ -889,38 +923,75 @@ export const GoogleRadarMap: React.FC<GoogleRadarMapProps> = ({
                   </div>
                   <input
                     type="text"
-                    disabled={isRoundTrip}
                     value={isRoundTrip ? 'Circuito cerrado (Regreso al Punto A)' : destinationAddress}
-                    onChange={(e) => setDestinationAddress(e.target.value)}
-                    placeholder="Dirección de Llegada / Fin..."
-                    className="flex-1 bg-transparent text-white placeholder:text-zinc-500 focus:outline-none text-xs disabled:opacity-50"
+                    onFocus={() => {
+                      if (isRoundTrip) {
+                        setIsRoundTrip(false);
+                        setDestinationAddress('');
+                      }
+                    }}
+                    onChange={(e) => {
+                      setIsRoundTrip(false);
+                      setDestinationAddress(e.target.value);
+                    }}
+                    onBlur={() => {
+                      if (destinationAddress.trim() && !isRoundTrip) {
+                        geocodeAddressToCoords(destinationAddress, 'dest');
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && destinationAddress.trim()) {
+                        geocodeAddressToCoords(destinationAddress, 'dest');
+                      }
+                    }}
+                    placeholder="Escribe la dirección de llegada..."
+                    className={`flex-1 bg-transparent text-xs focus:outline-none transition-colors ${
+                      isRoundTrip ? 'text-purple-300 font-medium' : 'text-white placeholder:text-zinc-500'
+                    }`}
                   />
                   <button
                     type="button"
-                    onClick={() => setIsRoundTrip(!isRoundTrip)}
-                    title={isRoundTrip ? 'Ruta de ida y vuelta a A' : 'Destino B personalizado'}
-                    className={`text-[10px] px-2 py-0.5 rounded font-bold transition-all ${
+                    onClick={() => handleCurrentLocation('dest')}
+                    title="Usar mi ubicación GPS para el Punto B"
+                    className="p-1 rounded text-zinc-400 hover:text-purple-400 transition-colors"
+                  >
+                    <Navigation size={13} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = !isRoundTrip;
+                      setIsRoundTrip(next);
+                      if (next) {
+                        setDestinationAddress(originAddress || 'Regreso al Punto A');
+                        setDestinationCoords(originCoords);
+                      } else {
+                        setDestinationAddress('');
+                      }
+                    }}
+                    title={isRoundTrip ? 'Click para escribir un destino B distinto' : 'Hacer circuito de regreso a A'}
+                    className={`text-[10px] px-2.5 py-1 rounded-lg font-bold flex items-center gap-1 transition-all shrink-0 ${
                       isRoundTrip
-                        ? 'bg-purple-600/30 text-purple-300 border border-purple-500/40'
-                        : 'bg-white/5 text-zinc-400'
+                        ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30'
+                        : 'bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white border border-white/10'
                     }`}
                   >
-                    <RotateCcw size={11} className="inline mr-1" />
-                    <span>Volver a A</span>
+                    <RotateCcw size={11} />
+                    <span>{isRoundTrip ? 'Circuito a A' : 'Volver a A'}</span>
                   </button>
                 </div>
               </div>
 
               {/* CONTROLES DE TRANSPORTE Y ACCIÓN DE CÁLCULO */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 border-t border-white/5">
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 flex-wrap">
                   <span className="text-[11px] text-zinc-400 mr-1">Transporte:</span>
                   <button
                     type="button"
                     onClick={() => setTravelMode('DRIVING')}
                     className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all ${
                       travelMode === 'DRIVING'
-                        ? 'bg-purple-600 text-white'
+                        ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30'
                         : 'bg-white/5 text-zinc-400 hover:text-white'
                     }`}
                   >
@@ -929,10 +1000,22 @@ export const GoogleRadarMap: React.FC<GoogleRadarMapProps> = ({
                   </button>
                   <button
                     type="button"
+                    onClick={() => setTravelMode('BICYCLING')}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all ${
+                      travelMode === 'BICYCLING'
+                        ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30'
+                        : 'bg-white/5 text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    <Bike size={13} />
+                    <span>En bicicleta</span>
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => setTravelMode('WALKING')}
                     className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all ${
                       travelMode === 'WALKING'
-                        ? 'bg-purple-600 text-white'
+                        ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30'
                         : 'bg-white/5 text-zinc-400 hover:text-white'
                     }`}
                   >
