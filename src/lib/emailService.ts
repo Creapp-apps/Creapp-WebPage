@@ -91,7 +91,7 @@ async function sendWelcomeEmailDirectFallback(
       </div>
     `;
 
-    const res = await fetch('https://api.resend.com/emails', {
+    let res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -105,9 +105,27 @@ async function sendWelcomeEmailDirectFallback(
       }),
     });
 
+    let resData = await res.json().catch(() => ({}));
+
+    if (!res.ok && (res.status === 403 || resData.message?.toLowerCase().includes('domain') || resData.message?.toLowerCase().includes('not verified'))) {
+      res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          from: 'CreAPP <onboarding@resend.dev>',
+          to: [params.email],
+          subject: `👋 ¡Bienvenido al equipo de CreAPP, ${params.fullName}! Tus credenciales`,
+          html,
+        }),
+      });
+      resData = await res.json().catch(() => ({}));
+    }
+
     if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      return { success: false, error: err.message || 'Error en Resend API' };
+      return { success: false, error: resData.message || 'Error en Resend API' };
     }
 
     return { success: true };

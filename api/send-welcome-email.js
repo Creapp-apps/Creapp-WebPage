@@ -359,8 +359,8 @@ export default async function handler(req, res) {
 </html>
     `;
 
-    // Envío a través de Resend API
-    const resendResponse = await fetch('https://api.resend.com/emails', {
+    // Envío a través de Resend API con fallback automático si el dominio no está verificado aún
+    let resendResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -374,7 +374,26 @@ export default async function handler(req, res) {
       }),
     });
 
-    const resendData = await resendResponse.json();
+    let resendData = await resendResponse.json();
+
+    // Si el dominio personalizado creapp.com.ar aún no tiene DNS verificados en Resend, reintentar con el sender verificado
+    if (!resendResponse.ok && (resendResponse.status === 403 || resendData.message?.toLowerCase().includes('domain') || resendData.message?.toLowerCase().includes('not verified'))) {
+      console.warn('Reintentando envío mediante sender verificado onboarding@resend.dev...');
+      resendResponse = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          from: 'CreAPP <onboarding@resend.dev>',
+          to: [email],
+          subject: `👋 ¡Bienvenido al equipo de CreAPP, ${fullName}! Tus credenciales de acceso`,
+          html: htmlContent,
+        }),
+      });
+      resendData = await resendResponse.json();
+    }
 
     if (!resendResponse.ok) {
       console.error('Error from Resend API:', resendData);
