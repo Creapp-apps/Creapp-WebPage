@@ -27,13 +27,13 @@ const SparkleStar: React.FC<{ size: number; className?: string; color?: string }
 
 export const PwaSplashScreen: React.FC<PwaSplashScreenProps> = ({ onComplete }) => {
   // Secuencia Cinemática con Cadencia Satisfactoria (5 Actos):
-  // 1. 'loading' (0 - 1.8s): Preloader inicial centrado con barra de carga que avanza de 0% a 100% de forma visible y fluida.
-  // 2. 'ascent' (1.8s - 3.4s): Cohete asciende al cielo con chispas y estela; cúmulos entran desde abajo apoyados 100% en el marco (SIN LOGO).
-  // 3. 'takeoff' (3.4s - 4.4s): Despegue a máxima potencia; el cohete sale por arriba y las nubes lo siguen barriendo como telón hacia arriba.
+  // 1. 'loading' (0 - 1.8s): Spawn 100% centrado al medio (cohete + creapp + barra de carga 0% a 100%).
+  // 2. 'takeoff' (1.8s - 3.4s): El cohete asciende desde el centro hacia arriba con estela; cúmulos entran desde abajo (SIN LOGO).
+  // 3. 'blastoff' (3.4s - 4.4s): El cohete sale disparado por arriba y las nubes lo siguen barriendo como telón hacia arriba.
   // 4. 'farewell' (4.4s - 5.6s): Sobre el fondo oscuro estrellado aparece centrado el branding de despedida: "creapp SOFTWARE LAB".
   // 5. 'reveal' (5.6s - 6.1s): Fade out suave y etéreo que devela la plataforma / login.
   // 6. 'done' (6.2s): Desmontado del componente.
-  const [stage, setStage] = useState<'loading' | 'ascent' | 'takeoff' | 'farewell' | 'reveal' | 'done'>('loading');
+  const [stage, setStage] = useState<'loading' | 'takeoff' | 'blastoff' | 'farewell' | 'reveal' | 'done'>('loading');
 
   useEffect(() => {
     // Retirar splash estático de index.html
@@ -58,13 +58,13 @@ export const PwaSplashScreen: React.FC<PwaSplashScreenProps> = ({ onComplete }) 
       }
     } catch (e) {}
 
-    // Cronograma con tiempos amplios y visualmente satisfactorios
-    const tAscent = setTimeout(() => {
-      setStage('ascent');
-    }, 1800);
-
+    // Cronograma Cinemático con Cadencia Perfecta
     const tTakeoff = setTimeout(() => {
       setStage('takeoff');
+    }, 1800);
+
+    const tBlastoff = setTimeout(() => {
+      setStage('blastoff');
     }, 3400);
 
     const tFarewell = setTimeout(() => {
@@ -88,8 +88,8 @@ export const PwaSplashScreen: React.FC<PwaSplashScreenProps> = ({ onComplete }) 
     }, 6600);
 
     return () => {
-      clearTimeout(tAscent);
       clearTimeout(tTakeoff);
+      clearTimeout(tBlastoff);
       clearTimeout(tFarewell);
       clearTimeout(tReveal);
       clearTimeout(tDone);
@@ -102,8 +102,8 @@ export const PwaSplashScreen: React.FC<PwaSplashScreenProps> = ({ onComplete }) 
   }
 
   const isLoading = stage === 'loading';
-  const isAscent = stage === 'ascent';
   const isTakeoff = stage === 'takeoff';
+  const isBlastoff = stage === 'blastoff';
   const isFarewell = stage === 'farewell';
   const isReveal = stage === 'reveal';
 
@@ -149,196 +149,199 @@ export const PwaSplashScreen: React.FC<PwaSplashScreenProps> = ({ onComplete }) 
         ))}
       </div>
 
-      {/* ── COHETE CREAPP Y SECUENCIA DE ASCENSO ── */}
-      <div
-        style={{
-          transform: isTakeoff || isFarewell || isReveal
-            ? 'translateY(-140vh) scale(1.15)'
-            : isAscent
-            ? 'translateY(-28vh) scale(1)'
-            : 'translateY(-6vh) scale(1)', // En loading: centrado cómodo en pantalla
-          transition: isTakeoff || isFarewell || isReveal
-            ? 'transform 0.85s cubic-bezier(0.65, 0, 0.35, 1)'
-            : isAscent
-            ? 'transform 1.4s cubic-bezier(0.2, 0.85, 0.25, 1)'
-            : 'transform 0.5s ease-out',
-        }}
-        className="absolute z-20 flex flex-col items-center pointer-events-none"
-      >
-        {/* Contenedor del Cohete con Balanceo y Sparkles Laterales */}
-        <div className="relative flex items-center justify-center animate-rocket-wobble">
-          {/* Sparkle Izquierdo (Amarillo / Dorado) - Aparece en ascenso */}
-          <div
-            style={{
-              opacity: isAscent ? 1 : 0,
-              transform: isAscent ? 'scale(1)' : 'scale(0)',
-              transition: 'opacity 0.6s ease-out, transform 0.6s ease-out',
-            }}
-            className="absolute -left-10 top-4 animate-sparkle-float-1"
-          >
-            <SparkleStar size={24} color="#FFE600" />
-          </div>
-
-          {/* Sparkle Derecho (Cyan Eléctrico) - Aparece en ascenso */}
-          <div
-            style={{
-              opacity: isAscent ? 1 : 0,
-              transform: isAscent ? 'scale(1)' : 'scale(0)',
-              transition: 'opacity 0.6s ease-out 0.2s, transform 0.6s ease-out 0.2s',
-            }}
-            className="absolute -right-10 top-8 animate-sparkle-float-2"
-          >
-            <SparkleStar size={26} color="#00F0FF" />
-          </div>
-
-          {/* Resplandor de Neón detrás del Cohete */}
-          <div className="absolute w-32 h-32 rounded-full bg-gradient-to-tr from-[#FF2D78]/55 to-[#9B30FF]/55 blur-2xl" />
-
-          {/* VECTOR OFICIAL CREAPP */}
-          <img
-            src={creappLogoOfficial}
-            alt="CreAPP Rocket"
-            className="w-18 sm:w-22 h-auto object-contain filter drop-shadow-[0_0_24px_rgba(255,45,120,0.85)] drop-shadow-[0_0_14px_rgba(155,48,255,0.7)]"
-          />
-        </div>
-
-        {/* ── LLAMA DE FUEGO DEL COHETE ── */}
-        <div className="relative -mt-2 flex flex-col items-center">
-          <div
-            style={{
-              transform: isTakeoff
-                ? 'scaleY(3.8) scaleX(1.3)'
-                : isAscent
-                ? 'scaleY(1.5) scaleX(1.1)'
-                : 'scaleY(0.9) scaleX(0.9)',
-              transition: isTakeoff ? 'transform 0.35s ease-out' : 'transform 0.6s ease-out',
-            }}
-            className="origin-top flex flex-col items-center animate-flame-flicker"
-          >
-            {/* Llama exterior magenta/púrpura */}
-            <div
-              className="w-5 h-8 rounded-b-full bg-gradient-to-b from-[#FF2D78] via-[#9B30FF] to-transparent filter blur-[0.6px] shadow-[0_6px_18px_#FF2D78]"
-              style={{ clipPath: 'polygon(15% 0%, 85% 0%, 100% 70%, 50% 100%, 0% 70%)' }}
-            />
-            {/* Núcleo de llama incandescente blanco/dorado */}
-            <div
-              className="absolute top-0 w-2.5 h-4.5 rounded-b-full bg-gradient-to-b from-white via-[#FFE600] to-transparent filter blur-[0.2px]"
-              style={{ clipPath: 'polygon(20% 0%, 80% 0%, 100% 75%, 50% 100%, 0% 75%)' }}
-            />
-          </div>
-        </div>
-
-        {/* ── ESTELA DE DESPEGUE CÓNICA (Puffs circulares perfectos, emergen en ascenso) ── */}
+      {/* ── BLOQUE PRINCIPAL CENTRADO (Spawn 100% idéntico al splash estático) ── */}
+      <div className="relative z-20 flex flex-col items-center text-center pointer-events-none">
+        {/* CONTENEDOR DEL COHETE (Comienza en el centro exacto y despega hacia arriba) */}
         <div
           style={{
-            opacity: isAscent || isTakeoff ? 1 : 0,
-            transform: isAscent || isTakeoff ? 'scaleY(1)' : 'scaleY(0.2)',
-            transformOrigin: 'top',
-            transition: 'opacity 0.6s ease-out, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
+            transform: isBlastoff || isFarewell || isReveal
+              ? 'translateY(-130vh) scale(1.15)'
+              : isTakeoff
+              ? 'translateY(-24vh) scale(1.05)'
+              : 'translateY(0px) scale(1)',
+            transition: isBlastoff || isFarewell || isReveal
+              ? 'transform 0.85s cubic-bezier(0.65, 0, 0.35, 1)'
+              : isTakeoff
+              ? 'transform 1.4s cubic-bezier(0.2, 0.8, 0.25, 1)'
+              : 'none',
           }}
-          className="relative -mt-1 flex flex-col items-center pointer-events-none"
+          className="flex flex-col items-center"
         >
-          {/* Puff 1: Incandescencia blanca inmediata */}
-          <div className="w-[30px] h-[30px] rounded-full bg-gradient-to-b from-white via-[#fce7f3] to-[#FF2D78] shadow-[0_0_16px_#ffffff] border-[1.5px] border-white animate-cloud-pulse-1" />
+          {/* Contenedor del Cohete con Balanceo y Sparkles Laterales */}
+          <div className="relative flex items-center justify-center animate-rocket-wobble">
+            {/* Sparkle Izquierdo (Amarillo / Dorado) - Aparece al despegar */}
+            <div
+              style={{
+                opacity: isTakeoff ? 1 : 0,
+                transform: isTakeoff ? 'scale(1)' : 'scale(0)',
+                transition: 'opacity 0.5s ease-out, transform 0.5s ease-out',
+              }}
+              className="absolute -left-10 top-4 animate-sparkle-float-1"
+            >
+              <SparkleStar size={24} color="#FFE600" />
+            </div>
 
-          {/* Puff 2: Magenta neón a violeta */}
-          <div className="w-[46px] h-[46px] -mt-3 rounded-full bg-gradient-to-b from-white/95 via-[#f5d0fe] to-[#c084fc] shadow-[0_0_20px_rgba(255,45,120,0.6)] border-[1.5px] border-pink-200/80 animate-cloud-pulse-2" />
+            {/* Sparkle Derecho (Cyan Eléctrico) - Aparece al despegar */}
+            <div
+              style={{
+                opacity: isTakeoff ? 1 : 0,
+                transform: isTakeoff ? 'scale(1)' : 'scale(0)',
+                transition: 'opacity 0.5s ease-out 0.2s, transform 0.5s ease-out 0.2s',
+              }}
+              className="absolute -right-10 top-8 animate-sparkle-float-2"
+            >
+              <SparkleStar size={26} color="#00F0FF" />
+            </div>
 
-          {/* Puff 3: Violeta luminoso */}
-          <div className="w-[66px] h-[66px] -mt-4.5 rounded-full bg-gradient-to-b from-[#fdf4ff] via-[#d8b4fe] to-[#9333ea] shadow-[0_0_22px_rgba(155,48,255,0.55)] border-[1.5px] border-purple-200/70 animate-cloud-pulse-1" />
+            {/* Resplandor de Neón detrás del Cohete */}
+            <div className="absolute w-32 h-32 rounded-full bg-gradient-to-tr from-[#FF2D78]/55 to-[#9B30FF]/55 blur-2xl" />
 
-          {/* Puff 4: Púrpura cósmico */}
-          <div className="w-[92px] h-[92px] -mt-6 rounded-full bg-gradient-to-b from-[#e9d5ff]/90 via-[#a855f7] to-[#7e22ce] shadow-[0_0_25px_rgba(155,48,255,0.4)] border border-purple-300/40 animate-cloud-pulse-2" />
+            {/* VECTOR OFICIAL CREAPP */}
+            <img
+              src={creappLogoOfficial}
+              alt="CreAPP Rocket"
+              className="w-18 sm:w-22 h-auto object-contain filter drop-shadow-[0_0_24px_rgba(255,45,120,0.85)] drop-shadow-[0_0_14px_rgba(155,48,255,0.7)]"
+            />
+          </div>
 
-          {/* Puff 5: Profundo CreAPP */}
-          <div className="w-[126px] h-[126px] -mt-8 rounded-full bg-gradient-to-b from-[#d8b4fe]/85 via-[#9333ea]/80 to-[#4c1d95]/80 shadow-[0_0_28px_rgba(155,48,255,0.3)] border border-purple-400/25" />
+          {/* ── LLAMA DE FUEGO DEL COHETE ── */}
+          <div className="relative -mt-2 flex flex-col items-center">
+            <div
+              style={{
+                transform: isBlastoff
+                  ? 'scaleY(3.8) scaleX(1.3)'
+                  : isTakeoff
+                  ? 'scaleY(1.6) scaleX(1.15)'
+                  : 'scaleY(0.9) scaleX(0.9)',
+                transition: isBlastoff ? 'transform 0.35s ease-out' : 'transform 0.6s ease-out',
+              }}
+              className="origin-top flex flex-col items-center animate-flame-flicker"
+            >
+              {/* Llama exterior magenta/púrpura */}
+              <div
+                className="w-5 h-8 rounded-b-full bg-gradient-to-b from-[#FF2D78] via-[#9B30FF] to-transparent filter blur-[0.6px] shadow-[0_6px_18px_#FF2D78]"
+                style={{ clipPath: 'polygon(15% 0%, 85% 0%, 100% 70%, 50% 100%, 0% 70%)' }}
+              />
+              {/* Núcleo de llama incandescente blanco/dorado */}
+              <div
+                className="absolute top-0 w-2.5 h-4.5 rounded-b-full bg-gradient-to-b from-white via-[#FFE600] to-transparent filter blur-[0.2px]"
+                style={{ clipPath: 'polygon(20% 0%, 80% 0%, 100% 75%, 50% 100%, 0% 75%)' }}
+              />
+            </div>
+          </div>
 
-          {/* Puff 6: Penacho que se ensancha hacia las nubes inferiores */}
-          <div className="w-[168px] h-[168px] -mt-11 rounded-full bg-gradient-to-b from-[#c084fc]/70 via-[#7e22ce]/70 to-[#2e1065]/70 shadow-[0_0_30px_rgba(155,48,255,0.2)]" />
+          {/* ── ESTELA CÓNICA DE NUBES (Cascada esférica orgánica que nace con el despegue) ── */}
+          <div
+            style={{
+              opacity: isTakeoff || isBlastoff ? 1 : 0,
+              transform: isTakeoff || isBlastoff ? 'scaleY(1)' : 'scaleY(0.1)',
+              transformOrigin: 'top',
+              transition: 'opacity 0.6s ease-out, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
+            }}
+            className="relative -mt-1 flex flex-col items-center pointer-events-none"
+          >
+            {/* Puff 1: Incandescencia blanca inmediata bajo tobera */}
+            <div className="w-[30px] h-[30px] rounded-full bg-gradient-to-b from-white via-[#fce7f3] to-[#FF2D78] shadow-[0_0_16px_#ffffff] border-[1.5px] border-white animate-cloud-pulse-1" />
 
-          {/* Puff 7: Transición difusa que penetra el banco de nubes */}
-          <div className="w-[218px] h-[218px] -mt-14 rounded-full bg-gradient-to-b from-[#9333ea]/50 via-[#581c87]/50 to-transparent blur-[1px]" />
+            {/* Puff 2: Magenta neón a violeta */}
+            <div className="w-[46px] h-[46px] -mt-3 rounded-full bg-gradient-to-b from-white/95 via-[#f5d0fe] to-[#c084fc] shadow-[0_0_20px_rgba(255,45,120,0.6)] border-[1.5px] border-pink-200/80 animate-cloud-pulse-2" />
+
+            {/* Puff 3: Violeta luminoso */}
+            <div className="w-[66px] h-[66px] -mt-4.5 rounded-full bg-gradient-to-b from-[#fdf4ff] via-[#d8b4fe] to-[#9333ea] shadow-[0_0_22px_rgba(155,48,255,0.55)] border-[1.5px] border-purple-200/70 animate-cloud-pulse-1" />
+
+            {/* Puff 4: Púrpura cósmico */}
+            <div className="w-[92px] h-[92px] -mt-6 rounded-full bg-gradient-to-b from-[#e9d5ff]/90 via-[#a855f7] to-[#7e22ce] shadow-[0_0_25px_rgba(155,48,255,0.4)] border border-purple-300/40 animate-cloud-pulse-2" />
+
+            {/* Puff 5: Profundo CreAPP */}
+            <div className="w-[126px] h-[126px] -mt-8 rounded-full bg-gradient-to-b from-[#d8b4fe]/85 via-[#9333ea]/80 to-[#4c1d95]/80 shadow-[0_0_28px_rgba(155,48,255,0.3)] border border-purple-400/25" />
+
+            {/* Puff 6: Penacho que se ensancha hacia las nubes inferiores */}
+            <div className="w-[168px] h-[168px] -mt-11 rounded-full bg-gradient-to-b from-[#c084fc]/70 via-[#7e22ce]/70 to-[#2e1065]/70 shadow-[0_0_30px_rgba(155,48,255,0.2)]" />
+
+            {/* Puff 7: Transición difusa */}
+            <div className="w-[218px] h-[218px] -mt-14 rounded-full bg-gradient-to-b from-[#9333ea]/50 via-[#581c87]/50 to-transparent blur-[1px]" />
+          </div>
+        </div>
+
+        {/* ── TEXTO + BARRA DE CARGA INICIAL (Act 1: Centrado bajo el cohete) ── */}
+        <div
+          style={{
+            opacity: isLoading ? 1 : 0,
+            transform: isLoading ? 'translateY(0px) scale(1)' : 'translateY(16px) scale(0.92)',
+            transition: 'opacity 0.4s ease-out, transform 0.4s ease-out',
+            pointerEvents: isLoading ? 'auto' : 'none',
+          }}
+          className="flex flex-col items-center mt-5"
+        >
+          {/* Marca creapp */}
+          <div className="font-display font-black text-4xl sm:text-5xl tracking-tight text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.9)]">
+            <span>cre</span>
+            <span className="bg-gradient-to-r from-[#FF2D78] via-[#9B30FF] to-cyan-400 bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(255,45,120,0.85)]">
+              app
+            </span>
+          </div>
+
+          {/* Subtítulo Software Lab */}
+          <p className="text-[12px] sm:text-xs text-zinc-300 font-mono tracking-[0.35em] uppercase mt-2 drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)] font-semibold">
+            Software Lab
+          </p>
+
+          {/* Barra de Progreso Fluida (0% a 100% en 1.6s) */}
+          <div className="mt-6 w-36 sm:w-44 h-[3px] bg-white/15 rounded-full overflow-hidden relative shadow-[0_0_10px_rgba(255,45,120,0.3)]">
+            <div className="h-full bg-gradient-to-r from-[#FF2D78] via-[#9B30FF] to-cyan-400 rounded-full animate-progress-fill shadow-[0_0_12px_#FF2D78]" />
+          </div>
         </div>
       </div>
 
-      {/* ── UI DE CARGA INICIAL CENTRADA (Act 1: Preloader 0% - 100%) ── */}
+      {/* ── BANCO DE NUBES CÚMULOS Y TELÓN (Act 2 & Act 3: 100% Cúpulas esféricas sin cortes rectos) ── */}
       <div
         style={{
-          opacity: isLoading ? 1 : 0,
-          transform: isLoading ? 'translateY(110px) scale(1)' : 'translateY(130px) scale(0.94)',
-          transition: 'opacity 0.5s ease-out, transform 0.5s ease-out',
-          pointerEvents: isLoading ? 'auto' : 'none',
-        }}
-        className="absolute z-20 flex flex-col items-center text-center"
-      >
-        {/* Marca creapp */}
-        <div className="font-display font-black text-4xl sm:text-5xl tracking-tight text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.9)]">
-          <span>cre</span>
-          <span className="bg-gradient-to-r from-[#FF2D78] via-[#9B30FF] to-cyan-400 bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(255,45,120,0.85)]">
-            app
-          </span>
-        </div>
-
-        {/* Subtítulo Software Lab */}
-        <p className="text-[12px] sm:text-xs text-zinc-300 font-mono tracking-[0.35em] uppercase mt-2 drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)] font-semibold">
-          Software Lab
-        </p>
-
-        {/* Barra de Progreso Fluida (0% a 100% en 1.6s) */}
-        <div className="mt-6 w-36 sm:w-44 h-[3px] bg-white/15 rounded-full overflow-hidden relative shadow-[0_0_10px_rgba(255,45,120,0.3)]">
-          <div className="h-full bg-gradient-to-r from-[#FF2D78] via-[#9B30FF] to-cyan-400 rounded-full animate-progress-fill shadow-[0_0_12px_#FF2D78]" />
-        </div>
-      </div>
-
-      {/* ── BANCO DE NUBES CÚMULOS Y TELÓN (Act 2 & Act 3: SIN LOGO) ── */}
-      <div
-        style={{
-          transform: isTakeoff || isFarewell || isReveal
+          transform: isBlastoff || isFarewell || isReveal
             ? 'translateY(-130vh)' // ¡Barrido tipo telón hacia arriba tras el cohete!
-            : isAscent
+            : isTakeoff
             ? 'translateY(0%)'     // Perfectamente asentado sobre el marco inferior
             : 'translateY(100%)',  // En loading: oculto bajo la pantalla
-          transition: isTakeoff || isFarewell || isReveal
+          transition: isBlastoff || isFarewell || isReveal
             ? 'transform 0.95s cubic-bezier(0.45, 0, 0.2, 1), opacity 0.75s ease-out'
-            : isAscent
+            : isTakeoff
             ? 'transform 1.4s cubic-bezier(0.16, 1, 0.3, 1)'
-            : 'transform 0.3s ease-out',
+            : 'none',
           opacity: isFarewell || isReveal ? 0 : 1,
         }}
         className="absolute inset-x-0 bottom-0 z-30 pointer-events-none flex flex-col justify-end"
       >
         {/* Glow ambiental de horizonte detrás de las nubes */}
-        <div className="absolute -top-28 w-full h-[35vh] bg-gradient-to-t from-[#FF2D78]/25 via-[#9B30FF]/30 to-transparent blur-[50px] pointer-events-none" />
+        <div className="absolute -top-32 w-full h-[40vh] bg-gradient-to-t from-[#FF2D78]/25 via-[#9B30FF]/30 to-transparent blur-[60px] pointer-events-none" />
 
-        {/* ── BANCO VOLUMÉTRICO DE NUBES FLUFFY (100% apoyado y sellado en el marco inferior) ── */}
-        <div className="relative w-full h-[46vh] flex items-end justify-center overflow-hidden">
-          {/* Base sólida y continua que garantiza 0 huecos y 0 márgenes inferiores */}
-          <div className="absolute inset-x-0 bottom-0 h-[36vh] bg-gradient-to-b from-[#3b0764] via-[#240842] to-[#120421]" />
+        {/* ── BANCO VOLUMÉTRICO DE NUBES FLUFFY (100% Cúpulas esféricas sin líneas horizontales expuestas) ── */}
+        <div className="relative w-full h-[48vh] flex items-end justify-center overflow-hidden">
+          {/* Base sólida que une las esferas, ubicada en el tercio inferior para que sus bordes NUNCA queden expuestos */}
+          <div className="absolute inset-x-0 bottom-0 h-[22vh] bg-gradient-to-b from-[#240842] to-[#120421]" />
 
-          {/* ── Layer 1: Nubes de fondo con glow difuso neón ── */}
-          <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-[380px] h-[380px] rounded-full bg-gradient-to-b from-[#c084fc]/50 via-[#7e22ce]/60 to-[#1e0838] blur-[8px]" />
-          <div className="absolute -bottom-16 left-[2%] w-[310px] h-[310px] rounded-full bg-gradient-to-b from-[#a855f7]/40 via-[#6b21a8]/50 to-[#1e0838] blur-[8px]" />
-          <div className="absolute -bottom-16 right-[2%] w-[310px] h-[310px] rounded-full bg-gradient-to-b from-[#e879f9]/40 via-[#9333ea]/50 to-[#1e0838] blur-[8px]" />
+          {/* ── Layer 1: Nubes de fondo con glow difuso neón (Esferas grandes que cubren cualquier posible hueco) ── */}
+          <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-[420px] h-[420px] rounded-full bg-gradient-to-b from-[#c084fc]/50 via-[#7e22ce]/60 to-[#1e0838] blur-[10px]" />
+          <div className="absolute -bottom-14 -left-16 w-[340px] h-[340px] rounded-full bg-gradient-to-b from-[#a855f7]/40 via-[#6b21a8]/50 to-[#1e0838] blur-[10px]" />
+          <div className="absolute -bottom-14 -right-16 w-[340px] h-[340px] rounded-full bg-gradient-to-b from-[#e879f9]/40 via-[#9333ea]/50 to-[#1e0838] blur-[10px]" />
 
-          {/* ── Layer 2: Cúmulos frontales acolchonados (Esferas geométricas puras con borde blanco brillante) ── */}
-          {/* Cúmulo Central Mayor (El pico supremo de la nube) */}
-          <div className="absolute -bottom-14 left-1/2 -translate-x-1/2 w-[310px] h-[310px] rounded-full bg-gradient-to-b from-white via-[#e9d5ff] to-[#3b0764] shadow-[0_0_35px_rgba(255,45,120,0.5)] border-2 border-white/95" />
+          {/* ── Layer 2: Cúmulos frontales acolchonados (Esferas gigantes que se solapan 100% de lado a lado) ── */}
+          {/* Cúmulo Central Mayor (El pico supremo iluminado con borde blanco brillante) */}
+          <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-[340px] h-[340px] rounded-full bg-gradient-to-b from-white via-[#e9d5ff] to-[#3b0764] shadow-[0_0_35px_rgba(255,45,120,0.5)] border-2 border-white/95" />
 
-          {/* Cúmulo Intermedio Izquierdo */}
-          <div className="absolute -bottom-22 left-[12%] -translate-x-1/4 w-[270px] h-[270px] rounded-full bg-gradient-to-b from-white/95 via-[#d8b4fe] to-[#2e1065] shadow-[0_0_28px_rgba(155,48,255,0.45)] border-2 border-purple-200/90" />
+          {/* Cúmulo Intermedio Izquierdo (Solapa con el central) */}
+          <div className="absolute -bottom-18 left-[8%] -translate-x-1/4 w-[300px] h-[300px] rounded-full bg-gradient-to-b from-white/95 via-[#d8b4fe] to-[#2e1065] shadow-[0_0_28px_rgba(155,48,255,0.45)] border-2 border-purple-200/90" />
 
-          {/* Cúmulo Intermedio Derecho */}
-          <div className="absolute -bottom-22 right-[12%] translate-x-1/4 w-[270px] h-[270px] rounded-full bg-gradient-to-b from-white/95 via-[#f5d0fe] to-[#2e1065] shadow-[0_0_28px_rgba(255,45,120,0.45)] border-2 border-pink-200/90" />
+          {/* Cúmulo Intermedio Derecho (Solapa con el central) */}
+          <div className="absolute -bottom-18 right-[8%] translate-x-1/4 w-[300px] h-[300px] rounded-full bg-gradient-to-b from-white/95 via-[#f5d0fe] to-[#2e1065] shadow-[0_0_28px_rgba(255,45,120,0.45)] border-2 border-pink-200/90" />
 
-          {/* Cúmulo Lateral Flanco Izquierdo */}
-          <div className="absolute -bottom-28 -left-12 w-[250px] h-[250px] rounded-full bg-gradient-to-b from-[#f3e8ff]/90 via-[#c084fc] to-[#1a0833] border-2 border-white/70 shadow-[0_0_20px_rgba(155,48,255,0.35)]" />
+          {/* Cúmulo Flanco Izquierdo Extremo (Garantiza cobertura total del borde izquierdo) */}
+          <div className="absolute -bottom-24 -left-16 w-[280px] h-[280px] rounded-full bg-gradient-to-b from-[#f3e8ff]/90 via-[#c084fc] to-[#1a0833] border-2 border-white/70 shadow-[0_0_20px_rgba(155,48,255,0.35)]" />
 
-          {/* Cúmulo Lateral Flanco Derecho */}
-          <div className="absolute -bottom-28 -right-12 w-[250px] h-[250px] rounded-full bg-gradient-to-b from-[#f3e8ff]/90 via-[#e879f9] to-[#1a0833] border-2 border-white/70 shadow-[0_0_20px_rgba(255,45,120,0.35)]" />
+          {/* Cúmulo Flanco Derecho Extremo (Garantiza cobertura total del borde derecho) */}
+          <div className="absolute -bottom-24 -right-16 w-[280px] h-[280px] rounded-full bg-gradient-to-b from-[#f3e8ff]/90 via-[#e879f9] to-[#1a0833] border-2 border-white/70 shadow-[0_0_20px_rgba(255,45,120,0.35)]" />
         </div>
       </div>
 
-      {/* ── BRANDING DE DESPEDIDA SOBRE EL FONDO OSCURO (Act 4: Farewell antes del Reveal) ── */}
+      {/* ── BRANDING DE DESPEDIDA SOBRE EL FONDO OSCURO (Act 4: Farewell sobre cielo estrellado) ── */}
       <div
         style={{
           opacity: isFarewell ? 1 : 0,
