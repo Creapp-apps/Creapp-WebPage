@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import AuthGuard from './components/auth/AuthGuard';
 import { AuthProvider } from './context/AuthContext';
 import { SmoothScroll } from './components/systems/SmoothScroll';
+import PwaSplashScreen from './components/systems/PwaSplashScreen';
 
 // Lazy loading de vistas para evitar cargar 4MB de golpe en dispositivos móviles
 const LandingPage = React.lazy(() => import('./pages/LandingPage'));
@@ -118,6 +119,7 @@ const LandingSmoothScrollWrapper: React.FC<{ children: React.ReactNode }> = ({ c
 const App: React.FC = () => {
   return (
     <BrowserRouter>
+      <PwaSplashScreen />
       <AuthProvider>
         <ErrorBoundary>
           <CursorRestorer>
