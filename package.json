@@ -14,6 +14,7 @@
     "@react-three/fiber": "^9.5.0",
     "@react-three/postprocessing": "^3.0.4",
     "@remotion/player": "^4.0.481",
+    "@sentry/react": "^11.4.0",
     "@supabase/supabase-js": "^2.99.1",
     "@types/react-signature-canvas": "^1.0.7",
     "@types/three": "^0.182.0",

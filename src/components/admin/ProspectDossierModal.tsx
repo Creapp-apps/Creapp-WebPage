@@ -380,7 +380,7 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6 overflow-y-auto">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -395,68 +395,68 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
           initial={{ opacity: 0, scale: 0.94, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.94, y: 15 }}
-          className="relative w-full max-w-4xl bg-[#0c0c14] border border-purple-500/30 rounded-3xl shadow-2xl shadow-purple-950/40 z-10 flex flex-col max-h-[92vh] overflow-hidden my-auto"
+          className="relative w-full max-w-4xl bg-[#0c0c14] border border-purple-500/30 rounded-2xl sm:rounded-3xl shadow-2xl shadow-purple-950/40 z-10 flex flex-col max-h-[92vh] overflow-hidden my-auto"
         >
           {/* TOP HEADER: BRANDING, STATUS & CLOSE */}
-          <div className="p-6 bg-gradient-to-r from-purple-950/40 via-[#10101a] to-zinc-950 border-b border-white/10 flex items-start justify-between gap-4">
-            <div className="space-y-1.5 flex-1">
-              <div className="flex flex-wrap items-center gap-2">
+          <div className="p-4 sm:p-6 bg-gradient-to-r from-purple-950/40 via-[#10101a] to-zinc-950 border-b border-white/10 flex items-start justify-between gap-3 sm:gap-4">
+            <div className="space-y-1.5 flex-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-purple-500/20 text-purple-300 border border-purple-500/30">
                   {currentProspect.category}
                 </span>
                 <span className="px-2 py-0.5 rounded-md text-[10px] font-mono bg-white/5 text-zinc-400 border border-white/10">
-                  Google Maps Verified
+                  Google Maps
                 </span>
                 {hasNoWeb ? (
                   <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center gap-1">
-                    <ShieldAlert size={11} /> Sin Sitio Web (Lead Caliente)
+                    <ShieldAlert size={11} /> Sin Sitio Web
                   </span>
                 ) : isWebUnlinkedInMaps ? (
                   <span
                     className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1 shadow-sm shadow-amber-950/30"
                     title="Tiene sitio web oficial activo pero NO está cargado en su perfil de Google Maps (fuga de pacientes/clientes)"
                   >
-                    <AlertTriangle size={11} className="text-amber-400" /> Web Activa (No vinculada en Maps)
+                    <AlertTriangle size={11} className="text-amber-400" /> Web no en Maps
                   </span>
                 ) : (
                   <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
-                    <CheckCircle2 size={11} /> Con Web Activa
+                    <CheckCircle2 size={11} /> Con Web
                   </span>
                 )}
               </div>
 
-              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
+              <h2 className="text-lg sm:text-2xl font-black text-white tracking-tight flex flex-wrap items-center gap-2">
                 <span>{currentProspect.name}</span>
                 {currentProspect.rating > 0 && (
                   <button
                     type="button"
                     onClick={() => handleOpenReviews()}
-                    className="text-xs px-2.5 py-1 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/30 font-bold flex items-center gap-1.5 hover:bg-amber-500/25 hover:border-amber-500/60 hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-sm group/rating shadow-amber-950/20"
+                    className="text-xs px-2.5 py-0.5 sm:py-1 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/30 font-bold flex items-center gap-1.5 hover:bg-amber-500/25 transition-all cursor-pointer shadow-sm group/rating shadow-amber-950/20"
                     title="Click para ver las opiniones y reseñas de Google Maps"
                   >
                     <Star size={12} className="fill-amber-400 text-amber-400 group-hover/rating:scale-110 transition-transform" />
-                    <span>{currentProspect.rating} ({currentProspect.reviewCount} reviews)</span>
+                    <span>{currentProspect.rating} ({currentProspect.reviewCount})</span>
                     <MessageSquare size={11} className="text-amber-300 opacity-60 group-hover/rating:opacity-100 transition-opacity" />
                   </button>
                 )}
               </h2>
 
-              <p className="text-xs text-zinc-400 flex items-center gap-1.5">
+              <p className="text-xs text-zinc-400 flex items-center gap-1.5 truncate">
                 <MapPin size={13} className="text-purple-400 shrink-0" />
-                <span>{currentProspect.address} • <strong>{currentProspect.city}</strong></span>
+                <span className="truncate">{currentProspect.address} • <strong>{currentProspect.city}</strong></span>
               </p>
             </div>
 
             <button
               onClick={onClose}
-              className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
+              className="p-1.5 sm:p-2 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-colors shrink-0"
             >
               <X size={18} />
             </button>
           </div>
 
           {/* QUICK ACTION BAR */}
-          <div className="px-6 py-3 bg-[#08080d] border-b border-white/5 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="px-4 sm:px-6 py-2.5 sm:py-3 bg-[#08080d] border-b border-white/5 flex flex-wrap items-center justify-between gap-2.5 sm:gap-3 text-xs">
             <div className="flex items-center gap-3 text-zinc-400 flex-wrap">
               {currentProspect.phone ? (
                 <a
@@ -655,10 +655,10 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
           </div>
 
           {/* SOCIAL MEDIA & DIGITAL PRESENCE BAR */}
-          <div className="px-6 py-2.5 bg-[#0a0a0f] border-b border-white/5 flex flex-wrap items-center justify-between gap-2.5 text-xs">
+          <div className="px-4 sm:px-6 py-2 sm:py-2.5 bg-[#0a0a0f] border-b border-white/5 flex flex-wrap items-center justify-between gap-2 text-xs">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-zinc-500 font-medium text-[11px] flex items-center gap-1">
-                <span>Redes Sociales:</span>
+                <span>Redes:</span>
               </span>
 
               {/* Instagram Direct Link or 1-Click Search */}
@@ -745,29 +745,29 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
 
 
           {/* TAB NAVIGATION */}
-          <div className="flex items-center gap-2 px-6 pt-4 border-b border-white/5 bg-[#0c0c14]">
+          <div className="flex items-center gap-1 sm:gap-2 px-3 sm:px-6 pt-3 sm:pt-4 border-b border-white/5 bg-[#0c0c14] overflow-x-auto whitespace-nowrap scrollbar-none">
             <button
               onClick={() => setActiveTab('strategy')}
-              className={`pb-3 px-3 text-xs font-semibold flex items-center gap-2 transition-all border-b-2 ${
+              className={`pb-2.5 sm:pb-3 px-2.5 sm:px-3 text-xs font-semibold flex items-center gap-1.5 sm:gap-2 transition-all border-b-2 shrink-0 ${
                 activeTab === 'strategy'
                   ? 'text-purple-400 border-purple-500'
                   : 'text-zinc-400 border-transparent hover:text-zinc-200'
               }`}
             >
               <Target size={14} />
-              <span>Estrategia de Venta & Solución</span>
+              <span>Estrategia & Solución</span>
             </button>
 
             <button
               onClick={() => setActiveTab('pitches')}
-              className={`pb-3 px-3 text-xs font-semibold flex items-center gap-2 transition-all border-b-2 ${
+              className={`pb-2.5 sm:pb-3 px-2.5 sm:px-3 text-xs font-semibold flex items-center gap-1.5 sm:gap-2 transition-all border-b-2 shrink-0 ${
                 activeTab === 'pitches'
                   ? 'text-purple-400 border-purple-500'
                   : 'text-zinc-400 border-transparent hover:text-zinc-200'
               }`}
             >
               <Sparkles size={14} />
-              <span>Playbook de Pitch (WhatsApp / Llamada)</span>
+              <span>Playbook de Pitch</span>
             </button>
 
             <button
@@ -777,7 +777,7 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
                   handleRunAudit(false);
                 }
               }}
-              className={`pb-3 px-3 text-xs font-semibold flex items-center gap-2 transition-all border-b-2 ${
+              className={`pb-2.5 sm:pb-3 px-2.5 sm:px-3 text-xs font-semibold flex items-center gap-1.5 sm:gap-2 transition-all border-b-2 shrink-0 ${
                 activeTab === 'audit'
                   ? 'text-purple-400 border-purple-500'
                   : 'text-zinc-400 border-transparent hover:text-zinc-200'
@@ -798,7 +798,7 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
           </div>
 
           {/* BODY CONTENT BY TAB */}
-          <div className="p-6 overflow-y-auto space-y-6 flex-1 text-xs">
+          <div className="p-4 sm:p-6 overflow-y-auto space-y-4 sm:space-y-6 flex-1 text-xs">
             {/* 1. STRATEGY TAB */}
             {activeTab === 'strategy' && (
               <div className="space-y-6">
@@ -872,7 +872,7 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
             {activeTab === 'pitches' && (
               <div className="space-y-4">
                 {/* Channel / Strategy Selector */}
-                <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-2xl bg-white/5 border border-white/10 w-fit">
+                <div className="flex items-center gap-1.5 sm:gap-2 p-1.5 rounded-2xl bg-white/5 border border-white/10 max-w-full overflow-x-auto whitespace-nowrap scrollbar-none flex-nowrap sm:flex-wrap">
                   {[
                     ...(currentStage === 'no_answer'
                       ? [

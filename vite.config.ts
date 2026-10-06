@@ -275,6 +275,86 @@ export default defineConfig(({ mode }) => {
                 res.writeHead(500, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: false, error: err?.message, reviews: [] }));
               }
+            } else if (req.url === '/api/ping-fleet' && req.method === 'GET') {
+              try {
+                const https = await import('https');
+                const fleet = [
+                  { id: 'dental-ia', url: 'https://dentalia.com.ar' },
+                  { id: 'stacked', url: 'https://software.stacked.com.ar' },
+                  { id: 'celebra', url: 'https://celebraexperiencias.com.ar' },
+                  { id: 'trazapp', url: 'https://software.trazapp.ar' },
+                  { id: 'belcalis-nails', url: 'https://belcalisnails.com.ar' }
+                ];
+                const results = await Promise.all(
+                  fleet.map(app => new Promise((resolve) => {
+                    const start = Date.now();
+                    const reqPing = https.get(app.url, { timeout: 4500, headers: { 'User-Agent': 'CreAPP-NOC/1.0' } }, (res) => {
+                      const latency = Date.now() - start;
+                      resolve({
+                        id: app.id,
+                        url: app.url,
+                        statusCode: res.statusCode || 200,
+                        latencyMs: latency,
+                        status: (res.statusCode && res.statusCode < 500) ? (latency > 1200 ? 'degraded' : 'healthy') : 'down'
+                      });
+                    });
+                    reqPing.on('error', (err) => {
+                      resolve({
+                        id: app.id,
+                        url: app.url,
+                        statusCode: 0,
+                        latencyMs: Date.now() - start,
+                        status: 'down',
+                        error: err.message
+                      });
+                    });
+                    reqPing.on('timeout', () => {
+                      reqPing.destroy();
+                      resolve({
+                        id: app.id,
+                        url: app.url,
+                        statusCode: 408,
+                        latencyMs: 4500,
+                        status: 'down',
+                        error: 'Timeout 4500ms'
+                      });
+                    });
+                  }))
+                );
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true, timestamp: new Date().toISOString(), results }));
+              } catch (err: any) {
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, error: err?.message }));
+              }
+            } else if (req.url === '/api/sentry-issues' && req.method === 'GET') {
+              try {
+                const https = await import('https');
+                const sentryToken = env.SENTRY_AUTH_TOKEN || env.VITE_SENTRY_AUTH_TOKEN || process.env.SENTRY_AUTH_TOKEN || '';
+                const options = {
+                  hostname: 'sentry.io',
+                  path: '/api/0/organizations/creapp/issues/?query=is:unresolved',
+                  headers: {
+                    ...(sentryToken ? { 'Authorization': `Bearer ${sentryToken}` } : {}),
+                    'User-Agent': 'CreAPP-Server/1.0'
+                  }
+                };
+                const sReq = https.get(options, (sRes) => {
+                  let body = '';
+                  sRes.on('data', chunk => body += chunk);
+                  sRes.on('end', () => {
+                    res.writeHead(sRes.statusCode || 200, { 'Content-Type': 'application/json' });
+                    res.end(body);
+                  });
+                });
+                sReq.on('error', (e) => {
+                  res.writeHead(500, { 'Content-Type': 'application/json' });
+                  res.end(JSON.stringify({ error: e.message }));
+                });
+              } catch (err: any) {
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: err?.message }));
+              }
             } else {
               next();
             }

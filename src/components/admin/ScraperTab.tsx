@@ -80,6 +80,7 @@ export const ScraperTab: React.FC<ScraperTabProps> = ({
   const [prospects, setProspects] = useState<ScrapedProspect[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
   // 360 Dossier Modal
   const [dossierProspect, setDossierProspect] = useState<ScrapedProspect | null>(null);
@@ -622,9 +623,35 @@ export const ScraperTab: React.FC<ScraperTabProps> = ({
         </div>
       </div>
 
-      {/* SEARCH FILTER BAR */}
-      <div className="p-5 rounded-2xl bg-[#0e0e12] border border-white/5 space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+      {/* MOBILE SEARCH SUMMARY & TOGGLE (sm:hidden) */}
+      {hasSearched && prospects.length > 0 && (
+        <div className="sm:hidden p-3 rounded-2xl bg-purple-950/20 border border-purple-500/30 flex items-center justify-between gap-2 shadow-md">
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-white truncate">
+              <Radar size={14} className="text-purple-400 shrink-0" />
+              <span className="truncate">{searchKeyword}</span>
+              <span className="text-zinc-500 font-normal">en</span>
+              <span className="text-zinc-300 truncate font-normal">{selectedCity}</span>
+            </div>
+            <p className="text-[10px] text-zinc-400 font-mono mt-0.5">
+              {prospects.length} comercios detectados
+            </p>
+          </div>
+          <button
+            onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
+            className="px-2.5 py-1.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 text-xs font-semibold shrink-0 transition-colors flex items-center gap-1"
+          >
+            <SlidersHorizontal size={12} />
+            <span>{mobileSearchOpen ? 'Ocultar' : 'Modificar'}</span>
+          </button>
+        </div>
+      )}
+
+      {/* SEARCH FILTER BAR & RADAR (Collapsible on mobile when results exist) */}
+      <div className={`${hasSearched && prospects.length > 0 && !mobileSearchOpen ? 'hidden sm:block' : 'block'} space-y-4`}>
+        {/* SEARCH FILTER BAR */}
+        <div className="p-4 sm:p-5 rounded-2xl bg-[#0e0e12] border border-white/5 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
           {/* Buscador de Palabras Clave / Keywords */}
           <div>
             <label className="block text-zinc-400 mb-1 font-medium flex items-center justify-between">
@@ -829,6 +856,7 @@ export const ScraperTab: React.FC<ScraperTabProps> = ({
             onImportToPipeline={(prospect) => handleImportToPipeline(prospect)}
           />
         )}
+      </div>
       </div>
 
       {/* RESULTADOS LIST */}
@@ -1360,18 +1388,18 @@ export const ScraperTab: React.FC<ScraperTabProps> = ({
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="relative w-full max-w-xl bg-[#0f0f15] border border-white/10 rounded-3xl p-6 shadow-2xl z-10 space-y-4"
+              className="relative w-full max-w-xl bg-[#0f0f15] border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl z-10 space-y-4 max-h-[92vh] overflow-y-auto"
             >
               <div className="flex items-center justify-between pb-3 border-b border-white/10">
                 <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-xl bg-purple-500/10 text-purple-400">
+                  <div className="p-2 rounded-xl bg-purple-500/10 text-purple-400 shrink-0">
                     <Bot size={18} />
                   </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-white">
-                      Pitch de Prospección con Gemini 3.6 Flash
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-bold text-white truncate">
+                      Pitch de Prospección con IA
                     </h3>
-                    <p className="text-[11px] text-zinc-400">
+                    <p className="text-[11px] text-zinc-400 truncate">
                       Para: <strong className="text-zinc-200">{activePitchProspect.name}</strong> ({activePitchProspect.city})
                     </p>
                   </div>
@@ -1379,20 +1407,20 @@ export const ScraperTab: React.FC<ScraperTabProps> = ({
 
                 <button
                   onClick={() => setActivePitchProspect(null)}
-                  className="p-1 rounded-lg text-zinc-400 hover:text-white"
+                  className="p-1.5 rounded-lg text-zinc-400 hover:text-white bg-white/5 shrink-0"
                 >
                   <X size={18} />
                 </button>
               </div>
 
               {/* Selector de canal */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-zinc-400 font-medium">Canal:</span>
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+                <span className="text-xs text-zinc-400 font-medium shrink-0">Canal:</span>
                 {(['whatsapp', 'email', 'linkedin'] as const).map((ch) => (
                   <button
                     key={ch}
                     onClick={() => handleRegeneratePitch(ch)}
-                    className={`px-3 py-1 rounded-lg text-xs capitalize transition-all ${
+                    className={`px-3 py-1.5 rounded-lg text-xs capitalize transition-all shrink-0 ${
                       pitchChannel === ch
                         ? 'bg-purple-600 text-white font-semibold shadow-sm'
                         : 'bg-white/5 text-zinc-400 hover:text-white'
@@ -1412,34 +1440,32 @@ export const ScraperTab: React.FC<ScraperTabProps> = ({
                   </div>
                 ) : (
                   <textarea
-                    rows={7}
+                    rows={6}
                     value={pitchText}
                     onChange={(e) => setPitchText(e.target.value)}
-                    className="w-full p-3.5 rounded-xl bg-black/50 border border-white/10 text-xs text-zinc-200 focus:outline-none focus:border-purple-500 font-sans leading-relaxed resize-none"
+                    className="w-full p-3 sm:p-3.5 rounded-xl bg-black/50 border border-white/10 text-xs text-zinc-200 focus:outline-none focus:border-purple-500 font-sans leading-relaxed resize-none"
                   />
                 )}
               </div>
 
               {/* Actions Footer */}
-              <div className="pt-2 flex items-center justify-between gap-3 text-xs">
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={handleCopyPitch}
-                    disabled={generatingPitch}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 border border-white/10 transition-colors"
-                  >
-                    {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
-                    <span>{copied ? 'Copiado' : 'Copiar Texto'}</span>
-                  </button>
-                </div>
+              <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3 text-xs">
+                <button
+                  onClick={handleCopyPitch}
+                  disabled={generatingPitch}
+                  className="flex items-center justify-center gap-1.5 px-3 py-2.5 sm:py-2 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 border border-white/10 transition-colors w-full sm:w-auto"
+                >
+                  {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+                  <span>{copied ? 'Copiado al portapapeles' : 'Copiar Texto'}</span>
+                </button>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                   {activePitchProspect.phone && pitchChannel === 'whatsapp' && (
                     <a
                       href={formatWhatsAppUrl(activePitchProspect.phone, pitchText)}
                       target="_blank"
                       rel="noreferrer"
-                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition-all shadow-md"
+                      className="flex items-center justify-center gap-1.5 px-4 py-2.5 sm:py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition-all shadow-md w-full sm:w-auto text-center"
                     >
                       <Send size={14} />
                       <span>Enviar WhatsApp</span>
@@ -1451,7 +1477,7 @@ export const ScraperTab: React.FC<ScraperTabProps> = ({
                       handleImportToPipeline(activePitchProspect);
                       setActivePitchProspect(null);
                     }}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 text-white font-semibold transition-all shadow-md"
+                    className="flex items-center justify-center gap-1.5 px-4 py-2.5 sm:py-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 text-white font-semibold transition-all shadow-md w-full sm:w-auto"
                   >
                     <ArrowRight size={14} />
                     <span>Importar al Pipeline</span>

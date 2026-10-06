@@ -14,6 +14,9 @@ import {
   X,
   Sparkles,
   Filter,
+  Phone,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { getAllProposals, deleteProposal } from '@/lib/proposalService';
 import type { Proposal } from '@/lib/proposalTypes';
@@ -29,6 +32,7 @@ import ContractsTab from '@/components/admin/ContractsTab';
 import ProjectsTab from '@/components/admin/ProjectsTab';
 import SubscriptionsTab from '@/components/admin/SubscriptionsTab';
 import FinancesTab from '@/components/admin/FinancesTab';
+import TelemetryTab from '@/components/admin/TelemetryTab';
 import { useAuth } from '@/context/AuthContext';
 
 const statusColors: Record<string, string> = {
@@ -43,7 +47,7 @@ const statusLabels: Record<string, string> = {
   signed: 'Firmada',
 };
 
-const ADMIN_ONLY_TABS: AdminTab[] = ['subscriptions', 'finances', 'contracts', 'projects'];
+const ADMIN_ONLY_TABS: AdminTab[] = ['subscriptions', 'finances', 'contracts', 'projects', 'telemetry'];
 
 const AdminPanel: React.FC = () => {
   const navigate = useNavigate();
@@ -63,6 +67,14 @@ const AdminPanel: React.FC = () => {
 
   // Filtro interno para tab de propuestas
   const [proposalFilter, setProposalFilter] = useState<'all' | 'published' | 'signed' | 'draft'>('all');
+  const [copiedProposalId, setCopiedProposalId] = useState<string | null>(null);
+
+  const handleCopyProposalLink = (proposal: Proposal) => {
+    const fullUrl = `${window.location.origin}/propuesta/${proposal.slug}`;
+    navigator.clipboard.writeText(fullUrl);
+    setCopiedProposalId(proposal.id);
+    setTimeout(() => setCopiedProposalId(null), 2000);
+  };
 
   const fetchProposals = async () => {
     setLoading(true);
@@ -353,14 +365,41 @@ const AdminPanel: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2.5 shrink-0 self-end md:self-auto">
+                    <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0 self-end md:self-auto flex-wrap">
                       <span
-                        className={`px-3 py-1 rounded-full text-[10px] font-bold border font-mono ${
+                        className={`px-2.5 sm:px-3 py-1 rounded-full text-[10px] font-bold border font-mono ${
                           statusColors[proposal.status] || 'bg-zinc-800 text-zinc-300'
                         }`}
                       >
                         {statusLabels[proposal.status] || proposal.status}
                       </span>
+
+                      {/* WhatsApp 1-tap share */}
+                      <a
+                        href={`https://wa.me/?text=${encodeURIComponent(
+                          `¡Hola ${proposal.client_name}! Te comparto la propuesta comercial interactiva de CreApp:\n${window.location.origin}/propuesta/${proposal.slug}`
+                        )}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 transition-all flex items-center gap-1 text-xs"
+                        title="Compartir directo por WhatsApp"
+                      >
+                        <Phone size={14} />
+                        <span className="hidden xs:inline text-[11px] font-semibold">WhatsApp</span>
+                      </a>
+
+                      {/* Copy Link */}
+                      <button
+                        onClick={() => handleCopyProposalLink(proposal)}
+                        className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white border border-white/10 transition-colors"
+                        title={copiedProposalId === proposal.id ? '¡Enlace copiado!' : 'Copiar enlace público'}
+                      >
+                        {copiedProposalId === proposal.id ? (
+                          <Check size={14} className="text-emerald-400" />
+                        ) : (
+                          <Copy size={14} />
+                        )}
+                      </button>
 
                       <a
                         href={`/propuesta/${proposal.slug}`}
@@ -407,6 +446,9 @@ const AdminPanel: React.FC = () => {
 
       {/* 8. FINANZAS & DÉBITOS OPERATIVOS (SOLO ADMIN) */}
       {activeTab === 'finances' && isAdmin && <FinancesTab />}
+
+      {/* 9. CENTRO DE CONTROL & TELEMETRÍA NOC (SOLO ADMIN) */}
+      {activeTab === 'telemetry' && isAdmin && <TelemetryTab />}
 
       {/* MODAL: SELECCIÓN DE PROPUESTA COMERCIAL */}
       <AnimatePresence>

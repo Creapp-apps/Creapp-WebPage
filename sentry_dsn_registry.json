@@ -1,0 +1,27 @@
+{
+  "dental-ia": {
+    "name": "Dental-IA",
+    "slug": "dental-ia",
+    "dsn": "https://c502d27816ee7cf5e3ab792ee05e62ac@o4512200993275904.ingest.us.sentry.io/4512201144401920"
+  },
+  "stacked": {
+    "name": "Stacked",
+    "slug": "stacked",
+    "dsn": "https://2e8230515004e21f07f65acb56c86b6b@o4512200993275904.ingest.us.sentry.io/4512201144467456"
+  },
+  "celebra": {
+    "name": "Célebra",
+    "slug": "celebra",
+    "dsn": "https://d91e2cec504c72aaa1d45fb2bc2833bb@o4512200993275904.ingest.us.sentry.io/4512201144532992"
+  },
+  "trazapp": {
+    "name": "TrazAPP",
+    "slug": "trazapp",
+    "dsn": "https://b91d0bcc8b07d2598cf344e288389231@o4512200993275904.ingest.us.sentry.io/4512201144598528"
+  },
+  "belcalis-nails": {
+    "name": "Belcalis Nails",
+    "slug": "belcalis-nails",
+    "dsn": "https://e0b2d77086fbd39f1eccc683650ffd0e@o4512200993275904.ingest.us.sentry.io/4512201144664064"
+  }
+}

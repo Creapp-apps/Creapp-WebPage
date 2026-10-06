@@ -1682,8 +1682,8 @@ const ProposalView: React.FC = () => {
       </header>
 
       {/* Main Slide Deck Viewport */}
-      <main className="flex-1 flex flex-col justify-center items-center relative z-10 w-full max-w-7xl mx-auto my-2 md:my-3 overflow-hidden px-4">
-        <div className="w-full h-full flex flex-col justify-center">
+      <main className="flex-1 flex flex-col justify-start md:justify-center items-center relative z-10 w-full max-w-7xl mx-auto my-1 sm:my-2 md:my-3 overflow-y-auto md:overflow-hidden px-3 sm:px-4">
+        <div className="w-full h-full flex flex-col justify-center py-2 sm:py-0">
           <AnimatePresence mode="wait" initial={false} custom={direction}>
             <motion.div
               ref={slideRef}
@@ -1702,22 +1702,23 @@ const ProposalView: React.FC = () => {
       </main>
 
       {/* Bottom Footer & Navigation */}
-      <footer className="w-full max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 z-20 relative border-t border-white/5 pt-6 px-2 pb-2">
-        <div className="text-[10px] text-slate-500 tracking-wider select-none font-medium">
+      <footer className="w-full max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4 z-20 relative border-t border-white/5 pt-4 sm:pt-6 px-3 sm:px-2 pb-6 sm:pb-2">
+        <div className="text-[10px] text-slate-500 tracking-wider select-none font-medium text-center sm:text-left">
           {isServiceProposal ? 'Contrato de Servicio SaaS • CreAPP Software Lab' : 'Propuesta Comercial Interactiva • CreAPP'}
         </div>
 
         {/* Dynamic Navigation Dots */}
-        <div className="flex items-center gap-3 bg-white/[0.02] border border-white/5 rounded-full p-2 select-none">
+        <div className="flex items-center gap-2 sm:gap-3 bg-white/[0.03] border border-white/10 rounded-full px-2.5 sm:px-2 py-1.5 sm:py-2 select-none shadow-lg">
           <button
             onClick={prevSlide}
             disabled={safeSlideIndex === 0}
-            className="p-1 text-slate-400 hover:text-white disabled:opacity-20 disabled:pointer-events-none transition-colors cursor-pointer"
+            className="p-2 sm:p-1 text-slate-400 hover:text-white disabled:opacity-20 disabled:pointer-events-none transition-colors cursor-pointer touch-manipulation"
+            aria-label="Slide anterior"
           >
-            <ChevronLeft size={16} />
+            <ChevronLeft size={18} />
           </button>
           
-          <div className="flex items-center gap-2 px-1">
+          <div className="flex items-center gap-1.5 sm:gap-2 px-1">
             {activeSlides.map((slide, idx) => (
               <button
                 key={idx}
@@ -1725,9 +1726,9 @@ const ProposalView: React.FC = () => {
                   setDirection(idx > safeSlideIndex ? 1 : -1);
                   setCurrentSlide(idx);
                 }}
-                className="w-2 h-2 rounded-full transition-all duration-300 cursor-pointer"
+                className="w-2.5 h-2.5 sm:w-2 sm:h-2 rounded-full transition-all duration-300 cursor-pointer touch-manipulation"
                 style={{ 
-                  backgroundColor: safeSlideIndex === idx ? brandPrimary : 'rgba(255,255,255,0.15)',
+                  backgroundColor: safeSlideIndex === idx ? brandPrimary : 'rgba(255,255,255,0.2)',
                   transform: safeSlideIndex === idx ? 'scale(1.3)' : 'scale(1)',
                   boxShadow: safeSlideIndex === idx ? `0 0 8px ${brandPrimary}` : 'none'
                 }}
@@ -1739,9 +1740,10 @@ const ProposalView: React.FC = () => {
           <button
             onClick={nextSlide}
             disabled={safeSlideIndex === activeSlides.length - 1}
-            className="p-1 text-slate-400 hover:text-white disabled:opacity-20 disabled:pointer-events-none transition-colors cursor-pointer"
+            className="p-2 sm:p-1 text-slate-400 hover:text-white disabled:opacity-20 disabled:pointer-events-none transition-colors cursor-pointer touch-manipulation"
+            aria-label="Siguiente slide"
           >
-            <ChevronRight size={16} />
+            <ChevronRight size={18} />
           </button>
         </div>
 

@@ -64,6 +64,7 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
   const [selectedProduct, setSelectedProduct] = useState<string>('all');
   const [isNewLeadModalOpen, setIsNewLeadModalOpen] = useState(false);
   const [selectedLeadForDetail, setSelectedLeadForDetail] = useState<Lead | null>(null);
+  const [activeMobileStage, setActiveMobileStage] = useState<PipelineStage>('prospect');
   const kanbanContainerRef = useRef<HTMLDivElement>(null);
 
   // Form state para nuevo lead manual
@@ -134,6 +135,7 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
       const nextStage = stages[targetIndex];
       const updated = updateLeadStage(leadId, nextStage);
       onLeadsChange(updated);
+      setActiveMobileStage(nextStage);
       // Auto-centrar la columna objetivo para que el usuario nunca pierda de vista la tarjeta
       setTimeout(() => {
         scrollToStage(targetIndex);
@@ -144,6 +146,7 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
   const handleDirectReject = (leadId: string) => {
     const updated = updateLeadStage(leadId, 'rejected');
     onLeadsChange(updated);
+    setActiveMobileStage('rejected');
     const rejectedIndex = stages.indexOf('rejected');
     if (rejectedIndex >= 0) {
       setTimeout(() => {
@@ -271,29 +274,40 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
   return (
     <div className="space-y-6">
       {/* HEADER & CONTROLS */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-            <span>Pipeline Comercial y Producción</span>
-            <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
-              {filteredLeads.length} Activos
-            </span>
-          </h2>
-          <p className="text-xs text-zinc-400">
-            Control de cuentas desde la prospección inicial hasta la entrega final y cobro recurrente.
-          </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight flex items-center gap-2">
+              <span>Pipeline CRM</span>
+              <span className="text-[10px] sm:text-xs font-mono px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                {filteredLeads.length} Activos
+              </span>
+            </h2>
+            <p className="text-xs text-zinc-400 hidden sm:block">
+              Control de cuentas desde prospección hasta entrega final y facturación recurrente.
+            </p>
+          </div>
+
+          {/* Quick Add Button on Mobile */}
+          <button
+            onClick={() => setIsNewLeadModalOpen(true)}
+            className="sm:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-sm"
+          >
+            <Plus size={14} />
+            <span>+ Lead</span>
+          </button>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           {/* Search */}
-          <div className="relative">
+          <div className="relative flex-1 sm:w-56">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Buscar cliente, rubro..."
-              className="pl-8 pr-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-purple-500 w-44 sm:w-56"
+              className="w-full pl-8 pr-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-purple-500"
             />
           </div>
 
@@ -301,19 +315,20 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
           <select
             value={selectedProduct}
             onChange={(e) => setSelectedProduct(e.target.value)}
-            className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs text-zinc-300 focus:outline-none focus:border-purple-500"
+            className="px-2.5 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs text-zinc-300 focus:outline-none focus:border-purple-500 max-w-[130px] sm:max-w-none truncate"
           >
-            <option value="all" className="bg-[#111]">Todos los Productos</option>
-            <option value="Stacked SaaS" className="bg-[#111]">Stacked SaaS</option>
+            <option value="all" className="bg-[#111]">Todos</option>
+            <option value="Stacked SaaS" className="bg-[#111]">Stacked</option>
             <option value="TrazApp" className="bg-[#111]">TrazApp</option>
             <option value="Dental IA" className="bg-[#111]">Dental IA</option>
-            <option value="Desarrollo a Medida" className="bg-[#111]">Desarrollo a Medida</option>
-            <option value="Landing & Growth" className="bg-[#111]">Landing & Growth</option>
+            <option value="Desarrollo a Medida" className="bg-[#111]">A Medida</option>
+            <option value="Landing & Growth" className="bg-[#111]">Landing</option>
           </select>
 
+          {/* Desktop Add Lead Button */}
           <button
             onClick={() => setIsNewLeadModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-sm hover:opacity-90 transition-all"
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-sm hover:opacity-90 transition-all shrink-0"
           >
             <Plus size={14} />
             <span>Nuevo Lead</span>
@@ -321,8 +336,276 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
         </div>
       </div>
 
-      {/* QUICK STAGE JUMP & HORIZONTAL SCROLL CONTROLS */}
-      <div className="flex items-center justify-between gap-3 p-2 rounded-2xl bg-white/[0.02] border border-white/5 backdrop-blur-sm">
+      {/* MOBILE STAGE SEGMENTED TABS & LIST (md:hidden) */}
+      <div className="md:hidden space-y-3">
+        {/* Horizontal scrollable stage pills */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 px-0.5">
+          {stages.map((stageKey) => {
+            const config = STAGE_CONFIG[stageKey];
+            const count = filteredLeads.filter((l) => l.stage === stageKey).length;
+            const isSelected = activeMobileStage === stageKey;
+            const isNoAnswer = stageKey === 'no_answer';
+            const isRejected = stageKey === 'rejected';
+
+            let activeStyles = 'bg-purple-600 text-white border-purple-500 shadow-md shadow-purple-500/25';
+            if (isNoAnswer) activeStyles = 'bg-rose-600 text-white border-rose-500 shadow-md shadow-rose-500/25';
+            if (isRejected) activeStyles = 'bg-red-600 text-white border-red-500 shadow-md shadow-red-500/25';
+
+            return (
+              <button
+                key={stageKey}
+                onClick={() => setActiveMobileStage(stageKey)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border shrink-0 ${
+                  isSelected
+                    ? activeStyles
+                    : 'bg-white/5 border-white/5 text-zinc-400 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                {isNoAnswer && <PhoneOff size={11} />}
+                {isRejected && <XCircle size={11} />}
+                <span>{config.label.split('. ')[1] || config.label}</span>
+                <span
+                  className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
+                    isSelected
+                      ? 'bg-black/40 text-white font-bold'
+                      : count > 0
+                      ? 'bg-white/10 text-zinc-200'
+                      : 'bg-white/5 text-zinc-500'
+                  }`}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Active Stage Mobile Header Card */}
+        {(() => {
+          const config = STAGE_CONFIG[activeMobileStage];
+          const activeStageLeads = filteredLeads.filter((l) => l.stage === activeMobileStage);
+          const activeStageValue = activeStageLeads.reduce((acc, l) => acc + (l.estimatedValue || 0), 0);
+          const activeIndex = stages.indexOf(activeMobileStage);
+          const prevStage = activeIndex > 0 ? stages[activeIndex - 1] : null;
+          const nextStage = activeIndex < stages.length - 1 ? stages[activeIndex + 1] : null;
+
+          return (
+            <div className="space-y-3">
+              <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-between">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${config.color.replace('text-', 'bg-')}`} />
+                  <div className="min-w-0">
+                    <h3 className="text-xs font-bold text-white truncate">{config.label}</h3>
+                    <p className="text-[10px] text-zinc-400 font-mono">
+                      {activeStageLeads.length} cuenta{activeStageLeads.length !== 1 ? 's' : ''} • ${activeStageValue.toLocaleString()} USD
+                    </p>
+                  </div>
+                </div>
+
+                {/* Stage Navigator Arrows */}
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    disabled={!prevStage}
+                    onClick={() => prevStage && setActiveMobileStage(prevStage)}
+                    className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 disabled:opacity-20 text-zinc-300 disabled:pointer-events-none transition-colors"
+                    title="Etapa anterior"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <button
+                    disabled={!nextStage}
+                    onClick={() => nextStage && setActiveMobileStage(nextStage)}
+                    className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 disabled:opacity-20 text-zinc-300 disabled:pointer-events-none transition-colors"
+                    title="Etapa siguiente"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Mobile Lead Cards List */}
+              <div className="space-y-2.5">
+                {activeStageLeads.length === 0 ? (
+                  <div className="py-12 px-4 text-center rounded-2xl bg-white/[0.01] border border-dashed border-white/10 text-xs text-zinc-500">
+                    <p className="font-medium text-zinc-400 mb-1">Sin cuentas en esta etapa</p>
+                    <p className="text-[11px] text-zinc-500">Usa las flechas superiores para ver otras etapas o agrega un nuevo prospecto.</p>
+                  </div>
+                ) : (
+                  activeStageLeads.map((lead) => {
+                    const cleanPhone = lead.phone ? lead.phone.replace(/[^0-9]/g, '') : null;
+                    const waUrl = lead.phone ? formatWhatsAppUrl(lead.phone, '') : null;
+                    const stageIndex = stages.indexOf(lead.stage);
+
+                    return (
+                      <motion.div
+                        key={lead.id}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="p-3.5 rounded-2xl bg-[#0f0f14] border border-white/10 shadow-lg space-y-3"
+                      >
+                        {/* Top: Product Badge + Estimated Value + Stage Transitions */}
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`text-[10px] font-mono px-2 py-0.5 rounded-md border font-semibold ${getProductColor(
+                                lead.productType
+                              )}`}
+                            >
+                              {lead.productType}
+                            </span>
+                            {lead.estimatedValue ? (
+                              <span className="text-[11px] font-bold text-emerald-400 font-mono">
+                                ${lead.estimatedValue.toLocaleString()} USD
+                              </span>
+                            ) : null}
+                          </div>
+
+                          {/* Quick Stage Transition Buttons */}
+                          <div className="flex items-center gap-1 shrink-0">
+                            {lead.stage === 'rejected' ? (
+                              <button
+                                onClick={() => {
+                                  const updated = updateLeadStage(lead.id, 'prospect');
+                                  onLeadsChange(updated);
+                                  setActiveMobileStage('prospect');
+                                }}
+                                className="px-2 py-1 rounded-lg bg-purple-500/20 text-purple-300 text-[10px] font-semibold flex items-center gap-1"
+                              >
+                                <RefreshCw size={10} />
+                                <span>Reactivar</span>
+                              </button>
+                            ) : (
+                              <>
+                                {stageIndex > 0 && (
+                                  <button
+                                    onClick={() => handleStageMove(lead.id, lead.stage, 'prev')}
+                                    className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-400 active:text-white"
+                                    title="Mover etapa anterior"
+                                  >
+                                    <ArrowLeft size={12} />
+                                  </button>
+                                )}
+                                {stageIndex < stages.length - 2 && (
+                                  <button
+                                    onClick={() => handleStageMove(lead.id, lead.stage, 'next')}
+                                    className="p-1.5 rounded-lg bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 font-semibold"
+                                    title="Avanzar etapa"
+                                  >
+                                    <ArrowRight size={12} />
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => handleDirectReject(lead.id)}
+                                  className="p-1.5 rounded-lg bg-white/5 hover:bg-red-500/20 text-zinc-500 active:text-red-400"
+                                  title="Rechazar"
+                                >
+                                  <XCircle size={12} />
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Middle: Company info & tap to view Dossier */}
+                        <div
+                          onClick={() => setSelectedLeadForDetail(lead)}
+                          className="cursor-pointer active:opacity-80 transition-opacity"
+                        >
+                          <h4 className="text-sm font-bold text-white truncate">
+                            {lead.company || lead.name}
+                          </h4>
+                          <div className="flex items-center gap-2 text-xs text-zinc-400 mt-0.5">
+                            <span className="truncate">{lead.industry}</span>
+                            {lead.contactName && (
+                              <>
+                                <span className="text-zinc-600">·</span>
+                                <span className="truncate">{lead.contactName}</span>
+                              </>
+                            )}
+                          </div>
+
+                          {/* Cold parking or rejection status */}
+                          {lead.stage === 'no_answer' && (
+                            <div className="flex items-center gap-1.5 mt-2 px-2 py-1 rounded-lg bg-rose-500/10 border border-rose-500/20 text-[10px] text-rose-300">
+                              <PhoneOff size={11} className="shrink-0 text-rose-400" />
+                              <span>Sin respuesta • {formatCoolingTime(lead.lastContactAt)}</span>
+                            </div>
+                          )}
+
+                          {lead.notes && (
+                            <p className="text-[11px] text-zinc-400 line-clamp-1 mt-1.5 bg-white/[0.02] p-1.5 rounded-lg border border-white/5 font-sans">
+                              {lead.notes}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Bottom Actions Row: One-tap WhatsApp, Llamada, Propuesta & Dossier */}
+                        <div className="pt-2 border-t border-white/5 flex items-center justify-between gap-1.5">
+                          <div className="flex items-center gap-1.5">
+                            {waUrl && (
+                              <a
+                                href={waUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-400 text-xs font-semibold"
+                              >
+                                <Phone size={12} />
+                                <span>WhatsApp</span>
+                              </a>
+                            )}
+                            {cleanPhone && (
+                              <a
+                                href={`tel:${cleanPhone}`}
+                                className="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-300 text-xs"
+                                title="Llamar"
+                              >
+                                <Phone size={12} />
+                              </a>
+                            )}
+                            {lead.website && (
+                              <a
+                                href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="p-1.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs"
+                                title="Web"
+                              >
+                                <Globe size={12} />
+                              </a>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => onCreateProposalFromLead(lead)}
+                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-sm"
+                            >
+                              <Plus size={12} />
+                              <span>Propuesta</span>
+                            </button>
+                            <button
+                              onClick={() => setSelectedLeadForDetail(lead)}
+                              className="p-1.5 rounded-xl bg-white/5 border border-white/10 text-zinc-300"
+                              title="Ver Ficha Completa"
+                            >
+                              <ExternalLink size={12} />
+                            </button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          );
+        })()}
+      </div>
+
+      {/* DESKTOP KANBAN BOARD (hidden md:block) */}
+      <div className="hidden md:block space-y-6">
+        {/* QUICK STAGE JUMP & HORIZONTAL SCROLL CONTROLS */}
+        <div className="flex items-center justify-between gap-3 p-2 rounded-2xl bg-white/[0.02] border border-white/5 backdrop-blur-sm">
         <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
           <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider px-2 shrink-0">
             Saltar a Etapa:
@@ -612,6 +895,7 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
             </div>
           );
         })}
+      </div>
       </div>
 
       {/* MODAL: NUEVO LEAD */}

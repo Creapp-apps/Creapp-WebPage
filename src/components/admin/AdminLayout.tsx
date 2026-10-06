@@ -27,6 +27,11 @@ import {
   Briefcase,
   User,
   Settings,
+  Radio,
+  Activity,
+  Smartphone,
+  Download,
+  Share2,
 } from 'lucide-react';
 import creappLogoOfficial from '@/assets/CREAPP LOGO VECTOR.png';
 import { useAuth } from '@/context/AuthContext';
@@ -41,7 +46,8 @@ export type AdminTab =
   | 'contracts'
   | 'projects'
   | 'subscriptions'
-  | 'finances';
+  | 'finances'
+  | 'telemetry';
 
 interface AdminLayoutProps {
   currentTab: AdminTab;
@@ -78,9 +84,44 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
   const [teamModalOpen, setTeamModalOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [quickActionsOpen, setQuickActionsOpen] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isStandalone, setIsStandalone] = useState(false);
+  const [installModalOpen, setInstallModalOpen] = useState(false);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { user, profile, role, isAdmin, signOut } = useAuth();
+
+  // Detección de PWA Standalone y beforeinstallprompt
+  useEffect(() => {
+    const handleBeforeInstall = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+
+    if (
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as any).standalone === true
+    ) {
+      setIsStandalone(true);
+    }
+
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const choice = await deferredPrompt.userChoice;
+      if (choice.outcome === 'accepted') {
+        setIsStandalone(true);
+        setDeferredPrompt(null);
+      }
+    } else {
+      setInstallModalOpen(true);
+    }
+  };
 
   // Cerrar dropdown si se hace clic fuera
   useEffect(() => {
@@ -172,6 +213,13 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
           icon: KeyRound,
           badge: 'Vault',
           badgeColor: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
+        },
+        {
+          id: 'telemetry',
+          label: 'NOC & Telemetría',
+          icon: Radio,
+          badge: 'Live',
+          badgeColor: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
         },
       ],
     },
@@ -409,31 +457,32 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
         {/* MAIN VIEWPORT */}
         <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
           {/* TOP BAR */}
-          <header className="h-16 px-4 sm:px-6 border-b border-white/5 bg-[#0b0b0e]/75 backdrop-blur-md flex items-center justify-between sticky top-0 z-20">
-            <div className="flex items-center gap-3">
+          <header className="h-16 px-3 sm:px-6 border-b border-white/5 bg-[#0b0b0e]/75 backdrop-blur-md flex items-center justify-between sticky top-0 z-20">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               <button
                 onClick={() => setMobileMenuOpen(true)}
-                className="md:hidden p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5"
+                className="md:hidden p-2 -ml-1 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 shrink-0"
+                title="Abrir menú"
               >
                 <Menu size={20} />
               </button>
 
-              <div className="flex items-center gap-2 text-xs font-mono">
-                <span className="text-zinc-500">creapp.os</span>
-                <span className="text-zinc-600">/</span>
-                <span className="text-purple-300 font-semibold bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20">
+              <div className="flex items-center gap-1.5 sm:gap-2 text-xs font-mono min-w-0">
+                <span className="text-zinc-500 hidden sm:inline">creapp.os</span>
+                <span className="text-zinc-600 hidden sm:inline">/</span>
+                <span className="text-purple-300 font-semibold bg-purple-500/10 px-2 sm:px-2.5 py-0.5 rounded border border-purple-500/20 truncate max-w-[130px] xs:max-w-[180px] sm:max-w-[260px]">
                   {currentTabLabel}
                 </span>
                 {!isAdmin && (
-                  <span className="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded font-mono">
-                    Acceso Ventas
+                  <span className="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-1.5 py-0.5 rounded font-mono hidden xs:inline shrink-0">
+                    Ventas
                   </span>
                 )}
               </div>
             </div>
 
             {/* Quick Actions & User Menu in Header */}
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
               <a
                 href="/"
                 target="_blank"
@@ -467,7 +516,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
 
               <button
                 onClick={onCreateProposalClick}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 shadow-sm transition-all"
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 shadow-sm transition-all"
               >
                 <Plus size={14} />
                 <span>+ Propuesta</span>
@@ -575,7 +624,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
           </header>
 
           {/* MAIN CONTENT AREA */}
-          <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+          <main className="flex-1 p-3.5 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto pb-28 md:pb-8">
             {children}
           </main>
         </div>
@@ -702,6 +751,374 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                   <span>Cerrar Sesión</span>
                 </button>
               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* MOBILE FLOATING BOTTOM NAVIGATION DOCK (Thumb Zone) */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#0b0b0e]/90 backdrop-blur-xl border-t border-white/10 shadow-[0_-8px_32px_rgba(0,0,0,0.65)] px-3 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-2">
+        <div className="flex items-center justify-around relative max-w-md mx-auto">
+          {/* 1. Dashboard */}
+          <button
+            onClick={() => onTabChange('dashboard')}
+            className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all relative ${
+              currentTab === 'dashboard'
+                ? 'text-purple-400 font-semibold'
+                : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <LayoutDashboard size={20} className={currentTab === 'dashboard' ? 'scale-110 transition-transform' : ''} />
+            <span className="text-[10px] mt-1 font-medium tracking-tight">Inicio</span>
+            {currentTab === 'dashboard' && (
+              <span className="absolute bottom-0 w-1.5 h-1.5 rounded-full bg-purple-500 shadow-sm shadow-purple-400" />
+            )}
+          </button>
+
+          {/* 2. Scraper */}
+          <button
+            onClick={() => onTabChange('scraper')}
+            className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all relative ${
+              currentTab === 'scraper'
+                ? 'text-purple-400 font-semibold'
+                : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <Radar size={20} className={currentTab === 'scraper' ? 'scale-110 transition-transform' : ''} />
+            <span className="text-[10px] mt-1 font-medium tracking-tight">Scraper</span>
+            {currentTab === 'scraper' && (
+              <span className="absolute bottom-0 w-1.5 h-1.5 rounded-full bg-purple-500 shadow-sm shadow-purple-400" />
+            )}
+          </button>
+
+          {/* 3. Central Elevated Quick Action FAB */}
+          <div className="relative -top-5 flex flex-col items-center">
+            <motion.button
+              whileTap={{ scale: 0.92 }}
+              onClick={() => setQuickActionsOpen(true)}
+              className="w-[52px] h-[52px] rounded-full bg-gradient-to-tr from-purple-600 via-indigo-600 to-pink-500 shadow-[0_4px_20px_rgba(168,85,247,0.45)] ring-4 ring-[#070709] flex items-center justify-center text-white active:opacity-95"
+              title="Acciones Rápidas"
+            >
+              <Plus size={26} />
+            </motion.button>
+            <span className="text-[9px] font-mono text-zinc-400 mt-1 uppercase tracking-wider font-semibold">
+              Acción
+            </span>
+          </div>
+
+          {/* 4. CRM / Pipeline */}
+          <button
+            onClick={() => onTabChange('pipeline')}
+            className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all relative ${
+              currentTab === 'pipeline'
+                ? 'text-purple-400 font-semibold'
+                : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <Kanban size={20} className={currentTab === 'pipeline' ? 'scale-110 transition-transform' : ''} />
+            <span className="text-[10px] mt-1 font-medium tracking-tight">CRM</span>
+            {currentTab === 'pipeline' && (
+              <span className="absolute bottom-0 w-1.5 h-1.5 rounded-full bg-purple-500 shadow-sm shadow-purple-400" />
+            )}
+          </button>
+
+          {/* 5. NOC Radar (Admin) or More Menu (Ventas) */}
+          {isAdmin ? (
+            <button
+              onClick={() => onTabChange('telemetry')}
+              className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all relative ${
+                currentTab === 'telemetry'
+                  ? 'text-rose-400 font-semibold'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              <div className="relative">
+                <Radio size={20} className={currentTab === 'telemetry' ? 'scale-110 transition-transform text-rose-400' : ''} />
+                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+              </div>
+              <span className="text-[10px] mt-1 font-medium tracking-tight">NOC</span>
+              {currentTab === 'telemetry' && (
+                <span className="absolute bottom-0 w-1.5 h-1.5 rounded-full bg-rose-500 shadow-sm shadow-rose-400" />
+              )}
+            </button>
+          ) : (
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="flex flex-col items-center justify-center py-1 px-3 rounded-xl text-zinc-400 hover:text-zinc-200 transition-all"
+            >
+              <Menu size={20} />
+              <span className="text-[10px] mt-1 font-medium tracking-tight">Más</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* QUICK ACTIONS BOTTOM SHEET MODAL */}
+      <AnimatePresence>
+        {quickActionsOpen && (
+          <div className="fixed inset-0 z-50 md:hidden flex flex-col justify-end">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setQuickActionsOpen(false)}
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm"
+            />
+
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 26, stiffness: 280 }}
+              className="relative bg-[#0d0d12] border-t border-white/10 rounded-t-3xl p-5 z-10 max-h-[85vh] overflow-y-auto shadow-2xl pb-[max(1.75rem,env(safe-area-inset-bottom))]"
+            >
+              {/* Pull Bar */}
+              <div className="w-12 h-1.5 bg-white/20 rounded-full mx-auto mb-4" />
+
+              <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
+                <div>
+                  <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    <Sparkles size={16} className="text-purple-400" />
+                    Acciones Rápidas
+                  </h3>
+                  <p className="text-xs text-zinc-400 mt-0.5">Operativa directa desde tu dispositivo móvil</p>
+                </div>
+                <button
+                  onClick={() => setQuickActionsOpen(false)}
+                  className="p-1.5 rounded-full bg-white/5 text-zinc-400 hover:text-white"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 gap-2.5">
+                {/* 1. Nueva Propuesta */}
+                <button
+                  onClick={() => {
+                    setQuickActionsOpen(false);
+                    onCreateProposalClick?.();
+                  }}
+                  className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-purple-600/20 to-pink-600/20 border border-purple-500/30 text-left group active:scale-[0.98] transition-all"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 to-pink-600 flex items-center justify-center text-white shadow-md shadow-purple-600/30">
+                      <Plus size={20} />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-white">Nueva Propuesta Comercial</h4>
+                      <p className="text-[11px] text-zinc-400">Crear cotización SaaS o desarrollo a medida</p>
+                    </div>
+                  </div>
+                  <ChevronRight size={16} className="text-zinc-500 group-hover:text-white transition-colors" />
+                </button>
+
+                {/* 2. Nuevo Prospecto / Lead */}
+                <button
+                  onClick={() => {
+                    setQuickActionsOpen(false);
+                    onTabChange('pipeline');
+                    onCreateLeadClick?.();
+                  }}
+                  className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/10 text-left group active:scale-[0.98] transition-all"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
+                      <Users size={18} />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-white">+ Nuevo Prospecto CRM</h4>
+                      <p className="text-[11px] text-zinc-400">Registrar nuevo cliente en el pipeline</p>
+                    </div>
+                  </div>
+                  <ChevronRight size={16} className="text-zinc-500 group-hover:text-white transition-colors" />
+                </button>
+
+                {/* 3. B2B Scraper */}
+                <button
+                  onClick={() => {
+                    setQuickActionsOpen(false);
+                    onTabChange('scraper');
+                  }}
+                  className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/10 text-left group active:scale-[0.98] transition-all"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-400">
+                      <Radar size={18} />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-white">Lead Scraper con IA</h4>
+                      <p className="text-[11px] text-zinc-400">Escanear negocios en Google Maps B2B</p>
+                    </div>
+                  </div>
+                  <ChevronRight size={16} className="text-zinc-500 group-hover:text-white transition-colors" />
+                </button>
+
+                {/* 4. NOC Radar (Solo Admin) */}
+                {isAdmin && (
+                  <button
+                    onClick={() => {
+                      setQuickActionsOpen(false);
+                      onTabChange('telemetry');
+                    }}
+                    className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/10 text-left group active:scale-[0.98] transition-all"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400">
+                        <Radio size={18} />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-white">Telemetría NOC & Bugs</h4>
+                        <p className="text-[11px] text-zinc-400">Monitoreo de latencia y Sentry de la flota</p>
+                      </div>
+                    </div>
+                    <ChevronRight size={16} className="text-zinc-500 group-hover:text-white transition-colors" />
+                  </button>
+                )}
+
+                {/* 5. Suscripciones / Finanzas (Solo Admin) */}
+                {isAdmin && (
+                  <button
+                    onClick={() => {
+                      setQuickActionsOpen(false);
+                      onTabChange('subscriptions');
+                    }}
+                    className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/10 text-left group active:scale-[0.98] transition-all"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                        <Repeat size={18} />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-white">Suscripciones & Abonos</h4>
+                        <p className="text-[11px] text-zinc-400">Control de pagos mensuales recurrentes</p>
+                      </div>
+                    </div>
+                    <ChevronRight size={16} className="text-zinc-500 group-hover:text-white transition-colors" />
+                  </button>
+                )}
+
+                {/* 6. Instalar App en Móvil (PWA) */}
+                {!isStandalone && (
+                  <button
+                    onClick={() => {
+                      setQuickActionsOpen(false);
+                      handleInstallClick();
+                    }}
+                    className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-emerald-600/20 via-cyan-600/20 to-purple-600/20 border border-emerald-500/40 text-left group active:scale-[0.98] transition-all"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-cyan-500 flex items-center justify-center text-white shadow-md shadow-emerald-500/30 shrink-0">
+                        <Smartphone size={20} />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-sm font-bold text-white">Instalar CreAPP en tu Móvil</h4>
+                          <span className="px-1.5 py-0.5 rounded bg-emerald-500/30 text-emerald-300 text-[9px] font-bold uppercase tracking-wider">PWA</span>
+                        </div>
+                        <p className="text-[11px] text-zinc-300 truncate">Acceso directo como app nativa en tu pantalla de inicio</p>
+                      </div>
+                    </div>
+                    <Download size={16} className="text-emerald-400 group-hover:scale-110 transition-transform shrink-0 ml-2" />
+                  </button>
+                )}
+              </div>
+
+              {/* Quick drawer link */}
+              <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between">
+                <button
+                  onClick={() => {
+                    setQuickActionsOpen(false);
+                    setMobileMenuOpen(true);
+                  }}
+                  className="text-xs text-zinc-400 hover:text-white flex items-center gap-1.5"
+                >
+                  <Menu size={14} />
+                  <span>Ver todos los módulos</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setQuickActionsOpen(false);
+                    setProfileModalOpen(true);
+                  }}
+                  className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1"
+                >
+                  <User size={13} />
+                  <span>Mi cuenta</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* MODAL GUÍA DE INSTALACIÓN PWA */}
+      <AnimatePresence>
+        {installModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-3 sm:p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setInstallModalOpen(false)}
+              className="fixed inset-0 bg-black/80 backdrop-blur-md"
+            />
+
+            <motion.div
+              initial={{ y: '100%', opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: '100%', opacity: 0 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 280 }}
+              className="relative w-full max-w-md bg-[#0f0f15] border border-emerald-500/30 rounded-3xl p-6 shadow-2xl z-10 space-y-5"
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                    <Smartphone size={20} />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-white">Instalar CreAPP OS</h3>
+                    <p className="text-xs text-zinc-400">PWA optimizada para pantalla completa</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setInstallModalOpen(false)}
+                  className="p-1.5 rounded-full bg-white/5 text-zinc-400 hover:text-white"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              {/* Instrucciones iOS Safari */}
+              <div className="p-4 rounded-2xl bg-[#14141f] border border-white/10 space-y-2.5">
+                <div className="flex items-center gap-2 text-xs font-bold text-white">
+                  <span className="w-5 h-5 rounded-full bg-purple-600 text-white flex items-center justify-center text-[10px]">🍎</span>
+                  <span>En iPhone / iPad (Safari)</span>
+                </div>
+                <ol className="text-xs text-zinc-300 space-y-2 pl-4 list-decimal marker:text-purple-400">
+                  <li>Toca el botón <strong>Compartir</strong> (ícono cuadrado con flecha <Share2 size={12} className="inline text-purple-400" />) en la barra de Safari.</li>
+                  <li>Desliza hacia abajo y selecciona <strong>"Agregar a pantalla de inicio"</strong> (+).</li>
+                  <li>Toca <strong>"Agregar"</strong> arriba a la derecha ¡y listo!</li>
+                </ol>
+              </div>
+
+              {/* Instrucciones Android Chrome */}
+              <div className="p-4 rounded-2xl bg-[#14141f] border border-white/10 space-y-2.5">
+                <div className="flex items-center gap-2 text-xs font-bold text-white">
+                  <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px]">🤖</span>
+                  <span>En Android (Google Chrome)</span>
+                </div>
+                <ol className="text-xs text-zinc-300 space-y-2 pl-4 list-decimal marker:text-emerald-400">
+                  <li>Toca el menú de los <strong>tres puntos</strong> (⋮) en la esquina superior.</li>
+                  <li>Elige <strong>"Instalar aplicación"</strong> o "Agregar a pantalla principal".</li>
+                </ol>
+              </div>
+
+              <button
+                onClick={() => setInstallModalOpen(false)}
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-emerald-600 text-white text-xs font-bold uppercase tracking-wider shadow-lg active:scale-95 transition-all"
+              >
+                Entendido, Continuar
+              </button>
             </motion.div>
           </div>
         )}

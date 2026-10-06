@@ -2667,101 +2667,163 @@ const ProposalEditor: React.FC = () => {
   return (
     <div className="min-h-screen bg-background-dark text-slate-200 font-body">
       {/* Header */}
-      <header className="border-b border-white/5 bg-surface-dark/80 backdrop-blur-xl sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col md:flex-row gap-4 justify-between items-center">
-          <button
-            onClick={() => navigate('/admin')}
-            className="flex items-center gap-3 text-slate-400 hover:text-white text-xs uppercase tracking-widest font-bold transition-colors"
-          >
-            <ArrowLeft size={16} />
-            Volver
-          </button>
-          <div className="flex items-center flex-wrap gap-3">
-            {!isNew && slug && (
-              <>
-                <a
-                  href={`/propuesta/${slug}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-slate-400 hover:text-white text-[11px] uppercase tracking-widest font-bold transition-all hover:bg-white/10"
-                >
-                  <Eye size={14} /> Ver Online
-                </a>
-                <button
-                  onClick={handleExportPDF}
-                  disabled={exportingPDF}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-slate-300 hover:text-white text-[11px] uppercase tracking-widest font-bold transition-all hover:bg-white/10 disabled:opacity-50"
-                >
-                  {exportingPDF ? (
-                    <>
-                      <Loader2 size={14} className="animate-spin" />
-                      Exportando PDF...
-                    </>
-                  ) : (
-                    <>
-                      <FileText size={14} />
-                      Exportar PDF
-                    </>
-                  )}
-                </button>
-                <button
-                  onClick={() => handleExportVideo('9:16')}
-                  disabled={renderingVertical}
-                  title={!isLocalhost ? 'Información sobre renderizado Remotion MP4 local y previsualización en vivo' : 'Exportar video vertical 9:16'}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-slate-300 hover:text-white text-[11px] uppercase tracking-widest font-bold transition-all hover:bg-white/10 disabled:opacity-50"
-                >
-                  {renderingVertical ? (
-                    <>
-                      <Loader2 size={14} className="animate-spin text-primary" />
-                      Vertical ({videoProgressVertical}%)
-                    </>
-                  ) : (
-                    <>
-                      <Video size={14} className="rotate-90" />
-                      Exportar Vertical
-                    </>
-                  )}
-                </button>
-                <button
-                  onClick={() => handleExportVideo('16:9')}
-                  disabled={renderingHorizontal}
-                  title={!isLocalhost ? 'Información sobre renderizado Remotion MP4 local y previsualización en vivo' : 'Exportar video horizontal 16:9'}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-slate-300 hover:text-white text-[11px] uppercase tracking-widest font-bold transition-all hover:bg-white/10 disabled:opacity-50"
-                >
-                  {renderingHorizontal ? (
-                    <>
-                      <Loader2 size={14} className="animate-spin text-primary" />
-                      Horizontal ({videoProgressHorizontal}%)
-                    </>
-                  ) : (
-                    <>
-                      <Video size={14} />
-                      Exportar Horizontal
-                    </>
-                  )}
-                </button>
-              </>
-            )}
+      <header className="border-b border-white/5 bg-surface-dark/90 backdrop-blur-xl sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 sm:py-4">
+          {/* Mobile Header Layout (< md) */}
+          <div className="flex md:hidden flex-col gap-2">
+            <div className="flex items-center justify-between gap-3">
+              <button
+                onClick={() => navigate('/admin')}
+                className="flex items-center gap-2 text-slate-400 hover:text-white text-xs uppercase tracking-widest font-bold transition-colors py-1 shrink-0"
+              >
+                <ArrowLeft size={16} />
+                <span>Volver</span>
+              </button>
+
+              <div className="min-w-0 flex-1 px-2 text-center">
+                <span className="text-xs font-bold text-white truncate block">
+                  {clientName || 'Nueva Propuesta'}
+                </span>
+              </div>
+
+              <button
+                onClick={handleSave}
+                disabled={saving || !clientName}
+                className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-gradient-to-r from-primary to-secondary text-white font-black uppercase tracking-widest text-[10px] hover:opacity-90 transition-all disabled:opacity-50 shrink-0 shadow-md"
+              >
+                <Save size={13} />
+                {saving ? '...' : 'Guardar'}
+              </button>
+            </div>
+
+            {/* Mobile Actions Scrollbar */}
+            <div className="flex items-center gap-2 overflow-x-auto scrollbar-none py-0.5 text-[10px]">
+              {!isNew && slug && (
+                <>
+                  <a
+                    href={`/propuesta/${slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-slate-300 hover:text-white uppercase tracking-wider font-bold transition-all shrink-0"
+                  >
+                    <Eye size={12} /> Ver Online
+                  </a>
+                  <button
+                    onClick={handleExportPDF}
+                    disabled={exportingPDF}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-slate-300 hover:text-white uppercase tracking-wider font-bold transition-all shrink-0 disabled:opacity-50"
+                  >
+                    {exportingPDF ? <Loader2 size={12} className="animate-spin" /> : <FileText size={12} />}
+                    PDF
+                  </button>
+                </>
+              )}
+              <button
+                onClick={() => setIsImportModalOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-slate-300 hover:text-white uppercase tracking-wider font-bold transition-all shrink-0"
+              >
+                <Upload size={12} className="text-secondary" />
+                Importar
+              </button>
+            </div>
+          </div>
+
+          {/* Desktop Header Layout (>= md) */}
+          <div className="hidden md:flex justify-between items-center gap-4">
             <button
-              onClick={() => setIsImportModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-slate-300 hover:text-white text-[11px] uppercase tracking-widest font-bold transition-all hover:bg-white/10 cursor-pointer"
+              onClick={() => navigate('/admin')}
+              className="flex items-center gap-3 text-slate-400 hover:text-white text-xs uppercase tracking-widest font-bold transition-colors"
             >
-              <Upload size={14} className="text-secondary" />
-              Importar PDF/DOC
+              <ArrowLeft size={16} />
+              Volver
             </button>
-            <button
-              onClick={handleSave}
-              disabled={saving || !clientName}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-gradient-to-r from-primary to-secondary text-white font-black uppercase tracking-widest text-[11px] hover:opacity-90 transition-all disabled:opacity-50"
-            >
-              <Save size={14} />
-              {saving ? 'Guardando...' : 'Guardar'}
-            </button>
+            <div className="flex items-center flex-wrap gap-3">
+              {!isNew && slug && (
+                <>
+                  <a
+                    href={`/propuesta/${slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-slate-400 hover:text-white text-[11px] uppercase tracking-widest font-bold transition-all hover:bg-white/10"
+                  >
+                    <Eye size={14} /> Ver Online
+                  </a>
+                  <button
+                    onClick={handleExportPDF}
+                    disabled={exportingPDF}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-slate-300 hover:text-white text-[11px] uppercase tracking-widest font-bold transition-all hover:bg-white/10 disabled:opacity-50"
+                  >
+                    {exportingPDF ? (
+                      <>
+                        <Loader2 size={14} className="animate-spin" />
+                        Exportando PDF...
+                      </>
+                    ) : (
+                      <>
+                        <FileText size={14} />
+                        Exportar PDF
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => handleExportVideo('9:16')}
+                    disabled={renderingVertical}
+                    title={!isLocalhost ? 'Información sobre renderizado Remotion MP4 local y previsualización en vivo' : 'Exportar video vertical 9:16'}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-slate-300 hover:text-white text-[11px] uppercase tracking-widest font-bold transition-all hover:bg-white/10 disabled:opacity-50"
+                  >
+                    {renderingVertical ? (
+                      <>
+                        <Loader2 size={14} className="animate-spin text-primary" />
+                        Vertical ({videoProgressVertical}%)
+                      </>
+                    ) : (
+                      <>
+                        <Video size={14} className="rotate-90" />
+                        Exportar Vertical
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => handleExportVideo('16:9')}
+                    disabled={renderingHorizontal}
+                    title={!isLocalhost ? 'Información sobre renderizado Remotion MP4 local y previsualización en vivo' : 'Exportar video horizontal 16:9'}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-slate-300 hover:text-white text-[11px] uppercase tracking-widest font-bold transition-all hover:bg-white/10 disabled:opacity-50"
+                  >
+                    {renderingHorizontal ? (
+                      <>
+                        <Loader2 size={14} className="animate-spin text-primary" />
+                        Horizontal ({videoProgressHorizontal}%)
+                      </>
+                    ) : (
+                      <>
+                        <Video size={14} />
+                        Exportar Horizontal
+                      </>
+                    )}
+                  </button>
+                </>
+              )}
+              <button
+                onClick={() => setIsImportModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-slate-300 hover:text-white text-[11px] uppercase tracking-widest font-bold transition-all hover:bg-white/10 cursor-pointer"
+              >
+                <Upload size={14} className="text-secondary" />
+                Importar PDF/DOC
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving || !clientName}
+                className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-gradient-to-r from-primary to-secondary text-white font-black uppercase tracking-widest text-[11px] hover:opacity-90 transition-all disabled:opacity-50"
+              >
+                <Save size={14} />
+                {saving ? 'Guardando...' : 'Guardar'}
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
-      <main className="max-w-[1600px] mx-auto px-6 py-6">
+      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 py-4 sm:py-6 pb-24 md:pb-6">
         {/* Tab Navigation */}
         <div className="flex items-center gap-1 mb-6 overflow-x-auto pb-2 scrollbar-hide">
           {(proposalType === 'service' ? [
