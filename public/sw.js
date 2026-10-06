@@ -1,7 +1,6 @@
-const CACHE_NAME = 'creapp-os-v1';
+const CACHE_NAME = 'creapp-os-v2';
 const STATIC_ASSETS = [
   '/',
-  '/admin',
   '/manifest.webmanifest',
   '/apple-touch-icon.png',
   '/icon-192.png',
@@ -26,6 +25,7 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         keys.map((key) => {
           if (key !== CACHE_NAME) {
+            console.log('[SW] Purging old cache:', key);
             return caches.delete(key);
           }
         })
@@ -38,12 +38,23 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Ignore non-GET requests or chrome-extension URLs
+  // 1. Ignore non-GET requests or non-http protocols
   if (event.request.method !== 'GET' || !url.protocol.startsWith('http')) {
     return;
   }
 
-  // Bypass API calls to Supabase, Google, etc. directly to network
+  // 2. Bypass Range requests, video/audio media (iOS Safari requirement)
+  if (
+    event.request.headers.get('range') ||
+    url.pathname.endsWith('.mp4') ||
+    url.pathname.endsWith('.webm') ||
+    url.pathname.endsWith('.mp3') ||
+    url.pathname.endsWith('.wav')
+  ) {
+    return;
+  }
+
+  // 3. Bypass third-party services and dynamic API routes
   if (
     url.hostname.includes('supabase.co') ||
     url.hostname.includes('googleapis.com') ||
@@ -53,7 +64,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Navigation / HTML requests: Network first, fallback to cached HTML
+  // 4. Navigation (HTML documents): Network first, fallback to cached '/' if offline
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request)
@@ -67,26 +78,44 @@ self.addEventListener('fetch', (event) => {
         .catch(async () => {
           const cached = await caches.match(event.request);
           if (cached) return cached;
-          return caches.match('/') || caches.match('/admin');
+          const rootCached = await caches.match('/');
+          if (rootCached) return rootCached;
+          return new Response('Sin conexión', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
         })
     );
     return;
   }
 
-  // Static assets: Stale while revalidate
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      const fetchPromise = fetch(event.request)
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            const clone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-          }
-          return networkResponse;
-        })
-        .catch(() => cachedResponse);
+  // 5. Static assets: ONLY cache images, fonts, and manifest to prevent blocking Vite JS/CSS chunks on iOS
+  const isImageOrFont =
+    url.pathname.endsWith('.png') ||
+    url.pathname.endsWith('.jpg') ||
+    url.pathname.endsWith('.jpeg') ||
+    url.pathname.endsWith('.svg') ||
+    url.pathname.endsWith('.webp') ||
+    url.pathname.endsWith('.woff2') ||
+    url.pathname === '/manifest.webmanifest' ||
+    url.pathname === '/manifest.json';
 
-      return cachedResponse || fetchPromise;
-    })
-  );
+  if (isImageOrFont) {
+    event.respondWith(
+      caches.match(event.request).then((cachedResponse) => {
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+        return fetch(event.request)
+          .then((networkResponse) => {
+            if (networkResponse && networkResponse.status === 200) {
+              const clone = networkResponse.clone();
+              caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+            }
+            return networkResponse;
+          })
+          .catch(() => new Response('', { status: 408 }));
+      })
+    );
+    return;
+  }
+
+  // For all other requests (Vite JS bundles, CSS, modules), allow browser network stack to handle natively
 });

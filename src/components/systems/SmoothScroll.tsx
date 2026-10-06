@@ -21,6 +21,13 @@ export const SmoothScroll: React.FC<SmoothScrollProps> = ({ children }) => {
     const lenisRef = useRef<Lenis | null>(null);
 
     useEffect(() => {
+        // Use native momentum scrolling on touch / iOS mobile devices
+        const isTouch = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+        if (isTouch) {
+            ScrollTrigger.refresh();
+            return;
+        }
+
         const lenis = new Lenis({
             lerp: 0.1,
             smoothWheel: true,
@@ -31,13 +38,16 @@ export const SmoothScroll: React.FC<SmoothScrollProps> = ({ children }) => {
         // Sync Lenis with GSAP ScrollTrigger
         lenis.on('scroll', ScrollTrigger.update);
 
-        gsap.ticker.add((time) => {
+        const tickerCallback = (time: number) => {
             lenis.raf(time * 1000);
-        });
+        };
 
-        gsap.ticker.lagSmoothing(0);
+        gsap.ticker.add(tickerCallback);
+        // Safe lag smoothing: allow 500ms max lag, target 33ms to avoid freeze
+        gsap.ticker.lagSmoothing(500, 33);
 
         return () => {
+            gsap.ticker.remove(tickerCallback);
             lenis.destroy();
             lenisRef.current = null;
         };

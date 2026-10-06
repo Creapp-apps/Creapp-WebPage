@@ -11,17 +11,39 @@ const Preloader: React.FC<PreloaderProps> = ({ onComplete }) => {
     const [displayProgress, setDisplayProgress] = useState(0);
     const hasCompleted = useRef(false);
 
-    // Simulated loading counter (procedural scene — no assets to track)
+    // Guaranteed finish helper
+    const finish = useRef(onComplete);
+    finish.current = onComplete;
+
     useEffect(() => {
+        const isMobile = typeof window !== 'undefined' && (window.innerWidth < 768 || 'ontouchstart' in window);
         const target = { val: 0 };
-        gsap.to(target, {
+
+        // Animate counter
+        const tween = gsap.to(target, {
             val: 100,
-            duration: 2.5,
+            duration: isMobile ? 1.0 : 1.8,
             ease: 'power2.inOut',
             onUpdate: () => {
                 setDisplayProgress(Math.round(target.val));
             },
+            onComplete: () => {
+                setDisplayProgress(100);
+            },
         });
+
+        // HARD SAFETY TIMEOUT: Under NO circumstance should preloader hang for > 2.2s (mobile) or 3s (desktop)
+        const safetyTimer = setTimeout(() => {
+            if (!hasCompleted.current) {
+                hasCompleted.current = true;
+                finish.current();
+            }
+        }, isMobile ? 1800 : 3000);
+
+        return () => {
+            tween.kill();
+            clearTimeout(safetyTimer);
+        };
     }, []);
 
     // Trigger exit animation when counter reaches 100
@@ -31,30 +53,35 @@ const Preloader: React.FC<PreloaderProps> = ({ onComplete }) => {
 
             const tl = gsap.timeline({
                 onComplete: () => {
-                    onComplete();
+                    finish.current();
                 },
             });
 
             // Counter scale up
-            tl.to(counterRef.current, {
-                scale: 1.2,
-                duration: 0.3,
-                ease: 'power2.in',
-            });
+            if (counterRef.current) {
+                tl.to(counterRef.current, {
+                    scale: 1.15,
+                    duration: 0.25,
+                    ease: 'power2.in',
+                });
+            }
 
-            // Fade out container
-            tl.to(
-                containerRef.current,
-                {
-                    opacity: 0,
-                    scale: 1.05,
-                    duration: 0.8,
-                    ease: 'power3.inOut',
-                },
-                '+=0.1'
-            );
+            // Fade out container smoothly
+            if (containerRef.current) {
+                tl.to(
+                    containerRef.current,
+                    {
+                        opacity: 0,
+                        duration: 0.5,
+                        ease: 'power3.inOut',
+                    },
+                    '+=0.05'
+                );
+            } else {
+                finish.current();
+            }
         }
-    }, [displayProgress, onComplete]);
+    }, [displayProgress]);
 
     return (
         <div

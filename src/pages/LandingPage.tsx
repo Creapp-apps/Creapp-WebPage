@@ -67,6 +67,18 @@ const LandingPage: React.FC = () => {
     const [showPreloader, setShowPreloader] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
+    const [isMobileDevice, setIsMobileDevice] = useState(false);
+
+    useEffect(() => {
+        const checkMobile = () => {
+            const isSmall = window.innerWidth < 768;
+            const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+            setIsMobileDevice(isSmall || (isTouch && window.innerWidth < 1024));
+        };
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
 
     // Refs shared between DOM and Canvas
     const scrollProgress = useRef(0);
@@ -179,8 +191,8 @@ const LandingPage: React.FC = () => {
             {/* Fixed 3D Canvas background */}
             <WebGLCanvas scrollProgress={scrollProgress} />
 
-            {/* Floating Lines background effect — deferred to avoid dual WebGL context crash */}
-            {!showPreloader && (
+            {/* Floating Lines background effect — deferred to avoid dual WebGL context crash, disabled on mobile */}
+            {!showPreloader && !isMobileDevice && (
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 0.35 }}
@@ -206,6 +218,17 @@ const LandingPage: React.FC = () => {
                         mouseRadius={0.7}
                     />
                 </motion.div>
+            )}
+
+            {/* Mobile-optimized lightweight ambient glow (zero WebGL overhead) */}
+            {!showPreloader && isMobileDevice && (
+                <div 
+                    className="fixed inset-0 pointer-events-none opacity-30" 
+                    style={{ 
+                        zIndex: 0,
+                        background: 'radial-gradient(ellipse 80% 50% at 50% -20%, rgba(255, 45, 120, 0.25), rgba(155, 48, 255, 0.15), transparent 70%)'
+                    }} 
+                />
             )}
 
             {/* ═══════════════ DOM LAYER ═══════════════ */}

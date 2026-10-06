@@ -11,12 +11,12 @@ Sentry.init({
     Sentry.browserTracingIntegration(),
     Sentry.replayIntegration({
       maskAllText: false,
-      blockAllMedia: false,
+      blockAllMedia: true, // Bloquea grabación pesada de canvas/WebGL en móvil
     }),
   ],
-  tracesSampleRate: 1.0,
+  tracesSampleRate: 0.2,
   tracePropagationTargets: ["localhost", /^https:\/\/creapp-web-page\.vercel\.app/],
-  replaysSessionSampleRate: 0.1,
+  replaysSessionSampleRate: 0.05,
   replaysOnErrorSampleRate: 1.0,
   environment: process.env.NODE_ENV || "development",
 });
@@ -35,6 +35,7 @@ if ('serviceWorker' in navigator && typeof window !== 'undefined') {
     navigator.serviceWorker
       .register('/sw.js')
       .then((reg) => {
+        reg.update().catch(() => {});
         console.log('⚡ [CreAPP PWA] Service Worker registrado:', reg.scope);
       })
       .catch((err) => {
