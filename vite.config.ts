@@ -363,9 +363,23 @@ export default defineConfig(({ mode }) => {
       }
     ],
     define: {
-      'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
+      'process.env': {},
+      'process.env.NODE_ENV': JSON.stringify(mode),
+      'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY || ''),
+      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || ''),
       'process.env.GOOGLE_MAPS_API_KEY': JSON.stringify(env.GOOGLE_MAPS_API_KEY || '')
+    },
+    build: {
+      chunkSizeWarningLimit: 1200,
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'three-vendor': ['three', '@react-three/fiber'],
+            'motion-vendor': ['framer-motion', 'gsap'],
+            'sentry-vendor': ['@sentry/react']
+          }
+        }
+      }
     },
     resolve: {
       alias: {
