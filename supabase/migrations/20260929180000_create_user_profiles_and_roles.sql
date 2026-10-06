@@ -63,7 +63,7 @@ declare
   assigned_role public.user_role;
   parsed_name text;
 begin
-  if new.email in ('creapp@creapp.com', 'admin@creapp.com.ar', 'admin@creapp.com') then
+  if new.email in ('creapp.ar@gmail.com', 'creapp@creapp.com', 'admin@creapp.com.ar', 'admin@creapp.com') then
     assigned_role := 'admin'::public.user_role;
   elsif (new.raw_user_meta_data->>'role') = 'admin' then
     assigned_role := 'admin'::public.user_role;
@@ -79,7 +79,7 @@ begin
   set 
     email = excluded.email,
     role = case 
-      when excluded.email in ('creapp@creapp.com', 'admin@creapp.com.ar', 'admin@creapp.com') then 'admin'::public.user_role
+      when excluded.email in ('creapp.ar@gmail.com', 'creapp@creapp.com', 'admin@creapp.com.ar', 'admin@creapp.com') then 'admin'::public.user_role
       else public.user_profiles.role
     end,
     full_name = coalesce(excluded.full_name, public.user_profiles.full_name),
