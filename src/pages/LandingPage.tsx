@@ -64,7 +64,7 @@ const SERVICES = [
 
 // ── Landing Page ───────────────────────────────────
 const LandingPage: React.FC = () => {
-    const [showPreloader, setShowPreloader] = useState(true);
+    const [showPreloader, setShowPreloader] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
     const [isMobileDevice, setIsMobileDevice] = useState(false);
@@ -92,24 +92,21 @@ const LandingPage: React.FC = () => {
     const footerRef = useRef<HTMLElement>(null);
     const navRef = useRef<HTMLElement>(null);
 
-    // ── Preloader Complete ───────────────────────────
+    // ── Hero Entrance Animation (sincronizada con el despegue de la Splash Screen) ──
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            const heroEls = [navRef.current, heroTitleRef.current, heroSubRef.current, heroCTARef.current].filter(Boolean);
+            gsap.fromTo(
+                heroEls,
+                { opacity: 0, y: 30, filter: 'blur(6px)' },
+                { opacity: 1, y: 0, filter: 'blur(0px)', stagger: 0.15, duration: 1.0, ease: 'power3.out' }
+            );
+        }, 1100);
+        return () => clearTimeout(timer);
+    }, []);
+
     const handlePreloaderComplete = useCallback(() => {
         setShowPreloader(false);
-
-        // Start hero elements hidden
-        const heroEls = [navRef.current, heroTitleRef.current, heroSubRef.current, heroCTARef.current].filter(Boolean);
-        gsap.set(heroEls, { opacity: 0, y: 40, filter: 'blur(8px)' });
-
-        // Entrance animation
-        gsap.to(heroEls, {
-            opacity: 1,
-            y: 0,
-            filter: 'blur(0px)',
-            stagger: 0.15,
-            duration: 1.2,
-            ease: 'power3.out',
-            delay: 0.3,
-        });
     }, []);
 
     // ── GSAP ScrollTrigger Setup ─────────────────────
