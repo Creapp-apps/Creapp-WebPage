@@ -110,10 +110,9 @@ export const PwaSplashScreen: React.FC<PwaSplashScreenProps> = ({ onComplete }) 
   return (
     <div
       onClick={() => setStage('done')}
-      className={`fixed inset-0 z-[99999] bg-[#070709] flex flex-col items-center justify-center select-none overflow-hidden transition-opacity duration-600 ease-out ${
+      className={`fixed inset-0 w-full h-full z-[99999] bg-[#070709] flex flex-col items-center justify-center select-none overflow-hidden transition-opacity duration-600 ease-out ${
         isReveal ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'
       }`}
-      style={{ height: '100dvh' }}
     >
       {/* ── CIELO ESPACIAL CON ESTRELLAS TITILANTES (Aparece suavemente sin sobresalto) ── */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden transition-opacity duration-700 ease-out opacity-100">
