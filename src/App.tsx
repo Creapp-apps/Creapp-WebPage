@@ -1,5 +1,5 @@
 import React, { useEffect, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import AuthGuard from './components/auth/AuthGuard';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
@@ -14,6 +14,28 @@ const AdminLogin = React.lazy(() => import('./pages/admin/AdminLogin'));
 const AdminPanel = React.lazy(() => import('./pages/admin/AdminPanel'));
 const ProposalEditor = React.lazy(() => import('./pages/admin/ProposalEditor'));
 const ControlCenter = React.lazy(() => import('./pages/admin/ControlCenter'));
+const SetPasswordPage = React.lazy(() => import('./pages/admin/SetPasswordPage'));
+
+// Detectar y redirigir invitaciones y recuperaciones de auth de Supabase a /admin/set-password
+const AuthRedirectHandler: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (
+      hash.includes('type=invite') ||
+      hash.includes('type=recovery') ||
+      hash.includes('error_code=otp_expired')
+    ) {
+      if (location.pathname !== '/admin/set-password') {
+        navigate('/admin/set-password' + hash, { replace: true });
+      }
+    }
+  }, [navigate, location]);
+
+  return null;
+};
 
 // Fallback de carga visual elegante (evita pantalla en negro total)
 const RouteLoadingFallback: React.FC = () => (
@@ -121,6 +143,7 @@ const App: React.FC = () => {
   return (
     <BrowserRouter>
       <PwaSplashScreen />
+      <AuthRedirectHandler />
       <AuthProvider>
         <NotificationProvider>
           <ErrorBoundary>
@@ -133,8 +156,10 @@ const App: React.FC = () => {
                     <Route path="/propuesta/:slug" element={<ProposalView />} />
                     <Route path="/contrato/:id" element={<ContractView />} />
 
-                    {/* Admin Routes (Protected) */}
+                    {/* Admin & Activation Routes */}
                     <Route path="/admin/login" element={<AdminLogin />} />
+                    <Route path="/admin/set-password" element={<SetPasswordPage />} />
+                    <Route path="/admin/activar" element={<SetPasswordPage />} />
                     <Route path="/admin" element={<AuthGuard><AdminPanel /></AuthGuard>} />
                     <Route path="/admin/propuesta/:id" element={<AuthGuard><ProposalEditor /></AuthGuard>} />
                     <Route path="/admin/propuesta/nueva" element={<AuthGuard><ProposalEditor /></AuthGuard>} />
