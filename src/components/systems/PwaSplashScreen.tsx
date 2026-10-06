@@ -36,12 +36,17 @@ export const PwaSplashScreen: React.FC<PwaSplashScreenProps> = ({ onComplete }) 
   const [stage, setStage] = useState<'loading' | 'takeoff' | 'blastoff' | 'farewell' | 'reveal' | 'done'>('loading');
 
   useEffect(() => {
-    // Retirar splash estático de index.html con transición imperceptible
-    const staticSplash = document.getElementById('pwa-static-splash');
-    if (staticSplash) {
-      staticSplash.style.opacity = '0';
-      setTimeout(() => staticSplash.remove(), 250);
-    }
+    const dismissStaticSplash = (instant = false) => {
+      const staticSplash = document.getElementById('pwa-static-splash');
+      if (staticSplash) {
+        if (instant) {
+          staticSplash.remove();
+        } else {
+          staticSplash.style.opacity = '0';
+          setTimeout(() => staticSplash.remove(), 400);
+        }
+      }
+    };
 
     // Comprobar sesión si no es PWA instalada
     try {
@@ -52,14 +57,19 @@ export const PwaSplashScreen: React.FC<PwaSplashScreenProps> = ({ onComplete }) 
 
       const hasSeen = sessionStorage.getItem('creapp_pwa_splash_seen');
       if (hasSeen && !isStandalone) {
+        dismissStaticSplash(true);
+        document.documentElement.classList.remove('splash-active');
         setStage('done');
         onComplete?.();
         return;
       }
     } catch (e) {}
 
-    // Cronograma Cinemático con Cadencia Perfecta
+    // Cronograma Cinemático con Cadencia Perfecta:
+    // El HTML estático cubre el loading bar (0 a 1.8s) de manera sólida y sin micro-saltos.
+    // Al cumplirse los 1.8s (barra llena), el splash estático se retira y se inicia el takeoff.
     const tTakeoff = setTimeout(() => {
+      dismissStaticSplash(false);
       setStage('takeoff');
     }, 1800);
 
@@ -72,6 +82,7 @@ export const PwaSplashScreen: React.FC<PwaSplashScreenProps> = ({ onComplete }) 
     }, 4400);
 
     const tReveal = setTimeout(() => {
+      document.documentElement.classList.remove('splash-active');
       setStage('reveal');
       try {
         sessionStorage.setItem('creapp_pwa_splash_seen', 'true');
@@ -80,10 +91,14 @@ export const PwaSplashScreen: React.FC<PwaSplashScreenProps> = ({ onComplete }) 
     }, 5600);
 
     const tDone = setTimeout(() => {
+      document.documentElement.classList.remove('splash-active');
+      dismissStaticSplash(true);
       setStage('done');
     }, 6100);
 
     const tSafety = setTimeout(() => {
+      document.documentElement.classList.remove('splash-active');
+      dismissStaticSplash(true);
       setStage('done');
     }, 6600);
 
@@ -94,6 +109,7 @@ export const PwaSplashScreen: React.FC<PwaSplashScreenProps> = ({ onComplete }) 
       clearTimeout(tReveal);
       clearTimeout(tDone);
       clearTimeout(tSafety);
+      document.documentElement.classList.remove('splash-active');
     };
   }, [onComplete]);
 
@@ -107,10 +123,21 @@ export const PwaSplashScreen: React.FC<PwaSplashScreenProps> = ({ onComplete }) 
   const isFarewell = stage === 'farewell';
   const isReveal = stage === 'reveal';
 
+  const handleSkip = () => {
+    const staticSplash = document.getElementById('pwa-static-splash');
+    if (staticSplash) staticSplash.remove();
+    document.documentElement.classList.remove('splash-active');
+    setStage('done');
+  };
+
   return (
     <div
-      onClick={() => setStage('done')}
-      className={`fixed inset-0 w-full h-full z-[99999] bg-[#070709] flex flex-col items-center justify-center select-none overflow-hidden transition-opacity duration-600 ease-out ${
+      onClick={handleSkip}
+      style={{
+        height: '100dvh',
+        minHeight: '-webkit-fill-available',
+      }}
+      className={`fixed inset-0 w-full z-[99998] bg-[#070709] flex flex-col items-center justify-center select-none overflow-hidden transition-opacity duration-600 ease-out ${
         isReveal ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'
       }`}
     >
@@ -195,11 +222,14 @@ export const PwaSplashScreen: React.FC<PwaSplashScreenProps> = ({ onComplete }) 
             {/* Resplandor de Neón detrás del Cohete */}
             <div className="absolute w-28 h-28 rounded-full bg-gradient-to-tr from-[#FF2D78]/55 to-[#9B30FF]/55 blur-2xl" />
 
-            {/* VECTOR OFICIAL CREAPP (Mismo tamaño exacto que index.html: 72px) */}
+            {/* VECTOR OFICIAL CREAPP (Mismo tamaño exacto que index.html: 72x126px) */}
             <img
-              src={creappLogoOfficial}
+              src="/CREAPP%20LOGO%20VECTOR.png"
               alt="CreAPP Rocket"
-              className="w-[72px] h-auto object-contain filter drop-shadow-[0_0_20px_rgba(255,45,120,0.7)]"
+              width={72}
+              height={126}
+              style={{ width: '72px', height: '126px' }}
+              className="object-contain filter drop-shadow-[0_0_20px_rgba(255,45,120,0.7)]"
             />
           </div>
 
@@ -295,6 +325,7 @@ export const PwaSplashScreen: React.FC<PwaSplashScreenProps> = ({ onComplete }) 
       {/* ── BANCO DE NUBES CÚMULOS Y TELÓN (Act 2 & Act 3: 100% Cúpulas esféricas sin cortes rectos) ── */}
       <div
         style={{
+          display: (isLoading || isFarewell || isReveal) ? 'none' : 'flex',
           transform: isBlastoff || isFarewell || isReveal
             ? 'translateY(-130vh)' // ¡Barrido tipo telón hacia arriba tras el cohete!
             : isTakeoff
@@ -307,7 +338,7 @@ export const PwaSplashScreen: React.FC<PwaSplashScreenProps> = ({ onComplete }) 
             : 'none',
           opacity: isLoading || isFarewell || isReveal ? 0 : 1,
         }}
-        className="absolute inset-x-0 bottom-0 z-30 pointer-events-none flex flex-col justify-end"
+        className="absolute inset-x-0 bottom-0 z-30 pointer-events-none flex-col justify-end"
       >
         {/* Glow ambiental de horizonte detrás de las nubes */}
         <div className="absolute -top-32 w-full h-[40vh] bg-gradient-to-t from-[#FF2D78]/25 via-[#9B30FF]/30 to-transparent blur-[60px] pointer-events-none" />
