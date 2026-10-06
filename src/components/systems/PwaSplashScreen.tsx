@@ -16,7 +16,7 @@ const SparkleStar: React.FC<{ size: number; className?: string; color?: string }
     height={size}
     viewBox="0 0 24 24"
     fill="none"
-    className={`filter drop-shadow-[0_0_8px_${color}] ${className}`}
+    className={`filter drop-shadow-[0_0_10px_${color}] ${className}`}
   >
     <path
       d="M12 0C12 7.5 14.5 12 24 12C14.5 12 12 16.5 12 24C12 16.5 9.5 12 0 12C9.5 12 12 7.5 12 0Z"
@@ -26,22 +26,20 @@ const SparkleStar: React.FC<{ size: number; className?: string; color?: string }
 );
 
 export const PwaSplashScreen: React.FC<PwaSplashScreenProps> = ({ onComplete }) => {
-  // Secuencia de animación estilo Wegho (adaptada a CreAPP):
-  // 1. 'ascending': El cohete emerge desde abajo dejando la estela de nubes mientras las nubes base suben (0 - 1.2s)
-  // 2. 'settled': El cohete se mantiene en la parte superior, las nubes cubren la base y se revela 'creapp Software Lab' (1.2s - 1.9s)
-  // 3. 'blastoff': El cohete acelera disparado fuera de la pantalla por arriba (1.9s - 2.3s)
-  // 4. 'reveal': Las nubes y la escena se desvanecen suavemente hacia el login/app (2.3s - 2.7s)
-  // 5. 'done': Desmontado total del DOM (2.8s)
+  // Secuencia Wegho Exacta (como describió el usuario en el audio):
+  // 1. 'ascending': El cohete y la estela suben desde abajo hacia el tercio superior (0 - 1.0s)
+  // 2. 'settled': Las nubes suben cubriendo la pantalla y revelan el nombre "creapp Software Lab" (1.0s - 1.9s)
+  // 3. 'blastoff': El cohete despega hacia arriba Y LAS NUBES SUBEN barriendo la pantalla hacia arriba (1.9s - 2.5s)
+  // 4. 'reveal': Fade out suave y fluido hacia la aplicación/login (2.4s - 2.8s)
+  // 5. 'done': Desmontado completo del DOM (2.9s)
   const [stage, setStage] = useState<'ascending' | 'settled' | 'blastoff' | 'reveal' | 'done'>('ascending');
 
   useEffect(() => {
-    // Retirar el splash estático de index.html
+    // Retirar splash estático de index.html
     const staticSplash = document.getElementById('pwa-static-splash');
     if (staticSplash) {
       staticSplash.style.opacity = '0';
-      setTimeout(() => {
-        staticSplash.remove();
-      }, 200);
+      setTimeout(() => staticSplash.remove(), 200);
     }
 
     // Comprobar sesión
@@ -59,10 +57,10 @@ export const PwaSplashScreen: React.FC<PwaSplashScreenProps> = ({ onComplete }) 
       }
     } catch (e) {}
 
-    // Cronograma Cinemático Wegho + CreAPP
+    // Cronograma Cinemático Wegho
     const tSettled = setTimeout(() => {
       setStage('settled');
-    }, 1100);
+    }, 1000);
 
     const tBlastoff = setTimeout(() => {
       setStage('blastoff');
@@ -74,16 +72,15 @@ export const PwaSplashScreen: React.FC<PwaSplashScreenProps> = ({ onComplete }) 
         sessionStorage.setItem('creapp_pwa_splash_seen', 'true');
       } catch (e) {}
       onComplete?.();
-    }, 2350);
+    }, 2400);
 
     const tDone = setTimeout(() => {
       setStage('done');
-    }, 2750);
+    }, 2850);
 
-    // Hard safety timeout
     const tSafety = setTimeout(() => {
       setStage('done');
-    }, 3000);
+    }, 3100);
 
     return () => {
       clearTimeout(tSettled);
@@ -111,23 +108,23 @@ export const PwaSplashScreen: React.FC<PwaSplashScreenProps> = ({ onComplete }) 
       }`}
       style={{ height: '100dvh' }}
     >
-      {/* ── CIELO ESPACIAL CON ESTRELLAS QUE TITILAN (Estilo Wegho en Dark Mode) ── */}
+      {/* ── CIELO ESPACIAL ESTRELLADO ── */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Resplandor radial cósmico superior */}
-        <div className="absolute top-[15%] left-1/2 -translate-x-1/2 w-[340px] h-[340px] rounded-full bg-gradient-to-b from-[#FF2D78]/20 via-[#9B30FF]/25 to-transparent blur-[90px]" />
+        {/* Glow cósmico de fondo */}
+        <div className="absolute top-[8%] left-1/2 -translate-x-1/2 w-[340px] h-[340px] rounded-full bg-gradient-to-b from-[#FF2D78]/20 via-[#9B30FF]/25 to-transparent blur-[90px]" />
 
-        {/* Constelación de estrellas centelleantes */}
+        {/* Estrellas centelleantes */}
         {[
-          { top: '8%', left: '15%', size: 4, delay: '0s' },
-          { top: '12%', left: '82%', size: 3, delay: '0.4s' },
-          { top: '18%', left: '38%', size: 4.5, delay: '0.8s' },
-          { top: '22%', left: '68%', size: 3, delay: '0.2s' },
-          { top: '28%', left: '12%', size: 4, delay: '0.6s' },
-          { top: '34%', left: '88%', size: 3.5, delay: '1s' },
-          { top: '40%', left: '25%', size: 4, delay: '0.3s' },
-          { top: '46%', left: '74%', size: 5, delay: '0.7s' },
-          { top: '55%', left: '18%', size: 3, delay: '0.5s' },
-          { top: '62%', left: '85%', size: 4, delay: '0.9s' },
+          { top: '6%', left: '16%', size: 4, delay: '0s' },
+          { top: '10%', left: '82%', size: 3, delay: '0.4s' },
+          { top: '14%', left: '38%', size: 4.5, delay: '0.8s' },
+          { top: '18%', left: '68%', size: 3, delay: '0.2s' },
+          { top: '24%', left: '12%', size: 4, delay: '0.6s' },
+          { top: '28%', left: '88%', size: 3.5, delay: '1s' },
+          { top: '35%', left: '25%', size: 4, delay: '0.3s' },
+          { top: '42%', left: '78%', size: 5, delay: '0.7s' },
+          { top: '48%', left: '15%', size: 3, delay: '0.5s' },
+          { top: '54%', left: '84%', size: 4, delay: '0.9s' },
         ].map((star, i) => (
           <div
             key={i}
@@ -143,42 +140,42 @@ export const PwaSplashScreen: React.FC<PwaSplashScreenProps> = ({ onComplete }) 
         ))}
       </div>
 
-      {/* ── COHETE ASCENDIENDO CON SU ESTELA DE NUBES Y CHISPAS ── */}
+      {/* ── COHETE ASCENDIENDO CON SU ESTELA Y SPARKLES ── */}
       <div
         style={{
           transform: isBlastoff || isReveal
             ? 'translateY(-140vh) scale(1.15)'
             : isSettled
-            ? 'translateY(18vh) scale(1)'
+            ? 'translateY(12vh) scale(1)'
             : isAscending
-            ? 'translateY(42vh) scale(1)'
+            ? 'translateY(35vh) scale(1)'
             : 'translateY(110vh) scale(0.9)',
           transition: isBlastoff || isReveal
-            ? 'transform 0.65s cubic-bezier(0.65, 0, 0.35, 1)'
-            : 'transform 1.2s cubic-bezier(0.2, 0.8, 0.25, 1)',
+            ? 'transform 0.75s cubic-bezier(0.65, 0, 0.35, 1)'
+            : 'transform 1.1s cubic-bezier(0.2, 0.8, 0.25, 1)',
         }}
         className="absolute z-20 flex flex-col items-center pointer-events-none"
       >
-        {/* Contenedor del Cohete con Oscilación y Sparkles Laterales */}
+        {/* Contenedor del Cohete con Balanceo y Sparkles Laterales */}
         <div className="relative flex items-center justify-center animate-rocket-wobble">
           {/* Sparkle Izquierdo (Amarillo / Dorado) */}
-          <div className="absolute -left-10 top-6 animate-sparkle-float-1">
-            <SparkleStar size={20} color="#FFE600" />
+          <div className="absolute -left-9 top-4 animate-sparkle-float-1">
+            <SparkleStar size={22} color="#FFE600" />
           </div>
 
-          {/* Sparkle Derecho (Cyan / Rosa Neón) */}
-          <div className="absolute -right-10 top-10 animate-sparkle-float-2">
-            <SparkleStar size={22} color="#00F0FF" />
+          {/* Sparkle Derecho (Cyan Eléctrico) */}
+          <div className="absolute -right-9 top-8 animate-sparkle-float-2">
+            <SparkleStar size={24} color="#00F0FF" />
           </div>
 
           {/* Resplandor de Neón detrás del Cohete */}
-          <div className="absolute w-24 h-24 rounded-full bg-gradient-to-tr from-[#FF2D78]/50 to-[#9B30FF]/50 blur-xl" />
+          <div className="absolute w-28 h-28 rounded-full bg-gradient-to-tr from-[#FF2D78]/55 to-[#9B30FF]/55 blur-2xl" />
 
           {/* VECTOR OFICIAL CREAPP */}
           <img
             src={creappLogoOfficial}
             alt="CreAPP Rocket"
-            className="w-16 sm:w-20 h-auto object-contain filter drop-shadow-[0_0_20px_rgba(255,45,120,0.8)] drop-shadow-[0_0_12px_rgba(155,48,255,0.7)]"
+            className="w-16 sm:w-20 h-auto object-contain filter drop-shadow-[0_0_22px_rgba(255,45,120,0.85)] drop-shadow-[0_0_12px_rgba(155,48,255,0.7)]"
           />
         </div>
 
@@ -204,105 +201,123 @@ export const PwaSplashScreen: React.FC<PwaSplashScreenProps> = ({ onComplete }) 
           </div>
         </div>
 
-        {/* ── ESTELA DE NUBES DE PROPULSIÓN (Columna de humo vertical estilo Wegho) ── */}
+        {/* ── COLUMNA DE HUMO/NUBES APILADAS (Estilo Wegho con bordes iluminados) ── */}
         <div className="relative -mt-1 flex flex-col items-center">
-          {/* Burbujas de nubes apiladas que crecen hacia abajo */}
-          <div className="w-8 h-8 rounded-full bg-gradient-to-b from-white/90 via-[#FF2D78]/40 to-[#9B30FF]/30 blur-[2px] shadow-[0_0_12px_rgba(255,255,255,0.6)] animate-cloud-pulse-1" />
-          <div className="w-12 h-10 -mt-3 rounded-full bg-gradient-to-b from-white/80 via-[#9B30FF]/50 to-[#2c124d]/60 blur-[3px] shadow-[0_0_15px_rgba(255,45,120,0.5)] animate-cloud-pulse-2" />
-          <div className="w-16 h-12 -mt-4 rounded-full bg-gradient-to-b from-white/70 via-[#FF2D78]/40 to-[#180a2b]/70 blur-[4px] animate-cloud-pulse-1" />
-          <div className="w-20 h-14 -mt-5 rounded-full bg-gradient-to-b from-[#9B30FF]/60 via-[#FF2D78]/30 to-[#0e051a]/80 blur-[5px] animate-cloud-pulse-2" />
-          <div className="w-28 h-18 -mt-6 rounded-full bg-gradient-to-b from-[#FF2D78]/40 via-[#9B30FF]/30 to-[#070709] blur-[6px]" />
-          <div className="w-36 h-24 -mt-8 rounded-full bg-gradient-to-b from-[#9B30FF]/30 via-[#260f3d]/60 to-[#070709] blur-[8px]" />
+          <div className="w-8 h-8 rounded-full bg-gradient-to-b from-white via-[#fbcfe8] to-[#FF2D78]/80 shadow-[0_0_15px_rgba(255,255,255,0.7)] border border-white/60 animate-cloud-pulse-1" />
+          <div className="w-12 h-10 -mt-3.5 rounded-full bg-gradient-to-b from-white/90 via-[#e9d5ff] to-[#9B30FF]/85 shadow-[0_0_18px_rgba(255,45,120,0.6)] border border-purple-200/50 animate-cloud-pulse-2" />
+          <div className="w-16 h-12 -mt-4.5 rounded-full bg-gradient-to-b from-[#f5d0fe] via-[#d8b4fe] to-[#7e22ce]/90 shadow-[0_0_20px_rgba(155,48,255,0.5)] border border-pink-300/40 animate-cloud-pulse-1" />
+          <div className="w-22 h-15 -mt-5.5 rounded-full bg-gradient-to-b from-[#d8b4fe] via-[#a855f7]/80 to-[#4c1d95]/90 border border-purple-400/30 animate-cloud-pulse-2" />
+          <div className="w-30 h-20 -mt-6.5 rounded-full bg-gradient-to-b from-[#c084fc]/70 via-[#9333ea]/70 to-[#2e1065]/90 blur-[1px]" />
+          <div className="w-40 h-26 -mt-8 rounded-full bg-gradient-to-b from-[#a855f7]/50 via-[#6b21a8]/60 to-[#1e0838]/90 blur-[2px]" />
+          <div className="w-52 h-32 -mt-10 rounded-full bg-gradient-to-b from-[#7e22ce]/40 via-[#3b0764]/70 to-[#070709] blur-[4px]" />
         </div>
       </div>
 
-      {/* ── BANCO DE NUBES EN LA BASE (Sube y cubre la mitad inferior estilo Wegho) ── */}
+      {/* ── BANCO DE NUBES CÚMULOS EN LA BASE QUE SUBE Y LUEGO BARRE HACIA ARRIBA ── */}
       <div
         style={{
-          transform: isAscending
-            ? 'translateY(16vh)'
-            : 'translateY(0vh)',
-          transition: 'transform 1.3s cubic-bezier(0.16, 1, 0.3, 1)',
+          transform: isBlastoff || isReveal
+            ? 'translateY(-125vh)' // ¡SUBE COMPLETAMENTE POR TODA LA PANTALLA HASTA SALIR!
+            : isSettled
+            ? 'translateY(0vh)'    // En reposo, cubriendo la mitad inferior y mostrando el logo
+            : isAscending
+            ? 'translateY(16vh)'   // Mientras asciende
+            : 'translateY(100vh)',
+          transition: isBlastoff || isReveal
+            ? 'transform 0.85s cubic-bezier(0.45, 0, 0.2, 1), opacity 0.7s ease-out'
+            : 'transform 1.2s cubic-bezier(0.16, 1, 0.3, 1)',
+          opacity: isReveal ? 0 : 1,
         }}
         className="absolute inset-x-0 bottom-0 z-30 pointer-events-none flex flex-col items-center justify-end"
       >
-        {/* Capa de Niebla Lumínica / Aura de las Nubes */}
-        <div className="absolute bottom-0 w-full h-[45vh] bg-gradient-to-t from-[#070709] via-[#150a26]/90 to-transparent pointer-events-none" />
+        {/* Glow ambiental inferior que ilumina el banco de nubes */}
+        <div className="absolute bottom-0 w-full h-[60vh] bg-gradient-to-t from-[#070709] via-[#21093b]/80 to-transparent pointer-events-none" />
 
-        {/* Nubes Volumétricas Layer 1 (Fondo con Glow Neón Magenta/Púrpura) */}
-        <div className="relative w-full overflow-hidden flex items-end justify-center -mb-8">
+        {/* ── NUBES LAYER 1 (Fondo con resplandor neón magenta/violeta) ── */}
+        <div className="relative w-full h-[48vh] overflow-hidden flex items-end justify-center -mb-12">
           <svg
-            viewBox="0 0 1440 400"
-            fill="none"
-            className="w-[120%] min-w-[600px] h-[32vh] filter drop-shadow-[0_-15px_30px_rgba(255,45,120,0.35)] opacity-85"
+            viewBox="0 0 1000 500"
+            className="w-[125%] min-w-[550px] h-full filter drop-shadow-[0_-15px_35px_rgba(255,45,120,0.5)] opacity-95"
             preserveAspectRatio="none"
           >
-            <path
-              d="M0,400 L0,260 C80,240 160,200 260,220 C360,240 420,160 540,150 C660,140 720,200 840,190 C960,180 1020,130 1140,140 C1260,150 1340,220 1440,240 L1440,400 Z"
-              fill="url(#cloudGrad1)"
-            />
             <defs>
-              <linearGradient id="cloudGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#FF2D78" stopOpacity="0.4" />
-                <stop offset="50%" stopColor="#9B30FF" stopOpacity="0.35" />
-                <stop offset="100%" stopColor="#1a0c2e" stopOpacity="0.9" />
+              <linearGradient id="cloudBackGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#d8b4fe" stopOpacity="0.9" />
+                <stop offset="15%" stopColor="#a855f7" stopOpacity="0.9" />
+                <stop offset="45%" stopColor="#6b21a8" stopOpacity="0.95" />
+                <stop offset="100%" stopColor="#1e0838" stopOpacity="1" />
               </linearGradient>
             </defs>
+            {/* Esferas cúmulos acolchonadas de fondo */}
+            <circle cx="70" cy="320" r="150" fill="url(#cloudBackGrad)" />
+            <circle cx="230" cy="230" r="170" fill="url(#cloudBackGrad)" />
+            <circle cx="410" cy="170" r="190" fill="url(#cloudBackGrad)" />
+            <circle cx="610" cy="190" r="180" fill="url(#cloudBackGrad)" />
+            <circle cx="790" cy="240" r="170" fill="url(#cloudBackGrad)" />
+            <circle cx="940" cy="330" r="150" fill="url(#cloudBackGrad)" />
+            <rect x="0" y="320" width="1000" height="180" fill="url(#cloudBackGrad)" />
           </svg>
         </div>
 
-        {/* Nubes Volumétricas Layer 2 (Primer plano: Ondas suaves estilo Cumulus) */}
-        <div className="relative w-full overflow-hidden flex items-end justify-center">
+        {/* ── NUBES LAYER 2 (Primer plano: Cúmulos acolchonados con bordes iluminados estilo Wegho) ── */}
+        <div className="relative w-full h-[40vh] overflow-hidden flex items-end justify-center">
           <svg
-            viewBox="0 0 1440 340"
-            fill="none"
-            className="w-[110%] min-w-[500px] h-[26vh] filter drop-shadow-[0_-10px_20px_rgba(155,48,255,0.4)]"
+            viewBox="0 0 1000 420"
+            className="w-[115%] min-w-[500px] h-full filter drop-shadow-[0_-12px_28px_rgba(155,48,255,0.6)]"
             preserveAspectRatio="none"
           >
-            <path
-              d="M0,340 L0,180 C120,140 220,190 320,170 C420,150 490,90 600,100 C710,110 780,160 880,150 C980,140 1060,95 1180,110 C1300,125 1380,170 1440,190 L1440,340 Z"
-              fill="url(#cloudGrad2)"
-            />
             <defs>
-              <linearGradient id="cloudGrad2" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#25123d" stopOpacity="0.95" />
-                <stop offset="40%" stopColor="#130921" stopOpacity="0.98" />
+              <linearGradient id="cloudFrontGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#ffffff" stopOpacity="1" />
+                <stop offset="8%" stopColor="#f3e8ff" stopOpacity="1" />
+                <stop offset="25%" stopColor="#c084fc" stopOpacity="0.98" />
+                <stop offset="55%" stopColor="#581c87" stopOpacity="1" />
                 <stop offset="100%" stopColor="#070709" stopOpacity="1" />
               </linearGradient>
             </defs>
+            {/* Esferas redondeadas frontales perfectamente acolchonadas */}
+            <circle cx="20" cy="280" r="135" fill="url(#cloudFrontGrad)" stroke="#ffffff" strokeWidth="2.5" strokeOpacity="0.8" />
+            <circle cx="150" cy="200" r="155" fill="url(#cloudFrontGrad)" stroke="#ffffff" strokeWidth="3" strokeOpacity="0.85" />
+            <circle cx="310" cy="140" r="170" fill="url(#cloudFrontGrad)" stroke="#ffffff" strokeWidth="3" strokeOpacity="0.9" />
+            <circle cx="500" cy="105" r="185" fill="url(#cloudFrontGrad)" stroke="#ffffff" strokeWidth="3.5" strokeOpacity="0.95" />
+            <circle cx="690" cy="140" r="170" fill="url(#cloudFrontGrad)" stroke="#ffffff" strokeWidth="3" strokeOpacity="0.9" />
+            <circle cx="850" cy="200" r="155" fill="url(#cloudFrontGrad)" stroke="#ffffff" strokeWidth="3" strokeOpacity="0.85" />
+            <circle cx="980" cy="280" r="135" fill="url(#cloudFrontGrad)" stroke="#ffffff" strokeWidth="2.5" strokeOpacity="0.8" />
+            <rect x="0" y="240" width="1000" height="180" fill="url(#cloudFrontGrad)" />
           </svg>
         </div>
 
         {/* ── MARCA CREAPP CENTRADA EN EL CORAZÓN DE LAS NUBES (Estilo 'wegho') ── */}
         <div
           style={{
+            bottom: '16vh',
             opacity: isSettled ? 1 : 0,
-            transform: isSettled ? 'translateY(-10vh) scale(1)' : 'translateY(-4vh) scale(0.92)',
-            transition: 'opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
+            transform: isSettled ? 'translateY(0px) scale(1)' : 'translateY(22px) scale(0.92)',
+            transition: 'opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1), transform 0.65s cubic-bezier(0.16, 1, 0.3, 1)',
           }}
           className="absolute z-40 flex flex-col items-center text-center pointer-events-none"
         >
           {/* Logo Tipográfico creapp */}
-          <div className="font-display font-black text-4xl sm:text-5xl tracking-tight text-white drop-shadow-[0_4px_25px_rgba(0,0,0,0.8)]">
+          <div className="font-display font-black text-4xl sm:text-5xl tracking-tight text-white drop-shadow-[0_4px_30px_rgba(0,0,0,1)]">
             <span>cre</span>
-            <span className="bg-gradient-to-r from-[#FF2D78] via-[#9B30FF] to-cyan-400 bg-clip-text text-transparent drop-shadow-[0_0_24px_rgba(255,45,120,0.7)]">
+            <span className="bg-gradient-to-r from-[#FF2D78] via-[#9B30FF] to-cyan-400 bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(255,45,120,0.85)]">
               app
             </span>
           </div>
 
           {/* Subtítulo Software Lab */}
-          <p className="text-[12px] sm:text-xs text-zinc-300 font-mono tracking-[0.3em] uppercase mt-2 drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]">
+          <p className="text-[12px] sm:text-xs text-zinc-100 font-mono tracking-[0.35em] uppercase mt-2 drop-shadow-[0_2px_14px_rgba(0,0,0,1)] font-semibold">
             Software Lab
           </p>
 
           {/* Línea Láser Sutil de Carga */}
-          <div className="mt-5 w-32 h-[2.5px] bg-white/10 rounded-full overflow-hidden relative shadow-[0_0_10px_rgba(255,45,120,0.3)]">
+          <div className="mt-5 w-36 h-[3px] bg-white/25 rounded-full overflow-hidden relative shadow-[0_0_12px_rgba(255,45,120,0.6)]">
             <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-[#FF2D78] to-[#9B30FF] rounded-full animate-laser-sweep" />
           </div>
         </div>
       </div>
 
-      {/* ── KEYFRAMES CSS DE MOVIMIENTO FLUIDO (60-120fps GPU) ── */}
+      {/* ── KEYFRAMES CSS (120fps GPU) ── */}
       <style>{`
         @keyframes rocket-wobble {
           0%, 100% { transform: rotate(-2deg); }
@@ -318,19 +333,19 @@ export const PwaSplashScreen: React.FC<PwaSplashScreenProps> = ({ onComplete }) 
         }
         @keyframes sparkle-float-1 {
           0%, 100% { transform: translateY(0px) rotate(0deg) scale(0.9); }
-          50% { transform: translateY(-8px) rotate(20deg) scale(1.1); }
+          50% { transform: translateY(-8px) rotate(20deg) scale(1.15); }
         }
         @keyframes sparkle-float-2 {
-          0%, 100% { transform: translateY(0px) rotate(0deg) scale(1.1); }
-          50% { transform: translateY(6px) rotate(-25deg) scale(0.9); }
+          0%, 100% { transform: translateY(0px) rotate(0deg) scale(1.15); }
+          50% { transform: translateY(7px) rotate(-25deg) scale(0.9); }
         }
         @keyframes cloud-pulse-1 {
           0%, 100% { transform: scale(1) translateX(0); }
-          50% { transform: scale(1.06) translateX(-3px); }
+          50% { transform: scale(1.06) translateX(-2.5px); }
         }
         @keyframes cloud-pulse-2 {
           0%, 100% { transform: scale(1) translateX(0); }
-          50% { transform: scale(1.08) translateX(3px); }
+          50% { transform: scale(1.08) translateX(2.5px); }
         }
         @keyframes laser-sweep {
           0% { transform: translateX(-100%); }
