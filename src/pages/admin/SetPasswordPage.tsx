@@ -45,6 +45,9 @@ export const SetPasswordPage: React.FC = () => {
       // 2. Si viene un token_hash directo (método inmune a bots de escaneo de correo)
       if (tokenHash) {
         try {
+          // Limpiar cualquier sesión previa en localStorage para evitar mezclar cuentas en el mismo navegador
+          await supabase.auth.signOut().catch(() => {});
+
           const { data, error: verifyError } = await supabase.auth.verifyOtp({
             token_hash: tokenHash,
             type: otpType as any,
@@ -52,6 +55,7 @@ export const SetPasswordPage: React.FC = () => {
 
           if (verifyError) {
             if (isMounted) {
+              setUserEmail(null);
               setError(
                 verifyError.message.includes('expired')
                   ? 'El enlace de invitación o activación ha expirado o ya fue utilizado.'
@@ -71,6 +75,7 @@ export const SetPasswordPage: React.FC = () => {
         } catch (err: any) {
           console.error('Error al verificar OTP:', err);
           if (isMounted) {
+            setUserEmail(null);
             setError(err.message || 'Error al validar el token de invitación.');
             setIsCheckingSession(false);
           }
@@ -84,6 +89,7 @@ export const SetPasswordPage: React.FC = () => {
 
       if (errorCode || errorDescription) {
         if (isMounted) {
+          setUserEmail(null);
           setError(
             errorCode === 'otp_expired'
               ? 'El enlace de invitación o activación ha expirado o ya fue utilizado.'
