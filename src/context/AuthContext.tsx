@@ -28,6 +28,7 @@ interface AuthContextType {
     role?: UserRole;
   }) => Promise<{ success: boolean; error?: string }>;
   updateUserRole: (userId: string, newRole: UserRole) => Promise<{ success: boolean; error?: string }>;
+  deleteUserProfile: (userId: string) => Promise<{ success: boolean; error?: string }>;
   refreshProfile: () => Promise<void>;
 }
 
@@ -307,6 +308,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const deleteUserProfile = async (userId: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const { error } = await supabase
+        .from('user_profiles')
+        .delete()
+        .eq('id', userId);
+
+      if (error) throw error;
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Error al eliminar usuario' };
+    }
+  };
+
   const role: UserRole = profile?.role || (isDefaultAdminEmail(user?.email) ? 'admin' : 'vendedor');
   const isAdmin = role === 'admin';
   const isVendedor = role === 'vendedor';
@@ -324,6 +339,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         listUsers,
         createSalesUser,
         updateUserRole,
+        deleteUserProfile,
         refreshProfile,
       }}
     >

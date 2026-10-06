@@ -13,6 +13,9 @@ import {
   User,
   Sparkles,
   RefreshCw,
+  Trash2,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { useAuth, UserProfile, UserRole } from '@/context/AuthContext';
 
@@ -22,7 +25,7 @@ interface TeamManagementModalProps {
 }
 
 export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({ isOpen, onClose }) => {
-  const { listUsers, createSalesUser, updateUserRole, profile: myProfile } = useAuth();
+  const { listUsers, createSalesUser, updateUserRole, deleteUserProfile, profile: myProfile } = useAuth();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
@@ -31,7 +34,8 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({ isOpen
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<UserRole>('vendedor');
+  const [showPassword, setShowPassword] = useState(false);
+  const [role, setRole] = useState<UserRole>('admin');
   const [submitLoading, setSubmitLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -78,12 +82,12 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({ isOpen
 
     if (result.success) {
       setSuccessMsg(
-        `¡Usuario ${fullName} (${role}) creado con éxito! Se le envió un correo de bienvenida con sus credenciales y accesos vía Resend.`
+        `¡Usuario ${fullName} (${role === 'admin' ? 'Master Admin' : 'Vendedor'}) creado con éxito! Ya puede ingresar con sus credenciales.`
       );
       setFullName('');
       setEmail('');
       setPassword('');
-      setRole('vendedor');
+      setRole('admin');
       setIsCreating(false);
       await fetchUsers();
     } else {
@@ -111,6 +115,26 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({ isOpen
     }
   };
 
+  const handleDeleteUser = async (targetUser: UserProfile) => {
+    if (targetUser.id === myProfile?.id) {
+      alert('No podés eliminar tu propia cuenta activa.');
+      return;
+    }
+
+    const confirmDelete = confirm(
+      `¿Estás seguro de que deseas eliminar permanentemente el acceso de ${targetUser.email} (${targetUser.role.toUpperCase()})?`
+    );
+    if (!confirmDelete) return;
+
+    const res = await deleteUserProfile(targetUser.id);
+    if (res.success) {
+      setSuccessMsg(`Usuario ${targetUser.email} eliminado correctamente.`);
+      await fetchUsers();
+    } else {
+      alert(res.error || 'No se pudo eliminar el usuario');
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -132,14 +156,14 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({ isOpen
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-lg font-bold text-white tracking-tight">
-                  Gestión de Equipo & Vendedores
+                  Gestión de Equipo & Administradores
                 </h3>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
                   Master Admin
                 </span>
               </div>
               <p className="text-xs text-zinc-400 mt-0.5">
-                Crea accesos comerciales con permisos restringidos únicamente a ventas.
+                Crea y administra accesos de Master Admins y Vendedores con credenciales seguras.
               </p>
             </div>
           </div>
@@ -170,7 +194,7 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({ isOpen
           <div className="flex items-center gap-2 text-xs text-zinc-300">
             <Shield size={15} className="text-purple-400 shrink-0" />
             <span>
-              <strong>Rol Vendedor:</strong> Acceso a Scraper, Pipeline y Propuestas. Finanzas y Vault ocultos.
+              <strong>Credenciales Reales:</strong> Los Master Admins tienen acceso total. Los Vendedores tienen acceso acotado comercial.
             </span>
           </div>
           <button
@@ -182,7 +206,7 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({ isOpen
             className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold text-white bg-purple-600 hover:bg-purple-500 transition-colors shadow-sm shrink-0"
           >
             <UserPlus size={14} />
-            <span>{isCreating ? 'Ver Lista' : '+ Nuevo Vendedor'}</span>
+            <span>{isCreating ? 'Ver Lista' : '+ Nuevo Miembro (Admin / Vendedor)'}</span>
           </button>
         </div>
 
@@ -198,7 +222,7 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({ isOpen
                 <input
                   type="text"
                   required
-                  placeholder="Ej: Marcos Gómez"
+                  placeholder="Ej: Sebastián Maza"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-white placeholder-zinc-600 text-xs focus:outline-none focus:border-purple-500/50"
@@ -208,12 +232,12 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({ isOpen
               <div className="space-y-1.5">
                 <label className="text-[11px] font-mono text-zinc-400 flex items-center gap-1.5">
                   <Mail size={13} />
-                  Email del Vendedor
+                  Email Corporativo / Personal
                 </label>
                 <input
                   type="email"
                   required
-                  placeholder="marcos@creapp.com.ar"
+                  placeholder="admin@creapp.com.ar"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-white placeholder-zinc-600 text-xs focus:outline-none focus:border-purple-500/50"
@@ -225,16 +249,25 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({ isOpen
               <div className="space-y-1.5">
                 <label className="text-[11px] font-mono text-zinc-400 flex items-center gap-1.5">
                   <Lock size={13} />
-                  Contraseña Provisoria
+                  Contraseña Segura (mín. 6 caracteres)
                 </label>
-                <input
-                  type="password"
-                  required
-                  placeholder="Mínimo 6 caracteres"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-white placeholder-zinc-600 text-xs focus:outline-none focus:border-purple-500/50"
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    placeholder="Contraseña segura"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 pr-10 text-white placeholder-zinc-600 text-xs focus:outline-none focus:border-purple-500/50"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
+                  >
+                    {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-1.5">
@@ -247,8 +280,8 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({ isOpen
                   onChange={(e) => setRole(e.target.value as UserRole)}
                   className="w-full bg-[#121622] border border-white/10 rounded-xl px-3.5 py-2.5 text-white text-xs focus:outline-none focus:border-purple-500/50"
                 >
-                  <option value="vendedor">Vendedor (Solo Ventas & Crecimiento)</option>
-                  <option value="admin">Master Admin (Acceso Total)</option>
+                  <option value="admin">Master Admin (Acceso Total a CreAPP)</option>
+                  <option value="vendedor">Vendedor (Solo Ventas, Scraper & Propuestas)</option>
                 </select>
               </div>
             </div>
@@ -256,7 +289,7 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({ isOpen
             <div className="flex items-center gap-2.5 p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-200 text-xs">
               <Mail size={15} className="shrink-0 text-purple-400" />
               <span>
-                <strong>Notificación automática:</strong> Al dar de alta, Resend le enviará un correo de bienvenida con diseño y colores de CreAPP, su usuario y contraseña provisoria.
+                <strong>Acceso Inmediato:</strong> El usuario podrá iniciar sesión en <code>/admin/login</code> inmediatamente con este email y contraseña.
               </span>
             </div>
 
@@ -278,15 +311,26 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({ isOpen
                 ) : (
                   <Sparkles size={14} />
                 )}
-                <span>Crear Acceso Comercial</span>
+                <span>Crear Credencial de Acceso</span>
               </button>
             </div>
           </form>
         ) : (
           /* Mode: List Team Users */
           <div className="space-y-3">
+            {users.some(u => u.email.toLowerCase() === 'creapp@creapp.com') && (
+              <div className="flex items-center justify-between p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300 text-xs">
+                <div className="flex items-center gap-2">
+                  <AlertCircle size={15} className="shrink-0 text-amber-400" />
+                  <span>
+                    Cuenta genérica <strong>creapp@creapp.com</strong> detectada. Una vez creada tu cuenta real de Master Admin, podés eliminarla con el icono de basura.
+                  </span>
+                </div>
+              </div>
+            )}
+
             <div className="flex items-center justify-between text-xs text-zinc-400">
-              <span>Miembros del Sistema ({users.length})</span>
+              <span>Miembros Registrados ({users.length})</span>
               <button
                 onClick={fetchUsers}
                 className="p-1 hover:text-white transition-colors"
@@ -301,7 +345,7 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({ isOpen
                 <div className="py-8 text-center text-xs text-zinc-500">Cargando miembros...</div>
               ) : users.length === 0 ? (
                 <div className="py-6 text-center text-xs text-zinc-500 border border-dashed border-white/10 rounded-xl">
-                  Aún no hay perfiles en la base de datos. Creá el primero con el botón "+ Nuevo Vendedor".
+                  Aún no hay perfiles en la base de datos. Creá el primero con el botón "+ Nuevo Miembro".
                 </div>
               ) : (
                 users.map((u) => {
@@ -330,7 +374,7 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({ isOpen
                             </span>
                             {isCurrent && (
                               <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-white/10 text-zinc-300">
-                                Vos
+                                Tu sesión
                               </span>
                             )}
                           </div>
@@ -353,6 +397,16 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({ isOpen
                         >
                           {isUserAdmin ? 'Master Admin' : 'Vendedor'}
                         </button>
+
+                        {!isCurrent && (
+                          <button
+                            onClick={() => handleDeleteUser(u)}
+                            title={`Eliminar ${u.email}`}
+                            className="p-1.5 rounded-lg text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
                       </div>
                     </div>
                   );
