@@ -27,16 +27,16 @@ const SparkleStar: React.FC<{ size: number; className?: string; color?: string }
 
 export const PwaSplashScreen: React.FC<PwaSplashScreenProps> = ({ onComplete }) => {
   // Secuencia Cinemática con Cadencia Satisfactoria (5 Actos):
-  // 1. 'loading' (0 - 1.8s): Spawn 100% centrado al medio (cohete + creapp + barra de carga 0% a 100%).
-  // 2. 'takeoff' (1.8s - 3.4s): El cohete asciende desde el centro hacia arriba con estela; cúmulos entran desde abajo (SIN LOGO).
-  // 3. 'blastoff' (3.4s - 4.4s): El cohete sale disparado por arriba y las nubes lo siguen barriendo como telón hacia arriba.
+  // 1. 'loading' (0 - 1.8s): Spawn 100% idéntico al HTML estático (cero saltos/desplazamientos), barra 0% a 100%.
+  // 2. 'takeoff' (1.8s - 3.4s): Cohete despega suavemente DESDE EL CENTRO hacia arriba; cúmulos entran desde abajo (SIN LOGO).
+  // 3. 'blastoff' (3.4s - 4.4s): Cohete sale disparado por arriba y las nubes lo siguen barriendo como telón hacia arriba.
   // 4. 'farewell' (4.4s - 5.6s): Sobre el fondo oscuro estrellado aparece centrado el branding de despedida: "creapp SOFTWARE LAB".
   // 5. 'reveal' (5.6s - 6.1s): Fade out suave y etéreo que devela la plataforma / login.
   // 6. 'done' (6.2s): Desmontado del componente.
   const [stage, setStage] = useState<'loading' | 'takeoff' | 'blastoff' | 'farewell' | 'reveal' | 'done'>('loading');
 
   useEffect(() => {
-    // Retirar splash estático de index.html
+    // Retirar splash estático de index.html con transición imperceptible
     const staticSplash = document.getElementById('pwa-static-splash');
     if (staticSplash) {
       staticSplash.style.opacity = '0';
@@ -115,8 +115,8 @@ export const PwaSplashScreen: React.FC<PwaSplashScreenProps> = ({ onComplete }) 
       }`}
       style={{ height: '100dvh' }}
     >
-      {/* ── CIELO ESPACIAL CON ESTRELLAS TITILANTES ── */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+      {/* ── CIELO ESPACIAL CON ESTRELLAS TITILANTES (Aparece suavemente sin sobresalto) ── */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden transition-opacity duration-700 ease-out opacity-100">
         {/* Glow de nebulosa cósmica */}
         <div className="absolute top-[12%] left-1/2 -translate-x-1/2 w-[380px] h-[380px] rounded-full bg-gradient-to-b from-[#FF2D78]/25 via-[#9B30FF]/25 to-transparent blur-[100px]" />
 
@@ -149,7 +149,7 @@ export const PwaSplashScreen: React.FC<PwaSplashScreenProps> = ({ onComplete }) 
         ))}
       </div>
 
-      {/* ── BLOQUE PRINCIPAL CENTRADO (Spawn 100% idéntico al splash estático) ── */}
+      {/* ── BLOQUE PRINCIPAL CENTRADO (Pixel-Perfect con index.html) ── */}
       <div className="relative z-20 flex flex-col items-center text-center pointer-events-none">
         {/* CONTENEDOR DEL COHETE (Comienza en el centro exacto y despega hacia arriba) */}
         <div
@@ -165,7 +165,7 @@ export const PwaSplashScreen: React.FC<PwaSplashScreenProps> = ({ onComplete }) 
               ? 'transform 1.4s cubic-bezier(0.2, 0.8, 0.25, 1)'
               : 'none',
           }}
-          className="flex flex-col items-center"
+          className="relative flex flex-col items-center"
         >
           {/* Contenedor del Cohete con Balanceo y Sparkles Laterales */}
           <div className="relative flex items-center justify-center animate-rocket-wobble">
@@ -194,13 +194,13 @@ export const PwaSplashScreen: React.FC<PwaSplashScreenProps> = ({ onComplete }) 
             </div>
 
             {/* Resplandor de Neón detrás del Cohete */}
-            <div className="absolute w-32 h-32 rounded-full bg-gradient-to-tr from-[#FF2D78]/55 to-[#9B30FF]/55 blur-2xl" />
+            <div className="absolute w-28 h-28 rounded-full bg-gradient-to-tr from-[#FF2D78]/55 to-[#9B30FF]/55 blur-2xl" />
 
-            {/* VECTOR OFICIAL CREAPP */}
+            {/* VECTOR OFICIAL CREAPP (Mismo tamaño exacto que index.html: 72px) */}
             <img
               src={creappLogoOfficial}
               alt="CreAPP Rocket"
-              className="w-18 sm:w-22 h-auto object-contain filter drop-shadow-[0_0_24px_rgba(255,45,120,0.85)] drop-shadow-[0_0_14px_rgba(155,48,255,0.7)]"
+              className="w-[72px] h-auto object-contain filter drop-shadow-[0_0_20px_rgba(255,45,120,0.7)]"
             />
           </div>
 
@@ -212,25 +212,25 @@ export const PwaSplashScreen: React.FC<PwaSplashScreenProps> = ({ onComplete }) 
                   ? 'scaleY(3.8) scaleX(1.3)'
                   : isTakeoff
                   ? 'scaleY(1.6) scaleX(1.15)'
-                  : 'scaleY(0.9) scaleX(0.9)',
+                  : 'scaleY(1) scaleX(1)',
                 transition: isBlastoff ? 'transform 0.35s ease-out' : 'transform 0.6s ease-out',
               }}
               className="origin-top flex flex-col items-center animate-flame-flicker"
             >
               {/* Llama exterior magenta/púrpura */}
               <div
-                className="w-5 h-8 rounded-b-full bg-gradient-to-b from-[#FF2D78] via-[#9B30FF] to-transparent filter blur-[0.6px] shadow-[0_6px_18px_#FF2D78]"
+                className="w-[18px] h-[26px] rounded-b-full bg-gradient-to-b from-[#FF2D78] via-[#9B30FF] to-transparent filter blur-[0.6px] shadow-[0_6px_18px_#FF2D78]"
                 style={{ clipPath: 'polygon(15% 0%, 85% 0%, 100% 70%, 50% 100%, 0% 70%)' }}
               />
               {/* Núcleo de llama incandescente blanco/dorado */}
               <div
-                className="absolute top-0 w-2.5 h-4.5 rounded-b-full bg-gradient-to-b from-white via-[#FFE600] to-transparent filter blur-[0.2px]"
+                className="absolute top-0 w-2 h-4 rounded-b-full bg-gradient-to-b from-white via-[#FFE600] to-transparent filter blur-[0.2px]"
                 style={{ clipPath: 'polygon(20% 0%, 80% 0%, 100% 75%, 50% 100%, 0% 75%)' }}
               />
             </div>
           </div>
 
-          {/* ── ESTELA CÓNICA DE NUBES (Cascada esférica orgánica que nace con el despegue) ── */}
+          {/* ── ESTELA CÓNICA DE NUBES (ABSOLUTA: Cero impacto en el flow, NO empuja el texto hacia abajo) ── */}
           <div
             style={{
               opacity: isTakeoff || isBlastoff ? 1 : 0,
@@ -238,7 +238,7 @@ export const PwaSplashScreen: React.FC<PwaSplashScreenProps> = ({ onComplete }) 
               transformOrigin: 'top',
               transition: 'opacity 0.6s ease-out, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
             }}
-            className="relative -mt-1 flex flex-col items-center pointer-events-none"
+            className="absolute top-[92%] left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none"
           >
             {/* Puff 1: Incandescencia blanca inmediata bajo tobera */}
             <div className="w-[30px] h-[30px] rounded-full bg-gradient-to-b from-white via-[#fce7f3] to-[#FF2D78] shadow-[0_0_16px_#ffffff] border-[1.5px] border-white animate-cloud-pulse-1" />
@@ -263,31 +263,31 @@ export const PwaSplashScreen: React.FC<PwaSplashScreenProps> = ({ onComplete }) 
           </div>
         </div>
 
-        {/* ── TEXTO + BARRA DE CARGA INICIAL (Act 1: Centrado bajo el cohete) ── */}
+        {/* ── TEXTO + BARRA DE CARGA INICIAL (Act 1: Centrado idéntico a index.html) ── */}
         <div
           style={{
             opacity: isLoading ? 1 : 0,
-            transform: isLoading ? 'translateY(0px) scale(1)' : 'translateY(16px) scale(0.92)',
-            transition: 'opacity 0.4s ease-out, transform 0.4s ease-out',
+            transform: isLoading ? 'translateY(0px)' : 'translateY(12px)',
+            transition: 'opacity 0.35s ease-out, transform 0.35s ease-out',
             pointerEvents: isLoading ? 'auto' : 'none',
           }}
           className="flex flex-col items-center mt-5"
         >
-          {/* Marca creapp */}
-          <div className="font-display font-black text-4xl sm:text-5xl tracking-tight text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.9)]">
+          {/* Marca creapp (Mismo tamaño exacto: 32px) */}
+          <div className="text-[32px] font-black leading-tight tracking-tight text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.9)]">
             <span>cre</span>
             <span className="bg-gradient-to-r from-[#FF2D78] via-[#9B30FF] to-cyan-400 bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(255,45,120,0.85)]">
               app
             </span>
           </div>
 
-          {/* Subtítulo Software Lab */}
-          <p className="text-[12px] sm:text-xs text-zinc-300 font-mono tracking-[0.35em] uppercase mt-2 drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)] font-semibold">
+          {/* Subtítulo Software Lab (Mismo tamaño exacto: 11px monospace) */}
+          <p className="text-[11px] text-zinc-400 font-mono tracking-[3px] uppercase mt-1.5 drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)]">
             Software Lab
           </p>
 
           {/* Barra de Progreso Fluida (0% a 100% en 1.6s) */}
-          <div className="mt-6 w-36 sm:w-44 h-[3px] bg-white/15 rounded-full overflow-hidden relative shadow-[0_0_10px_rgba(255,45,120,0.3)]">
+          <div className="mt-6 w-[130px] h-[3px] bg-white/10 rounded-full overflow-hidden relative shadow-[0_0_10px_rgba(255,45,120,0.3)]">
             <div className="h-full bg-gradient-to-r from-[#FF2D78] via-[#9B30FF] to-cyan-400 rounded-full animate-progress-fill shadow-[0_0_12px_#FF2D78]" />
           </div>
         </div>
@@ -306,7 +306,7 @@ export const PwaSplashScreen: React.FC<PwaSplashScreenProps> = ({ onComplete }) 
             : isTakeoff
             ? 'transform 1.4s cubic-bezier(0.16, 1, 0.3, 1)'
             : 'none',
-          opacity: isFarewell || isReveal ? 0 : 1,
+          opacity: isLoading || isFarewell || isReveal ? 0 : 1,
         }}
         className="absolute inset-x-0 bottom-0 z-30 pointer-events-none flex flex-col justify-end"
       >
