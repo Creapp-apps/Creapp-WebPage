@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, AlertCircle } from 'lucide-react';
+import { ArrowRight, AlertCircle, ArrowLeft } from 'lucide-react';
 import creappLogoOfficial from '@/assets/CREAPP LOGO VECTOR.png';
 import { supabase } from '@/lib/supabaseClient';
+import { AuthForm } from '@/components/ui/sign-in-1';
 
 const AdminLogin: React.FC = () => {
   const navigate = useNavigate();
@@ -12,105 +13,121 @@ const AdminLogin: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
-
-    if (authError) {
-      setError('Credenciales inválidas. Verificá tu email y contraseña.');
-      setLoading(false);
+  const handleLogin = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!email || !password) {
+      setError('Por favor completá todos los campos.');
       return;
     }
 
-    navigate('/admin');
+    setLoading(true);
+    setError('');
+
+    try {
+      const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+
+      if (authError) {
+        setError('Credenciales inválidas. Verificá tu email y contraseña.');
+        setLoading(false);
+        return;
+      }
+
+      navigate('/admin');
+    } catch {
+      setError('Ocurrió un error inesperado al iniciar sesión.');
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-background-dark flex items-center justify-center p-6">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md"
-      >
+    <div className="relative min-h-screen bg-background-dark flex items-center justify-center p-4 sm:p-6 overflow-hidden">
+      {/* Background ambient lighting */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px]" />
+        <div className="absolute bottom-1/4 left-1/3 w-[400px] h-[400px] bg-secondary/10 rounded-full blur-[140px]" />
+      </div>
 
-        {/* Logo */}
-        <div className="flex items-center justify-center gap-3.5 mb-10">
-          <img
-            src={creappLogoOfficial}
-            alt="CreAPP"
-            className="h-12 w-auto object-contain drop-shadow-[0_0_15px_rgba(255,45,120,0.4)]"
-          />
-          <div className="flex items-baseline italic">
-            <span className="text-3xl font-black tracking-tighter text-white">cre</span>
-            <span className="text-3xl font-black tracking-tighter text-primary">app</span>
-          </div>
-        </div>
-
-        {/* Card */}
-        <div className="glass rounded-[2rem] p-10 shadow-2xl">
-          <div className="text-center mb-10">
-            <h1 className="text-2xl font-display font-black text-white uppercase tracking-wider mb-2">Panel Admin</h1>
-            <p className="text-sm text-slate-500 font-light">Acceso al gestor de propuestas comerciales</p>
-          </div>
-
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-xs text-slate-500 uppercase tracking-widest font-bold block">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@creapp.com.ar"
-                required
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-3.5 text-white placeholder-slate-600 focus:outline-none focus:border-primary/50 transition-colors text-sm"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs text-slate-500 uppercase tracking-widest font-bold block">Contraseña</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-3.5 text-white placeholder-slate-600 focus:outline-none focus:border-primary/50 transition-colors text-sm"
-              />
-            </div>
-
-            {error && (
-              <motion.div
-                initial={{ opacity: 0, y: -5 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex items-center gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm"
-              >
-                <AlertCircle size={18} />
-                {error}
-              </motion.div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-4 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-50"
-            >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+      <div className="relative z-10 w-full max-w-sm">
+        <form onSubmit={handleLogin}>
+          <AuthForm
+            logoSrc={creappLogoOfficial}
+            logoAlt="CreAPP Software Lab"
+            title="Panel Admin"
+            description="Acceso al gestor y cotizador de CreAPP"
+            className="w-full"
+            primaryAction={{
+              label: loading ? "Iniciando sesión..." : "Iniciar Sesión",
+              type: "submit",
+              disabled: loading,
+              icon: loading ? (
+                <div className="mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
-                <>
-                  Iniciar Sesión <ArrowRight size={16} />
-                </>
-              )}
-            </button>
-          </form>
-        </div>
+                <ArrowRight className="mr-2 h-4 w-4" />
+              ),
+              className: "bg-gradient-to-r from-primary to-secondary text-white font-bold tracking-wide shadow-lg shadow-primary/20",
+            }}
+            skipAction={{
+              label: "Volver a CreAPP Web",
+              onClick: () => navigate('/'),
+            }}
+            footerContent={
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">
+                  ¿Necesitás acceso? Contactá al equipo de soporte de{" "}
+                  <span className="text-primary font-medium">CreAPP Lab</span>.
+                </p>
+                <p className="text-[10px] text-slate-600 uppercase tracking-widest font-mono">
+                  v2.5 • Fintech & Software Innovation Hub
+                </p>
+              </div>
+            }
+          >
+            {/* Custom Credentials Form Fields */}
+            <div className="grid gap-3 mb-2">
+              <div className="space-y-1.5 text-left">
+                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider block">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="admin@creapp.com.ar"
+                  required
+                  autoComplete="username"
+                  className="w-full rounded-md border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/60 focus:border-transparent transition-all"
+                />
+              </div>
 
-        <p className="text-center text-slate-700 text-[10px] uppercase tracking-[0.5em] font-black mt-10">
-          CreAPP Lab • Panel Interno
-        </p>
-      </motion.div>
+              <div className="space-y-1.5 text-left">
+                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider block">
+                  Contraseña
+                </label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  autoComplete="current-password"
+                  className="w-full rounded-md border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/60 focus:border-transparent transition-all"
+                />
+              </div>
+
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs"
+                >
+                  <AlertCircle size={16} className="shrink-0" />
+                  <span>{error}</span>
+                </motion.div>
+              )}
+            </div>
+          </AuthForm>
+        </form>
+      </div>
     </div>
   );
 };
