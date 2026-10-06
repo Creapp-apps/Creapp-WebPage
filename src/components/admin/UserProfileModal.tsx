@@ -13,8 +13,11 @@ import {
   ShieldCheck,
   Briefcase,
   Calendar,
+  Bell,
+  Smartphone,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useNotifications } from '@/context/NotificationContext';
 import { supabase } from '@/lib/supabaseClient';
 
 interface UserProfileModalProps {
@@ -24,6 +27,14 @@ interface UserProfileModalProps {
 
 export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose }) => {
   const { user, profile, role, isAdmin, refreshProfile } = useAuth();
+  const {
+    permission,
+    fcmToken,
+    requestPushPermission,
+    sendLocalTestNotification,
+    isConfigured,
+    loading: pushLoading,
+  } = useNotifications();
 
   const [fullName, setFullName] = useState(profile?.full_name || '');
   const [newPassword, setNewPassword] = useState('');
@@ -183,6 +194,69 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
               placeholder="Tu nombre y apellido"
               className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-white placeholder-zinc-600 text-xs focus:outline-none focus:border-purple-500/50"
             />
+          </div>
+
+          {/* Notificaciones Push Web (FCM) */}
+          <div className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                  <Bell size={13} />
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-white block">
+                    Notificaciones Push (FCM)
+                  </span>
+                  <span className="text-[10px] text-zinc-500 font-mono">
+                    Alertas de propuestas, leads y contratos
+                  </span>
+                </div>
+              </div>
+
+              <span
+                className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${
+                  permission === 'granted'
+                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                    : permission === 'denied'
+                    ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                    : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                }`}
+              >
+                {permission === 'granted'
+                  ? 'Activo'
+                  : permission === 'denied'
+                  ? 'Bloqueado'
+                  : 'Pendiente'}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between gap-2 pt-1 border-t border-white/5">
+              <span className="text-[11px] text-zinc-400">
+                {permission === 'granted'
+                  ? 'Este dispositivo está listo para recibir alertas'
+                  : 'Habilitá push para no perderte actualizaciones'}
+              </span>
+
+              {permission !== 'granted' ? (
+                <button
+                  type="button"
+                  onClick={requestPushPermission}
+                  disabled={pushLoading}
+                  className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[11px] font-bold hover:opacity-90 transition-all flex items-center gap-1.5 shrink-0"
+                >
+                  <Bell size={12} />
+                  <span>Activar</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => sendLocalTestNotification()}
+                  className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-purple-300 text-[10px] font-mono border border-white/10 transition-colors shrink-0"
+                >
+                  Test push
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Cambio de Contraseña */}

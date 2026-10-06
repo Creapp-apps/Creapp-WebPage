@@ -2,6 +2,7 @@ import React, { useEffect, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import AuthGuard from './components/auth/AuthGuard';
 import { AuthProvider } from './context/AuthContext';
+import { NotificationProvider } from './context/NotificationContext';
 import { SmoothScroll } from './components/systems/SmoothScroll';
 import PwaSplashScreen from './components/systems/PwaSplashScreen';
 
@@ -121,30 +122,32 @@ const App: React.FC = () => {
     <BrowserRouter>
       <PwaSplashScreen />
       <AuthProvider>
-        <ErrorBoundary>
-          <CursorRestorer>
-            <LandingSmoothScrollWrapper>
-              <Suspense fallback={<RouteLoadingFallback />}>
-                <Routes>
-                  {/* Public Routes */}
-                  <Route path="/" element={<LandingPage />} />
-                  <Route path="/propuesta/:slug" element={<ProposalView />} />
-                  <Route path="/contrato/:id" element={<ContractView />} />
+        <NotificationProvider>
+          <ErrorBoundary>
+            <CursorRestorer>
+              <LandingSmoothScrollWrapper>
+                <Suspense fallback={<RouteLoadingFallback />}>
+                  <Routes>
+                    {/* Public Routes */}
+                    <Route path="/" element={<LandingPage />} />
+                    <Route path="/propuesta/:slug" element={<ProposalView />} />
+                    <Route path="/contrato/:id" element={<ContractView />} />
 
-                  {/* Admin Routes (Protected) */}
-                  <Route path="/admin/login" element={<AdminLogin />} />
-                  <Route path="/admin" element={<AuthGuard><AdminPanel /></AuthGuard>} />
-                  <Route path="/admin/propuesta/:id" element={<AuthGuard><ProposalEditor /></AuthGuard>} />
-                  <Route path="/admin/propuesta/nueva" element={<AuthGuard><ProposalEditor /></AuthGuard>} />
-                  <Route
-                    path="/admin/control-center"
-                    element={<AuthGuard allowedRoles={['admin']}><ControlCenter /></AuthGuard>}
-                  />
-                </Routes>
-              </Suspense>
-            </LandingSmoothScrollWrapper>
-          </CursorRestorer>
-        </ErrorBoundary>
+                    {/* Admin Routes (Protected) */}
+                    <Route path="/admin/login" element={<AdminLogin />} />
+                    <Route path="/admin" element={<AuthGuard><AdminPanel /></AuthGuard>} />
+                    <Route path="/admin/propuesta/:id" element={<AuthGuard><ProposalEditor /></AuthGuard>} />
+                    <Route path="/admin/propuesta/nueva" element={<AuthGuard><ProposalEditor /></AuthGuard>} />
+                    <Route
+                      path="/admin/control-center"
+                      element={<AuthGuard allowedRoles={['admin']}><ControlCenter /></AuthGuard>}
+                    />
+                  </Routes>
+                </Suspense>
+              </LandingSmoothScrollWrapper>
+            </CursorRestorer>
+          </ErrorBoundary>
+        </NotificationProvider>
       </AuthProvider>
     </BrowserRouter>
   );

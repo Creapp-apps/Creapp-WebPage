@@ -37,6 +37,7 @@ import creappLogoOfficial from '@/assets/CREAPP LOGO VECTOR.png';
 import { useAuth } from '@/context/AuthContext';
 import TeamManagementModal from './TeamManagementModal';
 import UserProfileModal from './UserProfileModal';
+import { NotificationBell } from './NotificationBell';
 
 export type AdminTab = 
   | 'dashboard'
@@ -521,6 +522,9 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                 <Plus size={14} />
                 <span>+ Propuesta</span>
               </button>
+
+              {/* Notification Bell (FCM Push) */}
+              <NotificationBell />
 
               {/* USER PROFILE DROPDOWN MENU */}
               <div className="relative pl-1" ref={dropdownRef}>
