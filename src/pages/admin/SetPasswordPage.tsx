@@ -34,31 +34,69 @@ export const SetPasswordPage: React.FC = () => {
   useEffect(() => {
     let isMounted = true;
 
-    // 1. Revisar si hay error en la URL hash (ej: enlace expirado de Supabase)
-    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-    const errorCode = hashParams.get('error_code');
-    const errorDescription = hashParams.get('error_description');
+    const initAuth = async () => {
+      // 1. Extraer parámetros tanto de query (?token_hash=...) como de hash (#token_hash=...)
+      const searchParams = new URLSearchParams(window.location.search);
+      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
 
-    if (errorCode || errorDescription) {
-      if (isMounted) {
-        setError(
-          errorCode === 'otp_expired'
-            ? 'El enlace de invitación o activación ha expirado o ya fue utilizado.'
-            : errorDescription?.replace(/\+/g, ' ') || 'El enlace de activación no es válido.'
-        );
-        setIsCheckingSession(false);
+      const tokenHash = searchParams.get('token_hash') || hashParams.get('token_hash');
+      const otpType = searchParams.get('type') || hashParams.get('type') || 'invite';
+
+      // 2. Si viene un token_hash directo (método inmune a bots de escaneo de correo)
+      if (tokenHash) {
+        try {
+          const { data, error: verifyError } = await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type: otpType as any,
+          });
+
+          if (verifyError) {
+            if (isMounted) {
+              setError(
+                verifyError.message.includes('expired')
+                  ? 'El enlace de invitación o activación ha expirado o ya fue utilizado.'
+                  : verifyError.message
+              );
+              setIsCheckingSession(false);
+            }
+            return;
+          }
+
+          if (isMounted && data.user) {
+            setUserEmail(data.user.email || null);
+            setError(null);
+            setIsCheckingSession(false);
+            return;
+          }
+        } catch (err: any) {
+          console.error('Error al verificar OTP:', err);
+          if (isMounted) {
+            setError(err.message || 'Error al validar el token de invitación.');
+            setIsCheckingSession(false);
+          }
+          return;
+        }
       }
-      return;
-    }
 
-    // 2. Escuchar sesión activa o evento de recuperación / invitación de Supabase
-    const checkAuth = async () => {
+      // 3. Revisar si hay error en la URL hash (ej: enlace expirado vía verify estándar)
+      const errorCode = hashParams.get('error_code');
+      const errorDescription = hashParams.get('error_description');
+
+      if (errorCode || errorDescription) {
+        if (isMounted) {
+          setError(
+            errorCode === 'otp_expired'
+              ? 'El enlace de invitación o activación ha expirado o ya fue utilizado.'
+              : errorDescription?.replace(/\+/g, ' ') || 'El enlace de activación no es válido.'
+          );
+          setIsCheckingSession(false);
+        }
+        return;
+      }
+
+      // 4. Revisar si ya existe sesión activa
       try {
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
-        if (sessionError) {
-          console.warn('Error al verificar sesión:', sessionError);
-        }
 
         if (session?.user) {
           if (isMounted) {
@@ -66,7 +104,7 @@ export const SetPasswordPage: React.FC = () => {
             setIsCheckingSession(false);
           }
         } else {
-          // Dar un pequeño lapso para que Supabase Auth parsee los fragmentos del hash (#access_token=...)
+          // Breve espera para que Supabase procese fragmentos de hash (#access_token=...)
           const timeout = setTimeout(async () => {
             const { data: { session: delayedSession } } = await supabase.auth.getSession();
             if (isMounted) {
@@ -85,7 +123,7 @@ export const SetPasswordPage: React.FC = () => {
       }
     };
 
-    checkAuth();
+    initAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!isMounted) return;
