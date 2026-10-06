@@ -1,259 +1,225 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import creappLogoOfficial from '@/assets/CREAPP LOGO VECTOR.png';
 
 interface PwaSplashScreenProps {
   onComplete?: () => void;
-  duration?: number;
 }
 
-// Estelas de velocidad cósmica (Speed Lines) que caen simulando ascenso
-const SpeedLine: React.FC<{ left: string; height: number; delay: number; duration: number }> = ({
-  left,
-  height,
-  delay,
-  duration,
-}) => (
-  <motion.div
-    initial={{ y: '-20vh', opacity: 0 }}
-    animate={{ y: '120vh', opacity: [0, 0.85, 0] }}
-    transition={{
-      repeat: Infinity,
-      duration,
-      delay,
-      ease: 'linear',
-    }}
-    style={{ left, height: `${height}px` }}
-    className="absolute w-[1.5px] bg-gradient-to-b from-transparent via-[#FF2D78] to-[#9B30FF] rounded-full pointer-events-none filter blur-[0.2px]"
-  />
-);
-
-// Nubes de propulsión estilizadas
-const SmokePuff: React.FC<{ xOffset: number; delay: number; scaleSize: number }> = ({
-  xOffset,
-  delay,
-  scaleSize,
-}) => (
-  <motion.div
-    initial={{ y: 0, scale: 0.3, opacity: 0.7, x: xOffset }}
-    animate={{
-      y: [0, 60, 120],
-      scale: [0.3, scaleSize, scaleSize * 1.6],
-      opacity: [0.7, 0.3, 0],
-      x: [xOffset, xOffset * 1.3, xOffset * 1.6],
-    }}
-    transition={{
-      duration: 0.9,
-      repeat: Infinity,
-      delay,
-      ease: 'easeOut',
-    }}
-    className="absolute -bottom-2 w-7 h-7 rounded-full bg-gradient-to-t from-[#FF2D78]/25 via-[#9B30FF]/30 to-white/20 blur-md pointer-events-none"
-  />
-);
-
-export const PwaSplashScreen: React.FC<PwaSplashScreenProps> = ({
-  onComplete,
-  duration = 1600,
-}) => {
-  // Estados de fase para control absoluto sin cuelgues
-  const [phase, setPhase] = useState<'flying' | 'launching' | 'fadeout' | 'done'>('flying');
+export const PwaSplashScreen: React.FC<PwaSplashScreenProps> = ({ onComplete }) => {
+  // Estados de la secuencia cinemática:
+  // 'hover'     -> Levitación inicial en el centro con llama y estelas
+  // 'ignition'  -> El texto se desvanece suavemente, la llama se sobrecarga (pre-despegue)
+  // 'takeoff'   -> El cohete y su llama aceleran disparados hacia arriba saliendo por el borde superior
+  // 'reveal'    -> Desvanecimiento sutil del fondo oscuro revelando la aplicación/login
+  // 'done'      -> Desmontado completo del DOM
+  const [stage, setStage] = useState<'hover' | 'ignition' | 'takeoff' | 'reveal' | 'done'>('hover');
 
   useEffect(() => {
+    // 1. Desvanecer y retirar el splash estático de index.html inmediatamente para evitar duplicados
+    const staticSplash = document.getElementById('pwa-static-splash');
+    if (staticSplash) {
+      staticSplash.style.opacity = '0';
+      setTimeout(() => {
+        staticSplash.remove();
+      }, 250);
+    }
+
+    // Comprobar si ya fue visto en esta sesión (navegación común web)
     try {
       const isStandalone =
         typeof window !== 'undefined' &&
         (window.matchMedia('(display-mode: standalone)').matches ||
           (window.navigator as any).standalone === true);
 
-      const hasSeenSplash = sessionStorage.getItem('creapp_pwa_splash_seen');
-      if (hasSeenSplash && !isStandalone) {
-        setPhase('done');
+      const hasSeen = sessionStorage.getItem('creapp_pwa_splash_seen');
+      if (hasSeen && !isStandalone) {
+        setStage('done');
         onComplete?.();
         return;
       }
     } catch (e) {
-      // Ignorar errores de storage en modo privado
+      // Ignorar restricciones en navegación privada
     }
 
-    // Tiempos de la coreografía
-    const launchTime = Math.max(700, duration - 500); // 1100ms
-    const fadeoutTime = duration;                      // 1600ms
-    const doneTime = duration + 350;                   // 1950ms
+    // Cronograma Cinemático de Despegue (Take-Off Sequence)
+    const tIgnition = setTimeout(() => {
+      setStage('ignition');
+    }, 950);
 
-    // 1. Iniciar despegue hacia arriba (Blast-off)
-    const tLaunch = setTimeout(() => {
-      setPhase('launching');
-    }, launchTime);
+    const tTakeoff = setTimeout(() => {
+      setStage('takeoff');
+    }, 1250);
 
-    // 2. Desvanecer la cortina oscura
-    const tFade = setTimeout(() => {
-      setPhase('fadeout');
+    const tReveal = setTimeout(() => {
+      setStage('reveal');
       try {
         sessionStorage.setItem('creapp_pwa_splash_seen', 'true');
       } catch (e) {}
       onComplete?.();
-    }, fadeoutTime);
+    }, 1750);
 
-    // 3. Desmontar del DOM al 100%
     const tDone = setTimeout(() => {
-      setPhase('done');
-    }, doneTime);
+      setStage('done');
+    }, 2200);
 
-    // HARD SAFETY FALLBACK: Pase lo que pase, a los 2.1s se desmonta sí o sí
+    // Hard safety timeout
     const tSafety = setTimeout(() => {
-      setPhase('done');
-    }, 2100);
+      setStage('done');
+    }, 2500);
 
     return () => {
-      clearTimeout(tLaunch);
-      clearTimeout(tFade);
+      clearTimeout(tIgnition);
+      clearTimeout(tTakeoff);
+      clearTimeout(tReveal);
       clearTimeout(tDone);
       clearTimeout(tSafety);
     };
-  }, [duration, onComplete]);
+  }, [onComplete]);
 
-  // Si ya terminó, no renderizar nada
-  if (phase === 'done') {
+  if (stage === 'done') {
     return null;
   }
 
-  const isLaunching = phase === 'launching' || phase === 'fadeout';
-  const isFading = phase === 'fadeout';
+  const isIgnition = stage === 'ignition';
+  const isTakeoff = stage === 'takeoff';
+  const isReveal = stage === 'reveal';
 
   return (
     <div
-      className={`fixed inset-0 z-[99999] bg-[#070709] flex flex-col items-center justify-center p-6 select-none overflow-hidden transition-opacity duration-300 ease-out ${
-        isFading ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'
+      onClick={() => setStage('done')}
+      className={`fixed inset-0 z-[99999] bg-[#070709] flex flex-col items-center justify-center p-6 select-none overflow-hidden transition-opacity duration-500 ease-out ${
+        isReveal ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'
       }`}
       style={{ height: '100dvh' }}
     >
-      {/* Fondo Cósmico y Destellos de Hiperespacio */}
+      {/* ── Fondo Cósmico y Estelas de Velocidad ── */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         {/* Resplandor ambiental de fondo */}
-        <motion.div
-          animate={{
-            scale: isLaunching ? 2.2 : [1, 1.25, 1],
-            opacity: isLaunching ? 0.6 : [0.25, 0.45, 0.25],
-          }}
-          transition={{ duration: isLaunching ? 0.4 : 2, repeat: isLaunching ? 0 : Infinity }}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[340px] h-[340px] rounded-full bg-gradient-to-tr from-[#FF2D78]/25 via-[#9B30FF]/30 to-cyan-500/20 blur-[100px]"
+        <div
+          className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] h-[320px] rounded-full bg-gradient-to-tr from-[#FF2D78]/25 via-[#9B30FF]/30 to-cyan-500/20 blur-[100px] transition-transform duration-700 ease-out ${
+            isTakeoff ? 'scale-150 opacity-40' : 'scale-100 opacity-60'
+          }`}
         />
 
-        {/* Líneas de velocidad verticales */}
-        <SpeedLine left="12%" height={80} delay={0} duration={0.8} />
-        <SpeedLine left="26%" height={130} delay={0.25} duration={1.0} />
-        <SpeedLine left="42%" height={100} delay={0.5} duration={0.75} />
-        <SpeedLine left="60%" height={150} delay={0.1} duration={0.95} />
-        <SpeedLine left="76%" height={110} delay={0.4} duration={0.8} />
-        <SpeedLine left="88%" height={75} delay={0.2} duration={1.1} />
+        {/* Líneas de velocidad verticales (Hiperespacio) */}
+        <div className="absolute inset-0 overflow-hidden">
+          {[
+            { left: '14%', h: 70, delay: '0s', dur: isTakeoff ? '0.35s' : '0.9s' },
+            { left: '28%', h: 120, delay: '0.2s', dur: isTakeoff ? '0.4s' : '1.1s' },
+            { left: '44%', h: 90, delay: '0.4s', dur: isTakeoff ? '0.3s' : '0.8s' },
+            { left: '62%', h: 140, delay: '0.1s', dur: isTakeoff ? '0.38s' : '1.0s' },
+            { left: '78%', h: 100, delay: '0.3s', dur: isTakeoff ? '0.32s' : '0.85s' },
+            { left: '88%', h: 80, delay: '0.15s', dur: isTakeoff ? '0.42s' : '1.2s' },
+          ].map((line, i) => (
+            <div
+              key={i}
+              style={{
+                left: line.left,
+                height: `${line.h}px`,
+                animationDelay: line.delay,
+                animationDuration: line.dur,
+              }}
+              className="absolute w-[1.5px] bg-gradient-to-b from-transparent via-[#FF2D78] to-[#9B30FF] rounded-full filter blur-[0.2px] animate-cosmic-speedline"
+            />
+          ))}
+        </div>
 
-        {/* Estrellas sutiles */}
-        <div className="absolute top-[20%] left-[22%] w-1 h-1 bg-white rounded-full animate-ping opacity-60" />
-        <div className="absolute top-[30%] right-[24%] w-1.5 h-1.5 bg-[#FF2D78] rounded-full animate-pulse opacity-70" />
-        <div className="absolute bottom-[32%] left-[30%] w-1 h-1 bg-[#9B30FF] rounded-full animate-ping opacity-50" />
+        {/* Estrellas sutiles fijas */}
+        <div className="absolute top-[22%] left-[20%] w-1 h-1 bg-white rounded-full opacity-60 animate-ping" />
+        <div className="absolute top-[32%] right-[22%] w-1.5 h-1.5 bg-[#FF2D78] rounded-full opacity-70 animate-pulse" />
+        <div className="absolute bottom-[28%] left-[26%] w-1 h-1 bg-[#9B30FF] rounded-full opacity-50 animate-ping" />
       </div>
 
-      {/* Núcleo Central: El Cohete CreAPP Vector Puro (Sin recuadro) */}
+      {/* ── Núcleo Central: Cohete + Llama + Tipografía ── */}
       <div className="relative z-10 flex flex-col items-center justify-center">
-        {/* Contenedor del Cohete con Levitación y Despegue */}
-        <motion.div
-          initial={{ scale: 0.7, y: 50, opacity: 0 }}
-          animate={
-            isLaunching
-              ? {
-                  y: -900,
-                  scale: 1.15,
-                  opacity: [1, 1, 0],
-                  transition: { duration: 0.5, ease: [0.6, 0.05, -0.01, 0.9] },
-                }
-              : {
-                  scale: 1,
-                  y: [-4, 5, -4],
-                  rotate: [-1.2, 1.2, -1.2],
-                  opacity: 1,
-                  transition: {
-                    scale: { duration: 0.5, ease: [0.16, 1, 0.3, 1] },
-                    y: { repeat: Infinity, duration: 1.6, ease: 'easeInOut' },
-                    rotate: { repeat: Infinity, duration: 2.0, ease: 'easeInOut' },
-                  },
-                }
-          }
-          className="relative flex flex-col items-center justify-center"
+        {/* Contenedor del Cohete con Levitación y Despegue Vertical hacia Arriba */}
+        <div
+          style={{
+            transform: isTakeoff || isReveal
+              ? 'translateY(-130vh) scale(1.1)'
+              : isIgnition
+              ? 'translateY(6px) scale(0.98)'
+              : 'translateY(0px) scale(1)',
+            transition: isTakeoff || isReveal
+              ? 'transform 0.65s cubic-bezier(0.65, 0, 0.35, 1)'
+              : isIgnition
+              ? 'transform 0.3s ease-out'
+              : 'none',
+          }}
+          className={`relative flex flex-col items-center justify-center ${
+            stage === 'hover' ? 'animate-rocket-hover' : ''
+          }`}
         >
           {/* Resplandor violeta/fucsia directo en el vector */}
-          <div className="absolute w-32 h-32 rounded-full bg-gradient-to-tr from-[#FF2D78]/35 to-[#9B30FF]/35 blur-2xl pointer-events-none" />
+          <div
+            className={`absolute w-28 h-28 rounded-full bg-gradient-to-tr from-[#FF2D78]/35 to-[#9B30FF]/35 blur-2xl pointer-events-none transition-all duration-300 ${
+              isTakeoff ? 'scale-150 opacity-90' : isIgnition ? 'scale-125 opacity-70' : 'scale-100 opacity-50'
+            }`}
+          />
 
-          {/* Onda expansiva luminosa al despegar */}
-          {isLaunching && (
-            <motion.div
-              initial={{ scale: 0.4, opacity: 1 }}
-              animate={{ scale: 3.5, opacity: 0 }}
-              transition={{ duration: 0.45, ease: 'easeOut' }}
-              className="absolute w-24 h-24 rounded-full border-2 border-[#FF2D78] shadow-[0_0_30px_#FF2D78] pointer-events-none"
-            />
+          {/* Onda expansiva luminosa en el punto de lanzamiento */}
+          {isTakeoff && (
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 rounded-full border-2 border-[#FF2D78] shadow-[0_0_35px_#FF2D78] animate-shockwave-burst pointer-events-none" />
           )}
 
-          {/* COHETE VECTOR OFICIAL (Totalmente libre, sin recuadros ni cajas) */}
+          {/* VECTOR OFICIAL DEL COHETE CREAPP (Limpio, sin recuadro ni marcos) */}
           <div className="relative flex items-center justify-center">
             <img
               src={creappLogoOfficial}
               alt="CreAPP Rocket"
-              className="w-20 sm:w-24 h-auto object-contain filter drop-shadow-[0_0_24px_rgba(255,45,120,0.7)] drop-shadow-[0_0_12px_rgba(155,48,255,0.6)] pointer-events-none"
+              className="w-[72px] h-auto object-contain filter drop-shadow-[0_0_20px_rgba(255,45,120,0.7)] drop-shadow-[0_0_10px_rgba(155,48,255,0.6)] pointer-events-none"
             />
           </div>
 
-          {/* LLAMA DE PROPULSIÓN CONECTADA A LA TOBERA DEL VECTOR */}
-          <div className="relative -mt-3.5 flex flex-col items-center">
-            <motion.div
-              animate={
-                isLaunching
-                  ? {
-                      scaleY: [2, 3.8],
-                      scaleX: [1.2, 0.85],
-                      opacity: 1,
-                    }
-                  : {
-                      scaleY: [1, 1.35, 0.95, 1.25, 1],
-                      scaleX: [1, 0.92, 1.06, 0.95, 1],
-                    }
-              }
-              transition={{
-                repeat: isLaunching ? 0 : Infinity,
-                duration: isLaunching ? 0.35 : 0.28,
-                ease: 'easeInOut',
+          {/* LLAMA DE PROPULSIÓN CONECTADA DIRECTAMENTE A LA BASE */}
+          <div className="relative -mt-2 flex flex-col items-center">
+            {/* Llama dinámica con aceleración */}
+            <div
+              style={{
+                transform: isTakeoff
+                  ? 'scaleY(3.4) scaleX(1.15)'
+                  : isIgnition
+                  ? 'scaleY(2.0) scaleX(1.1)'
+                  : 'scaleY(1) scaleX(1)',
+                transition: isTakeoff
+                  ? 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
+                  : isIgnition
+                  ? 'transform 0.25s ease-out'
+                  : 'none',
               }}
-              className="relative origin-top flex flex-col items-center"
+              className={`relative origin-top flex flex-col items-center ${
+                stage === 'hover' ? 'animate-flame-flutter' : ''
+              }`}
             >
               {/* Cono Exterior de la Llama (Magenta / Púrpura) */}
               <div
-                className="w-5 sm:w-6 h-11 sm:h-12 rounded-b-full bg-gradient-to-b from-[#FF2D78] via-[#9B30FF] to-transparent filter blur-[1px] shadow-[0_8px_20px_#FF2D78]"
+                className="w-[18px] h-[26px] rounded-b-full bg-gradient-to-b from-[#FF2D78] via-[#9B30FF] to-transparent filter blur-[0.8px] shadow-[0_8px_20px_#FF2D78]"
                 style={{ clipPath: 'polygon(15% 0%, 85% 0%, 100% 70%, 50% 100%, 0% 70%)' }}
               />
 
-              {/* Núcleo Interior de la Llama (Cian / Blanco incandescente) */}
+              {/* Núcleo Interior Incandescente (Blanco / Cian) */}
               <div
-                className="absolute top-0 w-2.5 sm:w-3 h-6 sm:h-7 rounded-b-full bg-gradient-to-b from-white via-cyan-300 to-transparent filter blur-[0.4px]"
+                className="absolute top-0 w-[9px] h-[15px] rounded-b-full bg-gradient-to-b from-white via-cyan-300 to-transparent filter blur-[0.3px]"
                 style={{ clipPath: 'polygon(20% 0%, 80% 0%, 100% 75%, 50% 100%, 0% 75%)' }}
               />
-            </motion.div>
+            </div>
 
-            {/* Nubes de humo saliendo de la propulsión */}
-            <div className="absolute top-5 flex items-center justify-center pointer-events-none">
-              <SmokePuff xOffset={-12} delay={0} scaleSize={1} />
-              <SmokePuff xOffset={12} delay={0.2} scaleSize={1.1} />
-              <SmokePuff xOffset={-5} delay={0.4} scaleSize={1.2} />
-              <SmokePuff xOffset={7} delay={0.6} scaleSize={0.9} />
+            {/* Nubes de humo estilizadas que se expanden hacia abajo */}
+            <div className="absolute top-4 flex items-center justify-center pointer-events-none">
+              <div className="w-5 h-5 rounded-full bg-gradient-to-t from-[#FF2D78]/30 via-[#9B30FF]/30 to-white/20 blur-sm animate-smoke-puff-1" />
+              <div className="w-6 h-6 rounded-full bg-gradient-to-t from-[#9B30FF]/30 to-transparent blur-sm animate-smoke-puff-2" />
             </div>
           </div>
-        </motion.div>
+        </div>
 
-        {/* Tipografía de Marca Centrada (CreAPP + Software Lab) */}
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={isLaunching ? { opacity: 0, y: -10 } : { opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.45 }}
-          className="flex flex-col items-center text-center mt-9"
+        {/* ── Tipografía Centrada: creapp + Software Lab ── */}
+        <div
+          style={{
+            opacity: isIgnition || isTakeoff || isReveal ? 0 : 1,
+            transform: isIgnition || isTakeoff || isReveal ? 'translateY(12px)' : 'translateY(0px)',
+            transition: 'opacity 0.35s ease-out, transform 0.35s ease-out',
+          }}
+          className="flex flex-col items-center text-center mt-7 pointer-events-none"
         >
           <div className="font-display font-black text-3xl sm:text-4xl tracking-tight text-white text-center">
             <span>cre</span>
@@ -262,25 +228,56 @@ export const PwaSplashScreen: React.FC<PwaSplashScreenProps> = ({
             </span>
           </div>
 
-          <p className="text-[11px] sm:text-xs text-zinc-400 font-mono tracking-[0.25em] uppercase mt-2">
+          <p className="text-[11px] sm:text-xs text-zinc-400 font-mono tracking-[0.25em] uppercase mt-1.5">
             Software Lab
           </p>
 
-          {/* Barra de progreso láser */}
+          {/* Barra de progreso láser sincronizada */}
           <div className="mt-5 w-32 h-[2.5px] bg-white/10 rounded-full overflow-hidden relative">
-            <motion.div
-              initial={{ x: '-100%' }}
-              animate={{ x: isLaunching ? '0%' : '100%' }}
-              transition={{
-                repeat: isLaunching ? 0 : Infinity,
-                duration: 1.0,
-                ease: 'easeInOut',
-              }}
-              className="absolute inset-y-0 w-full bg-gradient-to-r from-transparent via-[#FF2D78] to-[#9B30FF] shadow-[0_0_12px_#FF2D78]"
-            />
+            <div className="absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-[#FF2D78] to-[#9B30FF] rounded-full shadow-[0_0_10px_#FF2D78] animate-laser-sweep" />
           </div>
-        </motion.div>
+        </div>
       </div>
+
+      {/* ── Keyframes CSS Optimizados por Hardware (60-120fps en iOS Safari) ── */}
+      <style>{`
+        @keyframes rocket-hover {
+          0%, 100% { transform: translateY(0px) rotate(-1deg); }
+          50% { transform: translateY(-7px) rotate(1deg); }
+        }
+        @keyframes flame-flutter {
+          0% { transform: scaleY(0.92) scaleX(1.05); }
+          100% { transform: scaleY(1.28) scaleX(0.94); }
+        }
+        @keyframes cosmic-speedline {
+          0% { transform: translateY(-30vh); opacity: 0; }
+          40% { opacity: 0.9; }
+          100% { transform: translateY(130vh); opacity: 0; }
+        }
+        @keyframes shockwave-burst {
+          0% { transform: translate(-50%, -50%) scale(0.3); opacity: 1; }
+          100% { transform: translate(-50%, -50%) scale(3.5); opacity: 0; }
+        }
+        @keyframes smoke-puff-1 {
+          0% { transform: translateY(0) scale(0.4); opacity: 0.8; }
+          100% { transform: translateY(45px) scale(2); opacity: 0; }
+        }
+        @keyframes smoke-puff-2 {
+          0% { transform: translateY(0) scale(0.3); opacity: 0.7; }
+          100% { transform: translateY(60px) scale(2.4); opacity: 0; }
+        }
+        @keyframes laser-sweep {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(200%); }
+        }
+        .animate-rocket-hover { animation: rocket-hover 1.8s ease-in-out infinite; }
+        .animate-flame-flutter { animation: flame-flutter 0.28s ease-in-out infinite alternate; }
+        .animate-cosmic-speedline { animation: cosmic-speedline linear infinite; }
+        .animate-shockwave-burst { animation: shockwave-burst 0.5s ease-out forwards; }
+        .animate-smoke-puff-1 { animation: smoke-puff-1 1s ease-out infinite; }
+        .animate-smoke-puff-2 { animation: smoke-puff-2 1.2s ease-out infinite 0.25s; }
+        .animate-laser-sweep { animation: laser-sweep 1.1s ease-in-out infinite; }
+      `}</style>
     </div>
   );
 };
