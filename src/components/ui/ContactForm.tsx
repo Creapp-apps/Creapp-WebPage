@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Send, Check } from 'lucide-react';
-import { Button } from './Button';
+import { Button } from './button';
 import { Input } from './Input';
 import logo from '../../assets/creapp-logo.png';
 
