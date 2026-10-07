@@ -15,6 +15,9 @@ import {
   Calendar,
   Bell,
   Smartphone,
+  Eye,
+  EyeOff,
+  CheckCircle2,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useNotifications } from '@/context/NotificationContext';
@@ -39,8 +42,31 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
   const [fullName, setFullName] = useState(profile?.full_name || '');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // 4 Pilares del Estándar Corporativo de Seguridad (OWASP / NIST)
+  const hasMinLength = newPassword.length >= 8;
+  const hasUppercase = /[A-Z]/.test(newPassword);
+  const hasNumber = /[0-9]/.test(newPassword);
+  const hasSpecialChar = /[^A-Za-z0-9]/.test(newPassword);
+  const passwordsMatch = Boolean(confirmPassword && newPassword === confirmPassword);
+
+  const criteriaCount = [hasMinLength, hasUppercase, hasNumber, hasSpecialChar].filter(Boolean).length;
+  const isPasswordValid = criteriaCount === 4 && passwordsMatch;
+
+  const strengthLabel =
+    criteriaCount === 0 ? '' :
+    criteriaCount === 1 ? 'Débil' :
+    criteriaCount === 2 ? 'Media' :
+    criteriaCount === 3 ? 'Buena' : 'Excelente';
+
+  const strengthColor =
+    criteriaCount === 1 ? 'text-rose-400' :
+    criteriaCount === 2 ? 'text-amber-400' :
+    criteriaCount === 3 ? 'text-purple-400' : 'text-emerald-400';
 
   if (!isOpen) return null;
 
@@ -64,14 +90,24 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
         await refreshProfile();
       }
 
-      // 2. Si ingresó nueva contraseña, actualizarla
+      // 2. Si ingresó nueva contraseña, validar y actualizar
       if (newPassword) {
-        if (newPassword.length < 6) {
-          throw new Error('La nueva contraseña debe tener al menos 6 caracteres.');
+        if (!hasMinLength) {
+          throw new Error('La contraseña debe tener al menos 8 caracteres.');
         }
-        if (newPassword !== confirmPassword) {
+        if (!hasUppercase) {
+          throw new Error('La contraseña debe incluir al menos una letra mayúscula (A-Z).');
+        }
+        if (!hasNumber) {
+          throw new Error('La contraseña debe incluir al menos un número (0-9).');
+        }
+        if (!hasSpecialChar) {
+          throw new Error('La contraseña debe incluir al menos un carácter especial o símbolo (!@#$%...).');
+        }
+        if (!passwordsMatch) {
           throw new Error('Las contraseñas no coinciden.');
         }
+
         const { error: pwdError } = await supabase.auth.updateUser({
           password: newPassword,
         });
@@ -261,30 +297,132 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
 
           {/* Cambio de Contraseña */}
           <div className="pt-2 border-t border-white/5 space-y-3">
-            <span className="text-[11px] font-mono text-zinc-400 uppercase tracking-wider block">
-              Cambiar Contraseña (Opcional)
-            </span>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-mono text-zinc-400 uppercase tracking-wider block">
+                Cambiar Contraseña (Opcional)
+              </span>
+              {newPassword && (
+                <span className={`text-[10px] font-bold font-mono ${strengthColor}`}>
+                  Seguridad: {strengthLabel}
+                </span>
+              )}
+            </div>
+
+            {/* Medidor visual de fortaleza */}
+            {newPassword && (
+              <div className="space-y-1.5">
+                <div className="grid grid-cols-4 gap-1.5 h-1">
+                  {[1, 2, 3, 4].map((level) => (
+                    <div
+                      key={level}
+                      className={`h-full rounded-full transition-all duration-300 ${
+                        criteriaCount >= level
+                          ? level === 1
+                            ? 'bg-rose-500'
+                            : level === 2
+                            ? 'bg-amber-500'
+                            : level === 3
+                            ? 'bg-purple-500'
+                            : 'bg-emerald-400'
+                          : 'bg-white/10'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
-                <input
-                  type="password"
-                  placeholder="Nueva contraseña"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2 text-white placeholder-zinc-600 text-xs focus:outline-none focus:border-purple-500/50"
-                />
+                <div className="relative">
+                  <input
+                    type={showNewPassword ? 'text' : 'password'}
+                    placeholder="Nueva contraseña"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2 pr-10 text-white placeholder-zinc-600 text-xs focus:outline-none focus:border-purple-500/50"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
+                  >
+                    {showNewPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                  </button>
+                </div>
               </div>
               <div className="space-y-1">
-                <input
-                  type="password"
-                  placeholder="Confirmar contraseña"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2 text-white placeholder-zinc-600 text-xs focus:outline-none focus:border-purple-500/50"
-                />
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    placeholder="Confirmar contraseña"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2 pr-10 text-white placeholder-zinc-600 text-xs focus:outline-none focus:border-purple-500/50"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
+                  >
+                    {showConfirmPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                  </button>
+                </div>
               </div>
             </div>
+
+            {/* Checklist interactivo de requisitos de seguridad */}
+            {newPassword && (
+              <div className="grid grid-cols-2 gap-1.5 p-2.5 rounded-xl bg-white/[0.02] border border-white/5 text-[10px]">
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2
+                    size={11}
+                    className={hasMinLength ? 'text-emerald-400' : 'text-zinc-600'}
+                  />
+                  <span className={hasMinLength ? 'text-zinc-200' : 'text-zinc-500'}>
+                    8+ caracteres
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2
+                    size={11}
+                    className={hasUppercase ? 'text-emerald-400' : 'text-zinc-600'}
+                  />
+                  <span className={hasUppercase ? 'text-zinc-200' : 'text-zinc-500'}>
+                    1 mayúscula (A-Z)
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2
+                    size={11}
+                    className={hasNumber ? 'text-emerald-400' : 'text-zinc-600'}
+                  />
+                  <span className={hasNumber ? 'text-zinc-200' : 'text-zinc-500'}>
+                    1 número (0-9)
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2
+                    size={11}
+                    className={hasSpecialChar ? 'text-emerald-400' : 'text-zinc-600'}
+                  />
+                  <span className={hasSpecialChar ? 'text-zinc-200' : 'text-zinc-500'}>
+                    1 carácter especial (!@#)
+                  </span>
+                </div>
+                {confirmPassword && (
+                  <div className="col-span-2 flex items-center gap-1.5 pt-1 border-t border-white/5">
+                    <CheckCircle2
+                      size={11}
+                      className={passwordsMatch ? 'text-emerald-400' : 'text-rose-400'}
+                    />
+                    <span className={passwordsMatch ? 'text-emerald-300' : 'text-rose-400'}>
+                      {passwordsMatch ? 'Las contraseñas coinciden' : 'Las contraseñas no coinciden'}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="flex items-center justify-end gap-2.5 pt-3">
@@ -297,7 +435,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || Boolean(newPassword && !isPasswordValid)}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 transition-all disabled:opacity-50"
             >
               {loading ? (
