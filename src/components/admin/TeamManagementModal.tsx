@@ -8,15 +8,13 @@ import {
   X,
   Check,
   AlertCircle,
-  Lock,
   Mail,
   User,
   Sparkles,
   RefreshCw,
   Trash2,
+  Send,
   Eye,
-  EyeOff,
-  CheckCircle2,
 } from 'lucide-react';
 import { useAuth, UserProfile, UserRole } from '@/context/AuthContext';
 
@@ -34,8 +32,6 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({ isOpen
   // Formulario
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState<UserRole>('admin');
   const [submitLoading, setSubmitLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,48 +53,19 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({ isOpen
     }
   }, [isOpen]);
 
-  // 4 Pilares del Estándar Corporativo de Seguridad (OWASP / NIST)
-  const hasMinLength = password.length >= 8;
-  const hasUppercase = /[A-Z]/.test(password);
-  const hasNumber = /[0-9]/.test(password);
-  const hasSpecialChar = /[^A-Za-z0-9]/.test(password);
-  const criteriaCount = [hasMinLength, hasUppercase, hasNumber, hasSpecialChar].filter(Boolean).length;
-  const isPasswordValid = criteriaCount === 4;
-
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccessMsg(null);
 
-    if (!email || !password || !fullName) {
-      setError('Por favor completá todos los campos.');
-      return;
-    }
-
-    if (!hasMinLength) {
-      setError('La contraseña debe tener al menos 8 caracteres.');
-      return;
-    }
-
-    if (!hasUppercase) {
-      setError('La contraseña debe incluir al menos una letra mayúscula (A-Z).');
-      return;
-    }
-
-    if (!hasNumber) {
-      setError('La contraseña debe incluir al menos un número (0-9).');
-      return;
-    }
-
-    if (!hasSpecialChar) {
-      setError('La contraseña debe incluir al menos un carácter especial o símbolo (!@#$%...).');
+    if (!email.trim() || !fullName.trim()) {
+      setError('Por favor completá el nombre y el correo electrónico.');
       return;
     }
 
     setSubmitLoading(true);
     const result = await createSalesUser({
       email: email.trim().toLowerCase(),
-      password,
       fullName: fullName.trim(),
       role,
     });
@@ -106,16 +73,15 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({ isOpen
 
     if (result.success) {
       setSuccessMsg(
-        `¡Usuario ${fullName} (${role === 'admin' ? 'Master Admin' : 'Vendedor'}) creado con éxito! Ya puede ingresar con sus credenciales.`
+        `¡Invitación enviada con éxito a ${fullName.trim()} (${email.trim()})! Recibirá un correo desde equipo@creapp.com.ar para activar su cuenta y configurar su contraseña en el onboarding.`
       );
       setFullName('');
       setEmail('');
-      setPassword('');
       setRole('admin');
       setIsCreating(false);
       await fetchUsers();
     } else {
-      setError(result.error || 'Ocurrió un error al crear el usuario.');
+      setError(result.error || 'Ocurrió un error al enviar la invitación.');
     }
   };
 
@@ -282,127 +248,31 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({ isOpen
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-mono text-zinc-400 flex items-center gap-1.5">
-                    <Lock size={13} />
-                    Contraseña Segura
-                  </label>
-                  {password && (
-                    <span className={`text-[10px] font-bold font-mono ${
-                      criteriaCount === 1 ? 'text-rose-400' :
-                      criteriaCount === 2 ? 'text-amber-400' :
-                      criteriaCount === 3 ? 'text-purple-400' : 'text-emerald-400'
-                    }`}>
-                      {criteriaCount === 1 ? 'Débil' : criteriaCount === 2 ? 'Media' : criteriaCount === 3 ? 'Buena' : 'Excelente'}
-                    </span>
-                  )}
-                </div>
-                <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    required
-                    placeholder="Ej: CreAPP2026!"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 pr-10 text-white placeholder-zinc-600 text-xs focus:outline-none focus:border-purple-500/50"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
-                  >
-                    {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
-                  </button>
-                </div>
-
-                {/* Barra de progreso */}
-                {password && (
-                  <div className="grid grid-cols-4 gap-1.5 h-1 pt-0.5">
-                    {[1, 2, 3, 4].map((lvl) => (
-                      <div
-                        key={lvl}
-                        className={`h-full rounded-full transition-all duration-300 ${
-                          criteriaCount >= lvl
-                            ? lvl === 1
-                              ? 'bg-rose-500'
-                              : lvl === 2
-                              ? 'bg-amber-500'
-                              : lvl === 3
-                              ? 'bg-purple-500'
-                              : 'bg-emerald-400'
-                            : 'bg-white/10'
-                        }`}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-mono text-zinc-400 flex items-center gap-1.5">
-                  <Shield size={13} />
-                  Rol a Asignar
-                </label>
-                <select
-                  value={role}
-                  onChange={(e) => setRole(e.target.value as UserRole)}
-                  className="w-full bg-[#121622] border border-white/10 rounded-xl px-3.5 py-2.5 text-white text-xs focus:outline-none focus:border-purple-500/50"
-                >
-                  <option value="admin">Master Admin (Acceso Total a CreAPP)</option>
-                  <option value="vendedor">Vendedor (Solo Ventas, Scraper & Propuestas)</option>
-                </select>
-              </div>
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-mono text-zinc-400 flex items-center gap-1.5">
+                <Shield size={13} />
+                Rol a Asignar en CreAPP
+              </label>
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value as UserRole)}
+                className="w-full bg-[#121622] border border-white/10 rounded-xl px-3.5 py-2.5 text-white text-xs focus:outline-none focus:border-purple-500/50"
+              >
+                <option value="admin">Master Admin (Acceso Total a CreAPP OS y Configuración)</option>
+                <option value="vendedor">Vendedor Comercial (Radar B2B, Scraper, CRM y Propuestas)</option>
+              </select>
             </div>
 
-            {/* Checklist interactivo de requisitos de seguridad */}
-            {password && (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-2.5 rounded-xl bg-white/[0.02] border border-white/5 text-[10px]">
-                <div className="flex items-center gap-1.5">
-                  <CheckCircle2
-                    size={11}
-                    className={hasMinLength ? 'text-emerald-400' : 'text-zinc-600'}
-                  />
-                  <span className={hasMinLength ? 'text-zinc-200' : 'text-zinc-500'}>
-                    8+ caracteres
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <CheckCircle2
-                    size={11}
-                    className={hasUppercase ? 'text-emerald-400' : 'text-zinc-600'}
-                  />
-                  <span className={hasUppercase ? 'text-zinc-200' : 'text-zinc-500'}>
-                    1 mayúscula (A-Z)
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <CheckCircle2
-                    size={11}
-                    className={hasNumber ? 'text-emerald-400' : 'text-zinc-600'}
-                  />
-                  <span className={hasNumber ? 'text-zinc-200' : 'text-zinc-500'}>
-                    1 número (0-9)
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <CheckCircle2
-                    size={11}
-                    className={hasSpecialChar ? 'text-emerald-400' : 'text-zinc-600'}
-                  />
-                  <span className={hasSpecialChar ? 'text-zinc-200' : 'text-zinc-500'}>
-                    1 símbolo (!@#)
-                  </span>
-                </div>
+            <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-200 text-xs">
+              <div className="p-1.5 rounded-xl bg-purple-500/20 text-purple-300 shrink-0 mt-0.5">
+                <Send size={14} />
               </div>
-            )}
-
-            <div className="flex items-center gap-2.5 p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-200 text-xs">
-              <Mail size={15} className="shrink-0 text-purple-400" />
-              <span>
-                <strong>Acceso Inmediato:</strong> El usuario podrá iniciar sesión en <code>/admin/login</code> inmediatamente con este email y contraseña.
-              </span>
+              <div className="space-y-0.5">
+                <strong className="block text-white font-semibold">Invitación Oficial por Email & Onboarding Seguro:</strong>
+                <p className="text-zinc-300 text-[11px] leading-relaxed">
+                  El usuario recibirá un correo corporativo desde <strong>equipo@creapp.com.ar</strong> con un enlace exclusivo de activación para que <strong>él mismo configure su contraseña personal</strong> bajo estándares OWASP/NIST.
+                </p>
+              </div>
             </div>
 
             <div className="flex items-center justify-end gap-2.5 pt-2">
@@ -415,15 +285,15 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({ isOpen
               </button>
               <button
                 type="submit"
-                disabled={submitLoading || Boolean(password && !isPasswordValid)}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 transition-all disabled:opacity-50"
+                disabled={submitLoading || !email.trim() || !fullName.trim()}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 transition-all disabled:opacity-50 shadow-lg shadow-purple-900/20"
               >
                 {submitLoading ? (
                   <RefreshCw size={14} className="animate-spin" />
                 ) : (
-                  <Sparkles size={14} />
+                  <Send size={14} />
                 )}
-                <span>Crear Credencial de Acceso</span>
+                <span>Enviar Invitación de Onboarding</span>
               </button>
             </div>
           </form>

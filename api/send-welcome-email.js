@@ -294,7 +294,14 @@ export default async function handler(req, res) {
               </td>
             </tr>
             `
-                : ''
+                : `
+            <tr>
+              <td style="padding: 6px 0; color: #64748B;">Contraseña:</td>
+              <td style="padding: 6px 0; color: #38BDF8; font-weight: 600;">
+                A definir en el Onboarding oficial
+              </td>
+            </tr>
+            `
             }
             <tr>
               <td style="padding: 6px 0; color: #64748B;">Rol asignado:</td>
@@ -336,18 +343,18 @@ export default async function handler(req, res) {
 
         <!-- Call to Action -->
         <div class="cta-container">
-          <a href="${loginUrl}" target="_blank" class="cta-btn">
-            Ingresar al Panel CreAPP &rarr;
+          <a href="${password ? loginUrl : 'https://creapp.com.ar/admin/set-password'}" target="_blank" class="cta-btn">
+            ${password ? 'Ingresar al Panel CreAPP &rarr;' : 'Activar Cuenta & Definir Clave &rarr;'}
           </a>
           <p class="note">
-            💡 <em>Podés cambiar tu contraseña en cualquier momento ingresando a <strong>"Mi Perfil"</strong> en la esquina superior derecha del panel.</em>
+            💡 <em>${password ? 'Podés cambiar tu contraseña en cualquier momento ingresando a <strong>"Mi Perfil"</strong>.' : 'Al hacer clic definirás tu contraseña personal con los máximos estándares de seguridad corporativa.'}</em>
           </p>
         </div>
       </div>
 
       <!-- Footer -->
       <div class="footer">
-        <p><strong>CreAPP</strong> • Fintech & Software Innovation Lab</p>
+        <p><strong>CreAPP</strong> • Software Innovation Lab</p>
         <p>Buenos Aires, Argentina • <a href="https://creapp.com.ar" target="_blank">creapp.com.ar</a></p>
         <p style="margin-top: 10px; color: #334155; font-size: 10px;">
           Este correo fue emitido automáticamente por la plataforma de administración de CreAPP para uso exclusivo del destinatario.

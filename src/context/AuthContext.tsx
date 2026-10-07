@@ -23,7 +23,7 @@ interface AuthContextType {
   listUsers: () => Promise<UserProfile[]>;
   createSalesUser: (params: {
     email: string;
-    password: string;
+    password?: string;
     fullName: string;
     role?: UserRole;
   }) => Promise<{ success: boolean; error?: string }>;
@@ -208,7 +208,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     role = 'vendedor',
   }: {
     email: string;
-    password: string;
+    password?: string;
     fullName: string;
     role?: UserRole;
   }): Promise<{ success: boolean; error?: string }> => {
@@ -228,14 +228,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         },
       });
 
+      // Si no se proveyó una contraseña manual, generamos una aleatoria criptosegura temporal
+      const effectivePassword = password || `CreApp_${crypto.randomUUID().replace(/-/g, '').slice(0, 10)}!9A`;
+
       const signUpPromise = tempClient.auth.signUp({
         email,
-        password,
+        password: effectivePassword,
         options: {
           data: {
             full_name: fullName,
             role: role,
           },
+          emailRedirectTo: 'https://creapp.com.ar/admin/set-password',
         },
       });
 
@@ -268,6 +272,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.warn('Aviso: el trigger de Postgres o upsert falló, pero el usuario se creó en Auth:', e);
         }
 
+        // Si es flujo de onboarding (sin contraseña provista por el admin), emitir solicitud de set-password
+        if (!password) {
+          try {
+            await tempClient.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+              redirectTo: 'https://creapp.com.ar/admin/set-password',
+            });
+          } catch (resetErr) {
+            console.warn('Aviso al emitir resetPasswordForEmail de activación:', resetErr);
+          }
+        }
+
         // Envío de email de bienvenida vía Resend (no bloqueante con timeout de 5s)
         try {
           const { sendWelcomeEmail } = await import('@/lib/emailService');
@@ -275,7 +290,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             sendWelcomeEmail({
               email: email.trim().toLowerCase(),
               fullName,
-              password,
+              password: password || undefined,
               role,
             }),
             new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000)),
