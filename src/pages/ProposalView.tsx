@@ -29,6 +29,7 @@ import creappLogoOfficial from '@/assets/CREAPP LOGO VECTOR.png';
 import Lightfall from '@/components/backgrounds/Lightfall';
 import { getPillars } from '@/lib/proposalTypes';
 import { DEFAULT_SERVICE_DETAILS, STACKED_CONTRACT_DESCRIPTION, STACKED_SERVICE_CONTRACT_TEMPLATE } from '@/lib/serviceContractTemplates';
+import { notifyProposalViewed, notifyProposalAccepted } from '@/lib/notificationDispatcher';
 
 export const cleanNumberString = (val: string | number | null | undefined): string => {
   if (!val) return '';
@@ -449,6 +450,19 @@ const ProposalView: React.FC = () => {
             else if (legal.tax_id) setClientDNI(legal.tax_id);
             if (legal.representative_role) setClientRole(legal.representative_role);
           }
+
+          // Trigger telemetry notification if not already sent in this session
+          try {
+            const sessionKey = `creapp_proposal_notified_${slug}`;
+            if (!sessionStorage.getItem(sessionKey)) {
+              sessionStorage.setItem(sessionKey, '1');
+              notifyProposalViewed({
+                clientName: data.client_name || 'Prospecto',
+                title: data.title || 'Propuesta Comercial',
+                slug: slug,
+              }).catch(() => {});
+            }
+          } catch (_) {}
         }
       })
       .catch(() => setError('Error al cargar la propuesta.'))
@@ -752,6 +766,12 @@ const ProposalView: React.FC = () => {
       
       setPdfSuccessUrl(url);
       setIsConfirmed(true);
+      notifyProposalAccepted({
+        clientName: proposal.client_name,
+        title: proposal.title,
+        slug: proposal.slug,
+        planName: clientRepName ? `Firmado por ${clientRepName}` : undefined,
+      }).catch(() => {});
 
     } catch (error: any) {
       console.error("Failed to generate and upload contract:", error);

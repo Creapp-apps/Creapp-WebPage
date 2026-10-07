@@ -128,6 +128,26 @@ export default async function handler(req, res) {
         .eq('id', incidentData.app_id);
     }
 
+    // Disparar alerta Push al Master Admin si la severidad es crítica o alta
+    if (incidentData.severity === 'critical' || incidentData.severity === 'high') {
+      try {
+        const protocol = req.headers['x-forwarded-proto'] || 'https';
+        const host = req.headers['host'] || 'creapp.com.ar';
+        await fetch(`${protocol}://${host}/api/send-fcm-notification`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'noc_alert',
+            title: `🚨 Alerta NOC: ${incidentData.app_id}`,
+            body: `[${incidentData.severity.toUpperCase()}] ${incidentData.title || incidentData.message}`,
+            url: '/admin',
+            targetRole: 'admin',
+            data: { appId: incidentData.app_id, incidentId: inserted?.id },
+          }),
+        }).catch(() => {});
+      } catch (_) {}
+    }
+
     return res.status(200).json({
       success: true,
       message: 'Incident registered successfully in CreAPP Mission Control',

@@ -63,6 +63,7 @@ import {
 import { Lead, getLeads } from '@/lib/pipelineService';
 import { GoogleRadarMap } from './GoogleRadarMap';
 import { ProspectDossierModal } from './ProspectDossierModal';
+import { notifyScraperCompleted } from '@/lib/notificationDispatcher';
 
 interface ScraperTabProps {
   onLeadImported: (newLead: Lead) => void;
@@ -381,6 +382,15 @@ export const ScraperTab: React.FC<ScraperTabProps> = ({
       saveStoredScraperSession(newSession);
       const updatedHist = addScrapeToHistory(newSession);
       setScrapeHistory(updatedHist);
+
+      if (results.length > 0) {
+        const qualifiedCount = results.filter((r) => r.phone || r.opportunityLevel === 'Alta').length;
+        notifyScraperCompleted({
+          query: `${keyword} en ${queryCity}`,
+          totalFound: results.length,
+          qualifiedCount,
+        }).catch(() => {});
+      }
     } catch (e: any) {
       console.error(e);
       setErrorMessage(e.message || 'Error durante la búsqueda de prospectos.');

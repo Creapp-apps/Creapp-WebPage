@@ -10,6 +10,12 @@ import {
   CheckCircle2,
   X,
   Volume2,
+  FileSignature,
+  Eye,
+  Users,
+  Radio,
+  CreditCard,
+  Rocket,
 } from 'lucide-react';
 import { useNotifications, NotificationItem } from '@/context/NotificationContext';
 import { useNavigate } from 'react-router-dom';
@@ -223,15 +229,37 @@ export const NotificationBell: React.FC = () => {
                       }`}
                     >
                       <div className="mt-0.5 shrink-0">
-                        {item.icon ? (
-                          <img
-                            src={item.icon}
-                            alt=""
-                            className="w-5 h-5 rounded-md object-contain"
-                          />
+                        {item.data?.type === 'contract_signed' || item.title.includes('Contrato') ? (
+                          <div className="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center">
+                            <FileSignature size={12} />
+                          </div>
+                        ) : item.data?.type === 'proposal_viewed' || item.title.includes('navegando') ? (
+                          <div className="w-6 h-6 rounded-lg bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 flex items-center justify-center">
+                            <Eye size={12} />
+                          </div>
+                        ) : item.data?.type === 'proposal_accepted' || item.title.includes('Aceptada') ? (
+                          <div className="w-6 h-6 rounded-lg bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center justify-center">
+                            <Rocket size={12} />
+                          </div>
+                        ) : item.data?.type === 'lead_assigned' || item.title.includes('Lead') || item.title.includes('Prospecto') ? (
+                          <div className="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center">
+                            <Sparkles size={12} />
+                          </div>
+                        ) : item.data?.type === 'noc_alert' || item.title.includes('NOC') ? (
+                          <div className="w-6 h-6 rounded-lg bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center justify-center">
+                            <Radio size={12} />
+                          </div>
+                        ) : item.data?.type === 'subscription_due' || item.title.includes('Abono') ? (
+                          <div className="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center">
+                            <CreditCard size={12} />
+                          </div>
+                        ) : item.data?.type === 'team_activated' || item.title.includes('Miembro') ? (
+                          <div className="w-6 h-6 rounded-lg bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center">
+                            <Users size={12} />
+                          </div>
                         ) : (
-                          <div className="w-5 h-5 rounded-md bg-purple-500/20 flex items-center justify-center text-purple-300">
-                            <Sparkles size={11} />
+                          <div className="w-6 h-6 rounded-lg bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center justify-center">
+                            <Sparkles size={12} />
                           </div>
                         )}
                       </div>

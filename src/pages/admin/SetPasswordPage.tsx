@@ -22,6 +22,7 @@ import {
 import creappLogoOfficial from '@/assets/CREAPP LOGO VECTOR.png';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/context/AuthContext';
+import { notifyTeamMemberActivated } from '@/lib/notificationDispatcher';
 
 export const SetPasswordPage: React.FC = () => {
   const navigate = useNavigate();
@@ -238,6 +239,11 @@ export const SetPasswordPage: React.FC = () => {
       }
 
       setIsSuccess(true);
+      notifyTeamMemberActivated({
+        memberName: userEmail?.split('@')[0] || 'Nuevo Miembro',
+        memberEmail: userEmail || '',
+      }).catch(() => {});
+
       if (refreshProfile) {
         await refreshProfile().catch(() => {});
       }

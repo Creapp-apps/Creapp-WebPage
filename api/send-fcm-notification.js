@@ -1,6 +1,8 @@
 // Vercel Serverless Function to dispatch FCM push notifications
 // CreAPP Software Lab • Push Notification Engine
 
+import { createClient } from '@supabase/supabase-js';
+
 export default async function handler(req, res) {
   // CORS Headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -16,29 +18,90 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { token, tokens, title, body, url = '/admin', data = {} } = req.body || {};
+    const {
+      token,
+      tokens,
+      targetRole = 'all', // 'all' | 'admin' | 'sales'
+      targetUserId,
+      title,
+      body,
+      url = '/admin',
+      type = 'system',
+      data = {},
+    } = req.body || {};
 
     if (!title || !body) {
       return res.status(400).json({ error: 'Missing title or body in request body.' });
     }
 
-    const targetTokens = tokens && Array.isArray(tokens) ? tokens : token ? [token] : [];
+    const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://yjrqpjlzyxivwpfcatvt.supabase.co';
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlqcnFwamx6eXhpdndwZmNhdHZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMTgwNzIsImV4cCI6MjA4ODg5NDA3Mn0.8OLnhISJn6z07yZJIqrSouvb7m9kf1htQukWdeTClH8';
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Check if Firebase Server Key or credentials are provided in env
+    // 1. Resolve target device tokens
+    let targetTokens = tokens && Array.isArray(tokens) ? [...tokens] : token ? [token] : [];
+
+    if (targetTokens.length === 0) {
+      try {
+        let tokenQuery = supabase.from('user_fcm_tokens').select('fcm_token, user_id').eq('is_active', true);
+
+        if (targetUserId) {
+          tokenQuery = tokenQuery.eq('user_id', targetUserId);
+        }
+
+        const { data: foundTokens, error: tokenError } = await tokenQuery;
+        if (!tokenError && foundTokens) {
+          // If role-specific targeting is needed:
+          if (targetRole === 'admin' && !targetUserId) {
+            const { data: adminProfiles } = await supabase
+              .from('user_profiles')
+              .select('id')
+              .eq('role', 'admin');
+            const adminIds = new Set((adminProfiles || []).map((p) => p.id));
+            targetTokens = foundTokens
+              .filter((t) => !t.user_id || adminIds.has(t.user_id))
+              .map((t) => t.fcm_token);
+          } else {
+            targetTokens = foundTokens.map((t) => t.fcm_token);
+          }
+        }
+      } catch (lookupErr) {
+        console.warn('[FCM] Token lookup warning:', lookupErr.message);
+      }
+    }
+
+    // Deduplicate tokens
+    targetTokens = Array.from(new Set(targetTokens.filter(Boolean)));
+
+    // 2. Persist notification to app_notifications table (if table exists)
+    try {
+      await supabase.from('app_notifications').insert([
+        {
+          type,
+          title,
+          body,
+          url,
+          target_role: targetRole,
+          target_user_id: targetUserId || null,
+          metadata: data,
+        },
+      ]);
+    } catch (insertErr) {
+      // Gracefully continue if table is not yet created
+    }
+
+    // 3. Dispatch via FCM
     const serverKey = process.env.FIREBASE_SERVER_KEY || process.env.FCM_SERVER_KEY;
 
     if (!serverKey) {
-      // In development or when server key is not yet pasted in Vercel:
-      // Return a simulated success response so the client continues cleanly
       return res.status(200).json({
         success: true,
         mode: 'simulated',
-        message: 'Notification received. Configure FIREBASE_SERVER_KEY in Vercel to dispatch real background Web Push.',
+        message: 'Notification stored. Real background push requires FIREBASE_SERVER_KEY in environment.',
         payload: { title, body, url, targetCount: targetTokens.length },
       });
     }
 
-    // Dispatch via FCM Legacy HTTP API (Simple & universal)
     const results = [];
     for (const deviceToken of targetTokens) {
       try {
@@ -58,6 +121,7 @@ export default async function handler(req, res) {
             },
             data: {
               url,
+              type,
               ...data,
             },
           }),

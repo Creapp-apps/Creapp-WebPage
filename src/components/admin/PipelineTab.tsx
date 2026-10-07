@@ -48,6 +48,7 @@ import {
   formatWhatsAppUrl,
 } from '@/lib/scraperService';
 import { ProspectDossierModal } from './ProspectDossierModal';
+import { notifyLeadAssigned } from '@/lib/notificationDispatcher';
 
 interface PipelineTabProps {
   leads: Lead[];
@@ -240,6 +241,11 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
       productType: newLeadForm.productType,
       notes: newLeadForm.notes,
     });
+
+    notifyLeadAssigned({
+      leadName: `${newLeadForm.name} (${newLeadForm.company})`,
+      sellerName: 'Equipo Comercial',
+    }).catch(() => {});
 
     onLeadsChange(getLeads()); // Trigger refresh with newly created lead
     setIsNewLeadModalOpen(false);

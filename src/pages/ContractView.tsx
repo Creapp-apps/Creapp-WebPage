@@ -25,6 +25,7 @@ import {
   recordContractView,
   signContract,
 } from '@/lib/contractService';
+import { notifyContractSigned } from '@/lib/notificationDispatcher';
 import creappLogoOfficial from '@/assets/creapp-logo.png';
 
 export const ContractView: React.FC = () => {
@@ -156,6 +157,12 @@ export const ContractView: React.FC = () => {
     if (signed) {
       setContract(signed);
       setSignedSuccess(true);
+      notifyContractSigned({
+        clientName: signerName || contract.clientName,
+        title: contract.title,
+        totalAmount: contract.totalAmount,
+        contractId: contract.id,
+      }).catch(() => {});
     }
     setIsSigning(false);
   };

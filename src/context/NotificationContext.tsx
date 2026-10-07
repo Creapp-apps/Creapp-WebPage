@@ -5,6 +5,7 @@ import {
   onForegroundMessage,
   deactivateFcmToken,
 } from '@/lib/firebase';
+import { subscribeToLocalDispatches } from '@/lib/notificationDispatcher';
 import { useAuth } from '@/context/AuthContext';
 
 export interface NotificationItem {
@@ -131,6 +132,22 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         body: payload.body || '',
         icon: payload.icon || '/icon-192.png',
         url: payload.data?.url || '/admin',
+        data: payload.data,
+      });
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [addNotification]);
+
+  // Local dispatch listener from notificationDispatcher
+  useEffect(() => {
+    const unsubscribe = subscribeToLocalDispatches((payload) => {
+      addNotification({
+        title: payload.title,
+        body: payload.body,
+        url: payload.url || '/admin',
         data: payload.data,
       });
     });

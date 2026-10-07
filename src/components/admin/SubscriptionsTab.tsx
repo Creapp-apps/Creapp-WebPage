@@ -39,6 +39,7 @@ import {
   formatBillingDay,
 } from '@/lib/financeService';
 import { Lead } from '@/lib/pipelineService';
+import { dispatchNotification } from '@/lib/notificationDispatcher';
 
 interface SubscriptionsTabProps {
   leads?: Lead[];
@@ -302,6 +303,13 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ leads = [] }
     const res = recordSubscriptionPayment(paymentModalSub.id, paymentModalSub.paymentMethod, paymentNotes);
     if (res) {
       showToast(`¡Cobro de $${paymentModalSub.amount.toLocaleString('es-AR')} ${paymentModalSub.currency === 'ARS' ? '$ars' : 'USD'} registrado e ingresado a Finanzas!`);
+      dispatchNotification({
+        type: 'subscription_due',
+        title: '✅ ¡Cobro de Abono Registrado!',
+        body: `Se cobró el abono mensual de "${paymentModalSub.clientName || paymentModalSub.companyName}" ($${paymentModalSub.amount.toLocaleString('es-AR')} ${paymentModalSub.currency}).`,
+        url: '/admin',
+        targetRole: 'admin',
+      }).catch(() => {});
     }
     setPaymentModalSub(null);
     setPaymentNotes('');
