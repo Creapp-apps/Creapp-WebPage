@@ -197,17 +197,30 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({ isOpen
               <strong>Credenciales Reales:</strong> Los Master Admins tienen acceso total. Los Vendedores tienen acceso acotado comercial.
             </span>
           </div>
-          <button
-            onClick={() => {
-              setIsCreating(!isCreating);
-              setError(null);
-              setSuccessMsg(null);
-            }}
-            className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold text-white bg-purple-600 hover:bg-purple-500 transition-colors shadow-sm shrink-0"
-          >
-            <UserPlus size={14} />
-            <span>{isCreating ? 'Ver Lista' : '+ Nuevo Miembro (Admin / Vendedor)'}</span>
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <a
+              href="/admin/set-password?preview=true"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-zinc-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-colors shadow-sm"
+              title="Abrir entorno de diseño y simulación de la pantalla de bienvenida"
+            >
+              <Eye size={13} className="text-purple-400" />
+              <span className="hidden sm:inline">Simular Onboarding</span>
+              <span className="sm:hidden">Preview</span>
+            </a>
+            <button
+              onClick={() => {
+                setIsCreating(!isCreating);
+                setError(null);
+                setSuccessMsg(null);
+              }}
+              className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold text-white bg-purple-600 hover:bg-purple-500 transition-colors shadow-sm"
+            >
+              <UserPlus size={14} />
+              <span>{isCreating ? 'Ver Lista' : '+ Nuevo Miembro'}</span>
+            </button>
+          </div>
         </div>
 
         {/* Mode: Form to Create User */}

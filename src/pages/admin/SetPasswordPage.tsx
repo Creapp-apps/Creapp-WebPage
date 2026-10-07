@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Lock,
@@ -12,6 +12,12 @@ import {
   ShieldCheck,
   Mail,
   KeyRound,
+  Play,
+  RotateCcw,
+  Sliders,
+  ExternalLink,
+  Shield,
+  Briefcase,
 } from 'lucide-react';
 import creappLogoOfficial from '@/assets/CREAPP LOGO VECTOR.png';
 import { supabase } from '@/lib/supabaseClient';
@@ -19,28 +25,44 @@ import { useAuth } from '@/context/AuthContext';
 
 export const SetPasswordPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { refreshProfile } = useAuth();
+
+  // Modo simulación / sandbox
+  const isPreview = searchParams.get('preview') === 'true' || searchParams.get('demo') === 'true';
+  const [simulatedRole, setSimulatedRole] = useState<'admin' | 'vendedor'>(
+    (searchParams.get('role') as any) || 'admin'
+  );
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(
+    isPreview ? searchParams.get('email') || 'nuevo.miembro@creapp.com.ar' : null
+  );
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [isCheckingSession, setIsCheckingSession] = useState(true);
+  const [isCheckingSession, setIsCheckingSession] = useState(!isPreview);
 
   useEffect(() => {
     let isMounted = true;
 
+    // Si estamos en modo simulación, no interferir con la sesión real de Supabase
+    if (isPreview) {
+      setUserEmail(searchParams.get('email') || 'nuevo.miembro@creapp.com.ar');
+      setIsCheckingSession(false);
+      return;
+    }
+
     const initAuth = async () => {
       // 1. Extraer parámetros tanto de query (?token_hash=...) como de hash (#token_hash=...)
-      const searchParams = new URLSearchParams(window.location.search);
+      const currentSearchParams = new URLSearchParams(window.location.search);
       const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
 
-      const tokenHash = searchParams.get('token_hash') || hashParams.get('token_hash');
-      const otpType = searchParams.get('type') || hashParams.get('type') || 'invite';
+      const tokenHash = currentSearchParams.get('token_hash') || hashParams.get('token_hash');
+      const otpType = currentSearchParams.get('type') || hashParams.get('type') || 'invite';
 
       // 2. Si viene un token_hash directo (método inmune a bots de escaneo de correo)
       if (tokenHash) {
@@ -102,7 +124,7 @@ export const SetPasswordPage: React.FC = () => {
 
       // 4. Revisar si ya existe sesión activa
       try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        const { data: { session } } = await supabase.auth.getSession();
 
         if (session?.user) {
           if (isMounted) {
@@ -132,7 +154,7 @@ export const SetPasswordPage: React.FC = () => {
     initAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!isMounted) return;
+      if (!isMounted || isPreview) return;
       if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN' || session?.user) {
         setUserEmail(session?.user?.email || null);
         setIsCheckingSession(false);
@@ -143,7 +165,7 @@ export const SetPasswordPage: React.FC = () => {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [isPreview, searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -161,8 +183,17 @@ export const SetPasswordPage: React.FC = () => {
 
     setLoading(true);
 
+    // Modo simulación: efecto visual interactivo sin tocar la base de datos
+    if (isPreview) {
+      setTimeout(() => {
+        setLoading(false);
+        setIsSuccess(true);
+      }, 1200);
+      return;
+    }
+
     try {
-      const { data, error: updateError } = await supabase.auth.updateUser({
+      const { error: updateError } = await supabase.auth.updateUser({
         password: password,
       });
 
@@ -175,7 +206,6 @@ export const SetPasswordPage: React.FC = () => {
         await refreshProfile().catch(() => {});
       }
 
-      // Redirigir a panel admin tras breve animación satisfactoria
       setTimeout(() => {
         navigate('/admin');
       }, 2200);
@@ -187,13 +217,43 @@ export const SetPasswordPage: React.FC = () => {
     }
   };
 
+  // Controles del simulador
+  const handleSimulateState = (state: 'normal' | 'success' | 'expired') => {
+    if (state === 'normal') {
+      setIsSuccess(false);
+      setError(null);
+      setPassword('');
+      setConfirmPassword('');
+    } else if (state === 'success') {
+      setIsSuccess(true);
+      setError(null);
+    } else if (state === 'expired') {
+      setIsSuccess(false);
+      setError('El enlace de invitación o activación ha expirado o ya fue utilizado.');
+    }
+  };
+
   return (
-    <div className="relative min-h-screen bg-[#05070B] text-white flex items-center justify-center p-4 sm:p-6 overflow-hidden">
+    <div className="relative min-h-screen bg-[#05070B] text-white flex flex-col items-center justify-center p-4 sm:p-6 overflow-hidden">
       {/* Luces de fondo y resplandor atmosférico */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-purple-600/10 rounded-full blur-[140px]" />
         <div className="absolute bottom-1/4 right-1/4 w-[450px] h-[450px] bg-pink-500/10 rounded-full blur-[160px]" />
       </div>
+
+      {/* Barra superior de simulación activa */}
+      {isPreview && (
+        <div className="relative z-20 mb-6 flex flex-wrap items-center justify-center gap-2.5 px-4 py-2 rounded-2xl bg-purple-950/60 border border-purple-500/30 backdrop-blur-md shadow-lg text-xs">
+          <div className="flex items-center gap-2 font-mono text-purple-300">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="font-semibold uppercase tracking-wider">Modo Simulación & Sandbox</span>
+          </div>
+          <span className="text-zinc-600 hidden sm:inline">•</span>
+          <span className="text-zinc-400 text-[11px]">
+            Podés probar las interacciones visuales sin alterar ningún usuario real.
+          </span>
+        </div>
+      )}
 
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 15 }}
@@ -230,11 +290,14 @@ export const SetPasswordPage: React.FC = () => {
             </p>
           </div>
 
-          {/* Email badge si está autenticado */}
+          {/* Email badge con indicador de rol */}
           {userEmail && (
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white/[0.03] border border-white/10 text-xs text-zinc-300">
+            <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-xl bg-white/[0.03] border border-white/10 text-xs text-zinc-300">
               <Mail size={13} className="text-purple-400" />
               <span className="font-mono text-[11px] text-zinc-200">{userEmail}</span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30 uppercase">
+                {simulatedRole === 'admin' ? 'Master Admin' : 'Vendedor'}
+              </span>
             </div>
           )}
         </div>
@@ -252,13 +315,21 @@ export const SetPasswordPage: React.FC = () => {
               <div className="flex-1">
                 <span>{error}</span>
                 {error.includes('expirado') && (
-                  <div className="mt-2">
+                  <div className="mt-2 flex items-center gap-3">
                     <button
                       onClick={() => navigate('/admin/login')}
                       className="text-white underline font-semibold hover:text-rose-200 transition-colors"
                     >
-                      Ir a la pantalla de inicio de sesión
+                      Ir al inicio de sesión
                     </button>
+                    {isPreview && (
+                      <button
+                        onClick={() => handleSimulateState('normal')}
+                        className="text-xs px-2 py-0.5 rounded bg-white/10 text-zinc-300 hover:text-white"
+                      >
+                        Reiniciar error
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -271,16 +342,32 @@ export const SetPasswordPage: React.FC = () => {
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="flex flex-col items-center text-center py-6 space-y-3"
+            className="flex flex-col items-center text-center py-6 space-y-4"
           >
             <div className="w-16 h-16 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-xl shadow-emerald-500/10">
               <CheckCircle2 size={32} />
             </div>
-            <h3 className="text-lg font-bold text-white">¡Contraseña Activada con Éxito!</h3>
-            <p className="text-xs text-zinc-400 max-w-xs">
-              Tu cuenta de Master Admin ha sido configurada. Redirigiéndote al panel de control...
-            </p>
-            <div className="w-8 h-8 border-2 border-purple-500/20 border-t-purple-500 rounded-full animate-spin mt-2" />
+            <div className="space-y-1">
+              <h3 className="text-lg font-bold text-white">¡Contraseña Activada con Éxito!</h3>
+              <p className="text-xs text-zinc-400 max-w-xs mx-auto">
+                Tu cuenta ha sido configurada. Redirigiéndote al Centro de Operaciones...
+              </p>
+            </div>
+
+            {isPreview ? (
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => handleSimulateState('normal')}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-600/30 hover:bg-purple-600/50 border border-purple-500/40 text-purple-200 text-xs font-semibold transition-all"
+                >
+                  <RotateCcw size={13} />
+                  <span>Probar Otra Vez el Formulario</span>
+                </button>
+              </div>
+            ) : (
+              <div className="w-8 h-8 border-2 border-purple-500/20 border-t-purple-500 rounded-full animate-spin mt-2" />
+            )}
           </motion.div>
         ) : (
           /* Formulario */
@@ -338,7 +425,7 @@ export const SetPasswordPage: React.FC = () => {
             <div className="p-3 rounded-2xl bg-white/[0.02] border border-white/5 space-y-1.5">
               <div className="flex items-center gap-2 text-[11px]">
                 <div
-                  className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] ${
+                  className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] transition-colors ${
                     password.length >= 6
                       ? 'bg-emerald-500/20 text-emerald-400'
                       : 'bg-white/10 text-zinc-500'
@@ -352,7 +439,7 @@ export const SetPasswordPage: React.FC = () => {
               </div>
               <div className="flex items-center gap-2 text-[11px]">
                 <div
-                  className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] ${
+                  className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] transition-colors ${
                     confirmPassword && password === confirmPassword
                       ? 'bg-emerald-500/20 text-emerald-400'
                       : 'bg-white/10 text-zinc-500'
@@ -393,12 +480,81 @@ export const SetPasswordPage: React.FC = () => {
         )}
 
         {/* Footer */}
-        <div className="pt-2 border-t border-white/5 text-center">
-          <p className="text-[11px] text-zinc-500">
-            CreAPP Innovation Hub • Software Innovation Lab
-          </p>
+        <div className="pt-2 border-t border-white/5 text-center flex items-center justify-between text-[11px] text-zinc-500">
+          <span>CreAPP Innovation Hub</span>
+          <span>Software Innovation Lab</span>
         </div>
       </motion.div>
+
+      {/* Control flotante inferior para diseñar y auditar estados */}
+      {isPreview && (
+        <div className="relative z-20 mt-6 flex flex-wrap items-center justify-center gap-2 p-2 rounded-2xl bg-[#0B101B]/90 border border-white/10 backdrop-blur-md text-xs shadow-2xl">
+          <span className="text-[11px] font-mono text-zinc-400 px-2 flex items-center gap-1.5">
+            <Sliders size={13} className="text-purple-400" />
+            Simular Estado:
+          </span>
+          <button
+            type="button"
+            onClick={() => handleSimulateState('normal')}
+            className={`px-3 py-1.5 rounded-xl font-medium transition-all ${
+              !isSuccess && !error
+                ? 'bg-purple-600 text-white shadow-sm'
+                : 'bg-white/5 text-zinc-400 hover:text-white'
+            }`}
+          >
+            Formulario
+          </button>
+          <button
+            type="button"
+            onClick={() => handleSimulateState('success')}
+            className={`px-3 py-1.5 rounded-xl font-medium transition-all ${
+              isSuccess
+                ? 'bg-emerald-600 text-white shadow-sm'
+                : 'bg-white/5 text-zinc-400 hover:text-white'
+            }`}
+          >
+            Pantalla Éxito
+          </button>
+          <button
+            type="button"
+            onClick={() => handleSimulateState('expired')}
+            className={`px-3 py-1.5 rounded-xl font-medium transition-all ${
+              error
+                ? 'bg-rose-600 text-white shadow-sm'
+                : 'bg-white/5 text-zinc-400 hover:text-white'
+            }`}
+          >
+            Token Expirado
+          </button>
+
+          <div className="h-4 w-px bg-white/10 mx-1 hidden sm:block" />
+
+          <button
+            type="button"
+            onClick={() =>
+              setSimulatedRole(simulatedRole === 'admin' ? 'vendedor' : 'admin')
+            }
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-zinc-300 text-xs transition-all"
+            title="Cambiar rol simulado"
+          >
+            {simulatedRole === 'admin' ? (
+              <Shield size={13} className="text-purple-400" />
+            ) : (
+              <Briefcase size={13} className="text-blue-400" />
+            )}
+            <span>Rol: {simulatedRole === 'admin' ? 'Master Admin' : 'Vendedor'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => navigate('/admin')}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white text-xs transition-all"
+          >
+            <ExternalLink size={12} />
+            <span>Volver a /admin</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 };
