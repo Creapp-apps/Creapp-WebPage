@@ -46,6 +46,27 @@ export const SetPasswordPage: React.FC = () => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [isCheckingSession, setIsCheckingSession] = useState(!isPreview);
 
+  // 4 Pilares del Estándar Corporativo de Seguridad (OWASP / NIST)
+  const hasMinLength = password.length >= 8;
+  const hasUppercase = /[A-Z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  const hasSpecialChar = /[^A-Za-z0-9]/.test(password);
+  const passwordsMatch = Boolean(confirmPassword && password === confirmPassword);
+
+  const criteriaCount = [hasMinLength, hasUppercase, hasNumber, hasSpecialChar].filter(Boolean).length;
+  const isPasswordValid = criteriaCount === 4 && passwordsMatch;
+
+  const strengthLabel =
+    criteriaCount === 0 ? '' :
+    criteriaCount === 1 ? 'Débil' :
+    criteriaCount === 2 ? 'Media' :
+    criteriaCount === 3 ? 'Buena' : 'Excelente';
+
+  const strengthColor =
+    criteriaCount === 1 ? 'text-rose-400' :
+    criteriaCount === 2 ? 'text-amber-400' :
+    criteriaCount === 3 ? 'text-purple-400' : 'text-emerald-400';
+
   useEffect(() => {
     let isMounted = true;
 
@@ -171,12 +192,27 @@ export const SetPasswordPage: React.FC = () => {
     e.preventDefault();
     setError(null);
 
-    if (password.length < 6) {
-      setError('La contraseña debe tener un mínimo de 6 caracteres.');
+    if (!hasMinLength) {
+      setError('La contraseña debe tener al menos 8 caracteres.');
       return;
     }
 
-    if (password !== confirmPassword) {
+    if (!hasUppercase) {
+      setError('La contraseña debe incluir al menos una letra mayúscula (A-Z).');
+      return;
+    }
+
+    if (!hasNumber) {
+      setError('La contraseña debe incluir al menos un número (0-9).');
+      return;
+    }
+
+    if (!hasSpecialChar) {
+      setError('La contraseña debe incluir al menos un símbolo o carácter especial (!@#$%...).');
+      return;
+    }
+
+    if (!passwordsMatch) {
       setError('Las contraseñas no coinciden. Por favor verificá que sean iguales.');
       return;
     }
@@ -382,7 +418,7 @@ export const SetPasswordPage: React.FC = () => {
                   type={showPassword ? 'text' : 'password'}
                   required
                   autoFocus
-                  placeholder="Mínimo 6 caracteres"
+                  placeholder="Mínimo 8 caracteres, mayús, número y símbolo"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full bg-white/[0.04] border border-white/10 rounded-xl px-4 py-3 pr-10 text-white placeholder-zinc-600 text-sm focus:outline-none focus:border-purple-500/60 focus:bg-white/[0.06] transition-all"
@@ -395,6 +431,56 @@ export const SetPasswordPage: React.FC = () => {
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
+
+              {/* Medidor visual de seguridad */}
+              {password.length > 0 && (
+                <div className="space-y-1.5 pt-1">
+                  <div className="flex items-center justify-between text-[10px] font-mono">
+                    <span className="text-zinc-500">Nivel de Seguridad:</span>
+                    <span className={`font-semibold ${strengthColor}`}>{strengthLabel}</span>
+                  </div>
+                  <div className="grid grid-cols-4 gap-1.5 h-1.5">
+                    <div
+                      className={`rounded-full transition-all duration-300 ${
+                        criteriaCount >= 1
+                          ? criteriaCount === 1
+                            ? 'bg-rose-500'
+                            : criteriaCount === 2
+                            ? 'bg-amber-500'
+                            : criteriaCount === 3
+                            ? 'bg-purple-500'
+                            : 'bg-emerald-400'
+                          : 'bg-white/10'
+                      }`}
+                    />
+                    <div
+                      className={`rounded-full transition-all duration-300 ${
+                        criteriaCount >= 2
+                          ? criteriaCount === 2
+                            ? 'bg-amber-500'
+                            : criteriaCount === 3
+                            ? 'bg-purple-500'
+                            : 'bg-emerald-400'
+                          : 'bg-white/10'
+                      }`}
+                    />
+                    <div
+                      className={`rounded-full transition-all duration-300 ${
+                        criteriaCount >= 3
+                          ? criteriaCount === 3
+                            ? 'bg-purple-500'
+                            : 'bg-emerald-400'
+                          : 'bg-white/10'
+                      }`}
+                    />
+                    <div
+                      className={`rounded-full transition-all duration-300 ${
+                        criteriaCount >= 4 ? 'bg-emerald-400' : 'bg-white/10'
+                      }`}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="space-y-1.5">
@@ -421,39 +507,82 @@ export const SetPasswordPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Checklist de requerimientos visual */}
-            <div className="p-3 rounded-2xl bg-white/[0.02] border border-white/5 space-y-1.5">
-              <div className="flex items-center gap-2 text-[11px]">
-                <div
-                  className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] transition-colors ${
-                    password.length >= 6
-                      ? 'bg-emerald-500/20 text-emerald-400'
-                      : 'bg-white/10 text-zinc-500'
-                  }`}
-                >
-                  ✓
+            {/* Checklist de requerimientos corporativos */}
+            <div className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-2.5">
+              <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider block">
+                Estándar de Seguridad Corporativa:
+              </span>
+              <div className="grid grid-cols-2 gap-2 text-[11px]">
+                <div className="flex items-center gap-1.5">
+                  <div
+                    className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] transition-colors shrink-0 ${
+                      hasMinLength
+                        ? 'bg-emerald-500/20 text-emerald-400'
+                        : 'bg-white/10 text-zinc-500'
+                    }`}
+                  >
+                    ✓
+                  </div>
+                  <span className={hasMinLength ? 'text-zinc-200' : 'text-zinc-500'}>
+                    Mín. 8 caracteres
+                  </span>
                 </div>
-                <span className={password.length >= 6 ? 'text-zinc-300' : 'text-zinc-500'}>
-                  Al menos 6 caracteres
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <div
+                    className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] transition-colors shrink-0 ${
+                      hasUppercase
+                        ? 'bg-emerald-500/20 text-emerald-400'
+                        : 'bg-white/10 text-zinc-500'
+                    }`}
+                  >
+                    ✓
+                  </div>
+                  <span className={hasUppercase ? 'text-zinc-200' : 'text-zinc-500'}>
+                    Una mayúscula
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div
+                    className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] transition-colors shrink-0 ${
+                      hasNumber
+                        ? 'bg-emerald-500/20 text-emerald-400'
+                        : 'bg-white/10 text-zinc-500'
+                    }`}
+                  >
+                    ✓
+                  </div>
+                  <span className={hasNumber ? 'text-zinc-200' : 'text-zinc-500'}>
+                    Un número (0-9)
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div
+                    className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] transition-colors shrink-0 ${
+                      hasSpecialChar
+                        ? 'bg-emerald-500/20 text-emerald-400'
+                        : 'bg-white/10 text-zinc-500'
+                    }`}
+                  >
+                    ✓
+                  </div>
+                  <span className={hasSpecialChar ? 'text-zinc-200' : 'text-zinc-500'}>
+                    Un símbolo (!@#$...)
+                  </span>
+                </div>
               </div>
-              <div className="flex items-center gap-2 text-[11px]">
+
+              {/* Coincidencia de contraseñas */}
+              <div className="pt-2 border-t border-white/5 flex items-center gap-1.5 text-[11px]">
                 <div
-                  className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] transition-colors ${
-                    confirmPassword && password === confirmPassword
+                  className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] transition-colors shrink-0 ${
+                    passwordsMatch
                       ? 'bg-emerald-500/20 text-emerald-400'
                       : 'bg-white/10 text-zinc-500'
                   }`}
                 >
                   ✓
                 </div>
-                <span
-                  className={
-                    confirmPassword && password === confirmPassword
-                      ? 'text-zinc-300'
-                      : 'text-zinc-500'
-                  }
-                >
+                <span className={passwordsMatch ? 'text-zinc-200' : 'text-zinc-500'}>
                   Las contraseñas coinciden
                 </span>
               </div>
@@ -461,7 +590,7 @@ export const SetPasswordPage: React.FC = () => {
 
             <button
               type="submit"
-              disabled={loading || password.length < 6 || password !== confirmPassword}
+              disabled={loading || !isPasswordValid}
               className="w-full mt-2 py-3.5 px-6 rounded-2xl font-bold text-sm text-white bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:opacity-90 active:scale-[0.99] transition-all shadow-lg shadow-purple-600/25 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {loading ? (

@@ -66,8 +66,8 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({ isOpen
       return;
     }
 
-    if (password.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres.');
+    if (password.length < 8) {
+      setError('La contraseña debe tener al menos 8 caracteres.');
       return;
     }
 
@@ -262,7 +262,7 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({ isOpen
               <div className="space-y-1.5">
                 <label className="text-[11px] font-mono text-zinc-400 flex items-center gap-1.5">
                   <Lock size={13} />
-                  Contraseña Segura (mín. 6 caracteres)
+                  Contraseña Segura (mín. 8 caracteres)
                 </label>
                 <div className="relative">
                   <input
