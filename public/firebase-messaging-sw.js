@@ -3,15 +3,15 @@
 importScripts('https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.13.0/firebase-messaging-compat.js');
 
-// Parse config from URL search params if passed, or use defaults/placeholders
+// Parse config from URL search params if passed, or use defaults for CreAPP
 const urlParams = new URL(location.href).searchParams;
 const firebaseConfig = {
-  apiKey: urlParams.get('apiKey') || '',
-  authDomain: urlParams.get('authDomain') || '',
-  projectId: urlParams.get('projectId') || '',
-  storageBucket: urlParams.get('storageBucket') || '',
-  messagingSenderId: urlParams.get('messagingSenderId') || '',
-  appId: urlParams.get('appId') || '',
+  apiKey: urlParams.get('apiKey') || 'AIzaSyCqZCF1fhyAIBwaTJH-Z7GGpCFLOuJaiIo',
+  authDomain: urlParams.get('authDomain') || 'creapp-e249b.firebaseapp.com',
+  projectId: urlParams.get('projectId') || 'creapp-e249b',
+  storageBucket: urlParams.get('storageBucket') || 'creapp-e249b.firebasestorage.app',
+  messagingSenderId: urlParams.get('messagingSenderId') || '307195656505',
+  appId: urlParams.get('appId') || '1:307195656505:web:2c3d6d194e837942ba10e8',
 };
 
 // Initialize Firebase in Service Worker if configured

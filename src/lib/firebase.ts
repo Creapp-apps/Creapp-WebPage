@@ -2,18 +2,20 @@ import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
 import { getMessaging, getToken, onMessage, isSupported, type Messaging } from 'firebase/messaging';
 import { supabase } from '@/lib/supabaseClient';
 
-// Firebase configuration from environment variables
+// Firebase configuration from environment variables with CreAPP defaults
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || '',
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || '',
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || '',
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || '',
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || '',
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyCqZCF1fhyAIBwaTJH-Z7GGpCFLOuJaiIo',
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'creapp-e249b.firebaseapp.com',
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'creapp-e249b',
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'creapp-e249b.firebasestorage.app',
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '307195656505',
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:307195656505:web:2c3d6d194e837942ba10e8',
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || 'G-PV4JJ9M9YF',
 };
 
-export const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY || '';
+export const VAPID_KEY =
+  import.meta.env.VITE_FIREBASE_VAPID_KEY ||
+  'BPU_k0Uh7wQs7ncalIwRJyqqo_oY_ZszYKWrabRi3jDvPW7z5s_Utairwvt3_JbcOrmH25pOw1aEb-CIshlRwA8';
 
 /**
  * Checks if the minimal required Firebase credentials are present.
