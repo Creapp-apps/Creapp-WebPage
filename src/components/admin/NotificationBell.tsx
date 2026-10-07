@@ -83,7 +83,7 @@ export const NotificationBell: React.FC = () => {
               // mark visible
             }
           }}
-          className={`relative p-2 rounded-xl border transition-all flex items-center justify-center ${
+          className={`relative p-2 rounded-xl border transition-all flex items-center justify-center min-w-[40px] min-h-[40px] active:scale-95 ${
             isOpen
               ? 'bg-purple-500/20 border-purple-500/40 text-purple-300'
               : 'bg-white/5 hover:bg-white/10 border-white/10 hover:border-white/20 text-zinc-300 hover:text-white'
@@ -109,7 +109,7 @@ export const NotificationBell: React.FC = () => {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               transition={{ duration: 0.15 }}
-              className="absolute right-0 mt-2 w-80 sm:w-96 bg-[#0c0c12]/95 border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50 p-3 flex flex-col gap-2 backdrop-blur-2xl"
+              className="absolute right-0 mt-2 w-80 sm:w-96 max-w-[calc(100vw-2rem)] bg-[#0c0c12]/95 border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50 p-3 flex flex-col gap-2 backdrop-blur-2xl"
             >
               {/* Header */}
               <div className="flex items-center justify-between pb-2 border-b border-white/5">

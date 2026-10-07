@@ -457,13 +457,14 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
 
         {/* MAIN VIEWPORT */}
         <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-          {/* TOP BAR */}
-          <header className="h-16 px-3 sm:px-6 border-b border-white/5 bg-[#0b0b0e]/75 backdrop-blur-md flex items-center justify-between sticky top-0 z-20">
+          {/* TOP BAR WITH SAFE AREA INSET SUPPORT */}
+          <header className="admin-mobile-header w-full border-b border-white/5 bg-[#0b0b0e]/95 backdrop-blur-xl flex items-center justify-between sticky top-0 z-30 transition-all sm:h-16 sm:px-6 sm:py-0">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               <button
                 onClick={() => setMobileMenuOpen(true)}
-                className="md:hidden p-2 -ml-1 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 shrink-0"
+                className="md:hidden p-2 rounded-xl text-zinc-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 active:scale-95 transition-all shrink-0 flex items-center justify-center min-w-[42px] min-h-[42px] shadow-sm ml-0.5"
                 title="Abrir menú"
+                aria-label="Abrir menú"
               >
                 <Menu size={20} />
               </button>
@@ -471,7 +472,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
               <div className="flex items-center gap-1.5 sm:gap-2 text-xs font-mono min-w-0">
                 <span className="text-zinc-500 hidden sm:inline">creapp.os</span>
                 <span className="text-zinc-600 hidden sm:inline">/</span>
-                <span className="text-purple-300 font-semibold bg-purple-500/10 px-2 sm:px-2.5 py-0.5 rounded border border-purple-500/20 truncate max-w-[130px] xs:max-w-[180px] sm:max-w-[260px]">
+                <span className="text-purple-300 font-semibold bg-purple-500/10 px-2 sm:px-2.5 py-1 rounded-lg border border-purple-500/20 truncate max-w-[125px] xs:max-w-[170px] sm:max-w-[260px]">
                   {currentTabLabel}
                 </span>
                 {!isAdmin && (
@@ -483,7 +484,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
             </div>
 
             {/* Quick Actions & User Menu in Header */}
-            <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+            <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
               <a
                 href="/"
                 target="_blank"
@@ -527,12 +528,13 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
               <NotificationBell />
 
               {/* USER PROFILE DROPDOWN MENU */}
-              <div className="relative pl-1" ref={dropdownRef}>
+              <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                  className="flex items-center gap-2 p-1 sm:px-2.5 sm:py-1 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all text-xs font-medium text-white group"
+                  className="flex items-center gap-1.5 sm:gap-2 p-1 sm:px-2.5 sm:py-1 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 active:scale-95 transition-all text-xs font-medium text-white group min-h-[40px]"
+                  aria-label="Menú de perfil de usuario"
                 >
-                  <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-purple-600 via-indigo-600 to-pink-500 flex items-center justify-center text-white text-[11px] font-black shadow-inner">
+                  <div className="w-7 h-7 sm:w-7 sm:h-7 rounded-lg bg-gradient-to-tr from-purple-600 via-indigo-600 to-pink-500 flex items-center justify-center text-white text-[11px] font-black shadow-inner shrink-0">
                     {userInitials}
                   </div>
                   <div className="hidden md:flex flex-col text-left">
@@ -554,11 +556,11 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                 <AnimatePresence>
                   {userDropdownOpen && (
                     <motion.div
-                      initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                      initial={{ opacity: 0, scale: 0.95, y: 8 }}
                       animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                      exit={{ opacity: 0, scale: 0.95, y: 8 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute right-0 mt-2 w-64 bg-[#0d0d12] border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50 p-2 flex flex-col gap-1 backdrop-blur-2xl"
+                      className="absolute right-0 mt-2 w-72 max-w-[calc(100vw-2rem)] bg-[#0d0d12]/95 border border-white/15 rounded-2xl shadow-2xl overflow-hidden z-50 p-2 flex flex-col gap-1 backdrop-blur-2xl"
                     >
                       {/* Dropdown Header */}
                       <div className="p-3 bg-white/[0.02] rounded-xl border border-white/5 flex items-center gap-3">
@@ -649,7 +651,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
               initial={{ x: -280 }}
               animate={{ x: 0 }}
               exit={{ x: -280 }}
-              className="relative w-72 bg-[#0d0d11] border-r border-white/10 flex flex-col p-4 z-10 h-full"
+              className="admin-mobile-drawer relative w-72 bg-[#0d0d11] border-r border-white/10 flex flex-col p-4 z-10 h-full"
             >
               <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-4">
                 <div className="flex items-center gap-2">
@@ -658,7 +660,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                 </div>
                 <button
                   onClick={() => setMobileMenuOpen(false)}
-                  className="p-1 rounded-lg text-zinc-400 hover:text-white"
+                  className="p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-white/10 min-w-[36px] min-h-[36px] flex items-center justify-center transition-colors"
+                  aria-label="Cerrar menú"
                 >
                   <X size={18} />
                 </button>
@@ -826,34 +829,22 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
             )}
           </button>
 
-          {/* 5. NOC Radar (Admin) or More Menu (Ventas) */}
-          {isAdmin ? (
-            <button
-              onClick={() => onTabChange('telemetry')}
-              className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all relative ${
-                currentTab === 'telemetry'
-                  ? 'text-rose-400 font-semibold'
-                  : 'text-zinc-400 hover:text-zinc-200'
-              }`}
-            >
-              <div className="relative">
-                <Radio size={20} className={currentTab === 'telemetry' ? 'scale-110 transition-transform text-rose-400' : ''} />
-                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
-              </div>
-              <span className="text-[10px] mt-1 font-medium tracking-tight">NOC</span>
-              {currentTab === 'telemetry' && (
-                <span className="absolute bottom-0 w-1.5 h-1.5 rounded-full bg-rose-500 shadow-sm shadow-rose-400" />
+          {/* 5. Menú Completo (Drawer en Thumb Zone) */}
+          <button
+            onClick={() => setMobileMenuOpen(true)}
+            className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all relative ${
+              mobileMenuOpen ? 'text-purple-400 font-semibold' : 'text-zinc-400 hover:text-zinc-200 active:scale-95'
+            }`}
+            aria-label="Abrir menú"
+          >
+            <div className="relative">
+              <Menu size={20} className={mobileMenuOpen ? 'scale-110 transition-transform text-purple-400' : ''} />
+              {isAdmin && (
+                <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-purple-500 shadow-sm shadow-purple-400" />
               )}
-            </button>
-          ) : (
-            <button
-              onClick={() => setMobileMenuOpen(true)}
-              className="flex flex-col items-center justify-center py-1 px-3 rounded-xl text-zinc-400 hover:text-zinc-200 transition-all"
-            >
-              <Menu size={20} />
-              <span className="text-[10px] mt-1 font-medium tracking-tight">Más</span>
-            </button>
-          )}
+            </div>
+            <span className="text-[10px] mt-1 font-medium tracking-tight">Menú</span>
+          </button>
         </div>
       </div>
 
