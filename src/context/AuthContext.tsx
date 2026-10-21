@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, createClient } from '@supabase/supabase-js';
+import { User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabaseClient';
 
 export type UserRole = 'admin' | 'vendedor';
@@ -213,91 +213,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     role?: UserRole;
   }): Promise<{ success: boolean; error?: string }> => {
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      const normalizedEmail = email.trim().toLowerCase();
 
-      if (!supabaseUrl || !supabaseAnonKey) {
-        return { success: false, error: 'Configuración de Supabase no encontrada en .env' };
-      }
-
-      // Cliente temporal aislado para que NO sobrescriba el session token del admin en localStorage
-      const tempClient = createClient(supabaseUrl, supabaseAnonKey, {
-        auth: {
-          persistSession: false,
-          autoRefreshToken: false,
-        },
+      // Operación privilegiada vía Edge Function (service_role). Reemplaza el
+      // viejo signUp, que sobre un email ya existente en auth.users dejaba
+      // usuarios "fantasma" y provocaba "Auth session missing!" al activar.
+      //   - Con contraseña del admin  -> action 'create' (alta directa confirmada).
+      //   - Sin contraseña (onboarding) -> action 'invite' (link de activación).
+      const { data, error } = await supabase.functions.invoke('manage-team', {
+        body: password
+          ? { action: 'create', email: normalizedEmail, fullName, role, password }
+          : { action: 'invite', email: normalizedEmail, fullName, role },
       });
-
-      // Si no se proveyó una contraseña manual, generamos una aleatoria criptosegura temporal
-      const effectivePassword = password || `CreApp_${crypto.randomUUID().replace(/-/g, '').slice(0, 10)}!9A`;
-
-      const signUpPromise = tempClient.auth.signUp({
-        email,
-        password: effectivePassword,
-        options: {
-          data: {
-            full_name: fullName,
-            role: role,
-          },
-          emailRedirectTo: 'https://creapp.com.ar/admin/set-password',
-        },
-      });
-
-      const timeoutPromise = new Promise<any>((_, reject) =>
-        setTimeout(() => reject(new Error('Tiempo de espera agotado al conectar con Supabase')), 8000)
-      );
-
-      const { data, error } = await Promise.race([signUpPromise, timeoutPromise]);
 
       if (error) {
-        return { success: false, error: error.message };
+        // functions.invoke envuelve los errores HTTP; intentamos extraer el mensaje real del body.
+        let message = error.message;
+        try {
+          const body = await (error as any).context?.json?.();
+          if (body?.error) message = body.error;
+        } catch { /* sin cuerpo JSON legible */ }
+        return { success: false, error: message };
       }
 
-      // Si se creó en Auth, intentar upsert de perfil de manera no bloqueante
-      if (data?.user) {
-        try {
-          await Promise.race([
-            supabase
-              .from('user_profiles')
-              .upsert({
-                id: data.user.id,
-                email: email.trim().toLowerCase(),
-                role: role,
-                full_name: fullName,
-                updated_at: new Date().toISOString(),
-              }),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000)),
-          ]);
-        } catch (e) {
-          console.warn('Aviso: el trigger de Postgres o upsert falló, pero el usuario se creó en Auth:', e);
-        }
+      if (data?.error) {
+        return { success: false, error: data.error };
+      }
 
-        // Si es flujo de onboarding (sin contraseña provista por el admin), emitir solicitud de set-password
-        if (!password) {
-          try {
-            await tempClient.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
-              redirectTo: 'https://creapp.com.ar/admin/set-password',
-            });
-          } catch (resetErr) {
-            console.warn('Aviso al emitir resetPasswordForEmail de activación:', resetErr);
-          }
-        }
-
-        // Envío de email de bienvenida vía Resend (no bloqueante con timeout de 5s)
-        try {
-          const { sendWelcomeEmail } = await import('@/lib/emailService');
-          await Promise.race([
-            sendWelcomeEmail({
-              email: email.trim().toLowerCase(),
-              fullName,
-              password: password || undefined,
-              role,
-            }),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000)),
-          ]);
-        } catch (emailErr) {
-          console.warn('Aviso al enviar email vía Resend:', emailErr);
-        }
+      // Email de bienvenida vía Resend (no bloqueante). El link de activación
+      // lo envía Supabase; este correo es informativo/branding.
+      try {
+        const { sendWelcomeEmail } = await import('@/lib/emailService');
+        await Promise.race([
+          sendWelcomeEmail({
+            email: normalizedEmail,
+            fullName,
+            password: password || undefined,
+            role,
+          }),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000)),
+        ]);
+      } catch (emailErr) {
+        console.warn('Aviso al enviar email vía Resend:', emailErr);
       }
 
       return { success: true };
@@ -326,12 +283,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const deleteUserProfile = async (userId: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      const { error } = await supabase
-        .from('user_profiles')
-        .delete()
-        .eq('id', userId);
+      // Borra el usuario de auth.users vía Edge Function (service_role).
+      // El ON DELETE CASCADE de user_profiles elimina el perfil. Antes se
+      // borraba solo el perfil y quedaba el user de Auth huérfano (fantasma).
+      const { data, error } = await supabase.functions.invoke('manage-team', {
+        body: { action: 'delete', userId },
+      });
 
-      if (error) throw error;
+      if (error) {
+        let message = error.message;
+        try {
+          const body = await (error as any).context?.json?.();
+          if (body?.error) message = body.error;
+        } catch { /* sin cuerpo JSON legible */ }
+        return { success: false, error: message };
+      }
+
+      if (data?.error) {
+        return { success: false, error: data.error };
+      }
+
       return { success: true };
     } catch (err: any) {
       return { success: false, error: err.message || 'Error al eliminar usuario' };
