@@ -15,6 +15,7 @@ const AdminPanel = React.lazy(() => import('./pages/admin/AdminPanel'));
 const ProposalEditor = React.lazy(() => import('./pages/admin/ProposalEditor'));
 const ControlCenter = React.lazy(() => import('./pages/admin/ControlCenter'));
 const SetPasswordPage = React.lazy(() => import('./pages/admin/SetPasswordPage'));
+const PortalPreview = React.lazy(() => import('./pages/admin/PortalPreview'));
 const PortalView = React.lazy(() => import('./pages/PortalView'));
 import PortalGuard from './components/auth/PortalGuard';
 import PortalLoader from './components/portal/PortalLoader';
@@ -178,6 +179,7 @@ const App: React.FC = () => {
                       path="/admin/control-center"
                       element={<AuthGuard allowedRoles={['admin']}><ControlCenter /></AuthGuard>}
                     />
+                    <Route path="/admin/portal-preview/:clientId" element={<AuthGuard allowedRoles={['admin', 'vendedor']}><PortalPreview /></AuthGuard>} />
                     <Route path="/portal" element={<PortalGuard><Suspense fallback={<PortalLoader />}><PortalView /></Suspense></PortalGuard>} />
                   </Routes>
                 </Suspense>

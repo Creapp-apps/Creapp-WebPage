@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { CheckCircle2, MessageSquareWarning, Clock, ImageOff, Film, Send, Undo2, ExternalLink } from 'lucide-react';
+import { CheckCircle2, MessageSquareWarning, Clock, ImageOff, Film, Send, Undo2, ExternalLink, MessageSquare } from 'lucide-react';
 import { sendPiece, unpublishPiece } from '@/lib/contentTrackerService';
 import { motorStudio } from '@/lib/motorStudio';
 import type { TrackerPiece } from '@/lib/contentTrackerTypes';
+import { PieceThread } from './PieceThread';
 import { STATUS_LABEL, relativeTime, pieceTitle } from '@/lib/contentTrackerView';
 
 const CHIP: Record<TrackerPiece['status'], { cls: string; Icon: React.ComponentType<{ size?: number }> }> = {
@@ -19,6 +20,7 @@ const STAGE_LABEL: Record<string, string> = {
 export const PieceStatusRow: React.FC<{ piece: TrackerPiece; onChanged: () => void }> = ({ piece, onChanged }) => {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [threadOpen, setThreadOpen] = useState(false);
   const run = async (fn: () => Promise<void>) => {
     if (busy) return;
     setBusy(true);
@@ -86,7 +88,15 @@ export const PieceStatusRow: React.FC<{ piece: TrackerPiece; onChanged: () => vo
               <ExternalLink size={11} /> Abrir en Estudio
             </button>
           )}
+          <button type="button" onClick={() => setThreadOpen((v) => !v)} className={btn} aria-expanded={threadOpen}>
+            <MessageSquare size={11} /> Conversación
+          </button>
         </div>
+        {threadOpen && (
+          <div className="pt-2">
+            <PieceThread jobId={piece.id} mode="team" variant="admin" />
+          </div>
+        )}
         {err && <p className="text-[11px] text-rose-400">{err}</p>}
       </div>
     </div>

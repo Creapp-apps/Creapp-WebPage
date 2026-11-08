@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import type { PortalPiece } from '@/lib/portalTypes';
 import { typeMeta } from '@/lib/portalView';
+import { PieceThread } from '@/components/admin/campaigns/PieceThread';
 
 type Props = {
   piece: PortalPiece;
@@ -71,6 +72,10 @@ export const PiecePlayer: React.FC<Props> = ({ piece, startWithChanges, busy, er
             </div>
           )}
           {error && <div className="err">{error}</div>}
+          <div style={{ borderTop: '1px solid var(--line)', paddingTop: 14, marginTop: 4, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ color: 'var(--wood)', fontSize: 11, letterSpacing: '.14em', textTransform: 'uppercase', fontWeight: 600 }}>Conversación con tu equipo</div>
+            <PieceThread jobId={piece.id} mode="client" variant="portal" />
+          </div>
         </div>
       </div>
     </div>
