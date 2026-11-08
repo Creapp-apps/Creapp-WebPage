@@ -1,22 +1,38 @@
 -- ==============================================================================
 -- MIGRACIÓN: Columnas de visibilidad y producción en content_jobs (Plan 5, admin ops)
--- Idempotente: `add column if not exists` y backfill que no re-oculta nada en re-ejecución.
+-- Idempotente y seguro de re-aplicar: el backfill corre UNA sola vez, atado a la
+-- creación de la columna. Re-aplicar la migración NO re-publica borradores que el
+-- equipo haya ocultado después (client_visible=false), ni reactiva campañas cerradas.
 -- ==============================================================================
 
--- 1. Columnas nuevas en content_jobs
-alter table public.content_jobs add column if not exists client_visible boolean not null default false;
-alter table public.content_jobs add column if not exists sent_at timestamptz;
-alter table public.content_jobs add column if not exists production_stage text;
-alter table public.content_jobs add column if not exists rendered boolean not null default false;
+do $$
+declare
+  v_fresh boolean;
+begin
+  -- ¿La columna client_visible ya existía antes de esta corrida?
+  v_fresh := not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'content_jobs'
+      and column_name = 'client_visible'
+  );
 
--- 2. Backfill: las piezas existentes pasan a visibles para el cliente.
---    Una vez en true no vuelven a cambiar en re-ejecuciones.
-update public.content_jobs
-  set client_visible = true,
-      sent_at = coalesce(sent_at, created_at)
-  where client_visible = false;
+  -- 1. Columnas nuevas (idempotentes).
+  alter table public.content_jobs add column if not exists client_visible boolean not null default false;
+  alter table public.content_jobs add column if not exists sent_at timestamptz;
+  alter table public.content_jobs add column if not exists production_stage text;
+  alter table public.content_jobs add column if not exists rendered boolean not null default false;
 
--- 3. Backfill de campañas: 'draft' -> 'active'.
-update public.content_campaigns
-  set status = 'active'
-  where status = 'draft';
+  -- 2. Backfill one-shot: SOLO la primera vez (cuando la columna recién se creó).
+  --    Así las piezas que ya veía el cliente quedan visibles, pero un re-run
+  --    jamás vuelve a exponer un borrador posterior.
+  if v_fresh then
+    update public.content_jobs
+      set client_visible = true,
+          sent_at = coalesce(sent_at, created_at);
+
+    update public.content_campaigns
+      set status = 'active'
+      where status = 'draft';
+  end if;
+end $$;
