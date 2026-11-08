@@ -36,6 +36,7 @@ create policy "Members can read own content_messages"
       select 1 from public.content_jobs j
       where j.id = content_messages.job_id
         and public.is_member_of(j.client_id)
+        and j.client_visible = true
     )
   );
 
@@ -50,6 +51,7 @@ create policy "Members can insert own content_messages"
       select 1 from public.content_jobs j
       where j.id = content_messages.job_id
         and public.is_member_of(j.client_id)
+        and j.client_visible = true
     )
   );
 

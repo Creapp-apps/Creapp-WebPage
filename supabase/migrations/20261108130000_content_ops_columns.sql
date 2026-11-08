@@ -36,3 +36,7 @@ begin
       where status = 'draft';
   end if;
 end $$;
+
+-- 3. Las campañas nuevas nacen vigentes ('active'), no 'draft' (el chip
+--    vigente/cerrada solo conoce {active, closed}). Idempotente: corre siempre.
+alter table public.content_campaigns alter column status set default 'active';

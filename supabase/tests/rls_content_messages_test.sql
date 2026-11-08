@@ -15,6 +15,7 @@ declare
   camp_b uuid := gen_random_uuid();
   job_a uuid := gen_random_uuid();
   job_b uuid := gen_random_uuid();
+  job_draft uuid := gen_random_uuid();
   u_m uuid := gen_random_uuid();
   u_t uuid := gen_random_uuid();
 begin
@@ -25,7 +26,8 @@ begin
     (camp_a, c_a, 'camp-msg-a'), (camp_b, c_b, 'camp-msg-b');
   insert into public.content_jobs (id, campaign_id, client_id, job_id_motor, type, client_visible) values
     (job_a, camp_a, c_a, 'rls-msg-job-a', 'reel', true),
-    (job_b, camp_b, c_b, 'rls-msg-job-b', 'reel', true);
+    (job_b, camp_b, c_b, 'rls-msg-job-b', 'reel', true),
+    (job_draft, camp_a, c_a, 'rls-msg-job-draft', 'reel', false);
 
   insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data) values
     (u_m, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
@@ -47,6 +49,7 @@ begin
 
   perform set_config('test.job_a', job_a::text, true);
   perform set_config('test.job_b', job_b::text, true);
+  perform set_config('test.job_draft', job_draft::text, true);
   perform set_config('test.camp_a', camp_a::text, true);
   perform set_config('test.u_m', u_m::text, true);
   perform set_config('test.u_t', u_t::text, true);
@@ -90,6 +93,15 @@ begin
   end;
   if not denied then raise exception 'FALLO: miembro pudo insertar en job de otro cliente'; end if;
 
+  -- (c2) borrador (client_visible=false) de su propio cliente: no inserta
+  denied := false;
+  begin
+    insert into public.content_messages (job_id, author_role, author_user_id, body)
+    values (current_setting('test.job_draft')::uuid, 'client', current_setting('test.u_m')::uuid, 'borrador');
+  exception when insufficient_privilege then denied := true;
+  end;
+  if not denied then raise exception 'FALLO: miembro pudo insertar en job borrador'; end if;
+
   -- spoofing de autor: author_user_id distinto de auth.uid() (usa al usuario de equipo, existe por FK)
   denied := false;
   begin
@@ -98,6 +110,20 @@ begin
   exception when insufficient_privilege then denied := true;
   end;
   if not denied then raise exception 'FALLO: miembro pudo falsificar author_user_id'; end if;
+end $$;
+
+-- Miembro no lee mensajes de un borrador (el equipo sí los sembró)
+reset role;
+insert into public.content_messages (job_id, author_role, author_user_id, body)
+values (current_setting('test.job_draft')::uuid, 'team', current_setting('test.u_t')::uuid, 'nota interna');
+select set_config('request.jwt.claims',
+  json_build_object('sub', current_setting('test.u_m'), 'role', 'authenticated')::text, true);
+set local role authenticated;
+do $$
+declare n int;
+begin
+  select count(*) into n from public.content_messages where job_id = current_setting('test.job_draft')::uuid;
+  if n <> 0 then raise exception 'FALLO: miembro lee mensajes de job borrador (%)', n; end if;
 end $$;
 
 -- Equipo ------------------------------------------------------------------------
