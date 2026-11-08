@@ -51,6 +51,7 @@ begin
 
   perform set_config('test.c_a', c_a::text, true);
   perform set_config('test.c_b', c_b::text, true);
+  perform set_config('test.camp_a', camp_a::text, true);
   perform set_config('test.job_a', job_a::text, true);
   perform set_config('test.job_b', job_b::text, true);
   perform set_config('test.u_a', u_a::text, true);
@@ -68,6 +69,11 @@ declare
   n int;
   denied boolean;
 begin
+  -- Guard anti-falso-verde: la simulación de auth debe haber aplicado
+  if current_user <> 'authenticated' or auth.uid() is distinct from current_setting('test.u_a')::uuid then
+    raise exception 'FALLO: simulación de auth no aplicó';
+  end if;
+
   -- Caso 2: aislamiento de lectura
   select count(*) into n from public.content_jobs;
   if n <> 1 then
@@ -110,7 +116,7 @@ begin
   begin
     insert into public.content_approvals (job_id, client_user_id, decision)
     values (current_setting('test.job_b')::uuid, current_setting('test.u_a')::uuid, 'approved');
-  exception when others then
+  exception when insufficient_privilege then
     denied := true;
   end;
   if not denied then
@@ -122,7 +128,7 @@ begin
   begin
     insert into public.content_approvals (job_id, client_user_id, decision)
     values (current_setting('test.job_a')::uuid, current_setting('test.u_b')::uuid, 'approved');
-  exception when others then
+  exception when insufficient_privilege then
     denied := true;
   end;
   if not denied then
@@ -132,9 +138,11 @@ begin
   -- Caso 4: el cliente no escribe contenido
   denied := false;
   begin
-    insert into public.content_jobs (client_id, job_id_motor, type)
-    values (current_setting('test.c_a')::uuid, 'rls-test-job-hack', 'reel');
-  exception when others then
+    -- todas las columnas NOT NULL completas: el único rechazo posible es RLS
+    insert into public.content_jobs (campaign_id, client_id, job_id_motor, type, status)
+    values (current_setting('test.camp_a')::uuid, current_setting('test.c_a')::uuid,
+            'rls-test-job-hack', 'reel', 'sent');
+  exception when insufficient_privilege then
     denied := true;
   end;
   if not denied then
@@ -159,6 +167,11 @@ do $$
 declare
   n int;
 begin
+  -- Guard anti-falso-verde: la simulación de auth debe haber aplicado
+  if current_user <> 'authenticated' or auth.uid() is distinct from current_setting('test.u_x')::uuid then
+    raise exception 'FALLO: simulación de auth no aplicó';
+  end if;
+
   -- Caso 5
   select count(*) into n from public.content_jobs;
   if n <> 0 then
