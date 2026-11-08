@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight, AlertCircle, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import creappLogoOfficial from '@/assets/CREAPP LOGO VECTOR.png';
 import { supabase } from '@/lib/supabaseClient';
+import { homePathForRole, type AccessRole } from '@/lib/portalAccess';
 import { AuthForm } from '@/components/ui/sign-in-1';
 
 const AdminLogin: React.FC = () => {
@@ -26,7 +27,7 @@ const AdminLogin: React.FC = () => {
     setError('');
 
     try {
-      const { error: authError } = await supabase.auth.signInWithPassword({
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: cleanEmail,
         password,
       });
@@ -37,7 +38,17 @@ const AdminLogin: React.FC = () => {
         return;
       }
 
-      navigate('/admin');
+      // Ruteo por rol: client -> /portal, equipo -> /admin.
+      let role: AccessRole = 'admin';
+      if (authData?.user) {
+        const { data: prof } = await supabase
+          .from('user_profiles')
+          .select('role')
+          .eq('id', authData.user.id)
+          .maybeSingle();
+        if (prof?.role === 'client') role = 'client';
+      }
+      navigate(homePathForRole(role));
     } catch {
       setError('Ocurrió un error inesperado al iniciar sesión.');
       setLoading(false);
