@@ -1,9 +1,9 @@
 import React from 'react';
 import type { TrackerClient } from '@/lib/contentTrackerTypes';
-import { plural } from '@/lib/contentTrackerView';
+import { plural, sortCampaignsByAttention } from '@/lib/contentTrackerView';
 import { CampaignGroup } from './CampaignGroup';
 
-export const ClientCampaignCard: React.FC<{ client: TrackerClient }> = ({ client }) => {
+export const ClientCampaignCard: React.FC<{ client: TrackerClient; onChanged: () => void }> = ({ client, onChanged }) => {
   const { counts } = client;
   return (
     <section className="rounded-2xl bg-[#0e0e12] border border-white/5 p-5 space-y-4">
@@ -25,7 +25,7 @@ export const ClientCampaignCard: React.FC<{ client: TrackerClient }> = ({ client
         <p className="text-xs text-zinc-500">Este cliente todavía no tiene campañas</p>
       ) : (
         <div className="space-y-3">
-          {client.campaigns.map((camp) => <CampaignGroup key={camp.id} campaign={camp} />)}
+          {sortCampaignsByAttention(client.campaigns).map((camp) => <CampaignGroup key={camp.id} campaign={camp} onChanged={onChanged} />)}
         </div>
       )}
     </section>

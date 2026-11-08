@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { TrackerCampaign } from '@/lib/contentTrackerTypes';
-import { campaignProgress, sortPieces, plural } from '@/lib/contentTrackerView';
+import { campaignProgress, sortPieces, plural, needsAttention } from '@/lib/contentTrackerView';
+import { setCampaignStatus } from '@/lib/contentTrackerService';
 import { PieceStatusRow } from './PieceStatusRow';
 
-export const CampaignGroup: React.FC<{ campaign: TrackerCampaign }> = ({ campaign }) => {
+export const CampaignGroup: React.FC<{ campaign: TrackerCampaign; onChanged: () => void }> = ({ campaign, onChanged }) => {
   const isActive = campaign.status === 'active';
   const [open, setOpen] = useState(isActive);
+  const [busy, setBusy] = useState(false);
   const { approved, total } = campaignProgress(campaign);
 
   const drafts = campaign.pieces.filter((p) => !p.clientVisible).length;
@@ -14,6 +16,26 @@ export const CampaignGroup: React.FC<{ campaign: TrackerCampaign }> = ({ campaig
   const nApproved = sent.filter((p) => p.status === 'approved').length;
   const nChanges = sent.filter((p) => p.status === 'changes_requested').length;
   const nPending = sent.filter((p) => p.status === 'sent').length;
+
+  const toggleStatus = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (busy) return;
+    if (isActive) {
+      const unresolved = campaign.pieces.some(
+        (p) => needsAttention(p) || (p.clientVisible && (p.status === 'sent' || p.status === 'changes_requested')),
+      );
+      if (unresolved && !window.confirm('Esta campaña tiene piezas sin resolver. ¿Cerrarla igual?')) return;
+    }
+    setBusy(true);
+    try {
+      await setCampaignStatus(campaign.id, isActive ? 'closed' : 'active');
+      onChanged();
+    } catch (err) {
+      console.error('Error cambiando estado de campaña:', err);
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <div className="rounded-xl bg-white/[0.02] border border-white/5">
@@ -29,6 +51,7 @@ export const CampaignGroup: React.FC<{ campaign: TrackerCampaign }> = ({ campaig
             <span className="text-sm font-semibold text-white truncate">{campaign.title || campaign.slug}</span>
             {campaign.month && <span className="text-xs text-zinc-500 shrink-0">· {campaign.month}</span>}
           </div>
+          <div className="flex items-center gap-2">
           <span
             className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border ${
               isActive
@@ -38,6 +61,17 @@ export const CampaignGroup: React.FC<{ campaign: TrackerCampaign }> = ({ campaig
           >
             {isActive ? 'Vigente' : 'Cerrada'}
           </span>
+          <span
+            role="button"
+            tabIndex={0}
+            aria-disabled={busy}
+            onClick={toggleStatus}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleStatus(e as unknown as React.MouseEvent); } }}
+            className={`px-2 py-0.5 rounded-lg text-[11px] font-semibold border border-white/10 text-zinc-300 hover:bg-white/5 cursor-pointer ${busy ? 'opacity-50 pointer-events-none' : ''}`}
+          >
+            {isActive ? 'Cerrar' : 'Reabrir'}
+          </span>
+          </div>
         </div>
 
         {total > 0 ? (
@@ -64,7 +98,7 @@ export const CampaignGroup: React.FC<{ campaign: TrackerCampaign }> = ({ campaig
           {campaign.pieces.length === 0 ? (
             <p className="text-xs text-zinc-500 py-2">Esta campaña todavía no tiene piezas</p>
           ) : (
-            sortPieces(campaign.pieces).map((p) => <PieceStatusRow key={p.id} piece={p} />)
+            sortPieces(campaign.pieces).map((p) => <PieceStatusRow key={p.id} piece={p} onChanged={onChanged} />)
           )}
         </div>
       )}
