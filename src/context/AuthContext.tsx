@@ -25,7 +25,7 @@ interface AuthContextType {
     email: string;
     password?: string;
     fullName: string;
-    role?: UserRole;
+    role?: Exclude<UserRole, 'client'>;
   }) => Promise<{ success: boolean; error?: string }>;
   updateUserRole: (userId: string, newRole: UserRole) => Promise<{ success: boolean; error?: string }>;
   deleteUserProfile: (userId: string) => Promise<{ success: boolean; error?: string }>;
@@ -210,7 +210,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     email: string;
     password?: string;
     fullName: string;
-    role?: UserRole;
+    role?: Exclude<UserRole, 'client'>;
   }): Promise<{ success: boolean; error?: string }> => {
     try {
       const normalizedEmail = email.trim().toLowerCase();
