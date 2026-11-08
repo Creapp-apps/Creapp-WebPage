@@ -9,6 +9,7 @@ export const CampaignGroup: React.FC<{ campaign: TrackerCampaign; onChanged: () 
   const isActive = campaign.status === 'active';
   const [open, setOpen] = useState(isActive);
   const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
   const { approved, total } = campaignProgress(campaign);
 
   const drafts = campaign.pieces.filter((p) => !p.clientVisible).length;
@@ -26,11 +27,13 @@ export const CampaignGroup: React.FC<{ campaign: TrackerCampaign; onChanged: () 
       if (unresolved && !window.confirm('Esta campaña tiene piezas sin resolver. ¿Cerrarla igual?')) return;
     }
     setBusy(true);
+    setErr(null);
     try {
       await setCampaignStatus(campaign.id, isActive ? 'closed' : 'active');
       onChanged();
-    } catch (err) {
-      console.error('Error cambiando estado de campaña:', err);
+    } catch (e) {
+      console.error('Error cambiando estado de campaña:', e);
+      setErr('No se pudo cambiar el estado de la campaña.');
     } finally {
       setBusy(false);
     }
@@ -89,6 +92,7 @@ export const CampaignGroup: React.FC<{ campaign: TrackerCampaign; onChanged: () 
           {isActive ? 'Cerrar' : 'Reabrir'}
         </button>
       </div>
+      {err && <p className="px-3.5 pb-2 text-[11px] text-rose-400">{err}</p>}
 
       {open && (
         <div className="px-3.5 pb-3.5 space-y-2">

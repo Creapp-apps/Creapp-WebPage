@@ -13,19 +13,22 @@ const CHIP: Record<TrackerPiece['status'], { cls: string; Icon: React.ComponentT
 
 const STAGE_LABEL: Record<string, string> = {
   guion: 'Guion', voz: 'Voz', broll: 'B-roll', render: 'Render', qa: 'QA',
-  listo: 'Listo', borrador: 'Borrador', enviado: 'Enviado',
+  listo: 'Listo',
 };
 
 export const PieceStatusRow: React.FC<{ piece: TrackerPiece; onChanged: () => void }> = ({ piece, onChanged }) => {
   const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
   const run = async (fn: () => Promise<void>) => {
     if (busy) return;
     setBusy(true);
+    setErr(null);
     try {
       await fn();
       onChanged();
-    } catch (err) {
-      console.error('Error en acción de pieza:', err);
+    } catch (e) {
+      console.error('Error en acción de pieza:', e);
+      setErr('No se pudo completar la acción. Probá de nuevo.');
     } finally {
       setBusy(false);
     }
@@ -84,6 +87,7 @@ export const PieceStatusRow: React.FC<{ piece: TrackerPiece; onChanged: () => vo
             </button>
           )}
         </div>
+        {err && <p className="text-[11px] text-rose-400">{err}</p>}
       </div>
     </div>
   );
