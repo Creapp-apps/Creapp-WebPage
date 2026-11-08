@@ -30,7 +30,7 @@ export const PieceStatusRow: React.FC<{ piece: TrackerPiece; onChanged: () => vo
       setBusy(false);
     }
   };
-  const stage = piece.productionStage ? (STAGE_LABEL[piece.productionStage] ?? piece.productionStage) : null;
+  const stage = piece.productionStage ? (STAGE_LABEL[piece.productionStage] ?? null) : null;
   const btn = 'inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold border border-white/10 text-zinc-300 hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed';
   const { cls, Icon } = CHIP[piece.status];
   const decided = piece.status !== 'sent';
@@ -79,7 +79,7 @@ export const PieceStatusRow: React.FC<{ piece: TrackerPiece; onChanged: () => vo
             </button>
           )}
           {piece.jobIdMotor && (
-            <button type="button" disabled={busy} onClick={() => window.open(motorStudio(piece.jobIdMotor), '_blank', 'noopener')} className={btn}>
+            <button type="button" onClick={() => window.open(motorStudio(piece.jobIdMotor), '_blank', 'noopener')} className={btn}>
               <ExternalLink size={11} /> Abrir en Estudio
             </button>
           )}
