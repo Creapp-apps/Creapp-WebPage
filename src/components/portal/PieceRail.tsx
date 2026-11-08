@@ -1,12 +1,12 @@
 import React, { useRef } from 'react';
 import type { PortalPiece } from '@/lib/portalTypes';
-import { TYPE_META } from '@/lib/portalView';
+import { typeMeta } from '@/lib/portalView';
 
 type Props = { type: PortalPiece['type']; count: number; children: React.ReactNode };
 
 export const PieceRail: React.FC<Props> = ({ type, count, children }) => {
   const ref = useRef<HTMLDivElement>(null);
-  const meta = TYPE_META[type];
+  const meta = typeMeta(type);
   const go = (dir: number) => {
     const el = ref.current;
     if (el) el.scrollBy({ left: dir * Math.round(el.clientWidth * 0.75), behavior: 'smooth' });

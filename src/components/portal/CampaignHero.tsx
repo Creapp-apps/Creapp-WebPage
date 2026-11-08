@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { PortalCampaign } from '@/lib/portalTypes';
 import { pickBrandMark, paletteSwatches, styleTags, progressSummary } from '@/lib/portalView';
 import { AgencyBadge } from './AgencyBadge';
@@ -11,8 +11,9 @@ function mesLabel(c: PortalCampaign): string {
 
 export const BrandMarkView: React.FC<{ client: PortalCampaign['client'] }> = ({ client }) => {
   const mark = pickBrandMark(client);
-  return mark.kind === 'logo'
-    ? <img className="brandlogo" src={mark.url} alt={mark.name} />
+  const [broken, setBroken] = useState(false);
+  return mark.kind === 'logo' && !broken
+    ? <img className="brandlogo" src={mark.url} alt="" aria-label={mark.name} onError={() => setBroken(true)} />
     : <span className="brandname">{mark.name}</span>;
 };
 
@@ -35,7 +36,7 @@ export const CampaignHero: React.FC<{ campaign: PortalCampaign }> = ({ campaign 
 
       <div className="hero">
         <div className="eyebrow">Tu agencia te presenta</div>
-        <h1>{campaign.title ? campaign.title : <>Campaña de <span className="mes serif">{mes}</span></>}</h1>
+        <h1>{campaign.title ? campaign.title : mes ? <>Campaña de <span className="mes serif">{mes}</span></> : 'Tu campaña'}</h1>
         <p className="lead">
           {n === 1 ? 'Una pieza pensada' : `${n} piezas pensadas`} para tu marca{mes ? ' este mes' : ''}. Mirá cada una, dejanos tu mirada y aprobá lo que te enamore.
         </p>

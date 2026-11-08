@@ -90,7 +90,7 @@ const PortalView: React.FC = () => {
 
       <div className="footer">
         <div className="in">
-          <span><b>{prog.approved} de {prog.total}</b> aprobadas · {prog.pending === 0 ? 'todo listo' : `${prog.pending} ${prog.pending === 1 ? 'espera' : 'esperan'} tu mirada`}</span>
+          <span><b>{prog.approved} de {prog.total}</b> aprobadas · {prog.pending > 0 && `${prog.pending} ${prog.pending === 1 ? 'espera' : 'esperan'} tu mirada`}{prog.pending > 0 && prog.changes > 0 && ' · '}{prog.changes > 0 && `${prog.changes} con cambios pedidos`}{prog.pending === 0 && prog.changes === 0 && 'todo listo'}</span>
           {prog.pending > 0 && (
             <div className="cta">
               <button type="button" className="btn approve approve-all" disabled={busyIds.size > 0} onClick={approvePending}>Aprobar pendientes</button>

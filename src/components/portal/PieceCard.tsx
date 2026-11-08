@@ -1,6 +1,6 @@
 import React from 'react';
 import type { PortalPiece } from '@/lib/portalTypes';
-import { TYPE_META } from '@/lib/portalView';
+import { typeMeta } from '@/lib/portalView';
 
 const GRADS = ['#0c2b4f,#071a33', '#1a3a24,#0a1f12', '#3a2a1a,#1f1408', '#143a66,#0c2b4f', '#2a1f14,#4a3420'];
 
@@ -15,7 +15,7 @@ type Props = {
 };
 
 export const PieceCard: React.FC<Props> = ({ piece, index, busy, error, onOpen, onApprove, onRequestChanges }) => {
-  const meta = TYPE_META[piece.type];
+  const meta = typeMeta(piece.type);
   const vertical = piece.type !== 'carousel';
   const approved = piece.status === 'approved';
   const label = piece.type === 'carousel' && piece.slides.length ? `${meta.singular} · ${piece.slides.length} láminas` : meta.singular;

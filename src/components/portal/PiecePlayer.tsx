@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import type { PortalPiece } from '@/lib/portalTypes';
-import { TYPE_META } from '@/lib/portalView';
+import { typeMeta } from '@/lib/portalView';
 
 type Props = {
   piece: PortalPiece;
@@ -45,7 +45,7 @@ export const PiecePlayer: React.FC<Props> = ({ piece, startWithChanges, busy, er
         </div>
         <div className="side">
           <button type="button" className="close" onClick={onClose} aria-label="Cerrar">✕</button>
-          <div className="ty" style={{ color: 'var(--wood)', fontSize: 11, letterSpacing: '.14em', textTransform: 'uppercase', fontWeight: 600 }}>{TYPE_META[piece.type].singular}</div>
+          <div className="ty" style={{ color: 'var(--wood)', fontSize: 11, letterSpacing: '.14em', textTransform: 'uppercase', fontWeight: 600 }}>{typeMeta(piece.type).singular}</div>
           <h3>{piece.title}</h3>
           {piece.caption && <div className="cap">{piece.caption}</div>}
           {approved ? (

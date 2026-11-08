@@ -24,11 +24,21 @@ export function paletteSwatches(colors: Record<string, string> | null | undefine
   return v.length ? v.slice(0, 6) : FALLBACK;
 }
 
+// Solo las que esperan mirada: nunca pisa una aprobada ni un pedido de cambios.
+export function pendingToApprove<T extends Pick<PortalPiece, 'status'>>(pieces: T[]): T[] {
+  return pieces.filter((p) => p.status === 'sent');
+}
+
+export function typeMeta(type: string) {
+  return (TYPE_META as Record<string, (typeof TYPE_META)['reel']>)[type] ?? { title: 'Piezas', singular: 'Pieza', hint: 'contenido', cls: 'g-reels' };
+}
+
 export function progressSummary(pieces: Pick<PortalPiece, 'id' | 'status'>[]) {
   const total = pieces.length;
   const approved = pieces.filter((p) => p.status === 'approved').length;
-  const pendingIds = pieces.filter((p) => p.status !== 'approved').map((p) => p.id);
-  return { total, approved, pending: pendingIds.length, pendingIds, pct: total ? Math.round((approved / total) * 100) : 0 };
+  const pendingIds = pendingToApprove(pieces).map((p) => p.id);
+  const changes = pieces.filter((p) => p.status === 'changes_requested').length;
+  return { total, approved, pending: pendingIds.length, changes, pendingIds, pct: total ? Math.round((approved / total) * 100) : 0 };
 }
 
 const ORDER: PortalPiece['type'][] = ['reel', 'carousel', 'story'];

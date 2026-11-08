@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { pickBrandMark, campaignViewState, paletteSwatches, progressSummary, groupPieces, styleTags } from './portalView.ts';
+import { pickBrandMark, campaignViewState, paletteSwatches, progressSummary, groupPieces, styleTags, pendingToApprove, typeMeta } from './portalView.ts';
 
 test('pickBrandMark: con logo devuelve el logo real', () => {
   assert.deepEqual(pickBrandMark({ name: 'Cardoso', logoUrl: 'https://r2/logo.png' }), { kind: 'logo', url: 'https://r2/logo.png', name: 'Cardoso' });
@@ -33,7 +33,7 @@ test('progressSummary y groupPieces', () => {
     { id: '2', type: 'reel', status: 'sent' },
     { id: '3', type: 'story', status: 'changes_requested' },
   ] as never[];
-  assert.deepEqual(progressSummary(p), { total: 3, approved: 1, pending: 2, pendingIds: ['2', '3'], pct: 33 });
+  assert.deepEqual(progressSummary(p), { total: 3, approved: 1, pending: 1, changes: 1, pendingIds: ['2'], pct: 33 });
   const g = groupPieces(p);
   assert.deepEqual(g.map((x) => [x.type, x.pieces.length]), [['reel', 2], ['story', 1]]);
 });
@@ -41,4 +41,14 @@ test('progressSummary y groupPieces', () => {
 test('styleTags', () => {
   assert.ok(styleTags('cinematic_broll').length > 0);
   assert.deepEqual(styleTags(null), []);
+});
+
+test('pendingToApprove: solo sent, nunca changes_requested ni approved', () => {
+  const p = [{ id: '1', status: 'approved' }, { id: '2', status: 'sent' }, { id: '3', status: 'changes_requested' }];
+  assert.deepEqual(pendingToApprove(p).map((x) => x.id), ['2']);
+});
+
+test('typeMeta: tipo desconocido no revienta', () => {
+  assert.equal(typeMeta('reel').title, 'Reels');
+  assert.equal(typeMeta('zzz').singular, 'Pieza');
 });
