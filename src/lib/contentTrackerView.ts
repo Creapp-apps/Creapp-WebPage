@@ -45,3 +45,12 @@ export function summaryText(t: { clients: number; total: number; approved: numbe
     `${t.pending} sin revisar`,
   ].join(' · ');
 }
+
+const TYPE_LABEL: Record<string, string> = {
+  reel: 'Reel', carousel: 'Carrusel', carrusel: 'Carrusel', story: 'Historia', historia: 'Historia',
+};
+
+export function pieceTitle(p: { title: string | null; type: string }): string {
+  const t = p.title?.trim();
+  return t || TYPE_LABEL[p.type?.toLowerCase()] || 'Sin título';
+}

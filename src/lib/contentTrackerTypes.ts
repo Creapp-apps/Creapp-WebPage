@@ -3,7 +3,7 @@ export type TrackerPieceStatus = 'sent' | 'approved' | 'changes_requested';
 export interface TrackerPiece {
   id: string;
   type: string;
-  title: string;
+  title: string | null;
   coverUrl: string | null;
   status: TrackerPieceStatus;
   lastComment: string | null;

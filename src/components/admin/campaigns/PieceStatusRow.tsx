@@ -1,7 +1,7 @@
 import React from 'react';
 import { CheckCircle2, MessageSquareWarning, Clock, ImageOff } from 'lucide-react';
 import type { TrackerPiece } from '@/lib/contentTrackerTypes';
-import { STATUS_LABEL, relativeTime } from '@/lib/contentTrackerView';
+import { STATUS_LABEL, relativeTime, pieceTitle } from '@/lib/contentTrackerView';
 
 const CHIP: Record<TrackerPiece['status'], { cls: string; Icon: React.ComponentType<{ size?: number }> }> = {
   sent: { cls: 'bg-amber-500/10 text-amber-300 border-amber-500/20', Icon: Clock },
@@ -25,7 +25,7 @@ export const PieceStatusRow: React.FC<{ piece: TrackerPiece }> = ({ piece }) => 
       </div>
       <div className="min-w-0 flex-1 space-y-1">
         <div className="flex items-start justify-between gap-2">
-          <span className="text-sm text-white font-medium truncate">{piece.title}</span>
+          <span className="text-sm text-white font-medium truncate">{pieceTitle(piece)}</span>
           <span className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${cls}`}>
             <Icon size={11} />
             {STATUS_LABEL[piece.status]}

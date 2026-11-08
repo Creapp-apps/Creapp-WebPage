@@ -2,7 +2,7 @@ import type { TrackerCampaign, TrackerClient, TrackerCounts, TrackerOverview, Tr
 
 export interface TClientRow { id: string; slug: string; name: string; logo_url: string | null }
 export interface TCampaignRow { id: string; client_id: string; title: string | null; month: string | null }
-export interface TJobRow { id: string; campaign_id: string; client_id: string; type: string; title: string }
+export interface TJobRow { id: string; campaign_id: string; client_id: string; type: string; title: string | null }
 export interface TAssetRow { job_id: string; kind: string; url: string }
 export interface TApprovalRow { job_id: string; client_user_id: string; decision: string; comment: string | null; created_at: string }
 export interface TProfileRow { id: string; email: string | null; full_name: string | null }

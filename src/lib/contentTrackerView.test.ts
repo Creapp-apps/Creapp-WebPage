@@ -32,3 +32,10 @@ test('plural y summaryText', () => {
   assert.equal(summaryText({ clients: 2, total: 5, approved: 2, changes: 2, pending: 1 }),
     '2 clientes · 5 piezas · 2 aprobadas · 2 pidieron cambios · 1 sin revisar');
 });
+
+test('pieceTitle fallback', async () => {
+  const { pieceTitle } = await import('./contentTrackerView.ts');
+  assert.equal(pieceTitle({ title: 'Hola', type: 'reel' }), 'Hola');
+  assert.equal(pieceTitle({ title: null, type: 'carousel' }), 'Carrusel');
+  assert.equal(pieceTitle({ title: '  ', type: 'x' }), 'Sin título');
+});

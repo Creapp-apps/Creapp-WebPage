@@ -17,7 +17,7 @@ export const ClientCampaignCard: React.FC<{ client: TrackerClient }> = ({ client
         </div>
         <div className="flex flex-wrap gap-1.5 text-[11px] font-semibold">
           {counts.approved > 0 && <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">{plural(counts.approved, 'aprobada', 'aprobadas')}</span>}
-          {counts.changes > 0 && <span className="px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/25">{plural(counts.changes, 'con cambios', 'con cambios')}</span>}
+          {counts.changes > 0 && <span className="px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/25">{plural(counts.changes, 'pidió cambios', 'pidieron cambios')}</span>}
           {counts.pending > 0 && <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/20">{counts.pending} sin revisar</span>}
         </div>
       </header>
