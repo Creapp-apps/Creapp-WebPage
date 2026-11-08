@@ -1,9 +1,9 @@
 import React from 'react';
 import type { TrackerClient } from '@/lib/contentTrackerTypes';
-import { sortPieces, plural } from '@/lib/contentTrackerView';
-import { PieceStatusRow } from './PieceStatusRow';
+import { plural, sortCampaignsByAttention } from '@/lib/contentTrackerView';
+import { CampaignGroup } from './CampaignGroup';
 
-export const ClientCampaignCard: React.FC<{ client: TrackerClient }> = ({ client }) => {
+export const ClientCampaignCard: React.FC<{ client: TrackerClient; onChanged: () => void }> = ({ client, onChanged }) => {
   const { counts } = client;
   return (
     <section className="rounded-2xl bg-[#0e0e12] border border-white/5 p-5 space-y-4">
@@ -21,16 +21,13 @@ export const ClientCampaignCard: React.FC<{ client: TrackerClient }> = ({ client
           {counts.pending > 0 && <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/20">{counts.pending} sin revisar</span>}
         </div>
       </header>
-      {client.campaigns.map((camp) => (
-        <div key={camp.id} className="space-y-2">
-          {(camp.title || camp.month) && (
-            <p className="text-xs text-zinc-400 font-medium">{[camp.title, camp.month].filter(Boolean).join(' · ')}</p>
-          )}
-          <div className="space-y-2">
-            {sortPieces(camp.pieces).map((p) => <PieceStatusRow key={p.id} piece={p} />)}
-          </div>
+      {client.campaigns.length === 0 ? (
+        <p className="text-xs text-zinc-500">Este cliente todavía no tiene campañas</p>
+      ) : (
+        <div className="space-y-3">
+          {sortCampaignsByAttention(client.campaigns).map((camp) => <CampaignGroup key={camp.id} campaign={camp} onChanged={onChanged} />)}
         </div>
-      ))}
+      )}
     </section>
   );
 };

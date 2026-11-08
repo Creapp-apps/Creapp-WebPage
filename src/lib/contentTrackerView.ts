@@ -1,4 +1,4 @@
-import type { TrackerClient, TrackerPiece, TrackerPieceStatus } from './contentTrackerTypes';
+import type { TrackerCampaign, TrackerClient, TrackerPiece, TrackerPieceStatus } from './contentTrackerTypes';
 
 export const STATUS_LABEL: Record<TrackerPieceStatus, string> = {
   sent: 'Sin revisar',
@@ -53,4 +53,21 @@ const TYPE_LABEL: Record<string, string> = {
 export function pieceTitle(p: { title: string | null; type: string }): string {
   const t = p.title?.trim();
   return t || TYPE_LABEL[p.type?.toLowerCase()] || 'Sin título';
+}
+
+/** Progreso de una campaña: solo piezas enviadas al cliente (los borradores no cuentan). */
+export function campaignProgress(campaign: TrackerCampaign): { approved: number; total: number } {
+  const sent = campaign.pieces.filter((p) => p.clientVisible);
+  return { approved: sent.filter((p) => p.status === 'approved').length, total: sent.length };
+}
+
+/** El cliente pidió cambios y no hubo re-envío posterior (el mapper ya resetea a 'sent' al re-enviar). */
+export function needsAttention(piece: TrackerPiece): boolean {
+  return piece.clientVisible === true && piece.status === 'changes_requested';
+}
+
+/** Campañas con alguna pieza en atención primero; el resto conserva su orden. */
+export function sortCampaignsByAttention(campaigns: TrackerCampaign[]): TrackerCampaign[] {
+  const key = (k: TrackerCampaign) => (k.pieces.some(needsAttention) ? 0 : 1);
+  return [...campaigns].sort((a, b) => key(a) - key(b));
 }

@@ -1,8 +1,8 @@
 import type { TrackerCampaign, TrackerClient, TrackerCounts, TrackerOverview, TrackerPiece, TrackerPieceStatus } from './contentTrackerTypes.ts';
 
 export interface TClientRow { id: string; slug: string; name: string; logo_url: string | null }
-export interface TCampaignRow { id: string; client_id: string; title: string | null; month: string | null }
-export interface TJobRow { id: string; campaign_id: string; client_id: string; type: string; title: string | null }
+export interface TCampaignRow { id: string; client_id: string; title: string | null; month: string | null; slug: string; status: string }
+export interface TJobRow { id: string; campaign_id: string; client_id: string; type: string; title: string | null; client_visible: boolean; sent_at: string | null; production_stage: string | null; rendered: boolean; job_id_motor: string }
 export interface TAssetRow { job_id: string; kind: string; url: string }
 export interface TApprovalRow { job_id: string; client_user_id: string; decision: string; comment: string | null; created_at: string }
 export interface TProfileRow { id: string; email: string | null; full_name: string | null }
@@ -28,8 +28,10 @@ export function mapTracker(
 
   const toPiece = (j: TJobRow): TrackerPiece => {
     const a = latest.get(j.id);
-    const status: TrackerPieceStatus =
+    let status: TrackerPieceStatus =
       a?.decision === 'approved' ? 'approved' : a?.decision === 'changes_requested' ? 'changes_requested' : 'sent';
+    // Re-envío posterior a la última decisión => nueva versión, vuelve a "sin revisar".
+    if (a && j.sent_at && new Date(j.sent_at).getTime() > new Date(a.created_at).getTime()) status = 'sent';
     const prof = a ? profileById.get(a.client_user_id) : undefined;
     return {
       id: j.id, type: j.type, title: j.title,
@@ -38,10 +40,12 @@ export function mapTracker(
       lastComment: a ? (a.comment ?? null) : null,
       lastDecisionAt: a ? a.created_at : null,
       lastDecisionBy: a ? (prof?.full_name || prof?.email || null) : null,
+      clientVisible: j.client_visible, sentAt: j.sent_at, productionStage: j.production_stage,
+      rendered: j.rendered, jobIdMotor: j.job_id_motor,
     };
   };
 
-  const empty = (): TrackerCounts => ({ total: 0, approved: 0, changes: 0, pending: 0 });
+  const empty = (): TrackerCounts => ({ total: 0, approved: 0, changes: 0, pending: 0, drafts: 0 });
   const totals = { clients: clients.length, ...empty() };
 
   const out: TrackerClient[] = clients.map(c => {
@@ -50,14 +54,15 @@ export function mapTracker(
       const pieces = jobs.filter(j => j.campaign_id === k.id).map(toPiece);
       for (const p of pieces) {
         counts.total++;
+        if (!p.clientVisible) { counts.drafts++; continue; }
         if (p.status === 'approved') counts.approved++;
         else if (p.status === 'changes_requested') counts.changes++;
         else counts.pending++;
       }
-      return { id: k.id, title: k.title, month: k.month, pieces };
+      return { id: k.id, title: k.title, month: k.month, slug: k.slug, status: k.status === 'closed' ? 'closed' : 'active', pieces };
     });
     totals.total += counts.total; totals.approved += counts.approved;
-    totals.changes += counts.changes; totals.pending += counts.pending;
+    totals.changes += counts.changes; totals.pending += counts.pending; totals.drafts += counts.drafts;
     return { id: c.id, slug: c.slug, name: c.name, logoUrl: c.logo_url, campaigns: camps, counts };
   });
 

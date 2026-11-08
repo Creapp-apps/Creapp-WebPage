@@ -7,13 +7,13 @@ const clients = [
   { id: 'c2', slug: 'vacio', name: 'Vacío', logo_url: null },
 ];
 const campaigns = [
-  { id: 'k1', client_id: 'c1', title: 'Noviembre', month: '2026-11-01' },
-  { id: 'k2', client_id: 'c1', title: null, month: null },
+  { id: 'k1', client_id: 'c1', title: 'Noviembre', month: '2026-11-01', slug: 'noviembre', status: 'active' },
+  { id: 'k2', client_id: 'c1', title: null, month: null, slug: 'sin-mes', status: 'closed' },
 ];
 const jobs = [
-  { id: 'j1', campaign_id: 'k1', client_id: 'c1', type: 'reel', title: 'R1' },
-  { id: 'j2', campaign_id: 'k1', client_id: 'c1', type: 'carousel', title: 'C1' },
-  { id: 'j3', campaign_id: 'k2', client_id: 'c1', type: 'reel', title: 'R2' },
+  { id: 'j1', campaign_id: 'k1', client_id: 'c1', type: 'reel', title: 'R1', client_visible: true, sent_at: null, production_stage: null, rendered: true, job_id_motor: 'm' },
+  { id: 'j2', campaign_id: 'k1', client_id: 'c1', type: 'carousel', title: 'C1', client_visible: true, sent_at: null, production_stage: null, rendered: true, job_id_motor: 'm' },
+  { id: 'j3', campaign_id: 'k2', client_id: 'c1', type: 'reel', title: 'R2', client_visible: true, sent_at: null, production_stage: null, rendered: true, job_id_motor: 'm' },
 ];
 const assets = [
   { job_id: 'j1', kind: 'mp4', url: 'https://r2/j1.mp4' },
@@ -66,7 +66,32 @@ test('coverUrl: primera cover/slide, sino null', () => {
 
 test('counts por cliente y totals', () => {
   const r = mapTracker(clients, campaigns, jobs, assets, approvals, profiles);
-  assert.deepEqual(r.clients[0].counts, { total: 3, approved: 1, changes: 1, pending: 1 });
-  assert.deepEqual(r.clients[1].counts, { total: 0, approved: 0, changes: 0, pending: 0 });
-  assert.deepEqual(r.totals, { clients: 2, total: 3, approved: 1, changes: 1, pending: 1 });
+  assert.deepEqual(r.clients[0].counts, { total: 3, approved: 1, changes: 1, pending: 1, drafts: 0 });
+  assert.deepEqual(r.clients[1].counts, { total: 0, approved: 0, changes: 0, pending: 0, drafts: 0 });
+  assert.deepEqual(r.totals, { clients: 2, total: 3, approved: 1, changes: 1, pending: 1, drafts: 0 });
+});
+
+const jb = (id: string, over: any = {}): any => ({ id, campaign_id: 'k1', client_id: 'c1', type: 'reel', title: id, client_visible: true, sent_at: null, production_stage: null, rendered: true, job_id_motor: 'm', ...over });
+
+test('borrador: client_visible=false cuenta en drafts y no en buckets', () => {
+  const r = mapTracker(clients, campaigns, [jb('d1', { client_visible: false }), jb('s1')], [], [], []);
+  assert.deepEqual(r.clients[0].counts, { total: 2, approved: 0, changes: 0, pending: 1, drafts: 1 });
+});
+
+test('nueva versión: sent_at posterior a la última approval => sent', () => {
+  const ap = [{ job_id: 'v1', client_user_id: 'u1', decision: 'approved', comment: null, created_at: '2026-11-02T10:00:00Z' }];
+  const r = mapTracker(clients, campaigns, [jb('v1', { sent_at: '2026-11-05T10:00:00Z' }), jb('v2', { sent_at: '2026-11-01T10:00:00Z' })],
+    [], [...ap, { ...ap[0], job_id: 'v2' }], profiles);
+  const [v1, v2] = r.clients[0].campaigns[0].pieces;
+  assert.equal(v1.status, 'sent');
+  assert.equal(v2.status, 'approved');
+});
+
+test('campaña lleva slug y status normalizado', () => {
+  const r = mapTracker(clients, campaigns, [], [], [], []);
+  assert.equal(r.clients[0].campaigns[0].slug, 'noviembre');
+  assert.equal(r.clients[0].campaigns[0].status, 'active');
+  assert.equal(r.clients[0].campaigns[1].status, 'closed');
+  const r2 = mapTracker(clients, [{ ...campaigns[0], status: 'raro' }], [], [], [], []);
+  assert.equal(r2.clients[0].campaigns[0].status, 'active');
 });

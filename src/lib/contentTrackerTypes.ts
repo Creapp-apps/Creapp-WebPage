@@ -9,16 +9,23 @@ export interface TrackerPiece {
   lastComment: string | null;
   lastDecisionAt: string | null;
   lastDecisionBy: string | null;
+  clientVisible: boolean;
+  sentAt: string | null;
+  productionStage: string | null;
+  rendered: boolean;
+  jobIdMotor: string;
 }
 
 export interface TrackerCampaign {
   id: string;
   title: string | null;
   month: string | null;
+  slug: string;
+  status: 'active' | 'closed';
   pieces: TrackerPiece[];
 }
 
-export interface TrackerCounts { total: number; approved: number; changes: number; pending: number }
+export interface TrackerCounts { total: number; approved: number; changes: number; pending: number; drafts: number }
 
 export interface TrackerClient {
   id: string;
