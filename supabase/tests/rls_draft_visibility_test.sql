@@ -37,7 +37,10 @@ begin
   insert into public.client_members (client_id, user_id) values (c_a, u_m);
 
   -- El usuario de equipo se promueve explícitamente (no depende del metadato).
-  update public.user_profiles set role = 'admin' where id = u_t;
+  -- Upsert: no depende de que el trigger haya creado la fila.
+  insert into public.user_profiles (id, email, role)
+  values (u_t, 'rls-draft-t@example.test', 'admin')
+  on conflict (id) do update set role = 'admin';
 
   perform set_config('test.job_draft', job_draft::text, true);
   perform set_config('test.job_pub', job_pub::text, true);
@@ -53,6 +56,7 @@ set local role authenticated;
 do $$
 declare
   n int;
+  denied boolean;
 begin
   if current_user <> 'authenticated' or auth.uid() is distinct from current_setting('test.u_m')::uuid then
     raise exception 'FALLO: simulación de auth no aplicó (miembro)';
@@ -80,6 +84,21 @@ begin
    where job_id = current_setting('test.job_pub')::uuid;
   if n <> 1 then
     raise exception 'FALLO: miembro no ve assets de un job client_visible=true (%)', n;
+  end if;
+
+  -- Approvals: sobre el job visible se permite; sobre el borrador se deniega
+  insert into public.content_approvals (job_id, client_user_id, decision)
+  values (current_setting('test.job_pub')::uuid, current_setting('test.u_m')::uuid, 'approved');
+
+  denied := false;
+  begin
+    insert into public.content_approvals (job_id, client_user_id, decision)
+    values (current_setting('test.job_draft')::uuid, current_setting('test.u_m')::uuid, 'approved');
+  exception when insufficient_privilege then
+    denied := true;
+  end;
+  if not denied then
+    raise exception 'FALLO: miembro pudo aprobar un job client_visible=false';
   end if;
 end $$;
 

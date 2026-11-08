@@ -26,3 +26,34 @@ create policy "Members can read own content_assets"
         and j.client_visible = true
     )
   );
+
+-- content_approvals: misma invariante. El miembro no lee ni inserta aprobaciones
+-- sobre jobs que todavía no fueron publicados al cliente.
+drop policy if exists "Members can read own content_approvals" on public.content_approvals;
+create policy "Members can read own content_approvals"
+  on public.content_approvals
+  for select
+  to authenticated
+  using (
+    exists (
+      select 1 from public.content_jobs j
+      where j.id = content_approvals.job_id
+        and public.is_member_of(j.client_id)
+        and j.client_visible = true
+    )
+  );
+
+drop policy if exists "Members can insert own content_approvals" on public.content_approvals;
+create policy "Members can insert own content_approvals"
+  on public.content_approvals
+  for insert
+  to authenticated
+  with check (
+    client_user_id = auth.uid()
+    and exists (
+      select 1 from public.content_jobs j
+      where j.id = content_approvals.job_id
+        and public.is_member_of(j.client_id)
+        and j.client_visible = true
+    )
+  );
