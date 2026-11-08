@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Loader2, CheckCircle2, MessageSquareWarning } from 'lucide-react';
 import type { ThreadEntry } from '@/lib/threadTypes';
 import { getThread, postTeamMessage, postClientMessage, subscribeThread } from '@/lib/threadService';
@@ -47,22 +47,35 @@ export const PieceThread: React.FC<{ jobId: string; mode: 'team' | 'client'; var
   const [text, setText] = useState('');
   const [posting, setPosting] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [loadErr, setLoadErr] = useState(false);
+  const reqId = useRef(0);
 
   const reload = useCallback(async () => {
+    const id = ++reqId.current;
     try {
-      setEntries(await getThread(jobId));
+      const data = await getThread(jobId);
+      if (id !== reqId.current) return;
+      setEntries(data);
+      setLoadErr(false);
     } catch (e) {
+      if (id !== reqId.current) return;
       console.error('Error cargando hilo:', e);
+      setLoadErr(true);
     } finally {
-      setLoading(false);
+      if (id === reqId.current) setLoading(false);
     }
   }, [jobId]);
 
   useEffect(() => {
+    setEntries([]);
+    setLoadErr(false);
     setLoading(true);
     reload();
     const unsub = subscribeThread(jobId, () => { reload(); });
-    return () => { unsub(); };
+    return () => {
+      reqId.current++;
+      unsub();
+    };
   }, [jobId, reload]);
 
   const send = async () => {
@@ -87,6 +100,8 @@ export const PieceThread: React.FC<{ jobId: string; mode: 'team' | 'client'; var
     <div className="space-y-2">
       {loading ? (
         <div className={`flex items-center gap-1.5 text-[11px] ${t.muted}`}><Loader2 size={12} className="animate-spin" /> Cargando conversación…</div>
+      ) : loadErr && entries.length === 0 ? (
+        <p className={`text-xs ${t.error}`}>No pudimos cargar la conversación.</p>
       ) : entries.length === 0 ? (
         <p className={`text-xs ${t.empty}`}>Todavía no hay mensajes. Escribí el primero.</p>
       ) : (
@@ -125,6 +140,7 @@ export const PieceThread: React.FC<{ jobId: string; mode: 'team' | 'client'; var
           value={text}
           onChange={(ev) => setText(ev.target.value)}
           rows={2}
+          aria-label="Escribí un mensaje"
           placeholder="Escribí un mensaje…"
           className={`flex-1 resize-none rounded-lg px-3 py-2 text-xs outline-none ${t.input}`}
         />
