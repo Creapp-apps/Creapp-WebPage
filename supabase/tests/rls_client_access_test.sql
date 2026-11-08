@@ -97,9 +97,21 @@ begin
     raise exception 'FALLO: uA ve assets del job de B';
   end if;
 
+  -- Gate de columnas (Plan 3): el cliente NO lee la tabla cruda, solo la vista pública
   select count(*) into n from public.clients;
+  if n <> 0 then
+    raise exception 'FALLO: uA ve % filas de clients crudo (esperado 0)', n;
+  end if;
+
+  select count(*) into n from public.client_public;
   if n <> 1 then
-    raise exception 'FALLO: uA ve % clients (esperado 1)', n;
+    raise exception 'FALLO: uA ve % filas de client_public (esperado 1)', n;
+  end if;
+
+  select count(*) into n from public.client_public
+   where id = current_setting('test.c_b')::uuid;
+  if n <> 0 then
+    raise exception 'FALLO: uA ve el cliente B en client_public';
   end if;
 
   -- Caso 3a: approval propia sobre job de A -> OK
@@ -133,6 +145,27 @@ begin
   end;
   if not denied then
     raise exception 'FALLO: uA pudo insertar una approval suplantando a uB';
+  end if;
+
+  -- Gate de escritura: client_public es solo lectura para el cliente
+  denied := false;
+  begin
+    update public.client_public set name = 'x';
+  exception when insufficient_privilege then
+    denied := true;
+  end;
+  if not denied then
+    raise exception 'FALLO: uA pudo hacer UPDATE sobre client_public';
+  end if;
+
+  denied := false;
+  begin
+    insert into public.client_public (id, slug, name) values (gen_random_uuid(), 'hack', 'x');
+  exception when insufficient_privilege then
+    denied := true;
+  end;
+  if not denied then
+    raise exception 'FALLO: uA pudo hacer INSERT sobre client_public';
   end if;
 
   -- Caso 4: el cliente no escribe contenido
@@ -186,6 +219,30 @@ begin
     raise exception 'FALLO: usuario sin membresia ve % content_approvals', n;
   end if;
 end $$;
+
+-- 3b. anon no lee client_public ------------------------------------------------
+reset role;
+set local role anon;
+
+do $$
+declare
+  n int;
+  denied boolean := false;
+begin
+  if current_user <> 'anon' then
+    raise exception 'FALLO: simulación de rol anon no aplicó';
+  end if;
+  begin
+    select count(*) into n from public.client_public;
+  exception when insufficient_privilege then
+    denied := true;
+  end;
+  if not denied then
+    raise exception 'FALLO: anon pudo leer client_public';
+  end if;
+end $$;
+
+reset role;
 
 -- 4. Si llegó hasta acá, todo pasó ---------------------------------------------
 reset role;
