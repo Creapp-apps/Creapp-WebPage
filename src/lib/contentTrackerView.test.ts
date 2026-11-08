@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { plural, summaryText, relativeTime, sortClientsByUrgency, sortPieces } from './contentTrackerView.ts';
+import { plural, summaryText, relativeTime, sortClientsByUrgency, sortPieces, campaignProgress, needsAttention, sortCampaignsByAttention } from './contentTrackerView.ts';
 
 const c = (name: string, changes: number, pending: number): any => ({
   name, counts: { total: 1, approved: 0, changes, pending },
@@ -38,4 +38,24 @@ test('pieceTitle fallback', async () => {
   assert.equal(pieceTitle({ title: 'Hola', type: 'reel' }), 'Hola');
   assert.equal(pieceTitle({ title: null, type: 'carousel' }), 'Carrusel');
   assert.equal(pieceTitle({ title: '  ', type: 'x' }), 'Sin título');
+});
+
+const pc = (status: string, clientVisible = true): any => ({ status, clientVisible });
+
+test('campaignProgress cuenta solo enviadas', () => {
+  const camp: any = { pieces: [pc('approved'), pc('sent'), pc('approved', false), pc('sent', false)] };
+  assert.deepEqual(campaignProgress(camp), { approved: 1, total: 2 });
+});
+
+test('needsAttention', () => {
+  assert.equal(needsAttention(pc('changes_requested')), true);
+  assert.equal(needsAttention(pc('changes_requested', false)), false);
+  assert.equal(needsAttention(pc('sent')), false);
+  assert.equal(needsAttention(pc('approved')), false);
+});
+
+test('sortCampaignsByAttention: atención primero, estable', () => {
+  const k = (id: string, ...ps: any[]): any => ({ id, pieces: ps });
+  const r = sortCampaignsByAttention([k('a', pc('approved')), k('b', pc('changes_requested')), k('c', pc('sent')), k('d', pc('changes_requested'))]);
+  assert.deepEqual(r.map((x) => x.id), ['b', 'd', 'a', 'c']);
 });

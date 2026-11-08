@@ -28,8 +28,10 @@ export function mapTracker(
 
   const toPiece = (j: TJobRow): TrackerPiece => {
     const a = latest.get(j.id);
-    const status: TrackerPieceStatus =
+    let status: TrackerPieceStatus =
       a?.decision === 'approved' ? 'approved' : a?.decision === 'changes_requested' ? 'changes_requested' : 'sent';
+    // Re-envío posterior a la última decisión => nueva versión, vuelve a "sin revisar".
+    if (a && j.sent_at && new Date(j.sent_at).getTime() > new Date(a.created_at).getTime()) status = 'sent';
     const prof = a ? profileById.get(a.client_user_id) : undefined;
     return {
       id: j.id, type: j.type, title: j.title,
@@ -52,14 +54,15 @@ export function mapTracker(
       const pieces = jobs.filter(j => j.campaign_id === k.id).map(toPiece);
       for (const p of pieces) {
         counts.total++;
+        if (!p.clientVisible) { counts.drafts++; continue; }
         if (p.status === 'approved') counts.approved++;
         else if (p.status === 'changes_requested') counts.changes++;
         else counts.pending++;
       }
-      return { id: k.id, title: k.title, month: k.month, slug: k.slug, status: k.status as 'active' | 'closed', pieces };
+      return { id: k.id, title: k.title, month: k.month, slug: k.slug, status: k.status === 'closed' ? 'closed' : 'active', pieces };
     });
     totals.total += counts.total; totals.approved += counts.approved;
-    totals.changes += counts.changes; totals.pending += counts.pending;
+    totals.changes += counts.changes; totals.pending += counts.pending; totals.drafts += counts.drafts;
     return { id: c.id, slug: c.slug, name: c.name, logoUrl: c.logo_url, campaigns: camps, counts };
   });
 
