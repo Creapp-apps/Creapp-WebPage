@@ -26,10 +26,8 @@ export const CampaignHero: React.FC<{ campaign: PortalCampaign }> = ({ campaign 
     <>
       <div className="topbar">
         <div className="mono">
-          <div>
-            <small>Portal de campaña · <span className="creapp">CreAPP</span></small>
-            <BrandMarkView client={campaign.client} />
-          </div>
+          <BrandMarkView client={campaign.client} />
+          <small>Portal de campaña</small>
         </div>
         <div className="right"><AgencyBadge /></div>
       </div>

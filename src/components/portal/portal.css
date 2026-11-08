@@ -6,13 +6,13 @@
   min-height:100vh;background:radial-gradient(1200px 600px at 80% -10%, rgba(192,132,87,.14), transparent 60%),radial-gradient(900px 500px at 0% 0%, rgba(12,43,79,.6), transparent 55%),#04101f;color:var(--ink);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5}
 .portal *{box-sizing:border-box}
 .portal button{font-family:inherit}
-.portal .wrap{max-width:1080px;margin:0 auto;padding:0 20px 120px}
+.portal .wrap{max-width:1080px;margin:0 auto;padding:0 20px 180px}
 .portal .serif{font-family:Fraunces,Georgia,serif}
 .portal /* top bar */
-  .topbar{display:flex;align-items:center;justify-content:space-between;padding:22px 0;border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(4,16,31,.72);backdrop-filter:blur(12px);z-index:30}
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:22px 0 10px;position:static;background:transparent;z-index:30}
 .portal .mono{display:flex;align-items:center;gap:12px}
 .portal .mono .mark{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;font-family:Fraunces,serif;font-weight:600;color:var(--cream);background:linear-gradient(135deg,#0c2b4f,#071a33);border:1px solid rgba(192,132,87,.35)}
-.portal .mono small{display:block;color:var(--muted);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+.portal .mono small{color:var(--muted);font-size:11px;letter-spacing:.16em;text-transform:uppercase;padding-left:14px;border-left:1px solid var(--line);align-self:center;line-height:1.2}
 .portal .mono b{font-weight:600;font-size:15px}
 .portal .topbar .msg{font-size:13px;color:var(--cream);border:1px solid rgba(192,132,87,.4);background:rgba(192,132,87,.1);padding:9px 15px;border-radius:999px;cursor:pointer;display:flex;gap:8px;align-items:center}
 .portal .topbar .right{display:flex;align-items:center;gap:11px}
@@ -20,7 +20,7 @@
   .creapp{font-weight:600;background:linear-gradient(135deg,#b06cff,#ff5ea8);-webkit-background-clip:text;background-clip:text;color:transparent}
 .portal .agency{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);border:1px solid var(--line);padding:7px 12px 7px 9px;border-radius:999px}
 .portal .agency .rk{width:20px;height:20px;border-radius:7px;background:linear-gradient(135deg,#b06cff,#ff5ea8);display:grid;place-items:center;font-size:11px;color:#fff;box-shadow:0 4px 14px rgba(176,108,255,.4)}
-.portal .footcredit{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:22px;font-size:12px;color:#5f7593}
+.portal .footcredit{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:40px;margin-bottom:12px;font-size:12px;color:#5f7593}
 .portal .footcredit .rk{width:18px;height:18px;border-radius:6px;background:linear-gradient(135deg,#b06cff,#ff5ea8);display:grid;place-items:center;font-size:10px;color:#fff}
 .portal .agency .lbl{display:none}
 .portal /* hero */
@@ -56,7 +56,7 @@
 .portal .rail{display:flex;gap:18px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x proximity;scroll-behavior:smooth;padding:4px 2px 8px;scrollbar-width:none}
 .portal .rail::-webkit-scrollbar{display:none}
 .portal /* degradé sutil en bordes que insinúa que hay más piezas */
-  .railwrap:after{content:"";position:absolute;top:0;right:-2px;width:56px;bottom:12px;pointer-events:none;background:linear-gradient(90deg,transparent,#04101f 85%);opacity:.9}
+  .railwrap.more:after{content:"";position:absolute;top:0;right:-2px;width:56px;bottom:12px;pointer-events:none;background:linear-gradient(90deg,transparent,#04101f 85%);opacity:.9}
 .portal .arrow{position:absolute;top:calc(50% - 34px);transform:translateY(-50%);width:42px;height:42px;border-radius:999px;display:grid;place-items:center;background:rgba(7,26,51,.82);backdrop-filter:blur(8px);border:1px solid rgba(192,132,87,.35);color:var(--cream);font-size:22px;cursor:pointer;z-index:5;opacity:0;transition:opacity .2s, background .2s;box-shadow:0 8px 24px rgba(0,0,0,.45)}
 .portal .arrow:hover{background:rgba(192,132,87,.25)}
 .portal .arrow.l{left:-8px}
@@ -78,7 +78,7 @@
 .portal .preview .veil{position:absolute;inset:0;background:linear-gradient(180deg,rgba(4,16,31,.1),rgba(4,16,31,.75))}
 .portal .play{position:relative;width:48px;height:48px;border-radius:999px;background:rgba(255,255,255,.14);backdrop-filter:blur(6px);display:grid;place-items:center;border:1px solid rgba(255,255,255,.35)}
 .portal .play:after{content:"";border-left:13px solid #fff;border-top:8px solid transparent;border-bottom:8px solid transparent;margin-left:3px}
-.portal .pill{position:absolute;top:10px;left:10px;font-size:11px;padding:5px 10px;border-radius:999px;background:rgba(4,16,31,.6);border:1px solid var(--line);color:var(--cream);z-index:2}
+.portal .pill{position:absolute;bottom:10px;left:10px;font-size:11px;padding:5px 10px;border-radius:999px;background:rgba(4,16,31,.78);backdrop-filter:blur(4px);border:1px solid var(--line);color:var(--cream);z-index:3}
 .portal .pill.aprob{background:rgba(74,222,128,.16);border-color:rgba(74,222,128,.5);color:#bbf7d0}
 .portal .pill.rev{background:rgba(245,196,81,.14);border-color:rgba(245,196,81,.5);color:#fde9b0}
 .portal .body{padding:14px 15px 16px}
@@ -121,14 +121,16 @@
 .portal .brandname{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:18px;color:var(--cream)}
 .portal .agency img,.portal .footcredit img{height:18px;width:auto;display:block}
 .portal .footcredit img{height:16px}
-.portal .railwrap:after{background:linear-gradient(90deg,transparent,#04101f 85%)}
+.portal .railwrap.more:after{background:linear-gradient(90deg,transparent,#04101f 85%)}
 .portal .arrow{border:1px solid rgba(192,132,87,.35)}
 .portal .sec-head{align-items:baseline}
 .portal button.btn{font-family:inherit}
 .portal .btn[disabled]{opacity:.6;cursor:default}
 .portal .progress{margin-top:40px}
 .portal .preview{border:0;width:100%;padding:0;cursor:pointer;background:transparent}
-.portal .preview .thumbimg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:brightness(.82) saturate(1.05)}
+.portal .preview .thumbimg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;filter:brightness(.86) saturate(1.05)}
+/* el velo oscurece solo el pie (donde va el chip), no tapa el encabezado de la slide */
+.portal .preview .veil{background:linear-gradient(180deg,rgba(4,16,31,0) 55%,rgba(4,16,31,.72) 100%)}
 .portal .empty{min-height:70vh;display:grid;place-items:center;text-align:center;padding:24px}
 .portal .empty h1{font-family:Fraunces,Georgia,serif;font-weight:500;font-size:clamp(30px,5vw,48px);margin:14px 0 8px}
 .portal .empty p{color:var(--muted);max-width:420px;margin:0 auto}
@@ -145,3 +147,30 @@
 .portal .modal .close{align-self:flex-end;background:none;border:0;color:var(--muted);font-size:22px;cursor:pointer}
 .portal .slidenav{display:flex;gap:12px;align-items:center;color:var(--muted);font-size:13px}
 .portal .slidenav button{background:rgba(255,255,255,.06);border:1px solid var(--line);color:var(--cream);border-radius:999px;width:34px;height:34px;cursor:pointer}
+
+/* ---- loader del portal (estética campaña) ---- */
+.portal .ploader{min-height:100vh;display:grid;place-content:center;justify-items:center;gap:14px;text-align:center;padding:24px}
+.portal .pspin{width:46px;height:46px;border-radius:999px;border:2px solid rgba(192,132,87,.18);border-top-color:var(--wood);animation:pspin .8s linear infinite}
+@keyframes pspin{to{transform:rotate(360deg)}}
+.portal .peyebrow{color:var(--wood);letter-spacing:.3em;text-transform:uppercase;font-size:11px;font-weight:600;margin-top:4px}
+.portal .pmsg{font-family:Fraunces,Georgia,serif;font-size:21px;color:var(--cream);min-height:1.3em;animation:portalRise .5s cubic-bezier(.16,1,.3,1) both}
+@media (prefers-reduced-motion: reduce){.portal .pspin{animation-duration:1.4s} .portal .pmsg{animation:none}}
+
+/* ---- animaciones suaves (entrada/salida) ---- */
+@keyframes portalFadeIn{from{opacity:0}to{opacity:1}}
+@keyframes portalFadeOut{from{opacity:1}to{opacity:0}}
+@keyframes portalPopIn{from{opacity:0;transform:translateY(18px) scale(.975)}to{opacity:1;transform:none}}
+@keyframes portalPopOut{from{opacity:1;transform:none}to{opacity:0;transform:translateY(12px) scale(.985)}}
+@keyframes portalRise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.portal .modal{animation:portalFadeIn .2s ease both}
+.portal .modal.closing{animation:portalFadeOut .18s ease both}
+.portal .modal .sheet{animation:portalPopIn .32s cubic-bezier(.16,1,.3,1) both}
+.portal .modal.closing .sheet{animation:portalPopOut .18s ease both}
+.portal .modal .discuss{animation:portalRise .26s cubic-bezier(.16,1,.3,1) both}
+.portal .modal .side .actions{animation:portalRise .24s ease both}
+.portal .modal .btn.done{animation:portalRise .24s ease both}
+/* micro-respiración de la card al aparecer no; respetamos reduced-motion */
+@media (prefers-reduced-motion: reduce){
+  .portal .modal,.portal .modal.closing,.portal .modal .sheet,.portal .modal.closing .sheet,
+  .portal .modal .discuss,.portal .modal .side .actions,.portal .modal .btn.done{animation:none}
+}

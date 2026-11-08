@@ -36,8 +36,15 @@
 
   <script>
     try {
+      var p = (window.location && window.location.pathname) || '';
+      var isPortal = p.indexOf('/portal') === 0;
       var isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator && window.navigator.standalone === true);
-      if (sessionStorage.getItem('creapp_pwa_splash_seen') && !isStandalone) {
+      if (isPortal) {
+        // Portal del cliente: saltear el splash de CreAPP y arrancar en navy (no negro).
+        document.documentElement.classList.remove('splash-active');
+        document.documentElement.classList.add('skip-splash');
+        document.documentElement.classList.add('portal-boot');
+      } else if (sessionStorage.getItem('creapp_pwa_splash_seen') && !isStandalone) {
         document.documentElement.classList.add('skip-splash');
       }
     } catch(e) {}
@@ -67,6 +74,10 @@
     }
     html.skip-splash #pwa-static-splash {
       display: none !important;
+    }
+    /* Portal del cliente: fondo navy desde el primer paint (sin negro CreAPP). */
+    html.portal-boot, html.portal-boot body {
+      background-color: #04101f !important;
     }
     #root {
       width: 100%;

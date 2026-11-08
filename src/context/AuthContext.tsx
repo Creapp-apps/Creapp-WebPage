@@ -89,6 +89,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email: currentUser.email || '',
         role: defaultRole,
       });
+    } finally {
+      // El rol ya está resuelto (real o default): recién acá soltamos el loading,
+      // para que los guards nunca redirijan con un rol adivinado (evita el flash de /admin).
+      setLoading(false);
     }
   };
 
@@ -143,15 +147,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (session?.user) {
         setUser(session.user);
-        // Ejecutar en background fuera del ciclo de eventos de auth
+        // Ejecutar en background fuera del ciclo de eventos de auth.
+        // NO soltamos loading acá: lo suelta fetchProfile cuando el rol real está listo
+        // (si no, el guard redirige con el rol default y pestañea /admin).
         setTimeout(() => {
           if (isMounted) fetchProfile(session.user);
         }, 0);
       } else {
         setUser(null);
         setProfile(null);
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => {

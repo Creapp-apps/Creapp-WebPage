@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import type { PortalPiece } from '@/lib/portalTypes';
 import { typeMeta } from '@/lib/portalView';
 
@@ -16,16 +16,24 @@ export const PiecePlayer: React.FC<Props> = ({ piece, startWithChanges, busy, er
   const [slide, setSlide] = useState(0);
   const [asking, setAsking] = useState(!!startWithChanges);
   const [comment, setComment] = useState('');
+  const [closing, setClosing] = useState(false);
   const approved = piece.status === 'approved';
 
-  useEffect(() => {
-    const k = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
-    window.addEventListener('keydown', k);
-    return () => window.removeEventListener('keydown', k);
+  const requestClose = useCallback(() => {
+    const reduce = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) { onClose(); return; }
+    setClosing(true);
+    window.setTimeout(onClose, 180);
   }, [onClose]);
 
+  useEffect(() => {
+    const k = (e: KeyboardEvent) => e.key === 'Escape' && requestClose();
+    window.addEventListener('keydown', k);
+    return () => window.removeEventListener('keydown', k);
+  }, [requestClose]);
+
   return (
-    <div className="modal" role="dialog" aria-modal="true" onClick={onClose}>
+    <div className={`modal${closing ? ' closing' : ''}`} role="dialog" aria-modal="true" onClick={requestClose}>
       <div className="sheet" onClick={(e) => e.stopPropagation()}>
         <div className="media">
           {piece.mediaUrl ? (
@@ -44,7 +52,7 @@ export const PiecePlayer: React.FC<Props> = ({ piece, startWithChanges, busy, er
           ) : null}
         </div>
         <div className="side">
-          <button type="button" className="close" onClick={onClose} aria-label="Cerrar">✕</button>
+          <button type="button" className="close" onClick={requestClose} aria-label="Cerrar">✕</button>
           <div className="ty" style={{ color: 'var(--wood)', fontSize: 11, letterSpacing: '.14em', textTransform: 'uppercase', fontWeight: 600 }}>{typeMeta(piece.type).singular}</div>
           <h3>{piece.title}</h3>
           {piece.caption && <div className="cap">{piece.caption}</div>}

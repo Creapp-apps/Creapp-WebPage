@@ -7,6 +7,7 @@ import { PieceRail } from '@/components/portal/PieceRail';
 import { PieceCard } from '@/components/portal/PieceCard';
 import { PiecePlayer } from '@/components/portal/PiecePlayer';
 import { AgencyFootCredit } from '@/components/portal/AgencyBadge';
+import PortalLoader from '@/components/portal/PortalLoader';
 import '@/components/portal/portal.css';
 
 const PortalView: React.FC = () => {
@@ -15,6 +16,13 @@ const PortalView: React.FC = () => {
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [open, setOpen] = useState<{ id: string; changes: boolean } | null>(null);
+  // Mínimo de loader diseñado (~2s): la carga se siente intencional, no un flash.
+  const [minShown, setMinShown] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setMinShown(true), 2000);
+    return () => clearTimeout(t);
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -45,8 +53,8 @@ const PortalView: React.FC = () => {
   const prog = progressSummary(pieces);
   const openPiece: PortalPiece | undefined = open ? pieces.find((p) => p.id === open.id) : undefined;
 
-  if (state === 'loading') {
-    return <div className="portal"><div className="empty"><div className="eyebrow">Tu agencia te presenta</div></div></div>;
+  if (state === 'loading' || !minShown) {
+    return <PortalLoader />;
   }
   if (state === 'empty' || !campaign) {
     return (

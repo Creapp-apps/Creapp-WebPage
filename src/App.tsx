@@ -17,6 +17,7 @@ const ControlCenter = React.lazy(() => import('./pages/admin/ControlCenter'));
 const SetPasswordPage = React.lazy(() => import('./pages/admin/SetPasswordPage'));
 const PortalView = React.lazy(() => import('./pages/PortalView'));
 import PortalGuard from './components/auth/PortalGuard';
+import PortalLoader from './components/portal/PortalLoader';
 
 // Detectar y redirigir invitaciones y recuperaciones de auth de Supabase a /admin/set-password
 const AuthRedirectHandler: React.FC = () => {
@@ -141,10 +142,18 @@ const LandingSmoothScrollWrapper: React.FC<{ children: React.ReactNode }> = ({ c
   return <SmoothScroll>{children}</SmoothScroll>;
 };
 
+// El splash de arranque de CreAPP (cohete) NO debe mostrarse en el portal del
+// cliente: ahí manda la estética de la campaña y su propio loader.
+const GlobalSplash: React.FC = () => {
+  const location = useLocation();
+  if (location.pathname.startsWith('/portal')) return null;
+  return <PwaSplashScreen />;
+};
+
 const App: React.FC = () => {
   return (
     <BrowserRouter>
-      <PwaSplashScreen />
+      <GlobalSplash />
       <AuthRedirectHandler />
       <AuthProvider>
         <NotificationProvider>
@@ -169,7 +178,7 @@ const App: React.FC = () => {
                       path="/admin/control-center"
                       element={<AuthGuard allowedRoles={['admin']}><ControlCenter /></AuthGuard>}
                     />
-                    <Route path="/portal" element={<PortalGuard><PortalView /></PortalGuard>} />
+                    <Route path="/portal" element={<PortalGuard><Suspense fallback={<PortalLoader />}><PortalView /></Suspense></PortalGuard>} />
                   </Routes>
                 </Suspense>
               </LandingSmoothScrollWrapper>
