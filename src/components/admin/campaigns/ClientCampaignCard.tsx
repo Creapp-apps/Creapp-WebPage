@@ -1,4 +1,5 @@
 import React from 'react';
+import { ExternalLink } from 'lucide-react';
 import type { TrackerClient } from '@/lib/contentTrackerTypes';
 import { plural, sortCampaignsByAttention } from '@/lib/contentTrackerView';
 import { CampaignGroup } from './CampaignGroup';
@@ -14,6 +15,11 @@ export const ClientCampaignCard: React.FC<{ client: TrackerClient; onChanged: ()
           ) : (
             <h3 className="text-base font-bold text-white truncate">{client.name}</h3>
           )}
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-semibold">
+          <a href={`/admin/portal-preview/${client.id}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/5 text-zinc-300 border border-white/10 hover:bg-white/10 hover:text-white transition-colors">
+            <ExternalLink size={12} /> Abrir en el portal
+          </a>
         </div>
         <div className="flex flex-wrap gap-1.5 text-[11px] font-semibold">
           {counts.approved > 0 && <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">{plural(counts.approved, 'aprobada', 'aprobadas')}</span>}

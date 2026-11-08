@@ -12,9 +12,13 @@ type Props = {
   onOpen: () => void;
   onApprove: () => void;
   onRequestChanges: () => void;
+  /** Vista del equipo: sin acciones de aprobación. */
+  readOnly?: boolean;
+  /** Pieza todavía no visible para el cliente. */
+  draft?: boolean;
 };
 
-export const PieceCard: React.FC<Props> = ({ piece, index, busy, error, onOpen, onApprove, onRequestChanges }) => {
+export const PieceCard: React.FC<Props> = ({ piece, index, busy, error, onOpen, onApprove, onRequestChanges, readOnly = false, draft = false }) => {
   const meta = typeMeta(piece.type);
   const vertical = piece.type !== 'carousel';
   const approved = piece.status === 'approved';
@@ -28,13 +32,14 @@ export const PieceCard: React.FC<Props> = ({ piece, index, busy, error, onOpen, 
         <div className={`pill ${approved ? 'aprob' : 'rev'}`}>
           {approved ? '✓ Aprobada' : piece.status === 'changes_requested' ? 'Cambios pedidos' : 'Espera tu mirada'}
         </div>
+        {draft && <div className="pill" style={{ top: 'auto', bottom: 10, left: 10, background: 'rgba(0,0,0,0.55)', color: '#e5e7eb', opacity: 0.85 }}>Borrador</div>}
         {vertical && <div className="play" />}
       </button>
       <div className="body">
         <div className="ty">{label}</div>
         <h3>{piece.title}</h3>
         <p>{piece.caption}</p>
-        <div className="actions">
+        {!readOnly && <div className="actions">
           {approved ? (
             <div className="btn done">✓ Aprobada por vos</div>
           ) : (
@@ -43,7 +48,7 @@ export const PieceCard: React.FC<Props> = ({ piece, index, busy, error, onOpen, 
               <button type="button" className="btn change" disabled={busy} onClick={onRequestChanges}>Pedir cambios</button>
             </>
           )}
-        </div>
+        </div>}
         {error && <div className="err">{error}</div>}
       </div>
     </div>
