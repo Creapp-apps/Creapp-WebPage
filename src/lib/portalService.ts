@@ -1,5 +1,6 @@
 import { getSupabase } from '@/lib/supabaseClient';
 import { mapCampaign, type AssetRow, type ApprovalRow, type CampaignRow, type ClientRow, type JobRow } from './portalMapper';
+import { submitDecisionWith, type ApprovalClient } from './portalApproval';
 import type { PortalCampaign, PortalDecision } from './portalTypes';
 
 export type { PortalCampaign, PortalPiece, PortalDecision } from './portalTypes';
@@ -45,12 +46,5 @@ export async function getMyCampaign(): Promise<PortalCampaign | null> {
 }
 
 export async function submitDecision(jobId: string, decision: PortalDecision, comment?: string): Promise<void> {
-  const sb = getSupabase();
-  const { data: { user }, error: uErr } = await sb.auth.getUser();
-  if (uErr) throw uErr;
-  if (!user) throw new Error('Sesión no iniciada');
-  const { error } = await sb.from('content_approvals').insert({
-    job_id: jobId, client_user_id: user.id, decision, comment: comment ?? null,
-  });
-  if (error) throw error;
+  return submitDecisionWith(getSupabase() as unknown as ApprovalClient, jobId, decision, comment);
 }

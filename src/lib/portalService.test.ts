@@ -35,3 +35,35 @@ test('status from latest approval, default sent', () => {
   assert.equal(r.pieces[0].status, 'approved');
   assert.equal(r.pieces[1].status, 'sent');
 });
+
+import { submitDecisionWith, buildApprovalInsert } from './portalApproval.ts';
+
+function fake(user: { id: string } | null) {
+  const inserts: { table: string; row: unknown }[] = [];
+  return {
+    inserts,
+    sb: {
+      auth: { getUser: async () => ({ data: { user }, error: null }) },
+      from: (table: string) => ({ insert: async (row: unknown) => { inserts.push({ table, row }); return { error: null }; } }),
+    } as any,
+  };
+}
+
+test('submitDecision inserta con client_user_id de la sesión', async () => {
+  const f = fake({ id: 'u-123' });
+  await submitDecisionWith(f.sb, 'j1', 'approved', 'ok');
+  assert.deepEqual(f.inserts, [{
+    table: 'content_approvals',
+    row: { job_id: 'j1', client_user_id: 'u-123', decision: 'approved', comment: 'ok' },
+  }]);
+});
+
+test('submitDecision sin sesión lanza y no inserta', async () => {
+  const f = fake(null);
+  await assert.rejects(() => submitDecisionWith(f.sb, 'j1', 'approved'));
+  assert.equal(f.inserts.length, 0);
+});
+
+test('buildApprovalInsert comment por defecto null', () => {
+  assert.equal(buildApprovalInsert({ id: 'u' }, 'j', 'changes_requested').comment, null);
+});
