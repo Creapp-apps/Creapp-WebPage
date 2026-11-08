@@ -33,6 +33,7 @@ import ProjectsTab from '@/components/admin/ProjectsTab';
 import SubscriptionsTab from '@/components/admin/SubscriptionsTab';
 import FinancesTab from '@/components/admin/FinancesTab';
 import TelemetryTab from '@/components/admin/TelemetryTab';
+import ContentCampaignsTab from '@/components/admin/campaigns/ContentCampaignsTab';
 import { useAuth } from '@/context/AuthContext';
 
 const statusColors: Record<string, string> = {
@@ -449,6 +450,8 @@ const AdminPanel: React.FC = () => {
 
       {/* 9. CENTRO DE CONTROL & TELEMETRÍA NOC (SOLO ADMIN) */}
       {activeTab === 'telemetry' && isAdmin && <TelemetryTab />}
+
+      {activeTab === 'content_campaigns' && <ContentCampaignsTab />}
 
       {/* MODAL: SELECCIÓN DE PROPUESTA COMERCIAL */}
       <AnimatePresence>
