@@ -4,17 +4,23 @@ import type { ThreadEntry } from './threadTypes';
 
 export async function getThread(jobId: string): Promise<ThreadEntry[]> {
   const sb = getSupabase();
-  const [m, a, p] = await Promise.all([
+  const [m, a] = await Promise.all([
     sb.from('content_messages').select('id, job_id, author_role, author_user_id, body, created_at').eq('job_id', jobId),
     sb.from('content_approvals').select('job_id, client_user_id, decision, comment, created_at').eq('job_id', jobId),
-    sb.from('user_profiles').select('id, email, full_name'),
   ]);
   if (m.error) throw m.error;
   if (a.error) throw a.error;
-  if (p.error) throw p.error;
+  const msgs = (m.data ?? []) as TMessageRow[];
+  const apps = (a.data ?? []) as TApprovalRow[];
+  // Solo resolvemos nombres de quienes participaron en este hilo (nunca emails).
+  const ids = [...new Set([...msgs.map((x) => x.author_user_id), ...apps.map((x) => x.client_user_id)])];
   const profiles: Record<string, TProfileRow> = {};
-  for (const r of (p.data ?? []) as TProfileRow[]) profiles[r.id] = r;
-  return buildThread((m.data ?? []) as TMessageRow[], (a.data ?? []) as TApprovalRow[], profiles);
+  if (ids.length > 0) {
+    const p = await sb.from('user_profiles').select('id, full_name').in('id', ids);
+    if (p.error) throw p.error;
+    for (const r of (p.data ?? []) as TProfileRow[]) profiles[r.id] = r;
+  }
+  return buildThread(msgs, apps, profiles);
 }
 
 async function post(jobId: string, body: string, role: 'team' | 'client'): Promise<void> {

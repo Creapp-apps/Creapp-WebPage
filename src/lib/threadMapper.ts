@@ -17,8 +17,7 @@ export interface TApprovalRow {
 }
 export interface TProfileRow {
   id: string;
-  email?: string | null;
-  full_name?: string | null;
+  full_name: string | null;
 }
 
 /**
@@ -30,8 +29,7 @@ export function approvalId(a: TApprovalRow): string {
 }
 
 function nameOf(profiles: Record<string, TProfileRow>, userId: string): string | null {
-  const p = profiles[userId];
-  return p?.full_name || p?.email || null;
+  return profiles[userId]?.full_name ?? null;
 }
 
 /** Fusiona mensajes y decisiones en un hilo cronológico (asc, desempate por id). PURA. */

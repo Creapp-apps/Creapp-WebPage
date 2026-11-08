@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { buildThread } from './threadMapper.ts';
 
 const profiles = {
-  u1: { id: 'u1', email: 'eq@x.com', full_name: 'Seba' },
-  u2: { id: 'u2', email: 'cli@x.com', full_name: null },
+  u1: { id: 'u1', full_name: 'Seba' },
+  u2: { id: 'u2', full_name: null },
 };
 const msg = (id: string, role: 'team' | 'client', uid: string, at: string) =>
   ({ id, job_id: 'j', author_role: role, author_user_id: uid, body: 'b-' + id, created_at: at });
@@ -22,7 +22,7 @@ test('orden cronológico con decisiones intercaladas y nombres', () => {
   assert.deepEqual(t.map((e) => e.kind), ['message', 'decision', 'message']);
   assert.equal(t[0].authorName, 'Seba');
   assert.equal(t[1].authorRole, 'client');
-  assert.equal(t[1].authorName, 'cli@x.com');
+  assert.equal(t[1].authorName, null);
   assert.equal(t[1].decision, 'changes_requested');
   assert.equal(t[1].body, 'ajustar');
   assert.equal(t[2].decision, null);
