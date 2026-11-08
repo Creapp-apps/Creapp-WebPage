@@ -32,6 +32,7 @@ import {
   Smartphone,
   Download,
   Share2,
+  Megaphone,
 } from 'lucide-react';
 import creappLogoOfficial from '@/assets/CREAPP LOGO VECTOR.png';
 import { useAuth } from '@/context/AuthContext';
@@ -48,7 +49,8 @@ export type AdminTab =
   | 'projects'
   | 'subscriptions'
   | 'finances'
-  | 'telemetry';
+  | 'telemetry'
+  | 'content_campaigns';
 
 interface AdminLayoutProps {
   currentTab: AdminTab;
@@ -180,6 +182,16 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
       ],
     },
     {
+      category: 'Marketing & Campañas',
+      items: [
+        {
+          id: 'content_campaigns',
+          label: 'Campañas de Contenido',
+          icon: Megaphone,
+        },
+      ],
+    },
+    {
       category: 'Finanzas & Contable',
       items: [
         {
@@ -229,7 +241,9 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
   // Si el usuario es vendedor, ocultamos las categorías de Finanzas, Contratos y Credenciales
   const navGroups: NavGroup[] = rawNavGroups.filter((g) => {
     if (isAdmin) return true;
-    return g.category === 'Visión General' || g.category === 'Ventas & Crecimiento';
+    return g.category === 'Visión General' ||
+      g.category === 'Ventas & Crecimiento' ||
+      g.category === 'Marketing & Campañas';
   });
 
   // Helper para buscar el título actual del tab
