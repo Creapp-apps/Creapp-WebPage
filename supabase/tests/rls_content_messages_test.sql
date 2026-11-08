@@ -89,6 +89,15 @@ begin
   exception when insufficient_privilege then denied := true;
   end;
   if not denied then raise exception 'FALLO: miembro pudo insertar en job de otro cliente'; end if;
+
+  -- spoofing de autor: author_user_id distinto de auth.uid() (usa al usuario de equipo, existe por FK)
+  denied := false;
+  begin
+    insert into public.content_messages (job_id, author_role, author_user_id, body)
+    values (current_setting('test.job_a')::uuid, 'client', current_setting('test.u_t')::uuid, 'spoof');
+  exception when insufficient_privilege then denied := true;
+  end;
+  if not denied then raise exception 'FALLO: miembro pudo falsificar author_user_id'; end if;
 end $$;
 
 -- Equipo ------------------------------------------------------------------------
@@ -140,6 +149,44 @@ begin
   select count(*) into n from public.content_campaigns
    where id = current_setting('test.camp_a')::uuid and status = 'closed';
   if n <> 1 then raise exception 'FALLO: equipo no pudo cambiar status de campaña'; end if;
+end $$;
+
+reset role;
+
+-- Trigger-only: el grant de columnas ya bloquea type/title, así que para probar
+-- el TRIGGER (defensa en profundidad) se ensancha el grant a nivel tabla; todo se
+-- revierte con el ROLLBACK final.
+grant update on public.content_jobs to authenticated;
+grant update on public.content_campaigns to authenticated;
+select set_config('request.jwt.claims',
+  json_build_object('sub', current_setting('test.u_t'), 'role', 'authenticated')::text, true);
+set local role authenticated;
+
+do $$
+declare
+  n int;
+  denied boolean;
+begin
+  denied := false;
+  begin
+    update public.content_jobs set type = 'x' where id = current_setting('test.job_a')::uuid;
+  exception when insufficient_privilege or raise_exception then denied := true;
+  end;
+  if not denied then raise exception 'FALLO: trigger no bloqueó content_jobs.type'; end if;
+
+  denied := false;
+  begin
+    update public.content_campaigns set title = 'x' where id = current_setting('test.camp_a')::uuid;
+  exception when insufficient_privilege or raise_exception then denied := true;
+  end;
+  if not denied then raise exception 'FALLO: trigger no bloqueó content_campaigns.title'; end if;
+
+  -- sigue permitido lo legítimo con el grant ancho
+  update public.content_jobs set sent_at = now() where id = current_setting('test.job_a')::uuid;
+  update public.content_campaigns set status = 'open' where id = current_setting('test.camp_a')::uuid;
+  select count(*) into n from public.content_campaigns
+   where id = current_setting('test.camp_a')::uuid and status = 'open';
+  if n <> 1 then raise exception 'FALLO: trigger bloqueó un cambio legítimo de status'; end if;
 end $$;
 
 reset role;
