@@ -15,6 +15,8 @@ const AdminPanel = React.lazy(() => import('./pages/admin/AdminPanel'));
 const ProposalEditor = React.lazy(() => import('./pages/admin/ProposalEditor'));
 const ControlCenter = React.lazy(() => import('./pages/admin/ControlCenter'));
 const SetPasswordPage = React.lazy(() => import('./pages/admin/SetPasswordPage'));
+const PortalView = React.lazy(() => import('./pages/PortalView'));
+import PortalGuard from './components/auth/PortalGuard';
 
 // Detectar y redirigir invitaciones y recuperaciones de auth de Supabase a /admin/set-password
 const AuthRedirectHandler: React.FC = () => {
@@ -167,6 +169,7 @@ const App: React.FC = () => {
                       path="/admin/control-center"
                       element={<AuthGuard allowedRoles={['admin']}><ControlCenter /></AuthGuard>}
                     />
+                    <Route path="/portal" element={<PortalGuard><PortalView /></PortalGuard>} />
                   </Routes>
                 </Suspense>
               </LandingSmoothScrollWrapper>
