@@ -31,3 +31,17 @@ export function relativeTime(iso: string | null, now: number = Date.now()): stri
   if (d < 30) return d === 1 ? 'hace 1 día' : `hace ${d} días`;
   return new Date(t).toLocaleDateString('es-AR');
 }
+
+export function plural(n: number, sing: string, plur: string): string {
+  return `${n} ${n === 1 ? sing : plur}`;
+}
+
+export function summaryText(t: { clients: number; total: number; approved: number; changes: number; pending: number }): string {
+  return [
+    plural(t.clients, 'cliente', 'clientes'),
+    plural(t.total, 'pieza', 'piezas'),
+    plural(t.approved, 'aprobada', 'aprobadas'),
+    plural(t.changes, 'pidió cambios', 'pidieron cambios'),
+    `${t.pending} sin revisar`,
+  ].join(' · ');
+}

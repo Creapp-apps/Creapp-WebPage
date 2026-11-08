@@ -1,8 +1,8 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Megaphone, Loader2 } from 'lucide-react';
 import { getTrackerOverview, subscribeTracker } from '@/lib/contentTrackerService';
 import type { TrackerOverview } from '@/lib/contentTrackerTypes';
-import { sortClientsByUrgency } from '@/lib/contentTrackerView';
+import { sortClientsByUrgency, summaryText } from '@/lib/contentTrackerView';
 import { ClientCampaignCard } from './ClientCampaignCard';
 
 export const ContentCampaignsTab: React.FC = () => {
@@ -10,15 +10,20 @@ export const ContentCampaignsTab: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
+  const reqId = useRef(0);
   const load = useCallback(async () => {
+    const id = ++reqId.current;
     try {
-      setOverview(await getTrackerOverview());
+      const data = await getTrackerOverview();
+      if (id !== reqId.current) return;
+      setOverview(data);
       setError(false);
     } catch (err) {
+      if (id !== reqId.current) return;
       console.error('Error cargando campañas:', err);
       setError(true);
     } finally {
-      setLoading(false);
+      if (id === reqId.current) setLoading(false);
     }
   }, []);
 
@@ -27,8 +32,15 @@ export const ContentCampaignsTab: React.FC = () => {
   }, [load]);
 
   useEffect(() => {
-    const unsub = subscribeTracker(() => { load(); });
-    return unsub;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const unsub = subscribeTracker(() => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => { load(); }, 300);
+    });
+    return () => {
+      if (timer) clearTimeout(timer);
+      unsub();
+    };
   }, [load]);
 
   const t = overview?.totals;
@@ -48,7 +60,7 @@ export const ContentCampaignsTab: React.FC = () => {
         </div>
         {t && (
           <p className="text-xs text-zinc-400">
-            {t.clients} clientes · {t.total} piezas · {t.approved} aprobadas · {t.changes} pidieron cambios · {t.pending} sin revisar
+            {summaryText(t)}
           </p>
         )}
       </div>
