@@ -3,7 +3,7 @@ import { CheckCircle2, MessageSquareWarning, Clock, ImageOff } from 'lucide-reac
 import type { TrackerPiece } from '@/lib/contentTrackerTypes';
 import { STATUS_LABEL, relativeTime } from '@/lib/contentTrackerView';
 
-const CHIP: Record<TrackerPiece['status'], { cls: string; Icon: React.ElementType }> = {
+const CHIP: Record<TrackerPiece['status'], { cls: string; Icon: React.ComponentType<{ size?: number }> }> = {
   sent: { cls: 'bg-amber-500/10 text-amber-300 border-amber-500/20', Icon: Clock },
   approved: { cls: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20', Icon: CheckCircle2 },
   changes_requested: { cls: 'bg-rose-500/10 text-rose-400 border-rose-500/25', Icon: MessageSquareWarning },
