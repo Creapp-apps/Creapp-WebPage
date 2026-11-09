@@ -32,7 +32,7 @@ export const PieceCard: React.FC<Props> = ({ piece, index, busy, error, onOpen, 
         <div className={`pill ${approved ? 'aprob' : 'rev'}`}>
           {approved ? '✓ Aprobada' : piece.status === 'changes_requested' ? 'Cambios pedidos' : 'Espera tu mirada'}
         </div>
-        {draft && <div className="pill" style={{ top: 'auto', bottom: 10, left: 10, background: 'rgba(0,0,0,0.55)', color: '#e5e7eb', opacity: 0.85 }}>Borrador</div>}
+        {draft && <div className="pill" style={{ top: 10, bottom: 'auto', left: 10, background: 'rgba(0,0,0,0.62)', color: '#e5e7eb', borderColor: 'rgba(255,255,255,0.18)' }}>Borrador</div>}
         {vertical && <div className="play" />}
       </button>
       <div className="body">
