@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { sendPortalInvite, buildPortalInviteHtml } from './emailService.ts';
+import { sendPortalInvite, buildPortalInviteHtml, sendCampaignUpdate, buildCampaignUpdateHtml } from './emailService.ts';
 
 test('sendPortalInvite hace POST a /api/send-portal-invite y resuelve success', async () => {
   const original = globalThis.fetch;
@@ -100,4 +100,44 @@ test('sendPortalInvite: 400 sin cuerpo usa mensaje genérico con el status', asy
       assert.match(res.error ?? '', /400/);
     }
   );
+});
+
+const updateParams = {
+  email: 'cliente@marca.com',
+  brandName: 'Cardoso',
+  month: 'noviembre',
+  campaignUrl: 'https://creapp.com.ar/portal/campanas/abc',
+  newCount: 3,
+  updatedCount: 2,
+};
+
+test('sendCampaignUpdate hace POST a /api/send-campaign-update y resuelve success', async () => {
+  const calls: { url: string; init: any }[] = [];
+  await withFetch(
+    (async (url: any, init: any) => {
+      calls.push({ url: String(url), init });
+      return { ok: true, status: 200, json: async () => ({ success: true }) } as any;
+    }) as any,
+    async () => {
+      const res = await sendCampaignUpdate(updateParams);
+      assert.deepEqual(res, { success: true });
+      assert.equal(calls.length, 1);
+      assert.equal(calls[0].url, '/api/send-campaign-update');
+      assert.equal(calls[0].init.method, 'POST');
+      assert.deepEqual(JSON.parse(calls[0].init.body), updateParams);
+    }
+  );
+});
+
+test('buildCampaignUpdateHtml escapa <, & y " en brandName y month', () => {
+  const html = buildCampaignUpdateHtml({
+    ...updateParams,
+    brandName: 'Marca<script>&"',
+    month: 'mes<b>"',
+  });
+  assert.ok(!html.includes('<script>'));
+  assert.ok(!html.includes('<b>'));
+  assert.ok(html.includes('Marca&lt;script&gt;&amp;&quot;'));
+  assert.ok(html.includes('mes&lt;b&gt;&quot;'));
+  assert.ok(html.includes('Ver mi campaña'));
 });

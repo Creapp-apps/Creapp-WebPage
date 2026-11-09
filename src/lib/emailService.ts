@@ -247,3 +247,120 @@ async function sendPortalInviteDirectFallback(
     return { success: false, error: err.message };
   }
 }
+
+export interface CampaignUpdateParams {
+  email: string;
+  brandName: string;
+  month: string | null;
+  campaignUrl: string;
+  newCount: number;
+  updatedCount: number;
+}
+
+export const buildCampaignUpdateSubject = (params: CampaignUpdateParams): string =>
+  `Novedades en tu campaña${params.month ? ' de ' + params.month : ''} · ${params.brandName}`;
+
+export const buildCampaignUpdateHtml = (params: CampaignUpdateParams): string => {
+  const brand = escapeHtml(params.brandName);
+  const month = params.month ? escapeHtml(params.month) : '';
+  const link = escapeHtml(params.campaignUrl);
+  const parts: string[] = [];
+  if (params.newCount > 0)
+    parts.push(`<strong>${params.newCount}</strong> ${params.newCount === 1 ? 'pieza nueva' : 'piezas nuevas'}`);
+  if (params.updatedCount > 0)
+    parts.push(
+      `<strong>${params.updatedCount}</strong> ${params.updatedCount === 1 ? 'pieza actualizada' : 'piezas actualizadas'}`
+    );
+  const summary = parts.length ? parts.join(' y ') : 'novedades';
+  return `
+<div style="background-color:#07080D;padding:30px 15px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#E2E8F0;">
+  <div style="max-width:580px;margin:0 auto;background:#0E121E;border:1px solid rgba(255,255,255,0.08);border-radius:20px;overflow:hidden;">
+    <div style="height:4px;background:linear-gradient(90deg,#9333EA,#EC4899,#F59E0B);"></div>
+    <div style="padding:32px 36px;">
+      <h2 style="color:#FFFFFF;font-size:24px;margin:0 0 12px 0;">Novedades en tu campaña${month ? ' de ' + month : ''}</h2>
+      <p style="font-size:15px;color:#CBD5E1;line-height:1.6;margin:0 0 12px 0;">
+        Hola,<br/>
+        Hay ${summary} en la campaña de <strong>${brand}</strong>. Entrá a verlas y dejanos tu aprobación o tus comentarios.
+      </p>
+      <p style="margin:28px 0;text-align:center;">
+        <a href="${link}" target="_blank" style="background:linear-gradient(135deg,#9333EA,#EC4899);color:#FFFFFF;text-decoration:none;font-weight:800;padding:14px 32px;border-radius:12px;display:inline-block;font-size:13px;letter-spacing:0.06em;text-transform:uppercase;">Ver mi campaña</a>
+      </p>
+      <p style="font-size:11px;color:#64748B;text-align:center;margin:28px 0 0 0;">
+        CreAPP • Software &amp; Fintech Innovation Lab • <a href="https://creapp.com.ar" style="color:#94A3B8;">creapp.com.ar</a>
+      </p>
+    </div>
+  </div>
+</div>`;
+};
+
+export const sendCampaignUpdate = async (
+  params: CampaignUpdateParams
+): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const response = await fetch('/api/send-campaign-update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    });
+
+    if (response.ok) {
+      return { success: true };
+    }
+
+    if (response.status === 404) {
+      console.warn(
+        'Endpoint /api/send-campaign-update no disponible localmente en Vite. Utilizando fallback directo con Resend...'
+      );
+      return await sendCampaignUpdateDirectFallback(params);
+    }
+
+    const errData = await response.json().catch(() => ({}));
+    return {
+      success: false,
+      error: errData.error || `Error ${response.status} al enviar email`,
+    };
+  } catch (err: any) {
+    console.warn('Error llamando a /api/send-campaign-update, intentando fallback directo:', err);
+    return await sendCampaignUpdateDirectFallback(params);
+  }
+};
+
+async function sendCampaignUpdateDirectFallback(
+  params: CampaignUpdateParams
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const apiKey = (import.meta as any).env?.VITE_RESEND_API_KEY as string | undefined;
+    if (!apiKey) {
+      return { success: false, error: 'VITE_RESEND_API_KEY no configurada' };
+    }
+
+    const html = buildCampaignUpdateHtml(params);
+    const subject = buildCampaignUpdateSubject(params);
+    const send = (from: string) =>
+      fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+        body: JSON.stringify({ from, to: [params.email], subject, html }),
+      });
+
+    let res = await send('CreAPP <equipo@creapp.com.ar>');
+    let resData = await res.json().catch(() => ({}));
+
+    if (
+      !res.ok &&
+      (res.status === 403 ||
+        resData.message?.toLowerCase().includes('domain') ||
+        resData.message?.toLowerCase().includes('not verified'))
+    ) {
+      res = await send('CreAPP <onboarding@resend.dev>');
+      resData = await res.json().catch(() => ({}));
+    }
+
+    if (!res.ok) {
+      return { success: false, error: resData.message || 'Error en Resend API' };
+    }
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
