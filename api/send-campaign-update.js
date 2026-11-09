@@ -19,7 +19,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { email, brandName, month, campaignUrl, newCount, updatedCount } = req.body || {};
+    const { email, brandName, month, campaignUrl, changedCount } = req.body || {};
 
     if (!email || !brandName || !campaignUrl) {
       return res
@@ -39,12 +39,11 @@ export default async function handler(req, res) {
     const brand = escapeHtml(brandName);
     const monthTxt = month ? escapeHtml(month) : '';
     const link = escapeHtml(campaignUrl);
-    const nNew = Number(newCount) || 0;
-    const nUpd = Number(updatedCount) || 0;
-    const parts = [];
-    if (nNew > 0) parts.push(`<strong>${nNew}</strong> ${nNew === 1 ? 'pieza nueva' : 'piezas nuevas'}`);
-    if (nUpd > 0) parts.push(`<strong>${nUpd}</strong> ${nUpd === 1 ? 'pieza actualizada' : 'piezas actualizadas'}`);
-    const summary = parts.length ? parts.join(' y ') : 'novedades';
+    const n = Number(changedCount) || 0;
+    const summary =
+      n > 0
+        ? `<strong>${n}</strong> ${n === 1 ? 'pieza nueva o actualizada' : 'piezas nuevas o actualizadas'} desde tu último aviso`
+        : 'novedades';
     const heading = `Novedades en tu campaña${monthTxt ? ' de ' + monthTxt : ''}`;
 
     const htmlContent = `

@@ -253,8 +253,7 @@ export interface CampaignUpdateParams {
   brandName: string;
   month: string | null;
   campaignUrl: string;
-  newCount: number;
-  updatedCount: number;
+  changedCount: number;
 }
 
 export const buildCampaignUpdateSubject = (params: CampaignUpdateParams): string =>
@@ -264,14 +263,11 @@ export const buildCampaignUpdateHtml = (params: CampaignUpdateParams): string =>
   const brand = escapeHtml(params.brandName);
   const month = params.month ? escapeHtml(params.month) : '';
   const link = escapeHtml(params.campaignUrl);
-  const parts: string[] = [];
-  if (params.newCount > 0)
-    parts.push(`<strong>${params.newCount}</strong> ${params.newCount === 1 ? 'pieza nueva' : 'piezas nuevas'}`);
-  if (params.updatedCount > 0)
-    parts.push(
-      `<strong>${params.updatedCount}</strong> ${params.updatedCount === 1 ? 'pieza actualizada' : 'piezas actualizadas'}`
-    );
-  const summary = parts.length ? parts.join(' y ') : 'novedades';
+  const n = params.changedCount;
+  const summary =
+    n > 0
+      ? `<strong>${n}</strong> ${n === 1 ? 'pieza nueva o actualizada' : 'piezas nuevas o actualizadas'} desde tu último aviso`
+      : 'novedades';
   return `
 <div style="background-color:#07080D;padding:30px 15px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#E2E8F0;">
   <div style="max-width:580px;margin:0 auto;background:#0E121E;border:1px solid rgba(255,255,255,0.08);border-radius:20px;overflow:hidden;">

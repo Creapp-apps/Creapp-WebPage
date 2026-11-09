@@ -7,20 +7,20 @@ test('lastSentAt null: todas las visibles son nuevas', () => {
     { clientVisible: true, sentAt: '2026-11-01T10:00:00Z' },
     { clientVisible: true, sentAt: null },
   ], null);
-  assert.deepEqual(r, { newCount: 2, updatedCount: 0, total: 2 });
+  assert.deepEqual(r, { changedCount: 2, total: 2 });
 });
 
-test('lastSentAt intermedio separa nuevas de actualizadas', () => {
+test('lastSentAt intermedio cuenta solo las posteriores al último aviso', () => {
   const r = countChangesSince([
     { clientVisible: true, sentAt: '2026-11-01T10:00:00Z' },
     { clientVisible: true, sentAt: '2026-11-05T10:00:00Z' },
     { clientVisible: true, sentAt: null },
   ], '2026-11-03T00:00:00Z');
-  assert.deepEqual(r, { newCount: 1, updatedCount: 2, total: 3 });
+  assert.deepEqual(r, { changedCount: 1, total: 3 });
 });
 
 test('0 visibles: total 0', () => {
-  assert.deepEqual(countChangesSince([], null), { newCount: 0, updatedCount: 0, total: 0 });
+  assert.deepEqual(countChangesSince([], null), { changedCount: 0, total: 0 });
 });
 
 test('piezas no visibles no cuentan', () => {
@@ -28,5 +28,5 @@ test('piezas no visibles no cuentan', () => {
     { clientVisible: false, sentAt: '2026-11-05T10:00:00Z' },
     { clientVisible: true, sentAt: '2026-11-05T10:00:00Z' },
   ], '2026-11-03T00:00:00Z');
-  assert.deepEqual(r, { newCount: 1, updatedCount: 0, total: 1 });
+  assert.deepEqual(r, { changedCount: 1, total: 1 });
 });

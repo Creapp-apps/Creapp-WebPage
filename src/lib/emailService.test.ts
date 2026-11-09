@@ -107,8 +107,7 @@ const updateParams = {
   brandName: 'Cardoso',
   month: 'noviembre',
   campaignUrl: 'https://creapp.com.ar/portal/campanas/abc',
-  newCount: 3,
-  updatedCount: 2,
+  changedCount: 3,
 };
 
 test('sendCampaignUpdate hace POST a /api/send-campaign-update y resuelve success', async () => {
@@ -140,4 +139,12 @@ test('buildCampaignUpdateHtml escapa <, & y " en brandName y month', () => {
   assert.ok(html.includes('Marca&lt;script&gt;&amp;&quot;'));
   assert.ok(html.includes('mes&lt;b&gt;&quot;'));
   assert.ok(html.includes('Ver mi campaña'));
+});
+
+test('buildCampaignUpdateHtml usa un solo conteo, con singular/plural', () => {
+  const uno = buildCampaignUpdateHtml({ ...updateParams, changedCount: 1 });
+  assert.ok(uno.includes('<strong>1</strong> pieza nueva o actualizada desde tu último aviso'));
+  const varias = buildCampaignUpdateHtml(updateParams);
+  assert.ok(varias.includes('<strong>3</strong> piezas nuevas o actualizadas desde tu último aviso'));
+  assert.ok(!varias.includes('actualizadas</') || !/ y <strong>/.test(varias));
 });

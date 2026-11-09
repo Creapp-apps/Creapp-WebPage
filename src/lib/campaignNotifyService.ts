@@ -14,15 +14,29 @@ export async function getCampaignClientEmail(campaignId: string): Promise<string
   if (!clientId) return null;
 
   const { data: members, error: mErr } = await sb
-    .from('client_members').select('user_id').eq('client_id', clientId);
+    .from('client_members').select('user_id, role, created_at').eq('client_id', clientId);
   if (mErr) throw mErr;
-  const ids = ((members ?? []) as { user_id: string }[]).map((m) => m.user_id);
-  if (ids.length === 0) return null;
+  const rows = (members ?? []) as { user_id: string; role: string | null; created_at?: string | null }[];
+  if (rows.length === 0) return null;
 
   const { data: profiles, error: pErr } = await sb
-    .from('user_profiles').select('id, email').in('id', ids);
+    .from('user_profiles').select('id, email').in('id', rows.map((m) => m.user_id));
   if (pErr) throw pErr;
-  return ((profiles ?? []) as { id: string; email: string | null }[])[0]?.email ?? null;
+  const emailById = new Map(
+    ((profiles ?? []) as { id: string; email: string | null }[]).map((p) => [p.id, p.email]),
+  );
+  // Owner primero; luego el miembro más antiguo; se salta quien no tenga email.
+  const ordered = [...rows].sort((a, b) => {
+    const ao = a.role === 'owner' ? 0 : 1;
+    const bo = b.role === 'owner' ? 0 : 1;
+    if (ao !== bo) return ao - bo;
+    return (a.created_at ?? '').localeCompare(b.created_at ?? '') || a.user_id.localeCompare(b.user_id);
+  });
+  for (const m of ordered) {
+    const email = emailById.get(m.user_id);
+    if (email) return email;
+  }
+  return null;
 }
 
 /** Envía el aviso de novedades y registra el envío. Nunca lanza. */
@@ -43,8 +57,8 @@ export async function notifyCampaignClient(args: {
     if (lErr) throw lErr;
     const lastSentAt = ((last ?? []) as { sent_at: string }[])[0]?.sent_at ?? null;
 
-    const { newCount, updatedCount, total } = countChangesSince(args.pieces, lastSentAt);
-    if (total === 0) return { success: true, sent: false };
+    const { changedCount, total } = countChangesSince(args.pieces, lastSentAt);
+    if (changedCount === 0) return { success: true, sent: false };
 
     const email = await getCampaignClientEmail(args.campaignId);
     if (!email) return { success: false, error: 'El cliente todavía no tiene acceso al portal.' };
@@ -55,8 +69,7 @@ export async function notifyCampaignClient(args: {
       brandName: args.brandName,
       month: args.month,
       campaignUrl: `${base}/portal?campaign=${args.campaignId}`,
-      newCount,
-      updatedCount,
+      changedCount,
     });
     if (!res.success) return { success: false, error: res.error ?? 'No se pudo enviar el aviso.' };
 
