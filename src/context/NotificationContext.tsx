@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import {
   isFirebaseConfigured,
   requestNotificationPermissionAndToken,
@@ -7,6 +7,8 @@ import {
 } from '@/lib/firebase';
 import { subscribeToLocalDispatches } from '@/lib/notificationDispatcher';
 import { useAuth } from '@/context/AuthContext';
+import { getSupabase } from '@/lib/supabaseClient';
+import { mapDbNotification, type DbNotificationRow } from '@/lib/notificationRealtimeMapper';
 
 export interface NotificationItem {
   id: string;
@@ -156,6 +158,51 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       unsubscribe();
     };
   }, [addNotification]);
+
+  // Realtime: filas de app_notifications (RLS filtra por rol/usuario)
+  const userId = user?.id;
+  const seenDbIds = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!userId) return;
+    seenDbIds.current = new Set();
+    let channel: ReturnType<ReturnType<typeof getSupabase>['channel']> | null = null;
+    try {
+      const sb = getSupabase();
+      channel = sb
+        .channel(`app_notifications_${userId}`)
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'app_notifications' },
+          (payload: { new: DbNotificationRow }) => {
+            if (!payload?.new?.id) return;
+            const item = mapDbNotification(payload.new);
+            if (seenDbIds.current.has(item.id)) return;
+            seenDbIds.current.add(item.id);
+            setNotifications((prev) =>
+              prev.some((n) => n.id === item.id) ? prev : [item, ...prev].slice(0, 50)
+            );
+            setActiveToast(item);
+            playChime();
+            setTimeout(() => {
+              setActiveToast((current) => (current?.id === item.id ? null : current));
+            }, 6000);
+          }
+        )
+        .subscribe();
+    } catch (e) {
+      console.warn('[Notifications] Realtime no disponible:', e);
+    }
+    return () => {
+      seenDbIds.current = new Set();
+      if (channel) {
+        try {
+          getSupabase().removeChannel(channel);
+        } catch {
+          /* noop */
+        }
+      }
+    };
+  }, [userId, playChime]);
 
   // Request Push Permission
   const requestPushPermission = async (): Promise<{ success: boolean; error?: string }> => {
