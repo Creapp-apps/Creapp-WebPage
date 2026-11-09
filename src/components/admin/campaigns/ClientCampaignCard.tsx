@@ -33,7 +33,7 @@ export const ClientCampaignCard: React.FC<{ client: TrackerClient; onChanged: ()
         <p className="text-xs text-zinc-500">Este cliente todavía no tiene campañas</p>
       ) : (
         <div className="space-y-3">
-          {sortCampaignsByAttention(client.campaigns).map((camp) => <CampaignGroup key={camp.id} campaign={camp} onChanged={onChanged} />)}
+          {sortCampaignsByAttention(client.campaigns).map((camp) => <CampaignGroup key={camp.id} campaign={camp} brandName={client.name} onChanged={onChanged} />)}
         </div>
       )}
     </section>
