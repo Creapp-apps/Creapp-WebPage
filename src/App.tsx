@@ -147,10 +147,11 @@ const LandingSmoothScrollWrapper: React.FC<{ children: React.ReactNode }> = ({ c
 // cliente: ahí manda la estética de la campaña y su propio loader.
 const GlobalSplash: React.FC = () => {
   const location = useLocation();
-  // Ni en el portal del cliente ni en la vista previa del equipo (que renderiza
-  // la estética del portal): el splash taparía el banner y la campaña.
-  if (location.pathname.startsWith('/portal') || location.pathname.startsWith('/admin/portal-preview')) return null;
-  return <PwaSplashScreen />;
+  // En portal y en la vista previa del equipo no se muestra el cohete, pero
+  // PwaSplashScreen DEBE montar igual para descartar el splash estático del
+  // index.html (si no monta, en una pestaña nueva queda cargando para siempre).
+  const skip = location.pathname.startsWith('/portal') || location.pathname.startsWith('/admin/portal-preview');
+  return <PwaSplashScreen skipOnRoute={skip} />;
 };
 
 const App: React.FC = () => {

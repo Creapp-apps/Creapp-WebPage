@@ -3,6 +3,9 @@ import creappLogoOfficial from '@/assets/CREAPP LOGO VECTOR.png';
 
 interface PwaSplashScreenProps {
   onComplete?: () => void;
+  // En rutas portal/preview no se muestra el cohete, pero el splash estático del
+  // index.html DEBE descartarse igual (si no, queda cargando eterno en pestaña nueva).
+  skipOnRoute?: boolean;
 }
 
 // Estrellas de 4 puntas estilo Wegho (Sparkles dorados/cyan al lado del cohete)
@@ -25,7 +28,7 @@ const SparkleStar: React.FC<{ size: number; className?: string; color?: string }
   </svg>
 );
 
-export const PwaSplashScreen: React.FC<PwaSplashScreenProps> = ({ onComplete }) => {
+export const PwaSplashScreen: React.FC<PwaSplashScreenProps> = ({ onComplete, skipOnRoute }) => {
   // Secuencia Cinemática con Cadencia Satisfactoria (5 Actos):
   // 1. 'loading' (0 - 1.8s): Spawn 100% idéntico al HTML estático (cero saltos/desplazamientos), barra 0% a 100%.
   // 2. 'takeoff' (1.8s - 3.4s): Cohete despega suavemente DESDE EL CENTRO hacia arriba; cúmulos entran desde abajo (SIN LOGO).
@@ -47,6 +50,16 @@ export const PwaSplashScreen: React.FC<PwaSplashScreenProps> = ({ onComplete }) 
         }
       }
     };
+
+    // Rutas portal/preview: sin cohete, pero descartar el splash estático YA
+    // (si no se descarta nunca, la pestaña queda cargando para siempre).
+    if (skipOnRoute) {
+      dismissStaticSplash(true);
+      document.documentElement.classList.remove('splash-active');
+      setStage('done');
+      onComplete?.();
+      return;
+    }
 
     // Comprobar sesión si no es PWA instalada
     try {
@@ -111,7 +124,7 @@ export const PwaSplashScreen: React.FC<PwaSplashScreenProps> = ({ onComplete }) 
       clearTimeout(tSafety);
       document.documentElement.classList.remove('splash-active');
     };
-  }, [onComplete]);
+  }, [onComplete, skipOnRoute]);
 
   if (stage === 'done') {
     return null;
