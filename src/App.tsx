@@ -147,7 +147,9 @@ const LandingSmoothScrollWrapper: React.FC<{ children: React.ReactNode }> = ({ c
 // cliente: ahí manda la estética de la campaña y su propio loader.
 const GlobalSplash: React.FC = () => {
   const location = useLocation();
-  if (location.pathname.startsWith('/portal')) return null;
+  // Ni en el portal del cliente ni en la vista previa del equipo (que renderiza
+  // la estética del portal): el splash taparía el banner y la campaña.
+  if (location.pathname.startsWith('/portal') || location.pathname.startsWith('/admin/portal-preview')) return null;
   return <PwaSplashScreen />;
 };
 
