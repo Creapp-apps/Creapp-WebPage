@@ -59,7 +59,7 @@ export const NotificationBell: React.FC = () => {
     if (item.url) {
       setIsOpen(false);
       if (item.url.startsWith('http')) {
-        window.open(item.url, '_blank');
+        window.open(item.url, '_blank', 'noopener,noreferrer');
       } else {
         navigate(item.url);
       }

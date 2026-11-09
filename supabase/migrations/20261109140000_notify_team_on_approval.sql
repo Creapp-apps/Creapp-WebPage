@@ -94,3 +94,16 @@ create policy "Read notifications by real role"
       )
     )
   );
+
+-- Seguridad: cerrar el INSERT permisivo. Un cliente del portal podía insertar
+-- avisos falsos (target_role='admin' + url externa) que aparecían en el centro
+-- de avisos del equipo (phishing / open-redirect). Los inserts legítimos vienen
+-- del trigger security definer y de la función serverless con service_role,
+-- ambos bypassean RLS, así que authenticated/anon no necesitan poder insertar.
+drop policy if exists "Allow notification inserts" on public.app_notifications;
+drop policy if exists "Only service role inserts notifications" on public.app_notifications;
+create policy "Only service role inserts notifications"
+  on public.app_notifications
+  for insert
+  to authenticated
+  with check (false);
