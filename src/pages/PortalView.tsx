@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { getMyCampaign, submitDecision } from '@/lib/portalService';
+import { useSearchParams } from 'react-router-dom';
+import { getMyCampaigns, submitDecision } from '@/lib/portalService';
 import type { PortalCampaign, PortalDecision, PortalPiece } from '@/lib/portalTypes';
-import { campaignViewState, groupPieces, progressSummary } from '@/lib/portalView';
+import { campaignViewState, pickCampaign, groupPieces, progressSummary } from '@/lib/portalView';
 import { CampaignHero } from '@/components/portal/CampaignHero';
 import { PieceRail } from '@/components/portal/PieceRail';
 import { PieceCard } from '@/components/portal/PieceCard';
@@ -11,7 +12,8 @@ import PortalLoader from '@/components/portal/PortalLoader';
 import '@/components/portal/portal.css';
 
 const PortalView: React.FC = () => {
-  const [campaign, setCampaign] = useState<PortalCampaign | null | undefined>(undefined);
+  const [campaigns, setCampaigns] = useState<PortalCampaign[] | undefined>(undefined);
+  const [params, setParams] = useSearchParams();
   const [loadError, setLoadError] = useState(false);
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -26,9 +28,9 @@ const PortalView: React.FC = () => {
 
   useEffect(() => {
     let alive = true;
-    getMyCampaign()
-      .then((c) => alive && setCampaign(c))
-      .catch(() => { if (alive) { setLoadError(true); setCampaign(null); } });
+    getMyCampaigns()
+      .then((c) => alive && setCampaigns(c))
+      .catch(() => { if (alive) { setLoadError(true); setCampaigns([]); } });
     return () => { alive = false; };
   }, []);
 
@@ -37,7 +39,7 @@ const PortalView: React.FC = () => {
     setErrors((e) => ({ ...e, [id]: '' }));
     try {
       await submitDecision(id, decision, comment);
-      setCampaign((c) => c && { ...c, pieces: c.pieces.map((p) => (p.id === id ? { ...p, status: decision } : p)) });
+      setCampaigns((cs) => cs && cs.map((c) => ({ ...c, pieces: c.pieces.map((p) => (p.id === id ? { ...p, status: decision } : p)) })));
       return true;
     } catch {
       setErrors((e) => ({ ...e, [id]: 'No pudimos enviar tu respuesta. Probá de nuevo en un momento.' }));
@@ -47,6 +49,7 @@ const PortalView: React.FC = () => {
     }
   }, []);
 
+  const campaign: PortalCampaign | null | undefined = campaigns === undefined ? undefined : pickCampaign(campaigns, params.get('campaign'));
   const state = campaignViewState(campaign);
   const pieces = campaign?.pieces ?? [];
   const groups = useMemo(() => groupPieces(pieces), [pieces]);
@@ -76,6 +79,21 @@ const PortalView: React.FC = () => {
   return (
     <div className="portal">
       <div className="wrap">
+        {campaigns && campaigns.length >= 2 && (
+          <div className="campaign-select" style={{ margin: '16px 0' }}>
+            <label>
+              <span style={{ marginRight: 8 }}>Campaña</span>
+              <select
+                value={campaign.id}
+                onChange={(e) => { setOpen(null); setParams({ campaign: e.target.value }, { replace: true }); }}
+              >
+                {campaigns.map((c) => (
+                  <option key={c.id} value={c.id}>{[c.month, c.title].filter(Boolean).join(' · ') || 'Campaña'}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+        )}
         <CampaignHero campaign={campaign} />
         {groups.map((g) => (
           <PieceRail key={g.type} type={g.type} count={g.pieces.length}>
