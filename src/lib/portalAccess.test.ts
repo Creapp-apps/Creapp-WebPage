@@ -26,3 +26,7 @@ test('home por rol', () => {
   assert.equal(homePathForRole('admin'), '/admin');
   assert.equal(homePathForRole('vendedor'), '/admin');
 });
+test('portal sin sesión -> login (el guard lo manda a /portal/login)', () => {
+  assert.equal(resolvePortalAccess({ loading: false, user: null, role: 'admin' }), 'login');
+  assert.equal(homePathForRole('client'), '/portal');
+});

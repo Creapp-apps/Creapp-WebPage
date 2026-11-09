@@ -17,6 +17,8 @@ const ControlCenter = React.lazy(() => import('./pages/admin/ControlCenter'));
 const SetPasswordPage = React.lazy(() => import('./pages/admin/SetPasswordPage'));
 const PortalPreview = React.lazy(() => import('./pages/admin/PortalPreview'));
 const PortalView = React.lazy(() => import('./pages/PortalView'));
+const PortalLogin = React.lazy(() => import('./pages/portal/PortalLogin'));
+const PortalActivate = React.lazy(() => import('./pages/portal/PortalActivate'));
 import PortalGuard from './components/auth/PortalGuard';
 import PortalLoader from './components/portal/PortalLoader';
 
@@ -27,11 +29,11 @@ const AuthRedirectHandler: React.FC = () => {
 
   useEffect(() => {
     const hash = window.location.hash;
-    if (
+    if ((
       hash.includes('type=invite') ||
       hash.includes('type=recovery') ||
       hash.includes('error_code=otp_expired')
-    ) {
+    ) && !location.pathname.startsWith('/portal')) {
       if (location.pathname !== '/admin/set-password') {
         navigate('/admin/set-password' + hash, { replace: true });
       }
@@ -183,6 +185,8 @@ const App: React.FC = () => {
                       element={<AuthGuard allowedRoles={['admin']}><ControlCenter /></AuthGuard>}
                     />
                     <Route path="/admin/portal-preview/:clientId" element={<AuthGuard allowedRoles={['admin', 'vendedor']}><PortalPreview /></AuthGuard>} />
+                    <Route path="/portal/login" element={<Suspense fallback={<PortalLoader />}><PortalLogin /></Suspense>} />
+                    <Route path="/portal/activar" element={<Suspense fallback={<PortalLoader />}><PortalActivate /></Suspense>} />
                     <Route path="/portal" element={<PortalGuard><Suspense fallback={<PortalLoader />}><PortalView /></Suspense></PortalGuard>} />
                   </Routes>
                 </Suspense>
