@@ -6,7 +6,7 @@ create or replace function public.notify_team_on_content_approval()
 returns trigger
 language plpgsql
 security definer
-set search_path = public
+set search_path = pg_catalog, public
 as $$
 declare
   v_pieza text;
@@ -35,7 +35,7 @@ begin
       v_title := 'Cambios solicitados';
       v_body := '«' || v_marca || '» pidió cambios en «' || v_pieza || '»';
       if nullif(btrim(coalesce(NEW.comment, '')), '') is not null then
-        v_body := v_body || ' — ' || NEW.comment;
+        v_body := v_body || ' — ' || left(NEW.comment, 300);
       end if;
     end if;
 
@@ -48,6 +48,7 @@ begin
     end loop;
   exception when others then
     -- Nunca romper el insert de la aprobación.
+    raise warning 'notify_team_on_content_approval: %', sqlerrm;
     return NEW;
   end;
   return NEW;
@@ -69,3 +70,27 @@ begin
     alter publication supabase_realtime add table public.app_notifications;
   end if;
 end $$;
+
+-- Anti-fuga: endurecer la policy SELECT de app_notifications.
+-- Antes: permitía lectura anónima (auth.uid() is null), 'all' y cualquier usuario con perfil veía 'sales'.
+-- Ahora: sin anon, sin 'all', y cada usuario ve solo su rol de equipo real o sus avisos directos.
+-- Un 'client' (role distinto de admin/vendedor) no ve filas de equipo.
+drop policy if exists "Users can read relevant notifications" on public.app_notifications;
+drop policy if exists "Read notifications by real role" on public.app_notifications;
+create policy "Read notifications by real role"
+  on public.app_notifications
+  for select
+  using (
+    auth.uid() is not null
+    and (
+      target_user_id = auth.uid()
+      or exists (
+        select 1 from public.user_profiles up
+        where up.id = auth.uid()
+          and (
+            (app_notifications.target_role = 'admin' and up.role::text = 'admin')
+            or (app_notifications.target_role = 'sales' and up.role::text = 'vendedor')
+          )
+      )
+    )
+  );
