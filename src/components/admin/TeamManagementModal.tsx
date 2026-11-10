@@ -32,7 +32,7 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({ isOpen
   // Formulario
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState<UserRole>('admin');
+  const [role, setRole] = useState<Exclude<UserRole, 'client'>>('admin');
   const [submitLoading, setSubmitLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -255,7 +255,7 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({ isOpen
               </label>
               <select
                 value={role}
-                onChange={(e) => setRole(e.target.value as UserRole)}
+                onChange={(e) => setRole(e.target.value as Exclude<UserRole, 'client'>)}
                 className="w-full bg-[#121622] border border-white/10 rounded-xl px-3.5 py-2.5 text-white text-xs focus:outline-none focus:border-purple-500/50"
               >
                 <option value="admin">Master Admin (Acceso Total a CreAPP OS y Configuración)</option>

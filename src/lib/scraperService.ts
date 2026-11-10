@@ -19,6 +19,7 @@ export interface ScrapedProspect {
   rating: number;
   reviewCount: number;
   source: 'google_places' | 'gemini_intelligence';
+  opportunityLevel?: 'Alta' | 'Media' | 'Baja';
   lat?: number;
   lng?: number;
   digitalHealth: {

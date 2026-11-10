@@ -159,8 +159,8 @@ export const ContractView: React.FC = () => {
       setSignedSuccess(true);
       notifyContractSigned({
         clientName: signerName || contract.clientName,
-        title: contract.title,
-        totalAmount: contract.totalAmount,
+        title: contract.productName,
+        totalAmount: contract.monthlyFee,
         contractId: contract.id,
       }).catch(() => {});
     }
