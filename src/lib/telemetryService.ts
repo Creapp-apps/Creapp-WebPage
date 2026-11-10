@@ -3,7 +3,7 @@
 // =========================================================================
 
 import { supabase } from './supabaseClient';
-import { GoogleGenAI } from '@google/genai';
+import { callGemini } from './aiClient';
 
 export interface MonitoredApp {
   id: string;
@@ -381,17 +381,6 @@ export async function updateIncidentStatus(id: string, status: Incident['status'
 
 // 5. Diagnóstico y generación de solución mediante Gemini AI
 export async function diagnoseIncidentWithAI(incident: Incident): Promise<{ diagnosis: string; solutionDiff: string }> {
-  const apiKey = process.env.API_KEY || (import.meta as any).env?.VITE_GEMINI_API_KEY;
-  
-  if (!apiKey) {
-    return {
-      diagnosis: 'API Key de Gemini no configurada. Diagnóstico heurístico: Se detectó un acceso a propiedad nula o undefined en tiempo de ejecución.',
-      solutionDiff: `// Añade optional chaining o fallback:\n- const value = obj.property;\n+ const value = obj?.property ?? "Valor seguro";`
-    };
-  }
-
-  const ai = new GoogleGenAI({ apiKey });
-
   const prompt = `
 Eres el Ingeniero de Observabilidad y Diagnóstico Forense en tiempo real de CreAPP Software Lab.
 Se ha detectado un bug prematuro en una de nuestras aplicaciones en producción.
@@ -422,16 +411,15 @@ Responde ÚNICAMENTE en el siguiente formato JSON estricto sin markdown externo:
 `;
 
   try {
-    const response = await ai.models.generateContent({
+    const text = await callGemini({
       model: 'gemini-2.5-flash',
       contents: prompt,
       config: {
         temperature: 0.2,
-      }
+      },
     });
 
-    const text = response.text || '';
-    const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
+    const cleanJson = (text || '').replace(/```json/g, '').replace(/```/g, '').trim();
     const parsed = JSON.parse(cleanJson);
 
     // Actualizar en base de datos si es posible

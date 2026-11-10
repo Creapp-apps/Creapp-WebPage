@@ -355,6 +355,33 @@ export default defineConfig(({ mode }) => {
                 res.writeHead(500, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ error: err?.message }));
               }
+            } else if (req.url === '/api/gemini' && req.method === 'POST') {
+              let body = '';
+              req.on('data', chunk => { body += chunk.toString(); });
+              req.on('end', async () => {
+                try {
+                  const apiKey = env.GEMINI_API_KEY || env.API_KEY || '';
+                  if (!apiKey) {
+                    res.writeHead(503, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'Servicio de IA no disponible (GEMINI_API_KEY no configurada).' }));
+                    return;
+                  }
+                  const { model, contents, config } = JSON.parse(body || '{}');
+                  if (!model || !contents) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'Faltan parámetros requeridos (model, contents).' }));
+                    return;
+                  }
+                  const { GoogleGenAI } = await import('@google/genai');
+                  const ai = new GoogleGenAI({ apiKey });
+                  const response = await ai.models.generateContent({ model, contents, config });
+                  res.writeHead(200, { 'Content-Type': 'application/json' });
+                  res.end(JSON.stringify({ text: response.text ?? '' }));
+                } catch (err: any) {
+                  res.writeHead(500, { 'Content-Type': 'application/json' });
+                  res.end(JSON.stringify({ error: err?.message || 'Error interno al consultar Gemini.' }));
+                }
+              });
             } else {
               next();
             }
@@ -363,11 +390,11 @@ export default defineConfig(({ mode }) => {
       }
     ],
     define: {
+      // SEGURIDAD: las API keys NO se hornean en el bundle del cliente.
+      // Gemini se consume vía el proxy serverless /api/gemini (key solo en el servidor).
+      // Google Maps se consume vía /api/places. El scraper admite BYO-key por admin (localStorage).
       'process.env': {},
-      'process.env.NODE_ENV': JSON.stringify(mode),
-      'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY || ''),
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || ''),
-      'process.env.GOOGLE_MAPS_API_KEY': JSON.stringify(env.GOOGLE_MAPS_API_KEY || '')
+      'process.env.NODE_ENV': JSON.stringify(mode)
     },
     build: {
       chunkSizeWarningLimit: 1200,
