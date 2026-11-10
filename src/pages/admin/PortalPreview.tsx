@@ -5,6 +5,7 @@ import { groupPieces } from '@/lib/portalView';
 import { CampaignHero } from '@/components/portal/CampaignHero';
 import { PieceRail } from '@/components/portal/PieceRail';
 import { PieceCard } from '@/components/portal/PieceCard';
+import { PiecePlayer } from '@/components/portal/PiecePlayer';
 import PortalLoader from '@/components/portal/PortalLoader';
 import '@/components/portal/portal.css';
 
@@ -15,6 +16,7 @@ const PortalPreview: React.FC = () => {
   const navigate = useNavigate();
   const [preview, setPreview] = useState<CampaignPreview | null | undefined>(undefined);
   const [loadError, setLoadError] = useState(false);
+  const [openId, setOpenId] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -55,6 +57,7 @@ const PortalPreview: React.FC = () => {
   }
 
   const { campaign, draftJobIds } = preview;
+  const openPiece = openId ? campaign.pieces.find((p) => p.id === openId) : undefined;
   return (
     <div className="portal">
       {banner}
@@ -71,7 +74,7 @@ const PortalPreview: React.FC = () => {
                 error={undefined}
                 readOnly
                 draft={draftJobIds.includes(p.id)}
-                onOpen={noop}
+                onOpen={() => setOpenId(p.id)}
                 onApprove={noop}
                 onRequestChanges={noop}
               />
@@ -79,6 +82,18 @@ const PortalPreview: React.FC = () => {
           </PieceRail>
         ))}
       </div>
+
+      {openPiece && (
+        <PiecePlayer
+          key={openPiece.id}
+          piece={openPiece}
+          busy={false}
+          readOnly
+          onClose={() => setOpenId(null)}
+          onApprove={noop}
+          onSendChanges={noop}
+        />
+      )}
     </div>
   );
 };

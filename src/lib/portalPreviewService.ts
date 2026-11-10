@@ -29,7 +29,7 @@ export async function getCampaignPreview(clientId: string): Promise<CampaignPrev
   if (!campaign) return null;
 
   const { data: jobs, error: jErr } = await sb
-    .from('content_jobs').select('id, type, title, caption, created_at, client_visible')
+    .from('content_jobs').select('id, type, title, caption, description, hashtags, created_at, client_visible')
     .eq('campaign_id', campaign.id).order('created_at', { ascending: true });
   if (jErr) throw jErr;
   const allJobs = (jobs ?? []) as Array<JobRow & { client_visible?: boolean | null }>;

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import type { PortalPiece } from '@/lib/portalTypes';
 import { typeMeta } from '@/lib/portalView';
 import { PieceThread } from '@/components/admin/campaigns/PieceThread';
+import { PortalVideo } from '@/components/portal/PortalVideo';
 
 type Props = {
   piece: PortalPiece;
@@ -11,9 +12,11 @@ type Props = {
   onClose: () => void;
   onApprove: () => void;
   onSendChanges: (comment: string) => void;
+  /** Vista previa del equipo: muestra la pieza sin disparar decisiones reales del cliente. */
+  readOnly?: boolean;
 };
 
-export const PiecePlayer: React.FC<Props> = ({ piece, startWithChanges, busy, error, onClose, onApprove, onSendChanges }) => {
+export const PiecePlayer: React.FC<Props> = ({ piece, startWithChanges, busy, error, onClose, onApprove, onSendChanges, readOnly = false }) => {
   const [slide, setSlide] = useState(0);
   const [asking, setAsking] = useState(!!startWithChanges);
   const [comment, setComment] = useState('');
@@ -38,7 +41,7 @@ export const PiecePlayer: React.FC<Props> = ({ piece, startWithChanges, busy, er
       <div className="sheet" onClick={(e) => e.stopPropagation()}>
         <div className="media">
           {piece.mediaUrl ? (
-            <video src={piece.mediaUrl} poster={piece.coverUrl ?? undefined} controls playsInline autoPlay />
+            <PortalVideo src={piece.mediaUrl} poster={piece.coverUrl} />
           ) : piece.slides.length > 0 ? (
             <>
               <img className="slide" src={piece.slides[slide]} alt={`Lámina ${slide + 1}`} />
@@ -57,6 +60,18 @@ export const PiecePlayer: React.FC<Props> = ({ piece, startWithChanges, busy, er
           <div className="ty" style={{ color: 'var(--wood)', fontSize: 11, letterSpacing: '.14em', textTransform: 'uppercase', fontWeight: 600 }}>{typeMeta(piece.type).singular}</div>
           <h3>{piece.title}</h3>
           {piece.caption && <div className="cap">{piece.caption}</div>}
+          {piece.description && (
+            <div style={{ color: 'var(--muted)', fontSize: 13, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{piece.description}</div>
+          )}
+          {piece.hashtags.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {piece.hashtags.map((h) => (
+                <span key={h} style={{ fontSize: 12, color: 'var(--wood)', border: '1px solid var(--line)', borderRadius: 999, padding: '3px 9px' }}>
+                  #{h.replace(/^#/, '')}
+                </span>
+              ))}
+            </div>
+          )}
           {approved ? (
             <div className="btn done">✓ Aprobada por vos</div>
           ) : asking ? (
@@ -71,11 +86,18 @@ export const PiecePlayer: React.FC<Props> = ({ piece, startWithChanges, busy, er
               <button type="button" className="btn change" disabled={busy} onClick={() => setAsking(true)}>Pedir cambios</button>
             </div>
           )}
+          {readOnly && (
+            <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: -2 }}>
+              Vista previa del equipo — así lo ve el cliente. Las acciones se completan desde su portal.
+            </div>
+          )}
           {error && <div className="err">{error}</div>}
-          <div style={{ borderTop: '1px solid var(--line)', paddingTop: 14, marginTop: 4, display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <div style={{ color: 'var(--wood)', fontSize: 11, letterSpacing: '.14em', textTransform: 'uppercase', fontWeight: 600 }}>Conversación con tu equipo</div>
-            <PieceThread jobId={piece.id} mode="client" variant="portal" />
-          </div>
+          {!readOnly && (
+            <div style={{ borderTop: '1px solid var(--line)', paddingTop: 14, marginTop: 4, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ color: 'var(--wood)', fontSize: 11, letterSpacing: '.14em', textTransform: 'uppercase', fontWeight: 600 }}>Conversación con tu equipo</div>
+              <PieceThread jobId={piece.id} mode="client" variant="portal" />
+            </div>
+          )}
         </div>
       </div>
     </div>

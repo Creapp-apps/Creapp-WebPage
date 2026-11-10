@@ -6,7 +6,8 @@ export type CampaignRow = {
   aesthetic_archetype: string | null;
 };
 export type JobRow = {
-  id: string; type: PortalPiece['type']; title: string | null; caption: string | null; created_at?: string;
+  id: string; type: PortalPiece['type']; title: string | null; caption: string | null;
+  description?: string | null; hashtags?: string[] | null; created_at?: string;
 };
 export type AssetRow = { job_id: string; kind: string; url: string; r2_key?: string | null };
 export type ApprovalRow = { job_id: string; decision: 'approved' | 'changes_requested'; created_at: string };
@@ -32,6 +33,8 @@ export function mapCampaign(
       type: job.type,
       title: job.title ?? '',
       caption: job.caption ?? '',
+      description: job.description ?? null,
+      hashtags: job.hashtags ?? [],
       mediaUrl: own.find((a) => a.kind === 'mp4')?.url ?? null,
       coverUrl: own.find((a) => a.kind === 'cover_9_16')?.url ?? null,
       slides,
