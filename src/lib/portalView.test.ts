@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { pickBrandMark, campaignViewState, paletteSwatches, progressSummary, groupPieces, styleTags, pendingToApprove, typeMeta } from './portalView.ts';
+import { pickBrandMark, campaignViewState, paletteSwatches, progressSummary, groupPieces, styleTags, pendingToApprove, typeMeta, pickCampaign } from './portalView.ts';
 
 test('pickBrandMark: con logo devuelve el logo real', () => {
   assert.deepEqual(pickBrandMark({ name: 'Cardoso', logoUrl: 'https://r2/logo.png' }), { kind: 'logo', url: 'https://r2/logo.png', name: 'Cardoso' });
@@ -44,11 +44,19 @@ test('styleTags', () => {
 });
 
 test('pendingToApprove: solo sent, nunca changes_requested ni approved', () => {
-  const p = [{ id: '1', status: 'approved' }, { id: '2', status: 'sent' }, { id: '3', status: 'changes_requested' }];
+  const p = [{ id: '1', status: 'approved' as const }, { id: '2', status: 'sent' as const }, { id: '3', status: 'changes_requested' as const }];
   assert.deepEqual(pendingToApprove(p).map((x) => x.id), ['2']);
 });
 
 test('typeMeta: tipo desconocido no revienta', () => {
   assert.equal(typeMeta('reel').title, 'Reels');
   assert.equal(typeMeta('zzz').singular, 'Pieza');
+});
+
+test('pickCampaign: elige por id, cae a la más reciente (primera) si no existe o no hay id', () => {
+  const cs = [{ id: 'a' }, { id: 'b' }] as any[];
+  assert.equal(pickCampaign(cs, 'b')?.id, 'b');
+  assert.equal(pickCampaign(cs, 'zzz')?.id, 'a');
+  assert.equal(pickCampaign(cs, null)?.id, 'a');
+  assert.equal(pickCampaign([], 'a'), null);
 });

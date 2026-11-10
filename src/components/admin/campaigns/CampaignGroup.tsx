@@ -3,13 +3,15 @@ import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { TrackerCampaign } from '@/lib/contentTrackerTypes';
 import { campaignProgress, sortPieces, plural } from '@/lib/contentTrackerView';
 import { setCampaignStatus } from '@/lib/contentTrackerService';
+import { notifyCampaignClient } from '@/lib/campaignNotifyService';
 import { PieceStatusRow } from './PieceStatusRow';
 
-export const CampaignGroup: React.FC<{ campaign: TrackerCampaign; onChanged: () => void }> = ({ campaign, onChanged }) => {
+export const CampaignGroup: React.FC<{ campaign: TrackerCampaign; brandName: string; onChanged: () => void }> = ({ campaign, brandName, onChanged }) => {
   const isActive = campaign.status === 'active';
   const [open, setOpen] = useState(isActive);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [notifyMsg, setNotifyMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const { approved, total } = campaignProgress(campaign);
 
   const drafts = campaign.pieces.filter((p) => !p.clientVisible).length;
@@ -34,6 +36,23 @@ export const CampaignGroup: React.FC<{ campaign: TrackerCampaign; onChanged: () 
     } catch (e) {
       console.error('Error cambiando estado de campaña:', e);
       setErr('No se pudo cambiar el estado de la campaña.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const notify = async () => {
+    if (busy) return;
+    setBusy(true);
+    setNotifyMsg(null);
+    try {
+      const r = await notifyCampaignClient({ campaignId: campaign.id, brandName, month: campaign.month, pieces: campaign.pieces });
+      if (!r.success) setNotifyMsg({ ok: false, text: r.error || 'No se pudo avisar al cliente.' });
+      else if (r.sent === false) setNotifyMsg({ ok: true, text: 'No hay novedades para avisar' });
+      else setNotifyMsg({ ok: true, text: 'Le avisamos al cliente' });
+    } catch (e) {
+      console.error('Error avisando al cliente:', e);
+      setNotifyMsg({ ok: false, text: 'No se pudo avisar al cliente.' });
     } finally {
       setBusy(false);
     }
@@ -86,12 +105,21 @@ export const CampaignGroup: React.FC<{ campaign: TrackerCampaign; onChanged: () 
         <button
           type="button"
           disabled={busy}
+          onClick={notify}
+          className="my-3.5 mr-2 shrink-0 px-2 py-0.5 rounded-lg text-[11px] font-semibold border border-emerald-500/20 text-emerald-300 hover:bg-emerald-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Enviar novedades al cliente
+        </button>
+        <button
+          type="button"
+          disabled={busy}
           onClick={toggleStatus}
           className="m-3.5 ml-0 shrink-0 px-2 py-0.5 rounded-lg text-[11px] font-semibold border border-white/10 text-zinc-300 hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isActive ? 'Cerrar' : 'Reabrir'}
         </button>
       </div>
+      {notifyMsg && <p className={`px-3.5 pb-2 text-[11px] ${notifyMsg.ok ? 'text-emerald-400' : 'text-rose-400'}`}>{notifyMsg.text}</p>}
       {err && <p className="px-3.5 pb-2 text-[11px] text-rose-400">{err}</p>}
 
       {open && (

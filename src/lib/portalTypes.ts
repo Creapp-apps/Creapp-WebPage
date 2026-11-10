@@ -5,6 +5,8 @@ export type PortalPiece = {
   type: 'reel' | 'carousel' | 'story';
   title: string;
   caption: string;
+  description: string | null;
+  hashtags: string[];
   coverUrl: string | null;
   mediaUrl: string | null;
   slides: string[];

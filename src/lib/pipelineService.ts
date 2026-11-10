@@ -12,6 +12,7 @@ export interface Lead {
   id: string;
   name: string;
   company: string;
+  contactName?: string;
   industry: string;
   stage: PipelineStage;
   estimatedValue: number;

@@ -458,7 +458,7 @@ const ProposalView: React.FC = () => {
               sessionStorage.setItem(sessionKey, '1');
               notifyProposalViewed({
                 clientName: data.client_name || 'Prospecto',
-                title: data.title || 'Propuesta Comercial',
+                title: data.hero_title || 'Propuesta Comercial',
                 slug: slug,
               }).catch(() => {});
             }
@@ -768,7 +768,7 @@ const ProposalView: React.FC = () => {
       setIsConfirmed(true);
       notifyProposalAccepted({
         clientName: proposal.client_name,
-        title: proposal.title,
+        title: proposal.hero_title || 'Propuesta Comercial',
         slug: proposal.slug,
         planName: clientRepName ? `Firmado por ${clientRepName}` : undefined,
       }).catch(() => {});

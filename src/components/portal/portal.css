@@ -174,3 +174,19 @@
   .portal .modal,.portal .modal.closing,.portal .modal .sheet,.portal .modal.closing .sheet,
   .portal .modal .discuss,.portal .modal .side .actions,.portal .modal .btn.done{animation:none}
 }
+
+/* Reproductor de video a medida (PortalVideo) — estética navy + cobre del portal */
+.portal .pvid{position:relative;width:100%;display:flex;align-items:center;justify-content:center;border-radius:12px;overflow:hidden;background:#02080f}
+.portal .pvid video{max-height:68vh;max-width:100%;border-radius:12px;object-fit:contain;display:block;cursor:pointer}
+.portal .pvid.idle video{cursor:none}
+.portal .pvid-big{position:absolute;inset:0;margin:auto;width:72px;height:72px;border-radius:50%;border:1px solid rgba(192,132,87,.5);background:rgba(4,16,31,.55);backdrop-filter:blur(6px);color:var(--cream);display:grid;place-items:center;cursor:pointer;transition:transform .2s,background .2s;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.portal .pvid-big svg{margin-left:3px}
+.portal .pvid-big:hover{transform:scale(1.06);background:rgba(192,132,87,.22);border-color:rgba(192,132,87,.8)}
+.portal .pvid-bar{position:absolute;left:10px;right:10px;bottom:10px;display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:12px;background:linear-gradient(180deg,rgba(2,8,15,.1),rgba(2,8,15,.85));backdrop-filter:blur(8px);border:1px solid var(--line);transition:opacity .3s,transform .3s}
+.portal .pvid.idle .pvid-bar{opacity:0;transform:translateY(8px);pointer-events:none}
+.portal .pvid-ic{background:none;border:0;color:var(--cream);cursor:pointer;display:grid;place-items:center;padding:3px;border-radius:7px;opacity:.9;transition:opacity .15s,color .15s}
+.portal .pvid-ic:hover{opacity:1;color:#fff}
+.portal .pvid-t{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.portal .pvid-track{flex:1;height:6px;border-radius:999px;background:rgba(255,255,255,.14);cursor:pointer;position:relative;overflow:hidden}
+.portal .pvid-track i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--wood),#e4b483)}
+@media(prefers-reduced-motion:reduce){.portal .pvid-bar,.portal .pvid-big{transition:none}}

@@ -28,3 +28,4 @@ dist-ssr
 # Temporary rendering assets
 temp/
 public/temp/
+.superpowers/

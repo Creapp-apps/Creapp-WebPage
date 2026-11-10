@@ -3,6 +3,7 @@ import { ExternalLink } from 'lucide-react';
 import type { TrackerClient } from '@/lib/contentTrackerTypes';
 import { plural, sortCampaignsByAttention } from '@/lib/contentTrackerView';
 import { CampaignGroup } from './CampaignGroup';
+import { PortalAccessControl } from './PortalAccessControl';
 
 export const ClientCampaignCard: React.FC<{ client: TrackerClient; onChanged: () => void }> = ({ client, onChanged }) => {
   const { counts } = client;
@@ -21,6 +22,7 @@ export const ClientCampaignCard: React.FC<{ client: TrackerClient; onChanged: ()
             <ExternalLink size={12} /> Abrir en el portal
           </a>
         </div>
+        <PortalAccessControl clientId={client.id} brandName={client.name} />
         <div className="flex flex-wrap gap-1.5 text-[11px] font-semibold">
           {counts.approved > 0 && <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">{plural(counts.approved, 'aprobada', 'aprobadas')}</span>}
           {counts.changes > 0 && <span className="px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/25">{plural(counts.changes, 'pidió cambios', 'pidieron cambios')}</span>}
@@ -31,7 +33,7 @@ export const ClientCampaignCard: React.FC<{ client: TrackerClient; onChanged: ()
         <p className="text-xs text-zinc-500">Este cliente todavía no tiene campañas</p>
       ) : (
         <div className="space-y-3">
-          {sortCampaignsByAttention(client.campaigns).map((camp) => <CampaignGroup key={camp.id} campaign={camp} onChanged={onChanged} />)}
+          {sortCampaignsByAttention(client.campaigns).map((camp) => <CampaignGroup key={camp.id} campaign={camp} brandName={client.name} onChanged={onChanged} />)}
         </div>
       )}
     </section>

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Send, Check } from 'lucide-react';
+import { Send, Check, AlertCircle } from 'lucide-react';
 import { Button } from './button';
 import { Input } from './Input';
+import { supabase } from '../../lib/supabaseClient';
 import logo from '../../assets/creapp-logo.png';
 
 interface ContactFormProps {
@@ -10,22 +11,91 @@ interface ContactFormProps {
     className?: string;
 }
 
+interface FormState {
+    name: string;
+    phone: string;
+    email: string;
+    message: string;
+    budget: string;
+    currency: string;
+    urgency: string;
+}
+
+const INITIAL_STATE: FormState = {
+    name: '',
+    phone: '',
+    email: '',
+    message: '',
+    budget: '',
+    currency: 'USD',
+    urgency: '',
+};
+
 export const ContactForm: React.FC<ContactFormProps> = ({ onSuccess, className = "" }) => {
+    const [form, setForm] = useState<FormState>(INITIAL_STATE);
+    const [honeypot, setHoneypot] = useState(''); // Anti-spam: bots rellenan campos ocultos
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const update = (field: keyof FormState) => (
+        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    ) => {
+        setForm(prev => ({ ...prev, [field]: e.target.value }));
+        if (error) setError(null);
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (isLoading) return;
+
+        // Si el honeypot está lleno es un bot: fingimos éxito y no insertamos nada.
+        if (honeypot.trim() !== '') {
+            setIsSubmitted(true);
+            return;
+        }
+
+        const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim());
+        if (!form.name.trim() || !form.phone.trim() || !emailOk || !form.message.trim()) {
+            setError('Revisá nombre, teléfono, un email válido y el mensaje.');
+            return;
+        }
+
         setIsLoading(true);
-        // Simulate API call
-        setTimeout(() => {
-            setIsLoading(false);
+        setError(null);
+
+        try {
+            const budgetText = form.budget.trim()
+                ? `${form.budget.trim()} ${form.currency}`
+                : null;
+
+            const { error: insertError } = await supabase.from('leads').insert([
+                {
+                    name: form.name.trim(),
+                    email: form.email.trim(),
+                    phone: form.phone.trim(),
+                    message: form.message.trim(),
+                    budget: budgetText,
+                    urgency: form.urgency || null,
+                    source: 'form',
+                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || null,
+                },
+            ]);
+
+            if (insertError) throw insertError;
+
+            setForm(INITIAL_STATE);
             setIsSubmitted(true);
             setTimeout(() => {
                 setIsSubmitted(false);
                 if (onSuccess) onSuccess();
             }, 4500);
-        }, 1500);
+        } catch (err) {
+            console.error('Failed to insert lead:', err);
+            setError('No pudimos enviar tu mensaje. Probá de nuevo o escribinos a creapp.ar@gmail.com.');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -92,20 +162,34 @@ export const ContactForm: React.FC<ContactFormProps> = ({ onSuccess, className =
                         className="relative z-20"
                     >
                         <h3 className="text-2xl font-display font-bold mb-2">¡Despegue Exitoso!</h3>
-                        <p className="text-slate-400">Tu proyecto ha sido lanzado a nuestro equipo.</p>
+                        <p className="text-slate-400">Recibimos tu mensaje. Te contactamos a la brevedad.</p>
                     </motion.div>
                 </div>
             ) : (
-                <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6 w-full">
+                <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6 w-full" noValidate>
+                    {/* Honeypot anti-spam: oculto para humanos, visible para bots */}
+                    <input
+                        type="text"
+                        name="company"
+                        tabIndex={-1}
+                        autoComplete="off"
+                        value={honeypot}
+                        onChange={(e) => setHoneypot(e.target.value)}
+                        className="absolute left-[-9999px] w-0 h-0 opacity-0 pointer-events-none"
+                        aria-hidden="true"
+                    />
+
                     {/* Inputs organized for both Modal and Landing scenarios */}
                     <div className="grid grid-cols-2 gap-4">
-                        <Input placeholder="Nombre" required />
-                        <Input placeholder="Teléfono" type="tel" required />
+                        <Input placeholder="Nombre" value={form.name} onChange={update('name')} required />
+                        <Input placeholder="Teléfono" type="tel" value={form.phone} onChange={update('phone')} required />
                     </div>
-                    <Input placeholder="Email" type="email" required />
+                    <Input placeholder="Email" type="email" value={form.email} onChange={update('email')} required />
 
                     <textarea
                         placeholder="Describe la problemática o idea..."
+                        value={form.message}
+                        onChange={update('message')}
                         className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-white placeholder:text-slate-600 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all resize-none h-24 md:h-32 text-sm"
                         required
                     ></textarea>
@@ -118,9 +202,14 @@ export const ContactForm: React.FC<ContactFormProps> = ({ onSuccess, className =
                                     placeholder="0.00"
                                     type="number"
                                     className="flex-1"
-                                    required
+                                    value={form.budget}
+                                    onChange={update('budget')}
                                 />
-                                <select className="bg-white/5 border border-white/10 rounded-xl px-3 py-3 text-white text-sm focus:outline-none focus:border-primary/50 appearance-none cursor-pointer hover:bg-white/10 transition-colors font-bold w-24 text-center">
+                                <select
+                                    value={form.currency}
+                                    onChange={update('currency')}
+                                    className="bg-white/5 border border-white/10 rounded-xl px-3 py-3 text-white text-sm focus:outline-none focus:border-primary/50 appearance-none cursor-pointer hover:bg-white/10 transition-colors font-bold w-24 text-center"
+                                >
                                     <option className="bg-surface-dark">USD</option>
                                     <option className="bg-surface-dark">ARS</option>
                                 </select>
@@ -128,8 +217,12 @@ export const ContactForm: React.FC<ContactFormProps> = ({ onSuccess, className =
                         </div>
                         <div className="space-y-1.5">
                             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Urgencia</label>
-                            <select className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-primary/50 appearance-none cursor-pointer hover:bg-white/10 transition-colors">
-                                <option className="bg-surface-dark text-slate-400">Seleccionar...</option>
+                            <select
+                                value={form.urgency}
+                                onChange={update('urgency')}
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-primary/50 appearance-none cursor-pointer hover:bg-white/10 transition-colors"
+                            >
+                                <option value="" className="bg-surface-dark text-slate-400">Seleccionar...</option>
                                 <option className="bg-surface-dark">Baja (1-3 meses)</option>
                                 <option className="bg-surface-dark">Media (1 mes)</option>
                                 <option className="bg-surface-dark">Alta (ASAP)</option>
@@ -137,14 +230,30 @@ export const ContactForm: React.FC<ContactFormProps> = ({ onSuccess, className =
                         </div>
                     </div>
 
+                    {error && (
+                        <div className="flex items-start gap-2 text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
+                            <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                            <span>{error}</span>
+                        </div>
+                    )}
+
                     <Button
                         type="submit"
                         className="w-full mt-4 h-12 md:h-14 text-base md:text-lg shadow-lg shadow-primary/20 group"
                         size="lg"
-                        isLoading={isLoading}
+                        disabled={isLoading}
                     >
-                        Enviar Solicitud
-                        {!isLoading && <Send className="ml-2 w-4 h-4 md:w-5 md:h-5 group-hover:-translate-y-1 group-hover:translate-x-1 transition-transform" />}
+                        {isLoading ? (
+                            <>
+                                <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                                Enviando...
+                            </>
+                        ) : (
+                            <>
+                                Enviar Solicitud
+                                <Send className="ml-2 w-4 h-4 md:w-5 md:h-5 group-hover:-translate-y-1 group-hover:translate-x-1 transition-transform" />
+                            </>
+                        )}
                     </Button>
                 </form>
             )}

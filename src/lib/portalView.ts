@@ -62,3 +62,9 @@ const TAGS: Record<string, string[]> = {
 export function styleTags(aesthetic: string | null | undefined): string[] {
   return (aesthetic && TAGS[aesthetic]) || [];
 }
+
+// Campaña elegida por ?campaign=<id>; si no está entre las del cliente, la más reciente (lista ya ordenada).
+export function pickCampaign<T extends { id: string }>(campaigns: T[], id: string | null | undefined): T | null {
+  if (campaigns.length === 0) return null;
+  return (id && campaigns.find((c) => c.id === id)) || campaigns[0];
+}

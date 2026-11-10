@@ -1,33 +1,26 @@
 
-import { GoogleGenAI } from "@google/genai";
+import { callGemini } from "./aiClient";
 
-const API_KEY = process.env.API_KEY;
+const MODEL = 'gemini-3.6-flash';
 
 export const generateProjectAdvice = async (userPrompt: string) => {
-  if (!API_KEY) return "AI services are currently unavailable.";
-  
-  const ai = new GoogleGenAI({ apiKey: API_KEY });
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.6-flash',
+    const text = await callGemini({
+      model: MODEL,
       contents: userPrompt,
       config: {
         systemInstruction: "You are a professional Fintech consultant at Creapp. Help the user brainstorm or define their fintech project. Be concise, professional, and innovative.",
         temperature: 0.7,
-      }
+      },
     });
-    return response.text || "I couldn't generate a response. Please try again.";
+    return text || "I couldn't generate a response. Please try again.";
   } catch (error) {
     console.error("Gemini API Error:", error);
-    return "Something went wrong with the AI service.";
+    return "AI services are currently unavailable.";
   }
 };
 
 export const importProposalFromDocument = async (base64Data: string, mimeType: string, isTextOnly: boolean = false) => {
-  if (!API_KEY) throw new Error("Servicio de IA no disponible temporalmente (falta la API key).");
-
-  const ai = new GoogleGenAI({ apiKey: API_KEY });
-  
   const systemInstruction = `
 Eres un asistente de inteligencia artificial especializado en consultoría Fintech e integración de datos.
 Tu tarea es leer y analizar el documento adjunto (puede ser un PDF de requerimientos, una propuesta preliminar, un pliego de condiciones o un resumen de proyecto) y extraer toda la información para rellenar los inputs del generador de presupuestos de Creapp.
@@ -117,33 +110,32 @@ Debes devolver ÚNICAMENTE un objeto JSON que cumpla exactamente con el siguient
 }
   `;
 
-  try {
-    let contents: any[] = [];
-    if (isTextOnly) {
-      contents = [userPrompt + "\n\nCONTENIDO DEL DOCUMENTO:\n" + base64Data];
-    } else {
-      contents = [
-        {
-          inlineData: {
-            data: base64Data,
-            mimeType: mimeType
-          }
-        },
-        userPrompt
-      ];
-    }
+  let contents: any[] = [];
+  if (isTextOnly) {
+    contents = [userPrompt + "\n\nCONTENIDO DEL DOCUMENTO:\n" + base64Data];
+  } else {
+    contents = [
+      {
+        inlineData: {
+          data: base64Data,
+          mimeType: mimeType
+        }
+      },
+      userPrompt
+    ];
+  }
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.6-flash',
-      contents: contents,
+  try {
+    const text = await callGemini({
+      model: MODEL,
+      contents,
       config: {
-        systemInstruction: systemInstruction,
+        systemInstruction,
         temperature: 0.2,
-        responseMimeType: 'application/json'
-      }
+        responseMimeType: 'application/json',
+      },
     });
 
-    const text = response.text;
     if (!text) {
       throw new Error("No se recibió respuesta del modelo de IA.");
     }
@@ -156,34 +148,29 @@ Debes devolver ÚNICAMENTE un objeto JSON que cumpla exactamente con el siguient
 };
 
 export const optimizeText = async (text: string, context?: string) => {
-  if (!API_KEY) throw new Error("Servicio de IA no disponible temporalmente (falta la API key).");
-
-  const ai = new GoogleGenAI({ apiKey: API_KEY });
-  try {
-    const systemInstruction = `
+  const systemInstruction = `
 Eres un redactor experto en propuestas comerciales y desarrollo de software para Creapp, un Fintech Innovation Hub.
 Tu tarea es optimizar, pulir y mejorar descripciones de entregables, alcances o justificaciones técnicas.
 Debes hacer que el texto suene extremadamente profesional, convincente, claro y moderno (siguiendo mejores prácticas de la industria Fintech y SaaS).
 El texto optimizado resultante debe ser muy conciso, teniendo obligatoriamente un límite máximo estricto de 200 caracteres (incluyendo espacios). Conserva los detalles clave, alcances o números del original.
 Devuelve ÚNICAMENTE la versión optimizada en español, sin preámbulos, explicaciones ni comillas adicionales.
-    `;
+  `;
 
-    const userPrompt = `Optimiza la siguiente descripción:\n\n"${text}"${context ? `\n\nContexto adicional del proyecto:\n${context}` : ''}`;
+  const userPrompt = `Optimiza la siguiente descripción:\n\n"${text}"${context ? `\n\nContexto adicional del proyecto:\n${context}` : ''}`;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.6-flash',
+  try {
+    const result = await callGemini({
+      model: MODEL,
       contents: userPrompt,
       config: {
-        systemInstruction: systemInstruction,
+        systemInstruction,
         temperature: 0.3,
-      }
+      },
     });
 
-    return response.text?.trim() || text;
+    return result?.trim() || text;
   } catch (error) {
     console.error("Error al optimizar el texto con Gemini:", error);
     throw error;
   }
 };
-
-
