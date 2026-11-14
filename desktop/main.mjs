@@ -1,9 +1,15 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, shell } from 'electron';
+import http from 'node:http';
+import fsp from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { loadConfig } from './src/config.mjs';
 import { runPreflight } from './src/preflight.mjs';
 import { makeRealDeps } from './src/real-deps.mjs';
 import { startMotor, stopMotor } from './src/motor.mjs';
+import { startUiServer } from './src/uiServer.mjs';
+
+let mainWindow = null;
+let uiServer = null;
 
 const preloadPath = fileURLToPath(new URL('./preload.mjs', import.meta.url));
 
@@ -19,7 +25,16 @@ function createWindow() {
       sandbox: false,
     },
   });
+  // Links externos y del Estudio del motor (localhost:8000) → navegador por defecto.
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    if (/^https?:\/\//i.test(url)) {
+      shell.openExternal(url);
+      return { action: 'deny' };
+    }
+    return { action: 'deny' };
+  });
   win.loadFile(fileURLToPath(new URL('./renderer/preflight.html', import.meta.url)));
+  mainWindow = win;
   return win;
 }
 
@@ -46,6 +61,9 @@ async function launchMotor() {
       if (motorLogs.length > 500) motorLogs.shift();
     });
     console.log(`[creapp] motor listo en :${motor.port}`);
+    const cfg = loadConfig();
+    uiServer = await startUiServer(cfg, { http, fs: fsp });
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.loadURL(uiServer.url);
   } catch (err) {
     console.error(`[creapp] motor no arrancó: ${err.message}${err.code != null ? ` (code ${err.code})` : ''}`);
   } finally {
@@ -70,6 +88,7 @@ app.on('before-quit', (e) => {
     try {
       if (!motor && pending) await pending.catch(() => {});
       await stopMotor(motor);
+      if (uiServer) await uiServer.close();
     } finally {
       app.quit();
     }
