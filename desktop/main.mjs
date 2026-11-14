@@ -7,6 +7,11 @@ import { runPreflight } from './src/preflight.mjs';
 import { makeRealDeps } from './src/real-deps.mjs';
 import { startMotor, stopMotor } from './src/motor.mjs';
 import { startUiServer } from './src/uiServer.mjs';
+import { createMonitor } from './src/connectivity.mjs';
+import { runWithRetry } from './src/resilience.mjs';
+import { toToastPayload } from './src/ipcPayload.mjs';
+import { createRealProbes } from './src/probes.mjs';
+import fs from 'node:fs';
 
 let mainWindow = null;
 let uiServer = null;
@@ -33,9 +38,69 @@ function createWindow() {
     }
     return { action: 'deny' };
   });
+  // Inyecta el overlay (toast + indicador) solo en la UI de CreAPP, no en el preflight.
+  win.webContents.on('did-finish-load', () => {
+    const url = win.webContents.getURL();
+    if (!/^https?:\/\//i.test(url)) return;
+    const code = fs.readFileSync(fileURLToPath(new URL('./renderer/overlay.js', import.meta.url)), 'utf8');
+    win.webContents.executeJavaScript(code).catch((e) => console.error('[creapp] overlay:', e.message));
+  });
   win.loadFile(fileURLToPath(new URL('./renderer/preflight.html', import.meta.url)));
   mainWindow = win;
   return win;
+}
+
+// Bridge main -> renderer: toasts y conectividad. Los retry() de eventos `failed`
+// viven en este mapa (id -> callback); el renderer solo conoce el id.
+const pendingRetries = new Map();
+let retrySeq = 0;
+const sendToRenderer = (channel, payload) => {
+  if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send(channel, payload);
+};
+
+// Para operaciones del main que quieran falla visible + Reintentar.
+export function runResilient(op, label, opts = {}) {
+  return runWithRetry(op, {
+    ...opts,
+    label,
+    onEvent: (evt) => {
+      if (evt.type !== 'failed') return;
+      const payload = toToastPayload(evt);
+      if (!payload) return;
+      const id = ++retrySeq;
+      pendingRetries.set(id, evt.retry);
+      sendToRenderer('desktop:toast', { ...payload, id });
+    },
+  });
+}
+
+ipcMain.on('desktop:retry', (_e, id) => {
+  const retry = pendingRetries.get(id);
+  if (!retry) return;
+  pendingRetries.delete(id);
+  retry();
+});
+
+let monitor = null;
+function startConnectivity() {
+  if (monitor) return;
+  try {
+    const cfg = loadConfig();
+    const supabaseUrl = process.env.CREAPP_SUPABASE_URL || 'https://yjrqpjlzyxivwpfcatvt.supabase.co';
+    const r2Url = process.env.CREAPP_R2_URL;
+    if (!r2Url) {
+      console.warn('[creapp] CREAPP_R2_URL no definida: monitor de conectividad desactivado');
+      return;
+    }
+    monitor = createMonitor({ probes: createRealProbes({ supabaseUrl, r2Url, creappPath: cfg.creappPath }) });
+  } catch (err) {
+    console.error('[creapp] monitor no arrancó:', err.message);
+    return;
+  }
+  monitor.on('change', (s) => sendToRenderer('desktop:connectivity', s));
+  monitor.on('connection-lost', () => sendToRenderer('desktop:toast', toToastPayload({ type: 'connection-lost' })));
+  monitor.on('monitor-error', (err) => console.error('[creapp] monitor-error:', err?.message ?? err));
+  monitor.start();
 }
 
 // Gate: el motor solo arranca si el preflight (corrido en el main) dio ok.
@@ -64,6 +129,7 @@ async function launchMotor() {
     const cfg = loadConfig();
     uiServer = await startUiServer(cfg, { http, fs: fsp });
     if (mainWindow && !mainWindow.isDestroyed()) mainWindow.loadURL(uiServer.url);
+    startConnectivity();
   } catch (err) {
     console.error(`[creapp] motor no arrancó: ${err.message}${err.code != null ? ` (code ${err.code})` : ''}`);
   } finally {
@@ -87,6 +153,7 @@ app.on('before-quit', (e) => {
   (async () => {
     try {
       if (!motor && pending) await pending.catch(() => {});
+      if (monitor) monitor.stop();
       await stopMotor(motor);
       if (uiServer) await uiServer.close();
     } finally {
