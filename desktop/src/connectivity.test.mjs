@@ -193,3 +193,19 @@ test('un listener que tira no deja una promesa suelta: se reporta como monitor-e
   assert.equal(errors.length, 1);
   assert.equal(errors[0].message, 'listener roto');
 });
+
+test('un listener de change que tira no impide connection-lost en la misma transición', async () => {
+  const state = { supabase: true, r2: true, git: true };
+  const m = createMonitor({ probes: makeProbes(state), intervalMs: 1000 });
+  const errors = [];
+  let lost = 0;
+  m.on('monitor-error', (err) => errors.push(err));
+  m.on('change', ({ online }) => { if (!online) throw new Error('change roto'); });
+  m.on('connection-lost', () => { lost += 1; });
+  await m.checkNow(); // online: el listener no tira aquí
+  state.supabase = false;
+  await m.checkNow(); // caída: change tira, connection-lost debe emitirse igual
+  assert.equal(lost, 1);
+  assert.equal(errors.length, 1);
+  assert.equal(errors[0].message, 'change roto');
+});

@@ -39,6 +39,19 @@ function requireString(name, value) {
   }
 }
 
+function requireHttpsUrl(name, value) {
+  requireString(name, value);
+  let url;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new TypeError(`createRealProbes: ${name} no es una URL válida: ${value}`);
+  }
+  if (url.protocol !== 'https:') {
+    throw new TypeError(`createRealProbes: ${name} debe ser https (recibido ${url.protocol})`);
+  }
+}
+
 export function createRealProbes({
   supabaseUrl,
   r2Url,
@@ -46,8 +59,8 @@ export function createRealProbes({
   gitRemote = 'origin',
   timeoutMs = DEFAULT_TIMEOUT_MS,
 }) {
-  requireString('supabaseUrl', supabaseUrl);
-  requireString('r2Url', r2Url);
+  requireHttpsUrl('supabaseUrl', supabaseUrl);
+  requireHttpsUrl('r2Url', r2Url);
   requireString('creappPath', creappPath);
   return {
     supabase: httpProbe(`${supabaseUrl.replace(/\/+$/, '')}/rest/v1/`, timeoutMs),

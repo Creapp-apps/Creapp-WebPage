@@ -38,6 +38,15 @@ export function createMonitor({ probes, intervalMs = 30_000, timers = globalThis
     }
   }
 
+  // Un listener que tira se reporta como 'monitor-error' y no corta los demás emits.
+  function safeEmit(event, ...args) {
+    try {
+      emitter.emit(event, ...args);
+    } catch (err) {
+      emitter.emit('monitor-error', err);
+    }
+  }
+
   async function checkNow() {
     const seq = ++issued;
     const results = await Promise.all(names.map(runProbe));
@@ -50,9 +59,10 @@ export function createMonitor({ probes, intervalMs = 30_000, timers = globalThis
     const wasOnline = lastOnline;
     lastOnline = online;
     if (wasOnline !== online) {
-      emitter.emit('change', { online, services });
+      // Cada emit va aislado: un listener de 'change' que tira no impide 'connection-lost'.
+      safeEmit('change', { online, services });
       if (wasOnline === true && online === false) {
-        emitter.emit('connection-lost');
+        safeEmit('connection-lost');
       }
     }
     return { online, services, stale: false };

@@ -18,3 +18,9 @@ test('createRealProbes con parámetros válidos devuelve las tres probes', () =>
   const p = createRealProbes(OK);
   assert.deepEqual(Object.keys(p).sort(), ['git', 'r2', 'supabase']);
 });
+
+test('createRealProbes rechaza URLs con forma inválida o sin https', () => {
+  assert.throws(() => createRealProbes({ ...OK, supabaseUrl: 'no es una url' }), /supabaseUrl no es una URL válida/);
+  assert.throws(() => createRealProbes({ ...OK, r2Url: 'http://r2.example.com' }), /r2Url debe ser https/);
+  assert.throws(() => createRealProbes({ ...OK, supabaseUrl: 'ftp://x.supabase.co' }), /supabaseUrl debe ser https/);
+});
