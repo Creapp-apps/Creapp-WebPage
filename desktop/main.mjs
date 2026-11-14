@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { loadConfig } from './src/config.mjs';
 import { runPreflight } from './src/preflight.mjs';
 import { makeRealDeps } from './src/real-deps.mjs';
+import { startMotor, stopMotor } from './src/motor.mjs';
 
 const preloadPath = fileURLToPath(new URL('./preload.mjs', import.meta.url));
 
@@ -22,13 +23,58 @@ function createWindow() {
   return win;
 }
 
-ipcMain.handle('preflight:run', () => runPreflight(loadConfig(), makeRealDeps()));
+// Gate: el motor solo arranca si el preflight (corrido en el main) dio ok.
+// Un evento del renderer por sí solo no alcanza.
+let preflightOk = false;
+let motor = null;
+let motorStarting = null;
+const motorLogs = [];
 
-// Preflight OK: la Task 5 engancha acá el arranque del motor.
+ipcMain.handle('preflight:run', async () => {
+  const result = await runPreflight(loadConfig(), makeRealDeps());
+  preflightOk = result.ok === true;
+  return result;
+});
+
+async function launchMotor() {
+  if (!preflightOk || motor || motorStarting) return;
+  motorStarting = startMotor(loadConfig());
+  try {
+    motor = await motorStarting;
+    motor.onLog((line) => {
+      motorLogs.push(line);
+      if (motorLogs.length > 500) motorLogs.shift();
+    });
+    console.log(`[creapp] motor listo en :${motor.port}`);
+  } catch (err) {
+    console.error(`[creapp] motor no arrancó: ${err.message}${err.code != null ? ` (code ${err.code})` : ''}`);
+  } finally {
+    motorStarting = null;
+  }
+}
+
 ipcMain.on('app:proceed', () => {
   app.emit('app:proceed');
 });
-app.on('app:proceed', () => console.log('[creapp] preflight ok -> app:proceed'));
+app.on('app:proceed', () => { launchMotor(); });
+
+// Sin huérfanos: esperamos el exit de uvicorn antes de cerrar.
+let quitting = false;
+app.on('before-quit', (e) => {
+  if (quitting) return;
+  const pending = motorStarting;
+  if (!motor && !pending) return;
+  e.preventDefault();
+  quitting = true;
+  (async () => {
+    try {
+      if (!motor && pending) await pending.catch(() => {});
+      await stopMotor(motor);
+    } finally {
+      app.quit();
+    }
+  })();
+});
 
 app.whenReady().then(() => {
   createWindow();
