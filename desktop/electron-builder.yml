@@ -6,6 +6,9 @@ files:
   - main.mjs
   - preload.mjs
   - package.json
+  - src/**/*
+  - renderer/**/*
+  - "!**/*.test.mjs"
 mac:
   target: dir
   identity: null

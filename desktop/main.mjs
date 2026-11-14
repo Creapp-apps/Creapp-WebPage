@@ -11,6 +11,8 @@ function createWindow() {
       preload: preloadPath,
       contextIsolation: true,
       nodeIntegration: false,
+      // sandbox:false: el preload es ESM (.mjs) y un renderer sandboxed no puede cargar preloads ESM.
+      sandbox: false,
     },
   });
   win.loadURL('about:blank');
