@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'">
+<title>CreAPP — Verificación inicial</title>
+<style>
+  body { margin: 0; background: #0b0d12; color: #e8eaf0; font: 15px -apple-system, system-ui, sans-serif; padding: 40px; }
+  h1 { font-size: 22px; margin: 0 0 6px; }
+  p.sub { color: #8b93a7; margin: 0 0 24px; }
+  ul { list-style: none; padding: 0; margin: 0 0 24px; max-width: 720px; }
+  li { padding: 12px 14px; border-radius: 10px; background: #141824; margin-bottom: 8px; border-left: 4px solid #2a3150; }
+  li.ok { border-left-color: #22c55e; }
+  li.fail { border-left-color: #ef4444; }
+  .label { font-weight: 600; }
+  .detail { color: #8b93a7; font-size: 13px; margin-top: 2px; word-break: break-word; }
+  .fix { color: #fbbf24; font-size: 13px; margin-top: 4px; }
+  button { background: #7c3aed; color: #fff; border: 0; border-radius: 8px; padding: 10px 20px; font-size: 14px; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: default; }
+</style>
+</head>
+<body>
+  <h1>Verificando tu entorno</h1>
+  <p class="sub" id="status">Revisando dependencias…</p>
+  <ul id="checks"></ul>
+  <button id="retry" hidden>Reintentar</button>
+  <script src="preflight.js"></script>
+</body>
+</html>

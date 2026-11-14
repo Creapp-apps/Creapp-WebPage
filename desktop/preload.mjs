@@ -1,1 +1,6 @@
-// Puente seguro entre la UI y el proceso principal. Se completa en tareas posteriores.
+import { contextBridge, ipcRenderer } from 'electron';
+
+contextBridge.exposeInMainWorld('creapp', {
+  runPreflight: () => ipcRenderer.invoke('preflight:run'),
+  proceed: () => ipcRenderer.send('app:proceed'),
+});
