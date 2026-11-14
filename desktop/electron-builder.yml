@@ -1,0 +1,15 @@
+appId: com.creapp.desktop
+productName: "CreAPP Suite"
+directories:
+  output: dist
+files:
+  - main.mjs
+  - preload.mjs
+  - package.json
+  - src/**/*
+  - renderer/**/*
+  - "!**/*.test.mjs"
+mac:
+  target: dir
+  identity: null
+  icon: build/icon.png
