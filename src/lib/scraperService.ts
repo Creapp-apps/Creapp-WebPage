@@ -1133,7 +1133,7 @@ REGLAS DE FORMATO Y EMOJIS (CRÍTICO):
   );
 };
 
-export const importProspectToPipeline = (prospect: ScrapedProspect): Lead => {
+export const importProspectToPipeline = async (prospect: ScrapedProspect): Promise<Lead> => {
   const instagram = prospect.socialLinks?.instagram || (prospect.website?.includes('instagram.com') ? prospect.website : undefined);
   const facebook = prospect.socialLinks?.facebook || (prospect.website?.includes('facebook.com') ? prospect.website : undefined);
 

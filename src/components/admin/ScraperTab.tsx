@@ -315,23 +315,22 @@ export const ScraperTab: React.FC<ScraperTabProps> = ({
 
   // Sincronizar importedIds con los leads del Pipeline CRM para pintar sus pines en el Radar
   useEffect(() => {
-    try {
-      const pipelineLeads = getLeads();
-      const pipelineNames = new Set(
-        pipelineLeads.map((l) => (l.company || l.name || '').toLowerCase().trim())
-      );
-      const matchedIds = new Set<string>();
-      prospects.forEach((p) => {
-        if (pipelineNames.has(p.name.toLowerCase().trim())) {
-          matchedIds.add(p.id);
+    getLeads()
+      .then((pipelineLeads) => {
+        const pipelineNames = new Set(
+          pipelineLeads.map((l) => (l.company || l.name || '').toLowerCase().trim())
+        );
+        const matchedIds = new Set<string>();
+        prospects.forEach((p) => {
+          if (pipelineNames.has(p.name.toLowerCase().trim())) {
+            matchedIds.add(p.id);
+          }
+        });
+        if (matchedIds.size > 0) {
+          setImportedIds((prev) => new Set([...prev, ...matchedIds]));
         }
-      });
-      if (matchedIds.size > 0) {
-        setImportedIds((prev) => new Set([...prev, ...matchedIds]));
-      }
-    } catch (e) {
-      console.error('Error synchronizing pipeline leads with map pins:', e);
-    }
+      })
+      .catch((e) => console.error('Error synchronizing pipeline leads with map pins:', e));
   }, [prospects]);
 
   const handleSaveApiKeys = async (e: React.FormEvent) => {
@@ -520,8 +519,8 @@ export const ScraperTab: React.FC<ScraperTabProps> = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleImportToPipeline = (prospect: ScrapedProspect) => {
-    const newLead = importProspectToPipeline(prospect);
+  const handleImportToPipeline = async (prospect: ScrapedProspect) => {
+    const newLead = await importProspectToPipeline(prospect);
     setImportedIds(new Set([...importedIds, prospect.id]));
     onLeadImported(newLead);
   };

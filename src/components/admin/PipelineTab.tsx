@@ -127,14 +127,14 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
     return matchSearch && matchProduct;
   });
 
-  const handleStageMove = (leadId: string, currentStage: PipelineStage, direction: 'next' | 'prev') => {
+  const handleStageMove = async (leadId: string, currentStage: PipelineStage, direction: 'next' | 'prev') => {
     // Delivered no avanza automáticamente a Rechazados
     if (currentStage === 'delivered' && direction === 'next') return;
     const currentIndex = stages.indexOf(currentStage);
     const targetIndex = direction === 'next' ? currentIndex + 1 : currentIndex - 1;
     if (targetIndex >= 0 && targetIndex < stages.length) {
       const nextStage = stages[targetIndex];
-      const updated = updateLeadStage(leadId, nextStage);
+      const updated = await updateLeadStage(leadId, nextStage);
       onLeadsChange(updated);
       setActiveMobileStage(nextStage);
       // Auto-centrar la columna objetivo para que el usuario nunca pierda de vista la tarjeta
@@ -144,8 +144,8 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
     }
   };
 
-  const handleDirectReject = (leadId: string) => {
-    const updated = updateLeadStage(leadId, 'rejected');
+  const handleDirectReject = async (leadId: string) => {
+    const updated = await updateLeadStage(leadId, 'rejected');
     onLeadsChange(updated);
     setActiveMobileStage('rejected');
     const rejectedIndex = stages.indexOf('rejected');
@@ -156,9 +156,9 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
     }
   };
 
-  const handleDelete = (leadId: string) => {
+  const handleDelete = async (leadId: string) => {
     if (confirm('¿Eliminar esta cuenta del pipeline?')) {
-      const updated = deleteLead(leadId);
+      const updated = await deleteLead(leadId);
       onLeadsChange(updated);
     }
   };
@@ -224,11 +224,11 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
     };
   };
 
-  const handleCreateLeadSubmit = (e: React.FormEvent) => {
+  const handleCreateLeadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newLeadForm.name || !newLeadForm.company) return;
 
-    createLead({
+    await createLead({
       name: newLeadForm.name,
       company: newLeadForm.company,
       industry: newLeadForm.industry,
@@ -247,7 +247,7 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
       sellerName: 'Equipo Comercial',
     }).catch(() => {});
 
-    onLeadsChange(getLeads()); // Trigger refresh with newly created lead
+    onLeadsChange(await getLeads()); // Trigger refresh with newly created lead
     setIsNewLeadModalOpen(false);
     setNewLeadForm({
       name: '',
@@ -470,8 +470,8 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
                           <div className="flex items-center gap-1 shrink-0">
                             {lead.stage === 'rejected' ? (
                               <button
-                                onClick={() => {
-                                  const updated = updateLeadStage(lead.id, 'prospect');
+                                onClick={async () => {
+                                  const updated = await updateLeadStage(lead.id, 'prospect');
                                   onLeadsChange(updated);
                                   setActiveMobileStage('prospect');
                                 }}
@@ -782,8 +782,8 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
                           >
                             {lead.stage === 'rejected' ? (
                               <button
-                                onClick={() => {
-                                  const updated = updateLeadStage(lead.id, 'prospect');
+                                onClick={async () => {
+                                  const updated = await updateLeadStage(lead.id, 'prospect');
                                   onLeadsChange(updated);
                                   scrollToStage(stages.indexOf('prospect'));
                                 }}
@@ -1050,8 +1050,8 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
             onClose={() => setSelectedLeadForDetail(null)}
             pipelineMode={true}
             currentStage={selectedLeadForDetail.stage}
-            onStageChange={(newStage) => {
-              const updated = updateLeadStage(selectedLeadForDetail.id, newStage);
+            onStageChange={async (newStage) => {
+              const updated = await updateLeadStage(selectedLeadForDetail.id, newStage);
               onLeadsChange(updated);
               setSelectedLeadForDetail({ ...selectedLeadForDetail, stage: newStage });
             }}
@@ -1064,8 +1064,8 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
               setSelectedLeadForDetail(null);
               onCreateProposalFromLead(target);
             }}
-            onProspectUpdate={(updated) => {
-              const updatedLeads = updateLead(selectedLeadForDetail.id, {
+            onProspectUpdate={async (updated) => {
+              const updatedLeads = await updateLead(selectedLeadForDetail.id, {
                 website: updated.website,
                 originalProspect: updated,
               });
