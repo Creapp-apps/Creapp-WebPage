@@ -74,3 +74,57 @@ test('stopMotor sends SIGTERM and resolves on exit; idempotent after exit', asyn
   await stopMotor(h);
   assert.deepEqual(proc.killed, ['SIGTERM']);
 });
+
+test('stopMotor escalates to SIGKILL when SIGTERM is ignored, and resolves', async () => {
+  const proc = fakeProc({ exitOnKill: false });
+  const h = await startMotor(config, { spawn: () => proc, fetch: okFetch(1), timeoutMs: 1000, pollMs: 1 });
+  await stopMotor(h, { killAfterMs: 5, capMs: 5 });
+  assert.deepEqual(proc.killed, ['SIGTERM', 'SIGKILL']);
+});
+
+test('timeout path escalates to SIGKILL if child ignores SIGTERM', async () => {
+  const proc = fakeProc({ exitOnKill: false });
+  const fetch = async () => { throw new Error('down'); };
+  await assert.rejects(
+    startMotor(config, { spawn: () => proc, fetch, timeoutMs: 20, pollMs: 1, killAfterMs: 5, capMs: 5 }),
+    (e) => e.message === 'motor_timeout',
+  );
+  assert.deepEqual(proc.killed, ['SIGTERM', 'SIGKILL']);
+});
+
+test('exit after 200 does not re-reject; handle marked exited', async () => {
+  const proc = fakeProc();
+  const h = await startMotor(config, { spawn: () => proc, fetch: okFetch(1), timeoutMs: 1000, pollMs: 1 });
+  proc.emit('exit', 1, null);
+  assert.equal(h.exited, true);
+  await stopMotor(h);
+  assert.deepEqual(proc.killed, []);
+});
+
+test('200 after exit does not re-resolve', async () => {
+  const proc = fakeProc();
+  let release;
+  const fetch = () => new Promise((r) => { release = () => r({ status: 200 }); });
+  const p = startMotor(config, { spawn: () => proc, fetch, timeoutMs: 1000, pollMs: 1 });
+  await new Promise((r) => setImmediate(r));
+  proc.emit('exit', 2, null);
+  release();
+  await assert.rejects(p, (e) => e.message === 'motor_exit' && e.code === 2);
+});
+
+test('spawn error event (ENOENT) rejects motor_exit', async () => {
+  const proc = fakeProc();
+  const fetch = async () => { throw new Error('down'); };
+  const p = startMotor(config, { spawn: () => proc, fetch, timeoutMs: 1000, pollMs: 1 });
+  setImmediate(() => proc.emit('error', Object.assign(new Error('spawn ENOENT'), { code: 'ENOENT' })));
+  await assert.rejects(p, (e) => e.message === 'motor_exit' && e.cause.code === 'ENOENT');
+});
+
+test('onLog replays lines emitted before registration', async () => {
+  const proc = fakeProc();
+  const spawn = () => { setImmediate(() => proc.stdout.emit('data', Buffer.from('boot'))); return proc; };
+  const h = await startMotor(config, { spawn, fetch: okFetch(3), timeoutMs: 1000, pollMs: 1 });
+  const got = [];
+  h.onLog((s) => got.push(s));
+  assert.deepEqual(got, ['boot']);
+});
