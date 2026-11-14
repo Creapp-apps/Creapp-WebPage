@@ -1,5 +1,8 @@
 // src/lib/financeService.ts
 // Gestión contable, suscripciones de clientes y control de débitos operativos de CreApp
+// Persistencia en Supabase (compartido entre el equipo + realtime); antes localStorage.
+
+import { supabase, getSupabase } from './supabaseClient';
 
 export type SubscriptionCategory =
   | 'saas_license'
@@ -68,94 +71,131 @@ export interface FinanceTransaction {
   createdAt: string;
 }
 
-const SUBSCRIPTIONS_KEY = 'creapp_subscriptions_real_v1';
-const FINANCES_KEY = 'creapp_finances_real_v1';
+// --- SUSCRIPCIONES (Supabase, compartido + realtime) ---
 
-// --- SUSCRIPCIONES STORAGE & CRUD ---
+type SubRow = {
+  id: string;
+  client_name: string;
+  company_name: string | null;
+  plan_name: string | null;
+  category: Subscription['category'];
+  product_type: Subscription['productType'] | null;
+  amount: number | string | null;
+  currency: 'USD' | 'ARS' | null;
+  billing_day: string | null;
+  billing_cycle: Subscription['billingCycle'] | null;
+  status: SubscriptionStatus;
+  start_date: string | null;
+  next_billing_date: string | null;
+  last_payment_date: string | null;
+  payment_method: Subscription['paymentMethod'] | null;
+  payment_link: string | null;
+  client_phone: string | null;
+  client_email: string | null;
+  notes: string | null;
+  lead_id: string | null;
+  created_at: string;
+};
 
-export function getSubscriptions(): Subscription[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    // Limpiar claves viejas con datos mock si existiesen
-    const legacy = localStorage.getItem('creapp_subscriptions_v1');
-    if (legacy) {
-      localStorage.removeItem('creapp_subscriptions_v1');
-    }
+const subRowToSub = (r: SubRow): Subscription => ({
+  id: r.id,
+  clientName: r.client_name,
+  companyName: r.company_name ?? '',
+  planName: r.plan_name ?? '',
+  category: r.category,
+  productType: (r.product_type ?? 'Desarrollo a Medida') as Subscription['productType'],
+  amount: Number(r.amount ?? 0),
+  currency: (r.currency ?? 'USD') as Subscription['currency'],
+  billingDay: r.billing_day ?? '',
+  billingCycle: (r.billing_cycle ?? 'monthly') as Subscription['billingCycle'],
+  status: r.status,
+  startDate: r.start_date ?? '',
+  nextBillingDate: r.next_billing_date ?? '',
+  lastPaymentDate: r.last_payment_date ?? undefined,
+  paymentMethod: (r.payment_method ?? 'Transferencia Bancaria') as Subscription['paymentMethod'],
+  paymentLink: r.payment_link ?? undefined,
+  clientPhone: r.client_phone ?? undefined,
+  clientEmail: r.client_email ?? undefined,
+  notes: r.notes ?? undefined,
+  leadId: r.lead_id ?? undefined,
+  createdAt: r.created_at,
+});
 
-    const raw = localStorage.getItem(SUBSCRIPTIONS_KEY);
-    if (!raw) {
-      localStorage.setItem(SUBSCRIPTIONS_KEY, JSON.stringify([]));
-      return [];
-    }
-    const parsed: Subscription[] = JSON.parse(raw);
-    // Filtrar cualquier residuo de mock sub-00
-    const clean = parsed.filter((s) => !s.id.startsWith('sub-00'));
-    if (clean.length !== parsed.length) {
-      localStorage.setItem(SUBSCRIPTIONS_KEY, JSON.stringify(clean));
-    }
-    return clean;
-  } catch (e) {
-    console.error('Error reading subscriptions:', e);
-    return [];
-  }
+const subToRow = (p: Partial<Subscription>): Record<string, any> => {
+  const row: Record<string, any> = {};
+  if (p.clientName !== undefined) row.client_name = p.clientName;
+  if (p.companyName !== undefined) row.company_name = p.companyName;
+  if (p.planName !== undefined) row.plan_name = p.planName;
+  if (p.category !== undefined) row.category = p.category;
+  if (p.productType !== undefined) row.product_type = p.productType;
+  if (p.amount !== undefined) row.amount = p.amount;
+  if (p.currency !== undefined) row.currency = p.currency;
+  if (p.billingDay !== undefined) row.billing_day = String(p.billingDay);
+  if (p.billingCycle !== undefined) row.billing_cycle = p.billingCycle;
+  if (p.status !== undefined) row.status = p.status;
+  if (p.startDate !== undefined) row.start_date = p.startDate || null;
+  if (p.nextBillingDate !== undefined) row.next_billing_date = p.nextBillingDate || null;
+  if (p.lastPaymentDate !== undefined) row.last_payment_date = p.lastPaymentDate || null;
+  if (p.paymentMethod !== undefined) row.payment_method = p.paymentMethod;
+  if (p.paymentLink !== undefined) row.payment_link = p.paymentLink;
+  if (p.clientPhone !== undefined) row.client_phone = p.clientPhone;
+  if (p.clientEmail !== undefined) row.client_email = p.clientEmail;
+  if (p.notes !== undefined) row.notes = p.notes;
+  if (p.leadId !== undefined) row.lead_id = p.leadId;
+  return row;
+};
+
+export async function getSubscriptions(): Promise<Subscription[]> {
+  const { data, error } = await supabase
+    .from('subscriptions')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map(subRowToSub);
 }
 
-export function clearAllSubscriptions(): void {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem(SUBSCRIPTIONS_KEY, JSON.stringify([]));
+export async function createSubscription(
+  input: Omit<Subscription, 'id' | 'createdAt'>
+): Promise<Subscription> {
+  const { data, error } = await supabase
+    .from('subscriptions')
+    .insert([subToRow(input)])
+    .select()
+    .single();
+  if (error) throw error;
+  return subRowToSub(data);
 }
 
-export function saveSubscriptions(subscriptions: Subscription[]): void {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(SUBSCRIPTIONS_KEY, JSON.stringify(subscriptions));
-  } catch (e) {
-    console.error('Error saving subscriptions:', e);
-  }
+export async function updateSubscription(
+  id: string,
+  updates: Partial<Subscription>
+): Promise<Subscription | null> {
+  const { data, error } = await supabase
+    .from('subscriptions')
+    .update(subToRow(updates))
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data ? subRowToSub(data) : null;
 }
 
-export function createSubscription(input: Omit<Subscription, 'id' | 'createdAt'>): Subscription {
-  const newSub: Subscription = {
-    ...input,
-    id: `sub-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-    createdAt: new Date().toISOString(),
-  };
-  const list = getSubscriptions();
-  const updated = [newSub, ...list];
-  saveSubscriptions(updated);
-  return newSub;
-}
-
-export function updateSubscription(id: string, updates: Partial<Subscription>): Subscription | null {
-  const list = getSubscriptions();
-  const index = list.findIndex((s) => s.id === id);
-  if (index === -1) return null;
-  const updatedSub = { ...list[index], ...updates };
-  list[index] = updatedSub;
-  saveSubscriptions(list);
-  return updatedSub;
-}
-
-export function deleteSubscription(id: string): void {
-  const list = getSubscriptions();
-  const filtered = list.filter((s) => s.id !== id);
-  saveSubscriptions(filtered);
+export async function deleteSubscription(id: string): Promise<void> {
+  const { error } = await supabase.from('subscriptions').delete().eq('id', id);
+  if (error) throw error;
 }
 
 /**
- * Registra el cobro de una suscripción:
- * 1. Actualiza lastPaymentDate a hoy.
- * 2. Proyecta nextBillingDate al mes siguiente manteniendo el billingDay.
- * 3. Marca la suscripción como 'active'.
- * 4. Genera automáticamente un movimiento de ingreso en Finanzas!
+ * Registra el cobro de una suscripción: actualiza lastPaymentDate/nextBillingDate/estado
+ * y genera automáticamente un ingreso en Finanzas.
  */
-export function recordSubscriptionPayment(
+export async function recordSubscriptionPayment(
   subscriptionId: string,
   paymentMethod?: Subscription['paymentMethod'],
   notes?: string
-): { subscription: Subscription; transaction: FinanceTransaction } | null {
-  const list = getSubscriptions();
-  const sub = list.find((s) => s.id === subscriptionId);
+): Promise<{ subscription: Subscription; transaction: FinanceTransaction } | null> {
+  const subs = await getSubscriptions();
+  const sub = subs.find((s) => s.id === subscriptionId);
   if (!sub) return null;
 
   const today = new Date();
@@ -172,19 +212,15 @@ export function recordSubscriptionPayment(
   }
   const nextDateStr = nextDate.toISOString().split('T')[0];
 
-  const updatedSub: Subscription = {
-    ...sub,
+  const updatedSub = await updateSubscription(subscriptionId, {
     status: 'active',
     lastPaymentDate: todayStr,
     nextBillingDate: nextDateStr,
     notes: notes ? `${sub.notes ? sub.notes + ' | ' : ''}Último cobro: ${notes}` : sub.notes,
-  };
-
-  const updatedList = list.map((s) => (s.id === subscriptionId ? updatedSub : s));
-  saveSubscriptions(updatedList);
+  });
 
   // Crear transacción de ingreso automático en Finanzas
-  const newTx = createTransaction({
+  const newTx = await createTransaction({
     type: 'income',
     concept: `Cobro Abono Mensual - ${sub.planName}`,
     provider: sub.companyName || sub.clientName,
@@ -199,83 +235,103 @@ export function recordSubscriptionPayment(
     notes: `Cobro automático de suscripción recurrente. ${notes || ''}`,
   });
 
-  return { subscription: updatedSub, transaction: newTx };
+  return { subscription: updatedSub ?? sub, transaction: newTx };
 }
 
-// --- FINANZAS / DÉBITOS STORAGE & CRUD ---
+// --- FINANZAS / DÉBITOS (Supabase, compartido + realtime) ---
 
-export function getTransactions(): FinanceTransaction[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    // Limpiar claves viejas con datos mock si existiesen
-    const legacy = localStorage.getItem('creapp_finances_v1');
-    if (legacy) {
-      localStorage.removeItem('creapp_finances_v1');
-    }
+type TxRow = {
+  id: string;
+  type: TransactionType;
+  concept: string;
+  provider: string | null;
+  category: ExpenseCategory;
+  amount: number | string | null;
+  currency: 'USD' | 'ARS' | null;
+  date: string;
+  payment_method: FinanceTransaction['paymentMethod'] | null;
+  recurring: boolean | null;
+  status: FinanceTransaction['status'];
+  receipt_number: string | null;
+  notes: string | null;
+  subscription_id: string | null;
+  created_at: string;
+};
 
-    const raw = localStorage.getItem(FINANCES_KEY);
-    if (!raw) {
-      localStorage.setItem(FINANCES_KEY, JSON.stringify([]));
-      return [];
-    }
-    const parsed: FinanceTransaction[] = JSON.parse(raw);
-    // Filtrar cualquier residuo de mock tx-00
-    const clean = parsed.filter((t) => !t.id.startsWith('tx-00'));
-    if (clean.length !== parsed.length) {
-      localStorage.setItem(FINANCES_KEY, JSON.stringify(clean));
-    }
-    return clean;
-  } catch (e) {
-    console.error('Error reading transactions:', e);
-    return [];
-  }
+const txRowToTx = (r: TxRow): FinanceTransaction => ({
+  id: r.id,
+  type: r.type,
+  concept: r.concept,
+  provider: r.provider ?? '',
+  category: r.category,
+  amount: Number(r.amount ?? 0),
+  currency: (r.currency ?? 'USD') as FinanceTransaction['currency'],
+  date: r.date,
+  paymentMethod: (r.payment_method ?? 'Transferencia') as FinanceTransaction['paymentMethod'],
+  recurring: !!r.recurring,
+  status: r.status,
+  receiptNumber: r.receipt_number ?? undefined,
+  notes: r.notes ?? undefined,
+  subscriptionId: r.subscription_id ?? undefined,
+  createdAt: r.created_at,
+});
+
+const txToRow = (p: Partial<FinanceTransaction>): Record<string, any> => {
+  const row: Record<string, any> = {};
+  if (p.type !== undefined) row.type = p.type;
+  if (p.concept !== undefined) row.concept = p.concept;
+  if (p.provider !== undefined) row.provider = p.provider;
+  if (p.category !== undefined) row.category = p.category;
+  if (p.amount !== undefined) row.amount = p.amount;
+  if (p.currency !== undefined) row.currency = p.currency;
+  if (p.date !== undefined) row.date = p.date || null;
+  if (p.paymentMethod !== undefined) row.payment_method = p.paymentMethod;
+  if (p.recurring !== undefined) row.recurring = p.recurring;
+  if (p.status !== undefined) row.status = p.status;
+  if (p.receiptNumber !== undefined) row.receipt_number = p.receiptNumber;
+  if (p.notes !== undefined) row.notes = p.notes;
+  if (p.subscriptionId !== undefined) row.subscription_id = p.subscriptionId;
+  return row;
+};
+
+export async function getTransactions(): Promise<FinanceTransaction[]> {
+  const { data, error } = await supabase
+    .from('finance_transactions')
+    .select('*')
+    .order('date', { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map(txRowToTx);
 }
 
-export function clearAllTransactions(): void {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem(FINANCES_KEY, JSON.stringify([]));
-}
-
-export function saveTransactions(transactions: FinanceTransaction[]): void {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(FINANCES_KEY, JSON.stringify(transactions));
-  } catch (e) {
-    console.error('Error saving transactions:', e);
-  }
-}
-
-export function createTransaction(
+export async function createTransaction(
   input: Omit<FinanceTransaction, 'id' | 'createdAt'>
-): FinanceTransaction {
-  const newTx: FinanceTransaction = {
-    ...input,
-    id: `tx-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-    createdAt: new Date().toISOString(),
-  };
-  const list = getTransactions();
-  const updated = [newTx, ...list];
-  saveTransactions(updated);
-  return newTx;
+): Promise<FinanceTransaction> {
+  const { data, error } = await supabase
+    .from('finance_transactions')
+    .insert([txToRow(input)])
+    .select()
+    .single();
+  if (error) throw error;
+  return txRowToTx(data);
 }
 
-export function updateTransaction(
+export async function updateTransaction(
   id: string,
   updates: Partial<FinanceTransaction>
-): FinanceTransaction | null {
-  const list = getTransactions();
-  const index = list.findIndex((t) => t.id === id);
-  if (index === -1) return null;
-  const updatedTx = { ...list[index], ...updates };
-  list[index] = updatedTx;
-  saveTransactions(list);
-  return updatedTx;
+): Promise<FinanceTransaction | null> {
+  const { data, error } = await supabase
+    .from('finance_transactions')
+    .update(txToRow(updates))
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data ? txRowToTx(data) : null;
 }
 
-export function deleteTransaction(id: string): void {
-  const list = getTransactions();
-  const filtered = list.filter((t) => t.id !== id);
-  saveTransactions(filtered);
+export async function deleteTransaction(id: string): Promise<void> {
+  const { error } = await supabase.from('finance_transactions').delete().eq('id', id);
+  if (error) throw error;
 }
 
 // --- RESUMEN FINANCIERO Y MÉTRICAS GLOBALES ---
@@ -338,7 +394,27 @@ export interface FinancialMetrics {
   recurringExpensesMRR: number; // Gastos operativos recurrentes mensuales ($ARS)
 }
 
-export function getFinancialMetrics(): FinancialMetrics {
+export const EMPTY_FINANCIAL_METRICS: FinancialMetrics = {
+  totalMRR: 0,
+  activeSubscriptionsCount: 0,
+  pendingSubscriptionsCount: 0,
+  totalIncomeMonth: 0,
+  totalExpensesMonth: 0,
+  netBalanceMonth: 0,
+  profitMarginPercent: 0,
+  expensesByCategory: {
+    infrastructure: 0,
+    ai_apis: 0,
+    saas_tools: 0,
+    resources_freelance: 0,
+    legal_accounting: 0,
+    marketing: 0,
+    other: 0,
+  },
+  recurringExpensesMRR: 0,
+};
+
+export async function getFinancialMetrics(): Promise<FinancialMetrics> {
   const defaultFallback: FinancialMetrics = {
     totalMRR: 0,
     activeSubscriptionsCount: 0,
@@ -360,8 +436,10 @@ export function getFinancialMetrics(): FinancialMetrics {
   };
 
   try {
-    const subscriptions = getSubscriptions() || [];
-    const transactions = getTransactions() || [];
+    const [subscriptions, transactions] = await Promise.all([
+      getSubscriptions(),
+      getTransactions(),
+    ]);
 
     // MRR: Suma de suscripciones activas en $ARS (CreApp opera en Pesos Argentinos)
     const totalMRR = subscriptions
@@ -435,6 +513,18 @@ export function getFinancialMetrics(): FinancialMetrics {
     console.warn('[FinanceService] Error calculando métricas financieras:', err);
     return defaultFallback;
   }
+}
+
+// Realtime: cambios en suscripciones o transacciones (hechos por el otro usuario)
+// se reflejan al instante. Devuelve la función de desuscripción.
+export function subscribeFinance(onChange: () => void): () => void {
+  const sb = getSupabase();
+  const channel = sb
+    .channel('finance-shared')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'subscriptions' }, () => onChange())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'finance_transactions' }, () => onChange())
+    .subscribe();
+  return () => { void sb.removeChannel(channel); };
 }
 
 export const EXPENSE_CATEGORIES_INFO: Record<

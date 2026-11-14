@@ -35,6 +35,9 @@ import {
   updateTransaction,
   deleteTransaction,
   getFinancialMetrics,
+  subscribeFinance,
+  FinancialMetrics,
+  EMPTY_FINANCIAL_METRICS,
   EXPENSE_CATEGORIES_INFO,
   parseArgentineNumber,
 } from '@/lib/financeService';
@@ -68,20 +71,24 @@ export const FinancesTab: React.FC = () => {
     notes: '',
   });
 
-  const loadData = () => {
-    setTransactions(getTransactions());
+  const [metrics, setMetrics] = useState<FinancialMetrics>(EMPTY_FINANCIAL_METRICS);
+
+  const loadData = async () => {
+    const [txs, m] = await Promise.all([getTransactions(), getFinancialMetrics()]);
+    setTransactions(txs);
+    setMetrics(m);
   };
 
   useEffect(() => {
     loadData();
+    const unsubscribe = subscribeFinance(() => { loadData(); });
+    return unsubscribe;
   }, []);
 
   const showToast = (msg: string) => {
     setSuccessToast(msg);
     setTimeout(() => setSuccessToast(null), 3500);
   };
-
-  const metrics = getFinancialMetrics();
 
   // Filtrado de transacciones
   const filteredTransactions = transactions.filter((t) => {
@@ -137,7 +144,7 @@ export const FinancesTab: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleSaveTransaction = (e: React.FormEvent) => {
+  const handleSaveTransaction = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.concept || !formData.provider) return;
 
@@ -148,28 +155,28 @@ export const FinancesTab: React.FC = () => {
     };
 
     if (editingTx) {
-      updateTransaction(editingTx.id, finalData);
+      await updateTransaction(editingTx.id, finalData);
       showToast('Movimiento financiero actualizado.');
     } else {
-      createTransaction(finalData);
+      await createTransaction(finalData);
       showToast(formData.type === 'expense' ? 'Débito operativo registrado.' : 'Ingreso registrado en Finanzas.');
     }
 
     setIsModalOpen(false);
-    loadData();
+    await loadData();
   };
 
-  const handleDelete = (id: string, concept: string) => {
+  const handleDelete = async (id: string, concept: string) => {
     if (!confirm(`¿Eliminar el registro "${concept}"?`)) return;
-    deleteTransaction(id);
-    loadData();
+    await deleteTransaction(id);
+    await loadData();
     showToast('Registro eliminado.');
   };
 
-  const handleToggleStatus = (tx: FinanceTransaction) => {
+  const handleToggleStatus = async (tx: FinanceTransaction) => {
     const nextStatus: FinanceTransaction['status'] = tx.status === 'paid' ? 'pending' : 'paid';
-    updateTransaction(tx.id, { status: nextStatus });
-    loadData();
+    await updateTransaction(tx.id, { status: nextStatus });
+    await loadData();
     showToast(`Estado cambiado a ${nextStatus === 'paid' ? 'Pagado' : 'Pendiente'}.`);
   };
 
