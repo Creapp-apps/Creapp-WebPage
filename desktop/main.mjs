@@ -39,7 +39,12 @@ function createWindow() {
     return { action: 'deny' };
   });
   // Inyecta el overlay (toast + indicador) solo en la UI de CreAPP, no en el preflight.
-  win.webContents.on('did-start-navigation', (_e, _u, _inPlace, isMain) => { if (isMain) overlayReady = false; });
+  // Firma Electron 33: (event, url, isInPlace, isMainFrame, ...). Las navegaciones in-place
+  // (pushState de react-router, SPA) NO recargan la página ni disparan did-finish-load:
+  // el overlay DOM sobrevive, así que no hay que marcarlo como no listo.
+  win.webContents.on('did-start-navigation', (_e, _url, isInPlace, isMain) => {
+    if (isMain && !isInPlace) overlayReady = false;
+  });
   win.webContents.on('did-finish-load', () => {
     const url = win.webContents.getURL();
     if (!/^https?:\/\//i.test(url)) return;
