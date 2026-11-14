@@ -1,0 +1,16 @@
+{
+  "name": "creapp-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "main.mjs",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test src/**/*.test.mjs",
+    "dist": "electron-builder --mac --dir"
+  },
+  "devDependencies": {
+    "electron": "33.4.11",
+    "electron-builder": "25.1.8"
+  }
+}
