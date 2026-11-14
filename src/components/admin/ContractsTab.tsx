@@ -51,6 +51,7 @@ import {
   markContractAsSent,
   signContract,
   syncContractsWithSupabase,
+  subscribeContracts,
 } from '@/lib/contractService';
 
 interface ContractsTabProps {
@@ -87,22 +88,45 @@ export const ContractsTab: React.FC<ContractsTabProps> = ({ leads }) => {
   const [selectedLeadId, setSelectedLeadId] = useState<string>('');
 
   useEffect(() => {
-    setContracts(getContracts());
-    // Sincronizar en tiempo real con la base de datos Supabase (verifica estado de AlPaso y propuestas)
-    syncContractsWithSupabase().then((synced) => {
-      setContracts(synced);
-    });
-  }, []);
+    let active = true;
 
-  const refreshContracts = () => {
-    setContracts(getContracts());
-    syncContractsWithSupabase().then((synced) => {
-      setContracts(synced);
-      if (inspectingContract) {
-        const updated = synced.find((c) => c.id === inspectingContract.id);
-        if (updated) setInspectingContract(updated);
+    // Carga inicial: trae los contratos y sincroniza el estado de AlPaso/propuestas.
+    const initialLoad = async () => {
+      try {
+        const synced = await syncContractsWithSupabase();
+        if (active) setContracts(synced);
+      } catch (e) {
+        console.error('Error cargando contratos:', e);
+      }
+    };
+    initialLoad();
+
+    // Realtime: si el otro usuario crea/edita/borra/firma, se refleja al instante.
+    const unsubscribe = subscribeContracts(async () => {
+      try {
+        const list = await getContracts();
+        if (!active) return;
+        setContracts(list);
+        setInspectingContract((prev) => (prev ? list.find((c) => c.id === prev.id) ?? prev : prev));
+      } catch (e) {
+        console.error('Error refrescando contratos (realtime):', e);
       }
     });
+
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, []);
+
+  const refreshContracts = async () => {
+    try {
+      const synced = await syncContractsWithSupabase();
+      setContracts(synced);
+      setInspectingContract((prev) => (prev ? synced.find((c) => c.id === prev.id) ?? prev : prev));
+    } catch (e) {
+      console.error('Error refrescando contratos:', e);
+    }
   };
 
   const currentPreset: CreappProductPreset =
@@ -145,7 +169,7 @@ export const ContractsTab: React.FC<ContractsTabProps> = ({ leads }) => {
     }
   };
 
-  const handleCreateSubmit = (e: React.FormEvent) => {
+  const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!clientName.trim()) {
       alert('Por favor ingrese el nombre del cliente.');
@@ -154,7 +178,7 @@ export const ContractsTab: React.FC<ContractsTabProps> = ({ leads }) => {
 
     const ref = `#${selectedProductKey.toUpperCase()}-${contractDate.replace(/-/g, '')}-${Math.floor(10 + Math.random() * 90)}`;
 
-    const newContract = createContract({
+    const newContract = await createContract({
       contractRef: ref,
       clientName: clientName.trim(),
       clientTaxId: clientTaxId.trim() || undefined,
@@ -174,7 +198,7 @@ export const ContractsTab: React.FC<ContractsTabProps> = ({ leads }) => {
       status: 'sent',
     });
 
-    refreshContracts();
+    await refreshContracts();
     setActiveSubTab('list');
     setInspectingContract(newContract);
   };
@@ -188,7 +212,7 @@ export const ContractsTab: React.FC<ContractsTabProps> = ({ leads }) => {
     setTimeout(() => setCopiedId(null), 2500);
   };
 
-  const handleSendWhatsApp = (c: ServiceContract) => {
+  const handleSendWhatsApp = async (c: ServiceContract) => {
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://creapp.com.ar';
     const link = c.slug ? `${origin}/propuesta/${c.slug}` : `${origin}/contrato/${c.id}`;
     const cleanPhone = c.clientPhone ? c.clientPhone.replace(/[^0-9]/g, '') : '';
@@ -196,27 +220,29 @@ export const ContractsTab: React.FC<ContractsTabProps> = ({ leads }) => {
       `Hola ${c.clientName || 'equipo'},\n\nLes compartimos el enlace oficial para la revisión y firma digital de su Contrato de Servicio & SLA de ${c.productName}:\n\n🔗 ${link}\n\nQuedamos a su total disposición ante cualquier consulta técnica o administrativa.\n\nEquipo CreApp Software Lab`
     );
 
-    markContractAsSent(c.id, 'WhatsApp');
-    refreshContracts();
-
+    // Abrimos la ventana en el mismo tick del click (antes de cualquier await) para
+    // no gatillar el bloqueador de pop-ups del navegador.
     const waUrl = cleanPhone ? `https://wa.me/${cleanPhone}?text=${text}` : `https://wa.me/?text=${text}`;
     window.open(waUrl, '_blank');
+
+    await markContractAsSent(c.id, 'WhatsApp');
+    await refreshContracts();
   };
 
-  const handleManualSign = (c: ServiceContract) => {
+  const handleManualSign = async (c: ServiceContract) => {
     const signer = prompt(`Confirmar firma manual para ${c.clientName}. Ingrese el nombre del firmante:`, c.clientName);
     if (!signer) return;
-    signContract(c.id, {
+    await signContract(c.id, {
       signedByName: signer,
       signedByRole: 'Firmado Físico / Confirmado por Cliente',
     });
-    refreshContracts();
+    await refreshContracts();
   };
 
-  const handleDelete = (id: string, name: string) => {
+  const handleDelete = async (id: string, name: string) => {
     if (confirm(`¿Confirma eliminar el contrato de "${name}"?`)) {
-      deleteContract(id);
-      refreshContracts();
+      await deleteContract(id);
+      await refreshContracts();
       if (inspectingContract?.id === id) setInspectingContract(null);
     }
   };

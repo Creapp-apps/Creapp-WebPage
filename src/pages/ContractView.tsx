@@ -47,23 +47,38 @@ export const ContractView: React.FC = () => {
   const [hasDrawn, setHasDrawn] = useState(false);
 
   useEffect(() => {
-    if (id) {
-      // Registrar apertura del cliente en el tracking
-      const updated = recordContractView(id);
-      if (updated) {
-        setContract(updated);
-        setSignerName(updated.clientName || '');
-        setSignerTaxId(updated.clientTaxId || '');
-      } else {
-        const found = getContractById(id);
-        if (found) {
-          setContract(found);
-          setSignerName(found.clientName || '');
-          setSignerTaxId(found.clientTaxId || '');
+    if (!id) return;
+    let active = true;
+
+    const load = async () => {
+      try {
+        // Registrar apertura del cliente en el tracking
+        const updated = await recordContractView(id);
+        if (!active) return;
+        if (updated) {
+          setContract(updated);
+          setSignerName(updated.clientName || '');
+          setSignerTaxId(updated.clientTaxId || '');
+        } else {
+          const found = await getContractById(id);
+          if (!active) return;
+          if (found) {
+            setContract(found);
+            setSignerName(found.clientName || '');
+            setSignerTaxId(found.clientTaxId || '');
+          }
         }
+      } catch (e) {
+        console.error('Error cargando el contrato:', e);
+      } finally {
+        if (active) setLoading(false);
       }
-      setLoading(false);
-    }
+    };
+    load();
+
+    return () => {
+      active = false;
+    };
   }, [id]);
 
   // Setup canvas
@@ -128,7 +143,7 @@ export const ContractView: React.FC = () => {
     setHasDrawn(false);
   };
 
-  const handleConfirmSignature = (e: React.FormEvent) => {
+  const handleConfirmSignature = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!contract) return;
     if (!signerName.trim()) {
@@ -147,7 +162,7 @@ export const ContractView: React.FC = () => {
       signatureImage = canvasRef.current.toDataURL('image/png');
     }
 
-    const signed = signContract(contract.id, {
+    const signed = await signContract(contract.id, {
       signedByName: signerName,
       signedByTaxId: signerTaxId,
       signedByRole: signerRole,
