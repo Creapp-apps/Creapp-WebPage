@@ -26,10 +26,17 @@ function gitProbe({ creappPath, gitRemote, timeoutMs }) {
     execFile(
       'git',
       ['ls-remote', '--exit-code', gitRemote, 'HEAD'],
-      { cwd: creappPath, timeout: timeoutMs },
+      // GIT_TERMINAL_PROMPT=0: sin prompt de credenciales, falla rápido en vez de colgarse.
+      { cwd: creappPath, timeout: timeoutMs, env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } },
       (err) => resolve(!err),
     );
   });
+}
+
+function requireString(name, value) {
+  if (typeof value !== 'string' || value.trim() === '') {
+    throw new TypeError(`createRealProbes: falta ${name} (string no vacío)`);
+  }
 }
 
 export function createRealProbes({
@@ -39,6 +46,9 @@ export function createRealProbes({
   gitRemote = 'origin',
   timeoutMs = DEFAULT_TIMEOUT_MS,
 }) {
+  requireString('supabaseUrl', supabaseUrl);
+  requireString('r2Url', r2Url);
+  requireString('creappPath', creappPath);
   return {
     supabase: httpProbe(`${supabaseUrl.replace(/\/+$/, '')}/rest/v1/`, timeoutMs),
     r2: httpProbe(r2Url, timeoutMs),

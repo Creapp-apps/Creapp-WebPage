@@ -105,16 +105,91 @@ test('arranque ya offline: no emite connection-lost (no hubo transición online-
   assert.equal(events.change[0].online, false);
 });
 
-test('start() programa checkNow con el intervalo y stop() limpia el timer (timers inyectados)', async () => {
+// Probe spy: cuenta cuántas veces se consultó cada probe (sólo el conteo de checks).
+function countingProbes(state) {
+  const calls = { n: 0 };
+  const base = makeProbes(state);
+  const wrap = (fn) => async () => { calls.n += 1; return fn(); };
+  return {
+    probes: { supabase: wrap(base.supabase), r2: wrap(base.r2), git: wrap(base.git) },
+    calls,
+  };
+}
+
+const flush = () => new Promise((r) => setImmediate(r));
+
+test('start() dispara checks por intervalo y stop() impide que un cb posterior haga checks', async () => {
   const state = { supabase: true, r2: true, git: true };
   const timers = makeTimers();
-  const m = createMonitor({ probes: makeProbes(state), intervalMs: 5000, timers });
-  const events = collect(m);
+  const { probes, calls } = countingProbes(state);
+  const m = createMonitor({ probes, intervalMs: 5000, timers });
   m.start();
+  await flush();
   assert.equal(timers.ms, 5000);
-  timers.cb();
-  await new Promise((r) => setImmediate(r));
-  assert.equal(events.change.length, 1);
+  assert.equal(calls.n, 3, 'start() hace un check inmediato (3 probes)');
+
+  timers.cb(); // el intervalo dispara
+  await flush();
+  assert.equal(calls.n, 6, 'el intervalo agrega un check (3 probes más)');
+
   m.stop();
   assert.equal(timers.cleared, true);
+  timers.cb(); // cb viejo tras stop()
+  await flush();
+  assert.equal(calls.n, 6, 'tras stop() el cb no produce checks');
+});
+
+test('online->offline->online->offline da DOS connection-lost (el estado se resetea al recuperar)', async () => {
+  const state = { supabase: true, r2: true, git: true };
+  const m = createMonitor({ probes: makeProbes(state), intervalMs: 1000 });
+  const events = collect(m);
+  await m.checkNow();
+  state.r2 = false;
+  await m.checkNow();
+  state.r2 = true;
+  await m.checkNow();
+  state.supabase = false;
+  await m.checkNow();
+  assert.equal(events.lost, 2);
+});
+
+test('un checkNow lento y viejo no pisa un resultado más nuevo ya aplicado', async () => {
+  const state = { supabase: true, r2: true, git: true };
+  const gate = {};
+  // Primer check (seq 2) queda colgado hasta que lo liberemos; el segundo (seq 3) resuelve ya.
+  let slowNext = false;
+  const probes = {
+    supabase: () => {
+      if (!slowNext) return Promise.resolve(state.supabase);
+      slowNext = false;
+      return new Promise((resolve) => { gate.release = () => resolve(false); });
+    },
+    r2: async () => state.r2,
+    git: async () => state.git,
+  };
+  const m = createMonitor({ probes, intervalMs: 1000 });
+  const events = collect(m);
+  await m.checkNow(); // online aplicado
+  slowNext = true;
+  const slow = m.checkNow(); // viejo: supabase cuelga, luego dará offline
+  await m.checkNow(); // nuevo: online, aplicado primero
+  gate.release();
+  const res = await slow;
+  await flush();
+  assert.equal(res.stale, true);
+  assert.equal(events.lost, 0, 'el batch viejo no emite connection-lost');
+  assert.equal(events.change.length, 1, 'no hay change espurio');
+});
+
+test('un listener que tira no deja una promesa suelta: se reporta como monitor-error', async () => {
+  const state = { supabase: true, r2: true, git: true };
+  const timers = makeTimers();
+  const m = createMonitor({ probes: makeProbes(state), intervalMs: 1000, timers });
+  const errors = [];
+  m.on('monitor-error', (err) => errors.push(err));
+  m.on('change', () => { throw new Error('listener roto'); });
+  m.start();
+  await flush();
+  assert.equal(errors.length, 1);
+  assert.equal(errors[0].message, 'listener roto');
 });

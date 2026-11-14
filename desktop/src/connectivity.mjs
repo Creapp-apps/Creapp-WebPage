@@ -12,6 +12,12 @@ import { EventEmitter } from 'node:events';
 //                     (incluye la primera medición).
 //   'connection-lost' sólo en la transición online -> offline. Nunca se repite
 //                     mientras sigue offline, y la recuperación no lo emite.
+//   'monitor-error'   (err) un listener que tira o un check fallido no se pierde
+//                     en una promesa suelta; se reporta por el emitter.
+//
+// Concurrencia: cada checkNow() toma un número de secuencia. Un resultado más
+// viejo que el último ya aplicado se descarta (no pisa estado ni emite eventos),
+// así un batch lento no produce change/connection-lost espurios.
 
 const REQUIRED = ['supabase', 'r2'];
 
@@ -19,6 +25,9 @@ export function createMonitor({ probes, intervalMs = 30_000, timers = globalThis
   const emitter = new EventEmitter();
   const names = Object.keys(probes);
   let lastOnline = null; // null = aún no medido
+  let issued = 0; // secuencia del último checkNow lanzado
+  let applied = 0; // secuencia del último resultado aplicado al estado
+  let running = false;
   let handle = null;
 
   async function runProbe(name) {
@@ -30,9 +39,13 @@ export function createMonitor({ probes, intervalMs = 30_000, timers = globalThis
   }
 
   async function checkNow() {
+    const seq = ++issued;
     const results = await Promise.all(names.map(runProbe));
     const services = Object.fromEntries(names.map((n, i) => [n, results[i]]));
     const online = REQUIRED.every((n) => services[n] === true);
+
+    if (seq < applied) return { online, services, stale: true }; // resultado viejo: descartado
+    applied = seq;
 
     const wasOnline = lastOnline;
     lastOnline = online;
@@ -42,17 +55,27 @@ export function createMonitor({ probes, intervalMs = 30_000, timers = globalThis
         emitter.emit('connection-lost');
       }
     }
-    return { online, services };
+    return { online, services, stale: false };
+  }
+
+  // Dispara un check sin soltar la promesa: un error (p. ej. un listener que tira)
+  // se reporta como 'monitor-error'.
+  function tick() {
+    checkNow().catch((err) => emitter.emit('monitor-error', err));
   }
 
   function start() {
-    if (handle !== null) return;
-    handle = timers.setInterval(() => { checkNow(); }, intervalMs);
-    checkNow();
+    if (running) return;
+    running = true;
+    handle = timers.setInterval(() => {
+      if (running) tick(); // un cb viejo tras stop() no produce checks
+    }, intervalMs);
+    tick();
   }
 
   function stop() {
-    if (handle === null) return;
+    if (!running) return;
+    running = false;
     timers.clearInterval(handle);
     handle = null;
   }
