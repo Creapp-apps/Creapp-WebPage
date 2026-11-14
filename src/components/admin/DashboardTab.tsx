@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   DollarSign,
@@ -22,7 +22,7 @@ import {
 import type { Proposal } from '@/lib/proposalTypes';
 import { Lead, STAGE_CONFIG } from '@/lib/pipelineService';
 import { AdminTab } from './AdminLayout';
-import { getFinancialMetrics } from '@/lib/financeService';
+import { getFinancialMetrics, subscribeFinance, FinancialMetrics, EMPTY_FINANCIAL_METRICS } from '@/lib/financeService';
 import { useAuth } from '@/context/AuthContext';
 
 interface DashboardTabProps {
@@ -46,8 +46,15 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
   const publishedProposals = proposals.filter((p) => p.status === 'published').length;
   const winRate = proposals.length > 0 ? Math.round((signedProposals / proposals.length) * 100) : 0;
   
-  // MRR recurrente de contratos de suscripción activos (solo admin)
-  const financeMetrics = isAdmin ? getFinancialMetrics() : { totalMRR: 0, activeSubscriptionsCount: 0 };
+  // MRR recurrente de suscripciones activas (solo admin) — desde Supabase + realtime
+  const [financeMetrics, setFinanceMetrics] = useState<FinancialMetrics>(EMPTY_FINANCIAL_METRICS);
+  useEffect(() => {
+    if (!isAdmin) return;
+    const load = () => { getFinancialMetrics().then(setFinanceMetrics).catch(() => {}); };
+    load();
+    const unsubscribe = subscribeFinance(load);
+    return unsubscribe;
+  }, [isAdmin]);
   const activeSaaSMRR = financeMetrics.totalMRR;
 
   const qualifiedLeads = leads.filter((l) => l.stage === 'prospect' || l.stage === 'contacted').length;

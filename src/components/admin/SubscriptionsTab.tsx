@@ -34,7 +34,9 @@ import {
   deleteSubscription,
   recordSubscriptionPayment,
   getFinancialMetrics,
-  saveSubscriptions,
+  subscribeFinance,
+  FinancialMetrics,
+  EMPTY_FINANCIAL_METRICS,
   parseArgentineNumber,
   formatBillingDay,
 } from '@/lib/financeService';
@@ -92,25 +94,18 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ leads = [] }
     notes: '',
   });
 
-  const loadData = () => {
-    const rawSubs = getSubscriptions();
-    // Auto-curar si alguna suscripción de AlPaso o en ARS se guardó con el bug del punto como $125
-    let hasHealed = false;
-    const healed = rawSubs.map((s) => {
-      if (s.amount === 125 && (s.currency === 'ARS' || s.companyName.toLowerCase().includes('alpaso'))) {
-        hasHealed = true;
-        return { ...s, amount: 125000, currency: 'ARS' as const };
-      }
-      return s;
-    });
-    if (hasHealed) {
-      saveSubscriptions(healed);
-    }
-    setSubscriptions(healed);
+  const [metrics, setMetrics] = useState<FinancialMetrics>(EMPTY_FINANCIAL_METRICS);
+
+  const loadData = async () => {
+    const [subs, m] = await Promise.all([getSubscriptions(), getFinancialMetrics()]);
+    setSubscriptions(subs);
+    setMetrics(m);
   };
 
   useEffect(() => {
     loadData();
+    const unsubscribe = subscribeFinance(() => { loadData(); });
+    return unsubscribe;
   }, []);
 
   const showToast = (msg: string) => {
@@ -119,7 +114,6 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ leads = [] }
   };
 
   // KPIs en Pesos Argentinos ($ARS)
-  const metrics = getFinancialMetrics();
   const totalActiveSubs = subscriptions.filter((s) => s.status === 'active').length;
   const totalPendingSubs = subscriptions.filter(
     (s) => s.status === 'pending_payment' || s.status === 'overdue'
@@ -262,7 +256,7 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ leads = [] }
     }));
   };
 
-  const handleSaveSubscription = (e: React.FormEvent) => {
+  const handleSaveSubscription = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.companyName) return;
 
@@ -273,34 +267,34 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ leads = [] }
     };
 
     if (editingSub) {
-      updateSubscription(editingSub.id, finalData);
+      await updateSubscription(editingSub.id, finalData);
       showToast('Suscripción actualizada exitosamente.');
     } else {
-      createSubscription(finalData);
+      await createSubscription(finalData);
       showToast('Nueva suscripción registrada y activada.');
     }
 
     setIsCreateModalOpen(false);
-    loadData();
+    await loadData();
   };
 
-  const handleDelete = (id: string, name: string) => {
+  const handleDelete = async (id: string, name: string) => {
     if (!confirm(`¿Eliminar la suscripción de "${name}"?`)) return;
-    deleteSubscription(id);
-    loadData();
+    await deleteSubscription(id);
+    await loadData();
     showToast('Suscripción eliminada.');
   };
 
-  const handleToggleStatus = (sub: Subscription) => {
+  const handleToggleStatus = async (sub: Subscription) => {
     const newStatus: SubscriptionStatus = sub.status === 'active' ? 'paused' : 'active';
-    updateSubscription(sub.id, { status: newStatus });
-    loadData();
+    await updateSubscription(sub.id, { status: newStatus });
+    await loadData();
     showToast(`Suscripción ${newStatus === 'active' ? 'reactivada' : 'pausada'}.`);
   };
 
-  const handleConfirmPayment = () => {
+  const handleConfirmPayment = async () => {
     if (!paymentModalSub) return;
-    const res = recordSubscriptionPayment(paymentModalSub.id, paymentModalSub.paymentMethod, paymentNotes);
+    const res = await recordSubscriptionPayment(paymentModalSub.id, paymentModalSub.paymentMethod, paymentNotes);
     if (res) {
       showToast(`¡Cobro de $${paymentModalSub.amount.toLocaleString('es-AR')} ${paymentModalSub.currency === 'ARS' ? '$ars' : 'USD'} registrado e ingresado a Finanzas!`);
       dispatchNotification({
@@ -313,7 +307,7 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ leads = [] }
     }
     setPaymentModalSub(null);
     setPaymentNotes('');
-    loadData();
+    await loadData();
   };
 
   const handleSendWhatsAppReminder = (sub: Subscription) => {
