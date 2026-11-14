@@ -7,6 +7,8 @@ const RAW_DEFAULTS = {
   creappPath: '/Users/sebamaza/Desktop/CREAPP/creapp---fintech-innovation-hub',
   motorPort: 8000,
   uiPort: 4599,
+  supabaseUrl: 'https://yjrqpjlzyxivwpfcatvt.supabase.co',
+  r2Url: 'https://pub-e8d5031001384d27a52e6cea45086f73.r2.dev',
 };
 
 const KEYS = Object.keys(RAW_DEFAULTS);

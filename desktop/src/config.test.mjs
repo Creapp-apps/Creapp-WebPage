@@ -83,3 +83,14 @@ test('tipo inválido en un campo no rompe los válidos del mismo archivo', () =>
   assert.equal(cfg.motorPort, 8000);
   assert.equal(cfg.uiPort, 4700);
 });
+
+test('supabaseUrl/r2Url: defaults, override y type-guard', () => {
+  const d = defaultConfig({ home: '/h' });
+  assert.equal(d.supabaseUrl, 'https://yjrqpjlzyxivwpfcatvt.supabase.co');
+  assert.equal(d.r2Url, 'https://pub-e8d5031001384d27a52e6cea45086f73.r2.dev');
+  const home = tmpHome();
+  writeCfg(home, JSON.stringify({ supabaseUrl: 'https://x.test', r2Url: 42 }));
+  const cfg = loadConfig({ home, fs });
+  assert.equal(cfg.supabaseUrl, 'https://x.test');
+  assert.equal(cfg.r2Url, d.r2Url);
+});

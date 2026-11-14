@@ -3,7 +3,13 @@ import { spawn as realSpawn } from 'node:child_process';
 function runGit(args, cwd, spawn) {
   return new Promise((resolve, reject) => {
     let stderr = '';
-    const p = spawn('git', args, { cwd });
+    const p = spawn('git', args, {
+      cwd,
+      env: { ...process.env, GIT_TERMINAL_PROMPT: '0' },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    // Drenar stdout: si nadie lo lee, un resumen grande llena el pipe (64KB) y git se cuelga.
+    p.stdout?.on('data', () => {});
     p.stderr?.on('data', (d) => { stderr += d.toString(); });
     p.on('error', reject);
     p.on('close', (code) => {
@@ -14,7 +20,7 @@ function runGit(args, cwd, spawn) {
 }
 
 export const gitPush = (config, { spawn = realSpawn } = {}) => runGit(['push'], config.creappPath, spawn);
-export const gitPull = (config, { spawn = realSpawn } = {}) => runGit(['pull'], config.creappPath, spawn);
+export const gitPull = (config, { spawn = realSpawn } = {}) => runGit(['pull', '--no-edit', '--ff-only'], config.creappPath, spawn);
 
 const realSleep = (ms) => new Promise((r) => setTimeout(r, ms));
 

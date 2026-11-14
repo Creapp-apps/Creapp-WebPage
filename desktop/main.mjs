@@ -102,6 +102,7 @@ export function runResilient(op, label, opts = {}) {
 // Operaciones pesadas: corren bajo runResilient (falla -> toast + Reintentar).
 // Fire-and-forget: runResilient queda pendiente hasta que la op funcione, así que
 // el invoke devuelve enseguida; el resultado/falla se ve por el toast.
+const GIT_TIMEOUT_MS = 60000;
 const HEAVY_OPS = {
   'desktop:git-push': () => ['git push', () => gitPush(loadConfig())],
   'desktop:git-pull': () => ['git pull', () => gitPull(loadConfig())],
@@ -109,13 +110,14 @@ const HEAVY_OPS = {
 for (const [channel, make] of Object.entries(HEAVY_OPS)) {
   ipcMain.handle(channel, () => {
     const [label, op] = make();
-    runResilient(op, label);
+    // timeoutMs: un git colgado se detecta como intermitencia (toast + Reintentar).
+    runResilient(op, label, { timeoutMs: GIT_TIMEOUT_MS });
     return { started: true };
   });
 }
 ipcMain.handle('desktop:observe-upload', (_e, jobId) => {
   if (typeof jobId !== 'string' || !jobId) return { started: false };
-  runResilient(() => observeMotorUpload(loadConfig(), jobId), `subida ${jobId}`);
+  runResilient(() => observeMotorUpload(loadConfig(), jobId), `subida ${jobId}`, { timeoutMs: 150000 });
   return { started: true };
 });
 
@@ -136,12 +138,8 @@ function startConnectivity() {
   if (monitor) return;
   try {
     const cfg = loadConfig();
-    const supabaseUrl = process.env.CREAPP_SUPABASE_URL || 'https://yjrqpjlzyxivwpfcatvt.supabase.co';
-    const r2Url = process.env.CREAPP_R2_URL;
-    if (!r2Url) {
-      console.warn('[creapp] CREAPP_R2_URL no definida: monitor de conectividad desactivado');
-      return;
-    }
+    const supabaseUrl = process.env.CREAPP_SUPABASE_URL || cfg.supabaseUrl;
+    const r2Url = process.env.CREAPP_R2_URL || cfg.r2Url;
     monitor = createMonitor({ probes: createRealProbes({ supabaseUrl, r2Url, creappPath: cfg.creappPath }) });
   } catch (err) {
     console.error('[creapp] monitor no arrancó:', err.message);

@@ -23,9 +23,13 @@ Si falta algo, el preflight lista cada dependencia con su comando de arreglo.
   "motorPath": "~/Desktop/PROYECTOS DEV/Creador de Contenidos",
   "creappPath": "/ruta/al/creapp---fintech-innovation-hub",
   "motorPort": 8000,
-  "uiPort": 4599
+  "uiPort": 4599,
+  "supabaseUrl": "https://yjrqpjlzyxivwpfcatvt.supabase.co",
+  "r2Url": "https://pub-e8d5031001384d27a52e6cea45086f73.r2.dev"
 }
 ```
+
+El monitor de conectividad usa `supabaseUrl` y `r2Url` de este archivo (con esos defaults), así que corre sin configurar nada. Opcionalmente se pueden pisar con las variables de entorno `CREAPP_SUPABASE_URL` y `CREAPP_R2_URL`.
 
 `~/` se expande al home. Valores inválidos o de tipo incorrecto se ignoran y se usa el default.
 

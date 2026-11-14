@@ -86,3 +86,23 @@ test('observeMotorUpload encodes jobId', async () => {
   await observeMotorUpload(cfg, 'a/b', { fetch: mkFetch([{ ok: true }], urls), sleep: async () => {} });
   assert.ok(urls[0].endsWith('/a%2Fb'));
 });
+
+test('gitPull usa --no-edit --ff-only; runGit sin prompt, stdin ignorado y stdout drenado', async () => {
+  const calls = [];
+  let stdoutListeners = 0;
+  const spawn = (cmd, args, opts) => {
+    calls.push({ args, opts });
+    const p = new EventEmitter();
+    p.stdout = new EventEmitter();
+    p.stdout.on('data', () => {});
+    p.stderr = new EventEmitter();
+    setImmediate(() => { stdoutListeners = p.stdout.listenerCount('data'); p.emit('close', 0); });
+    return p;
+  };
+  await gitPull(cfg, { spawn });
+  assert.deepEqual(calls[0].args, ['pull', '--no-edit', '--ff-only']);
+  assert.equal(calls[0].opts.env.GIT_TERMINAL_PROMPT, '0');
+  assert.deepEqual(calls[0].opts.stdio, ['ignore', 'pipe', 'pipe']);
+  // runGit registró su propio listener de stdout (además del nuestro).
+  assert.equal(stdoutListeners, 2);
+});
