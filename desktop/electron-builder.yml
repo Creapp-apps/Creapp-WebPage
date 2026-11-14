@@ -12,3 +12,4 @@ files:
 mac:
   target: dir
   identity: null
+  icon: build/icon.png
