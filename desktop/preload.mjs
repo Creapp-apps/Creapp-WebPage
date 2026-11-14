@@ -15,4 +15,5 @@ contextBridge.exposeInMainWorld('creappDesktop', {
   onToast: subscribe('desktop:toast'),
   onConnectivity: subscribe('desktop:connectivity'),
   retry: (id) => ipcRenderer.send('desktop:retry', id),
+  dismiss: (id) => ipcRenderer.send('desktop:dismiss', id),
 });

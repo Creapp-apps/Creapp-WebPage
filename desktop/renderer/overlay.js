@@ -24,9 +24,13 @@
   document.body.appendChild(root);
 
   api.onConnectivity((s) => {
-    const on = !!(s && s.online);
-    led.style.background = on ? '#22c55e' : '#ef4444';
-    txt.textContent = on ? 'En línea' : 'Sin conexión';
+    if (!s || s.online == null) {
+      led.style.background = '#6b7280';
+      txt.textContent = 'Sin monitoreo';
+      return;
+    }
+    led.style.background = s.online ? '#22c55e' : '#ef4444';
+    txt.textContent = s.online ? 'En línea' : 'Sin conexión';
   });
 
   api.onToast((t) => {
@@ -40,14 +44,14 @@
     b.style.cssText = 'font-size:13px;opacity:.85;margin-top:4px';
     b.textContent = t.body;
     el.append(h, b);
-    const close = () => el.remove();
+    const close = () => { el.remove(); if (t.id != null && api.dismiss) api.dismiss(t.id); };
     const row = document.createElement('div');
     row.style.cssText = 'display:flex;gap:8px;margin-top:10px;justify-content:flex-end';
     if (t.action && t.id != null) {
       const rb = document.createElement('button');
       rb.textContent = t.action;
       rb.style.cssText = 'background:#A855F7;color:#fff;border:0;border-radius:8px;padding:6px 12px;font-weight:600;cursor:pointer';
-      rb.onclick = () => { api.retry(t.id); close(); };
+      rb.onclick = () => { api.retry(t.id); el.remove(); };
       row.appendChild(rb);
     }
     const cb = document.createElement('button');

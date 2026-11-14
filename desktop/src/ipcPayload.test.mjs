@@ -11,16 +11,16 @@ test('failed push -> subida con Reintentar', () => {
   });
 });
 
-test('failed pull -> descarga', () => {
+test('failed pull -> mismo título', () => {
   const p = toToastPayload({ type: 'failed', label: 'git pull' });
-  assert.equal(p.title, 'No se pudo completar la descarga');
+  assert.equal(p.title, 'No se pudo completar la subida');
   assert.ok(p.body.includes('git pull'));
   assert.equal(p.action, 'Reintentar');
 });
 
 test('failed genérico', () => {
   const p = toToastPayload({ type: 'failed', label: 'sync assets' });
-  assert.equal(p.title, 'No se pudo completar la operación');
+  assert.equal(p.title, 'No se pudo completar la subida');
   assert.ok(p.body.includes('sync assets'));
   assert.equal(p.action, 'Reintentar');
 });

@@ -39,11 +39,17 @@ function createWindow() {
     return { action: 'deny' };
   });
   // Inyecta el overlay (toast + indicador) solo en la UI de CreAPP, no en el preflight.
+  win.webContents.on('did-start-navigation', (_e, _u, _inPlace, isMain) => { if (isMain) overlayReady = false; });
   win.webContents.on('did-finish-load', () => {
     const url = win.webContents.getURL();
     if (!/^https?:\/\//i.test(url)) return;
     const code = fs.readFileSync(fileURLToPath(new URL('./renderer/overlay.js', import.meta.url)), 'utf8');
-    win.webContents.executeJavaScript(code).catch((e) => console.error('[creapp] overlay:', e.message));
+    win.webContents.executeJavaScript(code).then(() => {
+      overlayReady = true;
+      // Replay: estado de conectividad actual (null = sin monitoreo) + toasts pendientes.
+      win.webContents.send('desktop:connectivity', lastConnectivity ?? { online: null });
+      for (const t of pendingToasts.splice(0)) win.webContents.send('desktop:toast', t);
+    }).catch((e) => console.error('[creapp] overlay:', e.message));
   });
   win.loadFile(fileURLToPath(new URL('./renderer/preflight.html', import.meta.url)));
   mainWindow = win;
@@ -53,9 +59,21 @@ function createWindow() {
 // Bridge main -> renderer: toasts y conectividad. Los retry() de eventos `failed`
 // viven en este mapa (id -> callback); el renderer solo conoce el id.
 const pendingRetries = new Map();
+const MAX_PENDING = 50;
 let retrySeq = 0;
+let lastConnectivity = null;
+let overlayReady = false;
+const pendingToasts = []; // toasts emitidos antes de que el overlay esté cargado
 const sendToRenderer = (channel, payload) => {
-  if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send(channel, payload);
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  if (!overlayReady) {
+    if (channel === 'desktop:toast') {
+      pendingToasts.push(payload);
+      if (pendingToasts.length > 20) pendingToasts.shift();
+    }
+    return;
+  }
+  mainWindow.webContents.send(channel, payload);
 };
 
 // Para operaciones del main que quieran falla visible + Reintentar.
@@ -69,6 +87,7 @@ export function runResilient(op, label, opts = {}) {
       if (!payload) return;
       const id = ++retrySeq;
       pendingRetries.set(id, evt.retry);
+      if (pendingRetries.size > MAX_PENDING) pendingRetries.delete(pendingRetries.keys().next().value);
       sendToRenderer('desktop:toast', { ...payload, id });
     },
   });
@@ -78,8 +97,13 @@ ipcMain.on('desktop:retry', (_e, id) => {
   const retry = pendingRetries.get(id);
   if (!retry) return;
   pendingRetries.delete(id);
-  retry();
+  try {
+    Promise.resolve(retry()).catch((err) => console.error('[creapp] retry:', err?.message ?? err));
+  } catch (err) {
+    console.error('[creapp] retry:', err?.message ?? err);
+  }
 });
+ipcMain.on('desktop:dismiss', (_e, id) => { pendingRetries.delete(id); });
 
 let monitor = null;
 function startConnectivity() {
@@ -97,7 +121,7 @@ function startConnectivity() {
     console.error('[creapp] monitor no arrancó:', err.message);
     return;
   }
-  monitor.on('change', (s) => sendToRenderer('desktop:connectivity', s));
+  monitor.on('change', (s) => { lastConnectivity = s; sendToRenderer('desktop:connectivity', s); });
   monitor.on('connection-lost', () => sendToRenderer('desktop:toast', toToastPayload({ type: 'connection-lost' })));
   monitor.on('monitor-error', (err) => console.error('[creapp] monitor-error:', err?.message ?? err));
   monitor.start();
