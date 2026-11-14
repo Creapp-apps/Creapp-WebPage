@@ -47,7 +47,13 @@ export function loadConfig({ home = os.homedir(), fs = realFs } = {}) {
   try {
     const parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
     if (parsed && typeof parsed === 'object') {
-      for (const key of KEYS) if (key in parsed) overrides[key] = parsed[key];
+      for (const key of KEYS) {
+        const value = parsed[key];
+        // Solo aceptamos el valor si su tipo coincide con el default (y los paths son strings no vacíos).
+        if (typeof value !== typeof RAW_DEFAULTS[key]) continue;
+        if (typeof value === 'string' && value.trim() === '') continue;
+        overrides[key] = value;
+      }
     }
   } catch {
     // JSON corrupto: usamos defaults sin tirar y sin tocar el archivo.
