@@ -1,4 +1,6 @@
-export type PipelineStage = 
+import { supabase, getSupabase } from './supabaseClient';
+
+export type PipelineStage =
   | 'no_answer'         // No contestó / Contacto Nulo (enfriamiento para recontactar luego)
   | 'prospect'          // Lead recién captado / Scrapeado
   | 'contacted'         // Contacto inicial / Diagnóstico
@@ -85,69 +87,139 @@ export const STAGE_CONFIG: Record<PipelineStage, { label: string; color: string;
   },
 };
 
-const STORAGE_KEY = 'creapp_leads_pipeline_production_v2';
+// ── Persistencia en Supabase (tabla public.leads) ───────────────────────────
+// Compartido entre el equipo y en vivo. Antes era localStorage (cada navegador
+// veía SU tablero). Ver migración 20261114170000_create_leads_table.sql.
 
-export const getLeads = (): Lead[] => {
-  try {
-    // Limpiar claves antiguas de prueba si existen
-    if (localStorage.getItem('creapp_leads_pipeline_v1')) {
-      localStorage.removeItem('creapp_leads_pipeline_v1');
-    }
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      return [];
-    }
-    const leads: Lead[] = JSON.parse(raw);
-    // Sanear leads importados desde el scraper para que no tengan valores asignados artificiales
-    return leads.map((l) => {
-      if (l.notes?.includes('Scraper') || l.notes?.includes('google_places') || l.notes?.includes('gemini_intelligence')) {
-        return { ...l, estimatedValue: 0 };
-      }
-      return l;
-    });
-  } catch (e) {
-    console.error('Error reading leads from storage', e);
-    return [];
-  }
+type LeadRow = {
+  id: string;
+  name: string;
+  company: string | null;
+  contact_name: string | null;
+  industry: string | null;
+  stage: PipelineStage;
+  estimated_value: number | string | null;
+  currency: 'USD' | 'ARS' | null;
+  phone: string | null;
+  email: string | null;
+  website: string | null;
+  instagram: string | null;
+  facebook: string | null;
+  product_type: Lead['productType'] | null;
+  notes: string | null;
+  address: string | null;
+  city: string | null;
+  rating: number | null;
+  review_count: number | null;
+  proposal_slug: string | null;
+  original_prospect: any | null;
+  created_at: string;
+  last_contact_at: string | null;
+  updated_at?: string | null;
 };
 
-export const saveLeads = (leads: Lead[]): void => {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(leads));
-  } catch (e) {
-    console.error('Error saving leads to storage', e);
-  }
+const rowToLead = (r: LeadRow): Lead => ({
+  id: r.id,
+  name: r.name,
+  company: r.company ?? '',
+  contactName: r.contact_name ?? undefined,
+  industry: r.industry ?? '',
+  stage: r.stage,
+  estimatedValue: Number(r.estimated_value ?? 0),
+  currency: (r.currency ?? 'USD') as Lead['currency'],
+  phone: r.phone ?? undefined,
+  email: r.email ?? undefined,
+  website: r.website ?? undefined,
+  instagram: r.instagram ?? undefined,
+  facebook: r.facebook ?? undefined,
+  productType: (r.product_type ?? 'Desarrollo a Medida') as Lead['productType'],
+  notes: r.notes ?? undefined,
+  createdAt: r.created_at,
+  lastContactAt: r.last_contact_at ?? undefined,
+  proposalSlug: r.proposal_slug ?? undefined,
+  address: r.address ?? undefined,
+  city: r.city ?? undefined,
+  rating: r.rating ?? undefined,
+  reviewCount: r.review_count ?? undefined,
+  originalProspect: r.original_prospect ?? undefined,
+});
+
+// camelCase -> columnas snake_case (solo los campos presentes en el patch).
+const leadToRow = (patch: Partial<Lead>): Record<string, any> => {
+  const row: Record<string, any> = {};
+  if (patch.name !== undefined) row.name = patch.name;
+  if (patch.company !== undefined) row.company = patch.company;
+  if (patch.contactName !== undefined) row.contact_name = patch.contactName;
+  if (patch.industry !== undefined) row.industry = patch.industry;
+  if (patch.stage !== undefined) row.stage = patch.stage;
+  if (patch.estimatedValue !== undefined) row.estimated_value = patch.estimatedValue;
+  if (patch.currency !== undefined) row.currency = patch.currency;
+  if (patch.phone !== undefined) row.phone = patch.phone;
+  if (patch.email !== undefined) row.email = patch.email;
+  if (patch.website !== undefined) row.website = patch.website;
+  if (patch.instagram !== undefined) row.instagram = patch.instagram;
+  if (patch.facebook !== undefined) row.facebook = patch.facebook;
+  if (patch.productType !== undefined) row.product_type = patch.productType;
+  if (patch.notes !== undefined) row.notes = patch.notes;
+  if (patch.address !== undefined) row.address = patch.address;
+  if (patch.city !== undefined) row.city = patch.city;
+  if (patch.rating !== undefined) row.rating = patch.rating;
+  if (patch.reviewCount !== undefined) row.review_count = patch.reviewCount;
+  if (patch.proposalSlug !== undefined) row.proposal_slug = patch.proposalSlug;
+  if (patch.originalProspect !== undefined) row.original_prospect = patch.originalProspect;
+  return row;
 };
 
-export const createLead = (lead: Omit<Lead, 'id' | 'createdAt'>): Lead => {
-  const all = getLeads();
-  const newLead: Lead = {
-    ...lead,
-    id: `lead-${Date.now()}`,
-    createdAt: new Date().toISOString(),
-  };
-  const updated = [newLead, ...all];
-  saveLeads(updated);
-  return newLead;
+export const getLeads = async (): Promise<Lead[]> => {
+  const { data, error } = await supabase
+    .from('leads')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map(rowToLead);
 };
 
-export const updateLeadStage = (leadId: string, newStage: PipelineStage): Lead[] => {
-  const all = getLeads();
-  const updated = all.map((l) => (l.id === leadId ? { ...l, stage: newStage, lastContactAt: new Date().toISOString() } : l));
-  saveLeads(updated);
-  return updated;
+export const createLead = async (lead: Omit<Lead, 'id' | 'createdAt'>): Promise<Lead> => {
+  const { data, error } = await supabase
+    .from('leads')
+    .insert([leadToRow(lead)])
+    .select()
+    .single();
+  if (error) throw error;
+  return rowToLead(data);
 };
 
-export const updateLead = (leadId: string, patch: Partial<Lead>): Lead[] => {
-  const all = getLeads();
-  const updated = all.map((l) => (l.id === leadId ? { ...l, ...patch } : l));
-  saveLeads(updated);
-  return updated;
+export const updateLeadStage = async (leadId: string, newStage: PipelineStage): Promise<Lead[]> => {
+  const { error } = await supabase
+    .from('leads')
+    .update({ stage: newStage, last_contact_at: new Date().toISOString() })
+    .eq('id', leadId);
+  if (error) throw error;
+  return getLeads();
 };
 
-export const deleteLead = (leadId: string): Lead[] => {
-  const all = getLeads();
-  const updated = all.filter((l) => l.id !== leadId);
-  saveLeads(updated);
-  return updated;
+export const updateLead = async (leadId: string, patch: Partial<Lead>): Promise<Lead[]> => {
+  const { error } = await supabase
+    .from('leads')
+    .update(leadToRow(patch))
+    .eq('id', leadId);
+  if (error) throw error;
+  return getLeads();
+};
+
+export const deleteLead = async (leadId: string): Promise<Lead[]> => {
+  const { error } = await supabase.from('leads').delete().eq('id', leadId);
+  if (error) throw error;
+  return getLeads();
+};
+
+// Realtime: cuando el otro usuario mueve/edita/borra una tarjeta, se refleja al
+// instante en el tablero propio. Devuelve la función de desuscripción.
+export const subscribeLeads = (onChange: () => void): (() => void) => {
+  const sb = getSupabase();
+  const channel = sb
+    .channel('leads-pipeline')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, () => onChange())
+    .subscribe();
+  return () => { void sb.removeChannel(channel); };
 };

@@ -21,7 +21,7 @@ import {
 import { getAllProposals, deleteProposal } from '@/lib/proposalService';
 import type { Proposal } from '@/lib/proposalTypes';
 import { CREAPP_PRODUCTS } from '@/lib/serviceContractTemplates';
-import { getLeads, Lead } from '@/lib/pipelineService';
+import { getLeads, subscribeLeads, Lead } from '@/lib/pipelineService';
 
 // Subcomponentes del SaaS OS
 import AdminLayout, { AdminTab } from '@/components/admin/AdminLayout';
@@ -90,7 +90,16 @@ const AdminPanel: React.FC = () => {
 
   useEffect(() => {
     fetchProposals();
-    setLeads(getLeads());
+    // Leads compartidos desde Supabase + realtime: si Facu mueve una tarjeta,
+    // acá se refleja al instante.
+    const loadLeads = () => {
+      getLeads()
+        .then(setLeads)
+        .catch((e) => console.error('Error cargando leads', e));
+    };
+    loadLeads();
+    const unsubscribeLeads = subscribeLeads(loadLeads);
+    return unsubscribeLeads;
   }, []);
 
   // Interceptar si un vendedor intenta acceder a un tab restringido por URL

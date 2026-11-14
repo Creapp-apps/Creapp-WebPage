@@ -320,16 +320,12 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
     setReactivationText(generateReactivationPitch(updatedProspect));
     loadPitchForChannel(updatedProspect, pitchChannel);
 
-    // Si está en pipeline, persistir en Lead storage
+    // Si está en pipeline, persistir en Supabase
     if (currentProspect.id) {
-      try {
-        updateLead(currentProspect.id, {
-          website: trimmed,
-          originalProspect: updatedProspect,
-        });
-      } catch (e) {
-        console.warn("Could not update lead in storage", e);
-      }
+      updateLead(currentProspect.id, {
+        website: trimmed,
+        originalProspect: updatedProspect,
+      }).catch((e) => console.warn("Could not update lead", e));
     }
 
     // Si hay sesión de scraper activa, actualizar en memoria
