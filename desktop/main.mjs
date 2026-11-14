@@ -11,6 +11,7 @@ import { createMonitor } from './src/connectivity.mjs';
 import { runWithRetry } from './src/resilience.mjs';
 import { toToastPayload } from './src/ipcPayload.mjs';
 import { createRealProbes } from './src/probes.mjs';
+import { gitPush, gitPull, observeMotorUpload } from './src/heavyOps.mjs';
 import fs from 'node:fs';
 
 let mainWindow = null;
@@ -97,6 +98,26 @@ export function runResilient(op, label, opts = {}) {
     },
   });
 }
+
+// Operaciones pesadas: corren bajo runResilient (falla -> toast + Reintentar).
+// Fire-and-forget: runResilient queda pendiente hasta que la op funcione, así que
+// el invoke devuelve enseguida; el resultado/falla se ve por el toast.
+const HEAVY_OPS = {
+  'desktop:git-push': () => ['git push', () => gitPush(loadConfig())],
+  'desktop:git-pull': () => ['git pull', () => gitPull(loadConfig())],
+};
+for (const [channel, make] of Object.entries(HEAVY_OPS)) {
+  ipcMain.handle(channel, () => {
+    const [label, op] = make();
+    runResilient(op, label);
+    return { started: true };
+  });
+}
+ipcMain.handle('desktop:observe-upload', (_e, jobId) => {
+  if (typeof jobId !== 'string' || !jobId) return { started: false };
+  runResilient(() => observeMotorUpload(loadConfig(), jobId), `subida ${jobId}`);
+  return { started: true };
+});
 
 ipcMain.on('desktop:retry', (_e, id) => {
   const retry = pendingRetries.get(id);

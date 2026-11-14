@@ -15,5 +15,8 @@ contextBridge.exposeInMainWorld('creappDesktop', {
   onToast: subscribe('desktop:toast'),
   onConnectivity: subscribe('desktop:connectivity'),
   retry: (id) => ipcRenderer.send('desktop:retry', id),
+  gitPush: () => ipcRenderer.invoke('desktop:git-push'),
+  gitPull: () => ipcRenderer.invoke('desktop:git-pull'),
+  observeUpload: (jobId) => ipcRenderer.invoke('desktop:observe-upload', jobId),
   dismiss: (id) => ipcRenderer.send('desktop:dismiss', id),
 });
