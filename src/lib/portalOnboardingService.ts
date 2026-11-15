@@ -1,5 +1,6 @@
 import { getSupabase } from '@/lib/supabaseClient';
 import { sendPortalInvite } from '@/lib/emailService';
+import { generateStrongPassword } from './clientPassword';
 import { deriveAccessStatus, type ClientAccessStatus } from './portalOnboardingMapper';
 
 export type { ClientAccessStatus } from './portalOnboardingMapper';
@@ -64,5 +65,35 @@ export async function invitePortalClient(args: {
     return sent.success ? { success: true } : { success: false, error: sent.error ?? 'No se pudo enviar el email.' };
   } catch (e: any) {
     return { success: false, error: e?.message ?? 'Error inesperado al invitar al cliente.' };
+  }
+}
+
+/**
+ * Asigna una contraseña directa al cliente y la devuelve para entregarla a mano.
+ * Úsalo cuando el cliente perdió el acceso al email y el recovery link no sirve.
+ * La clave se genera acá (fuerte, sin ambiguos) y el edge fn la aplica con
+ * service_role, invalidando la anterior.
+ */
+export async function setClientPassword(
+  clientId: string,
+): Promise<{ success: boolean; password?: string; email?: string | null; error?: string }> {
+  try {
+    const password = generateStrongPassword();
+    const { data, error } = await getSupabase().functions.invoke('set-client-password', {
+      body: { clientId, password },
+    });
+    if (error) {
+      let message = error.message;
+      try {
+        const body = await (error as any).context?.json?.();
+        if (body?.error) message = body.error;
+      } catch { /* sin cuerpo JSON legible */ }
+      return { success: false, error: message };
+    }
+    if (data?.error) return { success: false, error: data.error };
+    if (!data?.success) return { success: false, error: 'No se pudo asignar la contraseña.' };
+    return { success: true, password, email: data.email ?? null };
+  } catch (e: any) {
+    return { success: false, error: e?.message ?? 'Error inesperado al asignar la contraseña.' };
   }
 }
