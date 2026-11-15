@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Settings, X } from 'lucide-react';
 import { PresenceSemaphore } from './PresenceSemaphore';
 import { ConnectMotorPrompt } from './ConnectMotorPrompt';
 import { usePresence } from './usePresence';
@@ -130,7 +131,7 @@ function TerminalLauncher() {
 // El Studio del motor embebido. Se habilita SOLO con la conexión confirmada (🟢).
 // En desktop/dev local (página http) va en iframe; desde la web https (mixed content)
 // no se puede embeber → botón para abrirlo aparte.
-function StudioEmbed({ connected }: { connected: boolean }) {
+function StudioEmbed({ connected, fill = false }: { connected: boolean; fill?: boolean }) {
   const esHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
 
   if (!connected) {
@@ -145,7 +146,9 @@ function StudioEmbed({ connected }: { connected: boolean }) {
 
   if (esHttps) {
     return (
-      <div className="rounded-2xl border border-white/10 bg-[#0e0e14] p-4 space-y-2">
+      <div
+        className={`${fill ? 'h-full flex flex-col items-center justify-center' : 'rounded-2xl border border-white/10'} bg-[#0e0e14] p-4 space-y-2`}
+      >
         <p className="text-xs text-zinc-400">
           Desde la web no puedo embeber el Studio local (mixed content). Abrilo en otra pestaña:
         </p>
@@ -161,6 +164,17 @@ function StudioEmbed({ connected }: { connected: boolean }) {
     );
   }
 
+  if (fill) {
+    return (
+      <iframe
+        src={STUDIO_URL}
+        title="Studio del motor"
+        className="w-full h-full"
+        style={{ border: 0 }}
+      />
+    );
+  }
+
   return (
     <div className="rounded-2xl border border-white/10 bg-[#0e0e14] overflow-hidden">
       <iframe
@@ -173,27 +187,74 @@ function StudioEmbed({ connected }: { connected: boolean }) {
   );
 }
 
-export default function ContentCreatorTab() {
-  const p = usePresence('http://localhost:8000');
+// Pasos 1 + 2: el onboarding de conexión. Se muestra completo cuando no hay
+// conexión, y queda plegable (oculto por defecto) una vez conectado.
+function PasosConexion() {
   return (
-    <div className="space-y-6">
-      <div className="rounded-3xl p-6 bg-gradient-to-r from-indigo-950/30 via-[#0e0e14] to-purple-950/20 border border-indigo-500/20 shadow-xl space-y-2">
-        <h2 className="text-xl font-bold text-white tracking-tight">Creador de Contenidos</h2>
-        <p className="text-xs text-zinc-400">
-          Universo único: arrancás tu IA conectada al motor, trabajás desde el chat y usás tu Studio acá adentro.
-        </p>
-      </div>
-
+    <>
       <TerminalLauncher />
-
       <div className="space-y-2">
         <h3 className="text-sm font-semibold text-white px-1">2 · Pegá el prompt en la IA</h3>
         <ConnectMotorPrompt />
       </div>
+    </>
+  );
+}
 
-      <div className="space-y-2">
-        <h3 className="text-sm font-semibold text-white px-1">3 · Tu Studio del motor</h3>
-        <StudioEmbed connected={p.connected} />
+export default function ContentCreatorTab() {
+  const p = usePresence('http://localhost:8000');
+  const [pasosAbiertos, setPasosAbiertos] = useState(false);
+
+  // 🔴 Sin conexión: onboarding completo, scrollable.
+  if (!p.connected) {
+    return (
+      <div className="h-full overflow-y-auto">
+        <div className="mx-auto w-full max-w-5xl p-4 sm:p-6 lg:p-8 space-y-6">
+          <div className="rounded-3xl p-6 bg-gradient-to-r from-indigo-950/30 via-[#0e0e14] to-purple-950/20 border border-indigo-500/20 shadow-xl space-y-2">
+            <h2 className="text-xl font-bold text-white tracking-tight">Creador de Contenidos</h2>
+            <p className="text-xs text-zinc-400">
+              Universo único: arrancás tu IA conectada al motor, trabajás desde el chat y usás tu Studio acá adentro.
+            </p>
+          </div>
+
+          <PasosConexion />
+
+          <div className="space-y-2">
+            <h3 className="text-sm font-semibold text-white px-1">3 · Tu Studio del motor</h3>
+            <StudioEmbed connected={false} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 🟢 Conectado: barra fina plegable + Studio a pantalla completa.
+  return (
+    <div className="h-full flex flex-col">
+      <div className="relative shrink-0 z-10">
+        <div className="flex items-center justify-between gap-2 border-b border-white/5 bg-[#0b0b0e]/80 px-3 py-2 sm:px-4">
+          <PresenceSemaphore />
+          <button
+            type="button"
+            onClick={() => setPasosAbiertos((v) => !v)}
+            className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-zinc-300 hover:bg-white/10 hover:text-white transition-colors"
+            title="Ver pasos de conexión / reconectar"
+          >
+            {pasosAbiertos ? <X size={13} /> : <Settings size={13} />}
+            Pasos
+          </button>
+        </div>
+
+        {/* Panel plegable: overlay, no empuja al Studio. */}
+        {pasosAbiertos && (
+          <div className="absolute inset-x-0 top-full z-20 max-h-[72vh] space-y-4 overflow-y-auto border-b border-white/10 bg-[#0b0b0e]/98 p-4 shadow-2xl backdrop-blur-xl">
+            <PasosConexion />
+          </div>
+        )}
+      </div>
+
+      <div className="flex-1 min-h-0 bg-[#0e0e14]">
+        <StudioEmbed connected fill />
       </div>
     </div>
   );

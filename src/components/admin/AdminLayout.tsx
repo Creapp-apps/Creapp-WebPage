@@ -263,6 +263,10 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
   const userDisplayName = profile?.full_name || user?.email?.split('@')[0] || 'Usuario';
   const userInitials = (profile?.full_name || user?.email || 'U').slice(0, 2).toUpperCase();
 
+  // Modo Studio: en el Creador de Contenidos se trabaja de corrido, así que la
+  // sidebar fija pasa a ser overlay flotante (drawer) y el contenido va full-bleed.
+  const studioMode = currentTab === 'content_creator';
+
   return (
     <div className="min-h-screen bg-[#070709] text-zinc-100 flex flex-col font-sans selection:bg-purple-500 selection:text-white">
       {/* Background glow effects */}
@@ -274,7 +278,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
       <div className="relative z-10 flex-1 flex overflow-hidden">
         {/* DESKTOP SIDEBAR (Pinned, 100vh, never cut off) */}
         <aside
-          className={`hidden md:flex flex-col border-r border-white/5 bg-[#0b0b0e]/95 backdrop-blur-xl transition-all duration-300 z-30 h-screen sticky top-0 shrink-0 ${
+          className={`${studioMode ? 'hidden' : 'hidden md:flex'} flex-col border-r border-white/5 bg-[#0b0b0e]/95 backdrop-blur-xl transition-all duration-300 z-30 h-screen sticky top-0 shrink-0 ${
             collapsed ? 'w-20' : 'w-64'
           }`}
         >
@@ -477,13 +481,13 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
         </aside>
 
         {/* MAIN VIEWPORT */}
-        <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+        <div className={`flex-1 flex flex-col min-w-0 ${studioMode ? 'overflow-hidden' : 'overflow-y-auto'}`}>
           {/* TOP BAR WITH SAFE AREA INSET SUPPORT */}
           <header className="admin-mobile-header w-full border-b border-white/5 bg-[#0b0b0e]/95 backdrop-blur-xl flex items-center justify-between sticky top-0 z-30 transition-all sm:h-16 sm:px-6 sm:py-0">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               <button
                 onClick={() => setMobileMenuOpen(true)}
-                className="md:hidden p-2 rounded-xl text-zinc-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 active:scale-95 transition-all shrink-0 flex items-center justify-center min-w-[42px] min-h-[42px] shadow-sm ml-0.5"
+                className={`${studioMode ? '' : 'md:hidden'} p-2 rounded-xl text-zinc-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 active:scale-95 transition-all shrink-0 flex items-center justify-center min-w-[42px] min-h-[42px] shadow-sm ml-0.5`}
                 title="Abrir menú"
                 aria-label="Abrir menú"
               >
@@ -651,16 +655,22 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
           </header>
 
           {/* MAIN CONTENT AREA */}
-          <main className="flex-1 p-3.5 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto pb-28 md:pb-8">
+          <main
+            className={
+              studioMode
+                ? 'flex-1 min-h-0 flex flex-col p-0 w-full'
+                : 'flex-1 p-3.5 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto pb-28 md:pb-8'
+            }
+          >
             {children}
           </main>
         </div>
       </div>
 
-      {/* MOBILE DRAWER */}
+      {/* MOBILE DRAWER (también actúa de sidebar flotante en modo Studio, en desktop) */}
       <AnimatePresence>
         {mobileMenuOpen && (
-          <div className="fixed inset-0 z-50 md:hidden flex">
+          <div className={`fixed inset-0 z-50 flex ${studioMode ? '' : 'md:hidden'}`}>
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
