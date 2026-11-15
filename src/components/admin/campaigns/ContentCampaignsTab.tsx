@@ -4,6 +4,7 @@ import { getTrackerOverview, subscribeTracker } from '@/lib/contentTrackerServic
 import type { TrackerOverview } from '@/lib/contentTrackerTypes';
 import { sortClientsByUrgency, summaryText } from '@/lib/contentTrackerView';
 import { ClientCampaignCard } from './ClientCampaignCard';
+import { PresenceSemaphore } from './PresenceSemaphore';
 
 export const ContentCampaignsTab: React.FC = () => {
   const [overview, setOverview] = useState<TrackerOverview | null>(null);
@@ -64,9 +65,12 @@ export const ContentCampaignsTab: React.FC = () => {
             <div className="p-2 rounded-xl bg-indigo-500/20 text-indigo-400"><Megaphone size={20} /></div>
             <h2 className="text-xl font-bold text-white tracking-tight">Campañas de Contenido</h2>
           </div>
-          <span className="flex items-center gap-1.5 text-[11px] text-emerald-400/80">
+          <div className="flex items-center gap-3">
+            <PresenceSemaphore />
+            <span className="flex items-center gap-1.5 text-[11px] text-emerald-400/80">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> En vivo
-          </span>
+            </span>
+          </div>
         </div>
         {t && (
           <p className="text-xs text-zinc-400">
