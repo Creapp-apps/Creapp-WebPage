@@ -7,6 +7,8 @@ import { runPreflight } from './src/preflight.mjs';
 import { makeRealDeps } from './src/real-deps.mjs';
 import { startMotor, stopMotor } from './src/motor.mjs';
 import { startUiServer } from './src/uiServer.mjs';
+import { buildWebUi } from './src/webBuild.mjs';
+import { openMotorTerminal } from './src/openMotorTerminal.mjs';
 import { createMonitor } from './src/connectivity.mjs';
 import { runWithRetry } from './src/resilience.mjs';
 import { toToastPayload } from './src/ipcPayload.mjs';
@@ -121,6 +123,15 @@ ipcMain.handle('desktop:observe-upload', (_e, jobId) => {
   return { started: true };
 });
 
+// Abre una terminal en el repo del motor (lee el .mcp.json solo) y lanza la IA elegida.
+ipcMain.handle('desktop:open-motor-terminal', (_e, command) => {
+  try {
+    return openMotorTerminal(loadConfig(), command);
+  } catch (err) {
+    return { ok: false, error: err?.message ?? String(err) };
+  }
+});
+
 ipcMain.on('desktop:retry', (_e, id) => {
   const retry = pendingRetries.get(id);
   if (!retry) return;
@@ -166,7 +177,11 @@ ipcMain.handle('preflight:run', async () => {
 
 async function launchMotor() {
   if (!preflightOk || motor || motorStarting) return;
-  motorStarting = startMotor(loadConfig());
+  const cfg = loadConfig();
+  motorStarting = startMotor(cfg);
+  // Rebuild de la UI en paralelo al arranque del motor: el dist servido no debe
+  // quedar viejo respecto al código. Resiliente: si falla, servimos el dist previo.
+  const building = buildWebUi(cfg);
   try {
     motor = await motorStarting;
     motor.onLog((line) => {
@@ -174,9 +189,13 @@ async function launchMotor() {
       if (motorLogs.length > 500) motorLogs.shift();
     });
     console.log(`[creapp] motor listo en :${motor.port}`);
-    const cfg = loadConfig();
+    const build = await building;
+    if (!build.ok) console.error(`[creapp] rebuild UI falló, sirvo dist previo: ${build.error}`);
+    else console.log('[creapp] UI rebuildeada');
     uiServer = await startUiServer(cfg, { http, fs: fsp });
-    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.loadURL(uiServer.url);
+    // Arranque directo al área de agencia: sin sesión, AuthGuard redirige a
+    // /admin/login; con sesión activa, entra al panel. Nunca la landing pública.
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.loadURL(uiServer.url + 'admin');
     startConnectivity();
   } catch (err) {
     console.error(`[creapp] motor no arrancó: ${err.message}${err.code != null ? ` (code ${err.code})` : ''}`);

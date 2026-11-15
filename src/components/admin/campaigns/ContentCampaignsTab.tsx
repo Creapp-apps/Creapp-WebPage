@@ -5,7 +5,6 @@ import type { TrackerOverview } from '@/lib/contentTrackerTypes';
 import { sortClientsByUrgency, summaryText } from '@/lib/contentTrackerView';
 import { ClientCampaignCard } from './ClientCampaignCard';
 import { PresenceSemaphore } from './PresenceSemaphore';
-import { ConnectMotorPrompt } from './ConnectMotorPrompt';
 
 export const ContentCampaignsTab: React.FC = () => {
   const [overview, setOverview] = useState<TrackerOverview | null>(null);
@@ -79,8 +78,6 @@ export const ContentCampaignsTab: React.FC = () => {
           </p>
         )}
       </div>
-
-      <ConnectMotorPrompt />
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[200px]">

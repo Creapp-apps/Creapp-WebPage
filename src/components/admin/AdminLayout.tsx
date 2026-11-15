@@ -33,6 +33,7 @@ import {
   Download,
   Share2,
   Megaphone,
+  Terminal,
 } from 'lucide-react';
 import creappLogoOfficial from '@/assets/CREAPP LOGO VECTOR.png';
 import { useAuth } from '@/context/AuthContext';
@@ -50,7 +51,8 @@ export type AdminTab =
   | 'subscriptions'
   | 'finances'
   | 'telemetry'
-  | 'content_campaigns';
+  | 'content_campaigns'
+  | 'content_creator';
 
 interface AdminLayoutProps {
   currentTab: AdminTab;
@@ -184,6 +186,11 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
     {
       category: 'Marketing & Campañas',
       items: [
+        {
+          id: 'content_creator',
+          label: 'Creador de Contenidos',
+          icon: Terminal,
+        },
         {
           id: 'content_campaigns',
           label: 'Campañas de Contenido',

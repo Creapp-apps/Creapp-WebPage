@@ -19,4 +19,5 @@ contextBridge.exposeInMainWorld('creappDesktop', {
   gitPull: () => ipcRenderer.invoke('desktop:git-pull'),
   observeUpload: (jobId) => ipcRenderer.invoke('desktop:observe-upload', jobId),
   dismiss: (id) => ipcRenderer.send('desktop:dismiss', id),
+  openMotorTerminal: (command) => ipcRenderer.invoke('desktop:open-motor-terminal', command),
 });
