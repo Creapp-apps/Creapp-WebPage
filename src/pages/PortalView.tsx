@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { ChevronDown, LogOut } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 import { getMyCampaigns, submitDecision } from '@/lib/portalService';
 import type { PortalCampaign, PortalDecision, PortalPiece } from '@/lib/portalTypes';
 import { campaignViewState, pickCampaign, groupPieces, progressSummary } from '@/lib/portalView';
@@ -12,6 +14,7 @@ import PortalLoader from '@/components/portal/PortalLoader';
 import '@/components/portal/portal.css';
 
 const PortalView: React.FC = () => {
+  const { signOut } = useAuth();
   const [campaigns, setCampaigns] = useState<PortalCampaign[] | undefined>(undefined);
   const [params, setParams] = useSearchParams();
   const [loadError, setLoadError] = useState(false);
@@ -62,6 +65,14 @@ const PortalView: React.FC = () => {
   if (state === 'empty' || !campaign) {
     return (
       <div className="portal">
+        <div className="wrap">
+          <div className="topbar">
+            <span />
+            <button type="button" className="signout" onClick={() => signOut()}>
+              <LogOut size={14} aria-hidden /> Cerrar sesión
+            </button>
+          </div>
+        </div>
         <div className="empty">
           <div>
             <div className="eyebrow">Tu agencia te presenta</div>
@@ -79,21 +90,29 @@ const PortalView: React.FC = () => {
   return (
     <div className="portal">
       <div className="wrap">
-        {campaigns && campaigns.length >= 2 && (
-          <div className="campaign-select" style={{ margin: '16px 0' }}>
-            <label>
-              <span style={{ marginRight: 8 }}>Campaña</span>
-              <select
-                value={campaign.id}
-                onChange={(e) => { setOpen(null); setParams({ campaign: e.target.value }, { replace: true }); }}
-              >
-                {campaigns.map((c) => (
-                  <option key={c.id} value={c.id}>{[c.month, c.title].filter(Boolean).join(' · ') || 'Campaña'}</option>
-                ))}
-              </select>
-            </label>
+        <div className="topbar">
+          <div className="left">
+            {campaigns && campaigns.length >= 2 ? (
+              <div className="campaign-switch">
+                <span className="cs-lab">Campaña</span>
+                <div className="cs-field">
+                  <select
+                    value={campaign.id}
+                    onChange={(e) => { setOpen(null); setParams({ campaign: e.target.value }, { replace: true }); }}
+                  >
+                    {campaigns.map((c, i) => (
+                      <option key={c.id} value={c.id}>{[c.month, c.title].filter(Boolean).join(' · ') || `Campaña ${i + 1}`}</option>
+                    ))}
+                  </select>
+                  <ChevronDown size={15} className="cs-chev" aria-hidden />
+                </div>
+              </div>
+            ) : <span />}
           </div>
-        )}
+          <button type="button" className="signout" onClick={() => signOut()}>
+            <LogOut size={14} aria-hidden /> Cerrar sesión
+          </button>
+        </div>
         <CampaignHero campaign={campaign} />
         {groups.map((g) => (
           <PieceRail key={g.type} type={g.type} count={g.pieces.length}>
