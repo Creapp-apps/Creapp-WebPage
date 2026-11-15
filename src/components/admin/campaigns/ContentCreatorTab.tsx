@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { PresenceSemaphore } from './PresenceSemaphore';
 import { ConnectMotorPrompt } from './ConnectMotorPrompt';
+import { usePresence } from './usePresence';
+
+const STUDIO_URL = 'http://localhost:8000/';
 
 type OpenResult = { ok: boolean; error?: string };
 type DesktopBridge = { openMotorTerminal?: (command: string) => Promise<OpenResult> };
@@ -124,13 +127,60 @@ function TerminalLauncher() {
   );
 }
 
+// El Studio del motor embebido. Se habilita SOLO con la conexión confirmada (🟢).
+// En desktop/dev local (página http) va en iframe; desde la web https (mixed content)
+// no se puede embeber → botón para abrirlo aparte.
+function StudioEmbed({ connected }: { connected: boolean }) {
+  const esHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+
+  if (!connected) {
+    return (
+      <div className="rounded-2xl border border-white/10 bg-[#0e0e14] p-8 text-center">
+        <p className="text-sm text-zinc-400">
+          🔒 El Studio se habilita cuando la IA esté conectada (semáforo en 🟢). Hacé los pasos 1 y 2.
+        </p>
+      </div>
+    );
+  }
+
+  if (esHttps) {
+    return (
+      <div className="rounded-2xl border border-white/10 bg-[#0e0e14] p-4 space-y-2">
+        <p className="text-xs text-zinc-400">
+          Desde la web no puedo embeber el Studio local (mixed content). Abrilo en otra pestaña:
+        </p>
+        <a
+          href={STUDIO_URL}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-block rounded-lg bg-indigo-600 hover:bg-indigo-500 px-3 py-1.5 text-xs font-medium text-white transition-colors"
+        >
+          ↗ Abrir el Studio (:8000)
+        </a>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-2xl border border-white/10 bg-[#0e0e14] overflow-hidden">
+      <iframe
+        src={STUDIO_URL}
+        title="Studio del motor"
+        className="w-full"
+        style={{ height: '80vh', border: 0 }}
+      />
+    </div>
+  );
+}
+
 export default function ContentCreatorTab() {
+  const p = usePresence('http://localhost:8000');
   return (
     <div className="space-y-6">
       <div className="rounded-3xl p-6 bg-gradient-to-r from-indigo-950/30 via-[#0e0e14] to-purple-950/20 border border-indigo-500/20 shadow-xl space-y-2">
         <h2 className="text-xl font-bold text-white tracking-tight">Creador de Contenidos</h2>
         <p className="text-xs text-zinc-400">
-          Universo único: arrancás tu IA conectada al motor y trabajás desde el chat. Dos pasos.
+          Universo único: arrancás tu IA conectada al motor, trabajás desde el chat y usás tu Studio acá adentro.
         </p>
       </div>
 
@@ -139,6 +189,11 @@ export default function ContentCreatorTab() {
       <div className="space-y-2">
         <h3 className="text-sm font-semibold text-white px-1">2 · Pegá el prompt en la IA</h3>
         <ConnectMotorPrompt />
+      </div>
+
+      <div className="space-y-2">
+        <h3 className="text-sm font-semibold text-white px-1">3 · Tu Studio del motor</h3>
+        <StudioEmbed connected={p.connected} />
       </div>
     </div>
   );
