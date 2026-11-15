@@ -17,9 +17,15 @@ const IAS: { id: string; label: string; command: string }[] = [
   { id: 'custom', label: 'Comando personalizado', command: '' },
 ];
 
+function enElectron(): boolean {
+  if (getBridge()) return true;
+  return typeof navigator !== 'undefined' && /electron/i.test(navigator.userAgent);
+}
+
 function TerminalLauncher() {
   const bridge = getBridge();
   const enDesktop = typeof bridge?.openMotorTerminal === 'function';
+  const desktopDesactualizado = !enDesktop && enElectron();
   const [iaId, setIaId] = useState('claude');
   const [custom, setCustom] = useState('');
   const [estado, setEstado] = useState<null | OpenResult>(null);
@@ -91,6 +97,17 @@ function TerminalLauncher() {
           {estado && !estado.ok && (
             <span className="text-xs text-amber-400">No pude abrir la terminal: {estado.error}</span>
           )}
+        </div>
+      ) : desktopDesactualizado ? (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 space-y-1">
+          <p className="text-xs text-amber-300">
+            Estás en la app de escritorio, pero esta build no trae el botón todavía.
+            Rebuildeá la app y reabrila: <code className="text-zinc-200">npm --prefix desktop run dist</code>.
+            Mientras tanto, abrí una terminal en el repo del motor y corré:
+          </p>
+          <pre className="whitespace-pre-wrap rounded-lg bg-black/50 p-2 text-xs text-zinc-200 select-all">
+{comando || 'claude'}
+          </pre>
         </div>
       ) : (
         <div className="rounded-xl border border-white/10 bg-black/30 p-3 space-y-1">
