@@ -1,5 +1,6 @@
 const list = document.getElementById('checks');
 const status = document.getElementById('status');
+const title = document.getElementById('title');
 const retry = document.getElementById('retry');
 const wrap = document.getElementById('rocketWrap');
 const flame = document.getElementById('flame');
@@ -91,6 +92,7 @@ async function launch() {
 
 function showFail(msg) {
   document.body.classList.add('err');
+  title.textContent = 'Faltan componentes';
   status.textContent = msg;
   retry.hidden = false;
   retry.disabled = false;
@@ -98,25 +100,24 @@ function showFail(msg) {
 
 async function run() {
   document.body.classList.remove('err');
+  title.textContent = 'Armando tu estación';
   retry.hidden = true;
   retry.disabled = true;
   resetRocket();
   list.replaceChildren();
   status.textContent = 'Ensamblando tu estación…';
-  let result;
   try {
-    result = await window.creapp.runPreflight();
+    const result = await window.creapp.runPreflight();
+    await reveal(result.checks);
+    if (result.ok) {
+      await launch();
+      window.creapp.proceed();
+    } else {
+      const n = result.checks.filter((c) => !c.ok).length;
+      showFail(`Faltan ${n} requisito(s). Resolvelos y tocá Reintentar.`);
+    }
   } catch (err) {
     showFail(`No se pudo verificar: ${err.message}`);
-    return;
-  }
-  await reveal(result.checks);
-  if (result.ok) {
-    await launch();
-    window.creapp.proceed();
-  } else {
-    const n = result.checks.filter((c) => !c.ok).length;
-    showFail(`Faltan ${n} requisito(s). Resolvelos y tocá Reintentar.`);
   }
 }
 
