@@ -1,5 +1,5 @@
 import React from 'react';
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, Eye } from 'lucide-react';
 import type { TrackerClient } from '@/lib/contentTrackerTypes';
 import { plural, sortCampaignsByAttention } from '@/lib/contentTrackerView';
 import { CampaignGroup } from './CampaignGroup';
@@ -22,8 +22,15 @@ export const ClientCampaignCard: React.FC<{ client: TrackerClient; onChanged: ()
           )}
         </div>
         <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-semibold">
-          <a href={`${PORTAL_BASE}/admin/portal-preview/${client.id}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/5 text-zinc-300 border border-white/10 hover:bg-white/10 hover:text-white transition-colors">
-            <ExternalLink size={12} /> Abrir en el portal
+          <a href={`${PORTAL_BASE}/admin/portal-preview/${client.id}`} target="_blank" rel="noopener noreferrer"
+            title="Vista previa read-only de cómo ve el cliente su campaña (usa tu sesión de admin)"
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/5 text-zinc-300 border border-white/10 hover:bg-white/10 hover:text-white transition-colors">
+            <Eye size={12} /> Ver como cliente
+          </a>
+          <a href={`${PORTAL_BASE}/portal/login`} target="_blank" rel="noopener noreferrer"
+            title="Abre la puerta del portal donde el cliente ingresa con las credenciales que le damos"
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/5 text-zinc-300 border border-white/10 hover:bg-white/10 hover:text-white transition-colors">
+            <ExternalLink size={12} /> Portal del cliente
           </a>
         </div>
         <PortalAccessControl clientId={client.id} brandName={client.name} />
