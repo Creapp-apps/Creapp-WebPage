@@ -149,6 +149,17 @@ test('ui_build: pasa si existe dist/index.html; falla con fix npm run build', as
   assert.equal(c.fix, 'corré npm run build en el repo CreAPP');
 });
 
+test('checks traen install/installable según el mapa de instalación', async () => {
+  const { get } = await run({ present: ['/motor'], cmds: { 'which ffmpeg': fail() } });
+  const ff = get('ffmpeg');
+  assert.equal(ff.ok, false);
+  assert.equal(ff.install, 'brew install ffmpeg');
+  assert.equal(ff.installable, true);
+  const p = get('paths');
+  assert.equal(p.install, null);
+  assert.equal(p.installable, false);
+});
+
 test('ok global es el AND: un solo check en rojo => ok false', async () => {
   const { res } = await run({ cmds: { 'which ffmpeg': fail() } });
   assert.equal(res.ok, false);

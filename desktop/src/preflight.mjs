@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { installCommandFor } from './installCommands.mjs';
 
 // Preflight de dependencias del desktop.
 // Dependencias inyectadas:
@@ -20,7 +21,8 @@ const FIX = {
 };
 
 function result(id, label, ok, detail) {
-  return { id, label, ok, detail, fix: ok ? null : FIX[id] };
+  const { installable, command } = installCommandFor(id);
+  return { id, label, ok, detail, fix: ok ? null : FIX[id], install: command, installable };
 }
 
 function checkPaths(config, { fs }) {
