@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabaseClient';
 
@@ -51,6 +51,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  // Para distinguir un login real (usuario distinto) de un simple token-refresh
+  // del mismo usuario y así volver a loading SOLO cuando hace falta.
+  const lastUserIdRef = useRef<string | null>(null);
 
   const fetchProfile = async (currentUser: User) => {
     try {
@@ -117,9 +120,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         if (session?.user) {
+          lastUserIdRef.current = session.user.id;
           setUser(session.user);
           await fetchProfile(session.user);
         } else {
+          lastUserIdRef.current = null;
           setUser(null);
           setProfile(null);
         }
@@ -146,14 +151,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!isMounted) return;
 
       if (session?.user) {
+        // ¿Es un login real (usuario distinto) o un refresh del mismo usuario?
+        const changed = lastUserIdRef.current !== session.user.id;
+        lastUserIdRef.current = session.user.id;
         setUser(session.user);
+        if (changed) {
+          // Login real: volvemos a loading y descartamos el perfil anterior, para
+          // que los guards no evalúen con el rol DEFAULT ('vendedor') antes de tener
+          // el perfil real. Eso causaba el flash de /admin al entrar un cliente.
+          setProfile(null);
+          setLoading(true);
+        }
         // Ejecutar en background fuera del ciclo de eventos de auth.
-        // NO soltamos loading acá: lo suelta fetchProfile cuando el rol real está listo
-        // (si no, el guard redirige con el rol default y pestañea /admin).
+        // fetchProfile suelta loading cuando el rol real está listo.
         setTimeout(() => {
           if (isMounted) fetchProfile(session.user);
         }, 0);
       } else {
+        lastUserIdRef.current = null;
         setUser(null);
         setProfile(null);
         setLoading(false);
