@@ -8,7 +8,7 @@ test('brew para ffmpeg/ffprobe/node/python', () => {
   assert.equal(installCommandFor('python').command, 'brew install python@3.12');
 });
 test('venv y remotion con contexto', () => {
-  assert.match(installCommandFor('venv').command, /python -m venv \.venv && pip install -r requirements\.txt/);
+  assert.strictEqual(installCommandFor('venv').command, 'python3 -m venv .venv && .venv/bin/pip install -r requirements.txt');
   assert.equal(installCommandFor('remotion_modules').command, 'cd src/remotion && npm install');
 });
 test('paths/ui_build/desconocido no instalables', () => {

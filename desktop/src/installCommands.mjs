@@ -5,7 +5,7 @@ const COMMANDS = {
   ffmpeg: 'brew install ffmpeg',
   ffprobe: 'brew install ffmpeg',
   node: 'brew install node',
-  venv: 'python -m venv .venv && pip install -r requirements.txt',
+  venv: 'python3 -m venv .venv && .venv/bin/pip install -r requirements.txt',
   remotion_modules: 'cd src/remotion && npm install',
 };
 
