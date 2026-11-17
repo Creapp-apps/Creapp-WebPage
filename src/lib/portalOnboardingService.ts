@@ -97,3 +97,25 @@ export async function setClientPassword(
     return { success: false, error: e?.message ?? 'Error inesperado al asignar la contraseña.' };
   }
 }
+
+/**
+ * Lee la última clave que el equipo generó para el cliente (texto plano).
+ * Solo el equipo puede leerla (RLS). Devuelve null si nunca se generó una.
+ * No es "la clave vigente del cliente" si él la cambió al activar: es la última
+ * que generamos nosotros con "Generar clave".
+ */
+export async function getPortalCredential(
+  clientId: string,
+): Promise<{ password: string; email: string | null; updatedAt: string } | null> {
+  try {
+    const { data, error } = await getSupabase()
+      .from('client_portal_credentials')
+      .select('password_plain, email, updated_at')
+      .eq('client_id', clientId)
+      .maybeSingle();
+    if (error || !data) return null;
+    return { password: data.password_plain, email: data.email ?? null, updatedAt: data.updated_at };
+  } catch {
+    return null;
+  }
+}

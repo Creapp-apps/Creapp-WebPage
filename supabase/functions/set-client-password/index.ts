@@ -129,7 +129,23 @@ Deno.serve(async (req) => {
       return json({ error: updateError.message, code: 'update_failed' }, 500);
     }
 
-    // 5. Respuesta (sin devolver la clave: ya la tiene quien la generó y envió).
+    // 5. Guardar la clave para el equipo (texto plano, tradeoff aceptado).
+    //    Writer service_role: no pasa por RLS. Si falla, no abortamos el reset
+    //    (la clave ya quedó aplicada); solo logueamos.
+    const { error: credError } = await admin
+      .from('client_portal_credentials')
+      .upsert({
+        client_id: clientId,
+        email: targetProfile.email ?? null,
+        password_plain: password,
+        updated_at: new Date().toISOString(),
+        updated_by: caller.id,
+      });
+    if (credError) {
+      console.error('No se pudo guardar la credencial del portal:', credError.message);
+    }
+
+    // 6. Respuesta (sin devolver la clave: ya la tiene quien la generó y envió).
     return json({ success: true, email: targetProfile.email ?? null });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Error inesperado.';

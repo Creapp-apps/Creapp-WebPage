@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { KeyRound, ShieldAlert, Copy, Check } from 'lucide-react';
-import { getClientAccess, invitePortalClient, setClientPassword, type ClientAccessStatus } from '@/lib/portalOnboardingService';
+import { KeyRound, ShieldAlert, Copy, Check, Eye, EyeOff } from 'lucide-react';
+import { getClientAccess, getPortalCredential, invitePortalClient, setClientPassword, type ClientAccessStatus } from '@/lib/portalOnboardingService';
 
 const CHIP: Record<ClientAccessStatus, { label: string; cls: string }> = {
   none: { label: 'Sin alta', cls: 'bg-zinc-500/10 text-zinc-300 border-zinc-500/25' },
@@ -26,11 +26,17 @@ export const PortalAccessControl: React.FC<{ clientId: string; brandName: string
   const [pwResult, setPwResult] = useState<{ password: string; email: string | null } | null>(null);
   const [pwError, setPwError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [clientEmail, setClientEmail] = useState<string | null>(null);
+  const [stored, setStored] = useState<{ password: string; email: string | null; updatedAt: string } | null>(null);
+  const [reveal, setReveal] = useState(false);
+  const [storedCopied, setStoredCopied] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
       const a = await getClientAccess(clientId);
       setStatus(a.status);
+      setClientEmail(a.email);
+      getPortalCredential(clientId).then(setStored).catch(() => setStored(null));
       return a;
     } catch {
       setStatus(null);
@@ -69,6 +75,7 @@ export const PortalAccessControl: React.FC<{ clientId: string; brandName: string
     setConfirmPw(false);
     if (r.success && r.password) {
       setPwResult({ password: r.password, email: r.email ?? null });
+      setStored({ password: r.password, email: r.email ?? null, updatedAt: new Date().toISOString() });
     } else {
       setPwError(r.error ?? 'No se pudo generar la contraseña.');
     }
@@ -83,6 +90,15 @@ export const PortalAccessControl: React.FC<{ clientId: string; brandName: string
     } catch {
       setPwError('No se pudo copiar. Seleccioná y copiá a mano.');
     }
+  };
+
+  const copyStored = async () => {
+    if (!stored) return;
+    try {
+      await navigator.clipboard.writeText(stored.password);
+      setStoredCopied(true);
+      setTimeout(() => setStoredCopied(false), 2000);
+    } catch { /* clipboard bloqueado: el usuario puede seleccionar a mano */ }
   };
 
   const chip = status ? CHIP[status] : null;
@@ -105,6 +121,39 @@ export const PortalAccessControl: React.FC<{ clientId: string; brandName: string
           </button>
         )}
       </div>
+      {(clientEmail || stored) && (
+        <div className="flex flex-col gap-1.5 p-2.5 rounded-lg bg-white/[0.03] border border-white/10">
+          {clientEmail && (
+            <div className="flex items-center gap-2 text-[11px]">
+              <span className="text-zinc-500 w-20 shrink-0">Email</span>
+              <code className="flex-1 min-w-0 font-mono text-white truncate select-all">{clientEmail}</code>
+            </div>
+          )}
+          {stored ? (
+            <div className="flex items-center gap-2 text-[11px]">
+              <span className="text-zinc-500 w-20 shrink-0">Última clave</span>
+              <code className="flex-1 min-w-0 px-2 py-1 rounded bg-black/40 border border-white/10 font-mono text-white tracking-wide truncate select-all">
+                {reveal ? stored.password : '••••••••••••'}
+              </code>
+              <button type="button" onClick={() => setReveal((v) => !v)} title={reveal ? 'Ocultar' : 'Ver'}
+                className="p-1 rounded hover:bg-white/10 text-zinc-300 shrink-0">
+                {reveal ? <EyeOff size={13} /> : <Eye size={13} />}
+              </button>
+              <button type="button" onClick={copyStored} title="Copiar"
+                className="p-1 rounded hover:bg-white/10 text-zinc-300 shrink-0">
+                {storedCopied ? <Check size={13} /> : <Copy size={13} />}
+              </button>
+            </div>
+          ) : (
+            status && status !== 'none' && (
+              <p className="text-[10.5px] text-zinc-500">Sin clave generada todavía. Usá "Generar clave" para crear una y guardarla acá.</p>
+            )
+          )}
+          {stored && (
+            <p className="text-[10px] text-zinc-600">Última que generaste. Si el cliente la cambió al activar, esta queda vieja.</p>
+          )}
+        </div>
+      )}
       {confirmPw && (
         <div className="flex flex-col gap-2 p-2.5 rounded-lg bg-amber-500/5 border border-amber-500/20">
           <p className="text-xs text-amber-200/90 leading-relaxed">
