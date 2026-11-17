@@ -5,6 +5,10 @@ import { plural, sortCampaignsByAttention } from '@/lib/contentTrackerView';
 import { CampaignGroup } from './CampaignGroup';
 import { PortalAccessControl } from './PortalAccessControl';
 
+// Base pública del portal: evita que la suite desktop (origin local 127.0.0.1:4599)
+// arme un link local que rebota a /admin/login. El preview sigue siendo admin-only.
+const PORTAL_BASE = (import.meta.env.VITE_PUBLIC_SITE_URL as string | undefined) ?? 'https://creapp.com.ar';
+
 export const ClientCampaignCard: React.FC<{ client: TrackerClient; onChanged: () => void }> = ({ client, onChanged }) => {
   const { counts } = client;
   return (
@@ -18,7 +22,7 @@ export const ClientCampaignCard: React.FC<{ client: TrackerClient; onChanged: ()
           )}
         </div>
         <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-semibold">
-          <a href={`/admin/portal-preview/${client.id}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/5 text-zinc-300 border border-white/10 hover:bg-white/10 hover:text-white transition-colors">
+          <a href={`${PORTAL_BASE}/admin/portal-preview/${client.id}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/5 text-zinc-300 border border-white/10 hover:bg-white/10 hover:text-white transition-colors">
             <ExternalLink size={12} /> Abrir en el portal
           </a>
         </div>
