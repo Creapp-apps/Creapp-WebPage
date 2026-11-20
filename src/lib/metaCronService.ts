@@ -6,6 +6,7 @@ export interface CreateMediaContainerParams {
   mediaType: 'VIDEO' | 'REELS' | 'STORIES' | 'IMAGE';
   mediaUrl: string;
   caption?: string;
+  isCarouselItem?: boolean;
 }
 
 async function postJson(url: string, body: Record<string, unknown>): Promise<any> {
@@ -23,7 +24,7 @@ async function postJson(url: string, body: Record<string, unknown>): Promise<any
 }
 
 export async function createMediaContainer(params: CreateMediaContainerParams): Promise<string> {
-  const { igAccountId, accessToken, mediaType, mediaUrl, caption } = params;
+  const { igAccountId, accessToken, mediaType, mediaUrl, caption, isCarouselItem } = params;
   const body: Record<string, unknown> = {
     media_type: mediaType,
     access_token: accessToken,
@@ -36,8 +37,40 @@ export async function createMediaContainer(params: CreateMediaContainerParams): 
   if (caption) {
     body.caption = caption;
   }
+  if (isCarouselItem) {
+    body.is_carousel_item = true;
+  }
   const data = await postJson(`${GRAPH_API_BASE}/${igAccountId}/media`, body);
   return data.id;
+}
+
+export async function createCarouselContainer(params: {
+  igAccountId: string;
+  accessToken: string;
+  mediaUrls: string[];
+  caption?: string;
+}): Promise<{ parentId: string; childIds: string[] }> {
+  const { igAccountId, accessToken, mediaUrls, caption } = params;
+  if (mediaUrls.length < 2) {
+    throw new Error('Un carrusel necesita 2 o más imágenes');
+  }
+  const childIds: string[] = [];
+  for (const mediaUrl of mediaUrls) {
+    const childId = await createMediaContainer({
+      igAccountId, accessToken, mediaType: 'IMAGE', mediaUrl, isCarouselItem: true,
+    });
+    childIds.push(childId);
+  }
+  const parentBody: Record<string, unknown> = {
+    media_type: 'CAROUSEL',
+    children: childIds,
+    access_token: accessToken,
+  };
+  if (caption) {
+    parentBody.caption = caption;
+  }
+  const parentData = await postJson(`${GRAPH_API_BASE}/${igAccountId}/media`, parentBody);
+  return { parentId: parentData.id, childIds };
 }
 
 export async function getContainerStatus(params: {

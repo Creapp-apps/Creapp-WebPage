@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createMediaContainer, getContainerStatus, publishContainer } from './metaCronService.ts';
+import { createMediaContainer, getContainerStatus, publishContainer, createCarouselContainer } from './metaCronService.ts';
 
 test('createMediaContainer hace POST con media_type y devuelve el id', async () => {
   const original = globalThis.fetch;
@@ -69,4 +69,38 @@ test('publishContainer hace POST a media_publish con creation_id', async () => {
   } finally {
     globalThis.fetch = original;
   }
+});
+
+test('createCarouselContainer crea hijos y luego el padre', async () => {
+  const original = globalThis.fetch;
+  const calls: any[] = [];
+  let n = 0;
+  globalThis.fetch = (async (url: any, init: any) => {
+    calls.push({ url: String(url), init });
+    n += 1;
+    if (n <= 2) return { ok: true, status: 200, json: async () => ({ id: `child_${n}` }) } as any;
+    return { ok: true, status: 200, json: async () => ({ id: 'parent_1' }) } as any;
+  }) as any;
+  try {
+    const { parentId, childIds } = await createCarouselContainer({
+      igAccountId: '178', accessToken: 't',
+      mediaUrls: ['https://pub.r2.dev/1.png', 'https://pub.r2.dev/2.png'],
+      caption: 'hola',
+    });
+    assert.equal(parentId, 'parent_1');
+    assert.deepEqual(childIds, ['child_1', 'child_2']);
+    assert.equal(calls.length, 3);
+    const parentBody = JSON.parse(calls[2].init.body);
+    assert.equal(parentBody.media_type, 'CAROUSEL');
+    assert.deepEqual(parentBody.children, ['child_1', 'child_2']);
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+
+test('createCarouselContainer rechaza menos de 2 imágenes', async () => {
+  await assert.rejects(
+    () => createCarouselContainer({ igAccountId: 'x', accessToken: 't', mediaUrls: ['one.png'] }),
+    /2 o más imágenes/,
+  );
 });
