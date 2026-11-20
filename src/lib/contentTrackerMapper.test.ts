@@ -99,10 +99,13 @@ test('campaña lleva slug y status normalizado', () => {
 // jb() ya existe más arriba en este archivo (helper de fixture).
 const jobsDistinct = [jb('p1', { job_id_motor: 'motor-1' }), jb('p2', { job_id_motor: 'motor-2' })];
 
-test('publishStatus se resuelve por client_id + job_id_motor, sin cruzarse entre piezas', () => {
+test('publishStatus se resuelve por slug del cliente + job_id_motor, sin cruzarse entre piezas', () => {
+  // scheduled_posts.client_id es el SLUG ('cardoso'), no el uuid de clients.id
+  // ('c1') — a propósito distintos acá, para que este test de verdad
+  // ejercite la traducción slug<->uuid del join (y no un falso positivo).
   const rows = [
-    { client_id: 'c1', job_id: 'motor-1', status: 'containerizing', error_message: null },
-    { client_id: 'c1', job_id: 'motor-2', status: 'published', error_message: null },
+    { client_id: 'cardoso', job_id: 'motor-1', status: 'containerizing', error_message: null },
+    { client_id: 'cardoso', job_id: 'motor-2', status: 'published', error_message: null },
   ];
   const r = mapTracker(clients, campaigns, jobsDistinct, [], [], [], rows);
   const [p1, p2] = r.clients[0].campaigns[0].pieces;
@@ -119,7 +122,7 @@ test('publishStatus es null si no hay fila en scheduled_posts (sin programar)', 
 });
 
 test('publishStatus error expone error_message', () => {
-  const rows = [{ client_id: 'c1', job_id: 'motor-1', status: 'error', error_message: 'Falta META_ACCESS_TOKEN__dental_ia' }];
+  const rows = [{ client_id: 'cardoso', job_id: 'motor-1', status: 'error', error_message: 'Falta META_ACCESS_TOKEN__dental_ia' }];
   const r = mapTracker(clients, campaigns, jobsDistinct, [], [], [], rows);
   const [p1, p2] = r.clients[0].campaigns[0].pieces;
   assert.equal(p1.publishStatus, 'error');

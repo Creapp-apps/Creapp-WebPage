@@ -17,6 +17,12 @@ export function mapTracker(
 ): TrackerOverview {
   const profileById = new Map(profiles.map(p => [p.id, p]));
 
+  // scheduled_posts.client_id lo escribe el motor con el SLUG del cliente
+  // (el mismo que usa client_manager.get_client_integrations), no con el
+  // uuid de content_jobs.client_id/clients.id. Hay que traducir antes de
+  // armar la clave de join, o nunca matchea nada.
+  const slugById = new Map(clients.map(c => [c.id, c.slug]));
+
   const scheduledByKey = new Map<string, TScheduledPostRow>();
   for (const s of scheduledPosts) {
     const key = `${s.client_id}:${s.job_id}`;
@@ -41,7 +47,7 @@ export function mapTracker(
     // Re-envío posterior a la última decisión => nueva versión, vuelve a "sin revisar".
     if (a && j.sent_at && new Date(j.sent_at).getTime() > new Date(a.created_at).getTime()) status = 'sent';
     const prof = a ? profileById.get(a.client_user_id) : undefined;
-    const sp = scheduledByKey.get(`${j.client_id}:${j.job_id_motor}`);
+    const sp = scheduledByKey.get(`${slugById.get(j.client_id)}:${j.job_id_motor}`);
     return {
       id: j.id, type: j.type, title: j.title,
       coverUrl: cover.get(j.id) ?? null,
