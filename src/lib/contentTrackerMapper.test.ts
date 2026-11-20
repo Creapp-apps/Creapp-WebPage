@@ -95,3 +95,39 @@ test('campaña lleva slug y status normalizado', () => {
   const r2 = mapTracker(clients, [{ ...campaigns[0], status: 'raro' }], [], [], [], []);
   assert.equal(r2.clients[0].campaigns[0].status, 'active');
 });
+
+// jb() ya existe más arriba en este archivo (helper de fixture).
+const jobsDistinct = [jb('p1', { job_id_motor: 'motor-1' }), jb('p2', { job_id_motor: 'motor-2' })];
+
+test('publishStatus se resuelve por client_id + job_id_motor, sin cruzarse entre piezas', () => {
+  const rows = [
+    { client_id: 'c1', job_id: 'motor-1', status: 'containerizing', error_message: null },
+    { client_id: 'c1', job_id: 'motor-2', status: 'published', error_message: null },
+  ];
+  const r = mapTracker(clients, campaigns, jobsDistinct, [], [], [], rows);
+  const [p1, p2] = r.clients[0].campaigns[0].pieces;
+  assert.equal(p1.publishStatus, 'containerizing');
+  assert.equal(p2.publishStatus, 'published');
+});
+
+test('publishStatus es null si no hay fila en scheduled_posts (sin programar)', () => {
+  const r = mapTracker(clients, campaigns, jobsDistinct, [], [], [], []);
+  const [p1, p2] = r.clients[0].campaigns[0].pieces;
+  assert.equal(p1.publishStatus, null);
+  assert.equal(p2.publishStatus, null);
+  assert.equal(p1.publishErrorMessage, null);
+});
+
+test('publishStatus error expone error_message', () => {
+  const rows = [{ client_id: 'c1', job_id: 'motor-1', status: 'error', error_message: 'Falta META_ACCESS_TOKEN__dental_ia' }];
+  const r = mapTracker(clients, campaigns, jobsDistinct, [], [], [], rows);
+  const [p1, p2] = r.clients[0].campaigns[0].pieces;
+  assert.equal(p1.publishStatus, 'error');
+  assert.equal(p1.publishErrorMessage, 'Falta META_ACCESS_TOKEN__dental_ia');
+  assert.equal(p2.publishStatus, null);
+});
+
+test('mapTracker sin scheduledPosts (parámetro omitido) sigue funcionando — retrocompatible', () => {
+  const r = mapTracker(clients, campaigns, jobs, assets, approvals, profiles);
+  assert.equal(r.clients[0].campaigns[0].pieces[0].publishStatus, null);
+});

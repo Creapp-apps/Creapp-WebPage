@@ -1,4 +1,4 @@
-import type { TrackerCampaign, TrackerClient, TrackerCounts, TrackerOverview, TrackerPiece, TrackerPieceStatus } from './contentTrackerTypes.ts';
+import type { PublishStatus, TrackerCampaign, TrackerClient, TrackerCounts, TrackerOverview, TrackerPiece, TrackerPieceStatus } from './contentTrackerTypes.ts';
 
 export interface TClientRow { id: string; slug: string; name: string; logo_url: string | null }
 export interface TCampaignRow { id: string; client_id: string; title: string | null; month: string | null; slug: string; status: string }
@@ -6,14 +6,22 @@ export interface TJobRow { id: string; campaign_id: string; client_id: string; t
 export interface TAssetRow { job_id: string; kind: string; url: string }
 export interface TApprovalRow { job_id: string; client_user_id: string; decision: string; comment: string | null; created_at: string }
 export interface TProfileRow { id: string; email: string | null; full_name: string | null }
+export interface TScheduledPostRow { client_id: string; job_id: string; status: string; error_message: string | null }
 
 const COVER_KINDS = new Set(['cover_9_16', 'slide']);
 
 export function mapTracker(
   clients: TClientRow[], campaigns: TCampaignRow[], jobs: TJobRow[],
   assets: TAssetRow[], approvals: TApprovalRow[], profiles: TProfileRow[],
+  scheduledPosts: TScheduledPostRow[] = [],
 ): TrackerOverview {
   const profileById = new Map(profiles.map(p => [p.id, p]));
+
+  const scheduledByKey = new Map<string, TScheduledPostRow>();
+  for (const s of scheduledPosts) {
+    const key = `${s.client_id}:${s.job_id}`;
+    if (!scheduledByKey.has(key)) scheduledByKey.set(key, s);
+  }
 
   const latest = new Map<string, TApprovalRow>();
   for (const a of approvals) {
@@ -33,6 +41,7 @@ export function mapTracker(
     // Re-envío posterior a la última decisión => nueva versión, vuelve a "sin revisar".
     if (a && j.sent_at && new Date(j.sent_at).getTime() > new Date(a.created_at).getTime()) status = 'sent';
     const prof = a ? profileById.get(a.client_user_id) : undefined;
+    const sp = scheduledByKey.get(`${j.client_id}:${j.job_id_motor}`);
     return {
       id: j.id, type: j.type, title: j.title,
       coverUrl: cover.get(j.id) ?? null,
@@ -42,6 +51,8 @@ export function mapTracker(
       lastDecisionBy: a ? (prof?.full_name || prof?.email || null) : null,
       clientVisible: j.client_visible, sentAt: j.sent_at, productionStage: j.production_stage,
       rendered: j.rendered, jobIdMotor: j.job_id_motor,
+      publishStatus: sp ? (sp.status as PublishStatus) : null,
+      publishErrorMessage: sp ? sp.error_message : null,
     };
   };
 

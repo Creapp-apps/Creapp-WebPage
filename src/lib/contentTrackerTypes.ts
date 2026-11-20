@@ -1,5 +1,7 @@
 export type TrackerPieceStatus = 'sent' | 'approved' | 'changes_requested';
 
+export type PublishStatus = 'queued' | 'containerizing' | 'ready' | 'publishing' | 'published' | 'error';
+
 export interface TrackerPiece {
   id: string;
   type: string;
@@ -14,6 +16,8 @@ export interface TrackerPiece {
   productionStage: string | null;
   rendered: boolean;
   jobIdMotor: string;
+  publishStatus: PublishStatus | null;
+  publishErrorMessage: string | null;
 }
 
 export interface TrackerCampaign {
