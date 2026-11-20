@@ -474,13 +474,15 @@ Mismo esqueleto de cabeceras/método que `api/telemetry-webhook.js`, más la
 verificación de `Authorization: Bearer ${process.env.CRON_SECRET}` al
 principio (401 si no matchea exacto — Review Focus). Lee de Supabase
 (`service_role`) las filas `status=queued` con `scheduled_at` entre ahora y
-+20h, llama `containerizeRow` por cada una, y actualiza la fila: si hay
-`containerId`, `status: 'containerizing'` + `container_id` (+
-`child_container_ids` si vino); si hay `error`, `status: 'error'` +
-`error_message`. Si falta `process.env['META_ACCESS_TOKEN__' + row.client_id]`
-para una fila puntual, esa fila pasa a `status: 'error'` con
-`error_message` mencionando la variable faltante, y el loop sigue con las
-demás filas (Review Focus — no tirar abajo el tick entero).
++20h. Para cada una, dentro de un try/catch propio: resuelve el token con
+`resolveClientToken(row.client_id, process.env)` y llama `containerizeRow`
+con ese token. Si `resolveClientToken` tira (token faltante) o
+`containerizeRow` devuelve `{ error }`, esa fila pasa a `status: 'error'` +
+`error_message` (el mensaje del error de `resolveClientToken` ya menciona
+la variable faltante), y el loop sigue con las demás filas (Review Focus —
+no tirar abajo el tick entero). Si `containerizeRow` devuelve
+`containerId`, la fila pasa a `status: 'containerizing'` + `container_id`
+(+ `child_container_ids` si vino).
 
 - [ ] **Step 6: Verificación manual del handler (sin tests automáticos de
   handler HTTP en este repo — mismo criterio que el resto de `api/*.js`,
@@ -572,7 +574,9 @@ Expected: PASS
 
 - [ ] **Step 5: Sumar las Fases 2 y 3 al handler `api/cron/publish-queue.js`**
 
-Fase 2: para filas `status='containerizing'`, llama `getContainerStatus`
+Fase 2: para filas `status='containerizing'`, dentro del mismo try/catch
+por fila que la Fase 1 (resolviendo el token con `resolveClientToken` de
+nuevo — no se persiste el token entre fases), llama `getContainerStatus`
 con `container_id` y clasifica con `classifyContainerStatus`; `ready`→
 `status: 'ready'`; `error`→`status: 'error'` + `error_message` con el
 `status_code` crudo de Meta.
