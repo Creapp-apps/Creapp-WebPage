@@ -29,3 +29,5 @@ dist-ssr
 temp/
 public/temp/
 .superpowers/
+
+.worktrees/
