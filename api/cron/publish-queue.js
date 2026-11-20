@@ -42,35 +42,44 @@ export default async function handler(req, res) {
   const rows = selectRowsToContainerize(candidateRows || [], now);
   const results = [];
 
+  // Toda escritura a `scheduled_posts` pasa por acá: si Supabase rechaza el
+  // update (RLS, red, lo que sea), la fila puede quedar en un estado que no
+  // refleja lo que pasó realmente (ej. el container de Meta ya existe, pero
+  // la fila sigue en `queued` y el próximo tick la vuelve a containerizar,
+  // duplicando el container). Nunca tragarse ese error en silencio.
+  async function updateRow(id, patch) {
+    const { error } = await supabase.from('scheduled_posts').update(patch).eq('id', id);
+    if (error) {
+      console.error(`[publish-queue] fallo al actualizar scheduled_posts.id=${id}:`, error.message);
+    }
+    return error;
+  }
+
   for (const row of rows) {
     try {
       const accessToken = resolveClientToken(row.client_id, process.env);
       const outcome = await containerizeRow(row, accessToken);
 
       if (outcome.error) {
-        await supabase
-          .from('scheduled_posts')
-          .update({ status: 'error', error_message: outcome.error })
-          .eq('id', row.id);
-        results.push({ id: row.id, status: 'error', error: outcome.error });
+        const updateError = await updateRow(row.id, { status: 'error', error_message: outcome.error });
+        results.push({ id: row.id, status: 'error', error: outcome.error, update_error: updateError?.message ?? null });
         continue;
       }
 
-      await supabase
-        .from('scheduled_posts')
-        .update({
-          status: 'containerizing',
-          container_id: outcome.containerId,
-          child_container_ids: outcome.childContainerIds ?? null,
-        })
-        .eq('id', row.id);
-      results.push({ id: row.id, status: 'containerizing', container_id: outcome.containerId });
+      const updateError = await updateRow(row.id, {
+        status: 'containerizing',
+        container_id: outcome.containerId,
+        child_container_ids: outcome.childContainerIds ?? null,
+      });
+      results.push({
+        id: row.id,
+        status: 'containerizing',
+        container_id: outcome.containerId,
+        update_error: updateError?.message ?? null,
+      });
     } catch (err) {
-      await supabase
-        .from('scheduled_posts')
-        .update({ status: 'error', error_message: err.message })
-        .eq('id', row.id);
-      results.push({ id: row.id, status: 'error', error: err.message });
+      const updateError = await updateRow(row.id, { status: 'error', error_message: err.message });
+      results.push({ id: row.id, status: 'error', error: err.message, update_error: updateError?.message ?? null });
     }
   }
 
