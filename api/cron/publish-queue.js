@@ -1,11 +1,21 @@
 // =========================================================================
 // CreAPP — Cron de publicación programada a Meta (Instagram/Facebook)
 // Fase 1: containerizar filas `queued` con scheduled_at dentro de ~20h.
+// Fase 2: confirmar que el container de Meta terminó de procesar.
+// Fase 3: publicar las filas listas cuyo horario ya llegó.
 // Ver docs/superpowers/specs/2026-11-20-publicacion-programada-sin-pc-design.md
 // =========================================================================
 
 import { createClient } from '@supabase/supabase-js';
-import { selectRowsToContainerize, containerizeRow, resolveClientToken } from '../../src/lib/publishQueuePhases.ts';
+import { getContainerStatus, publishContainer } from '../../src/lib/metaCronService.ts';
+import {
+  selectRowsToContainerize,
+  containerizeRow,
+  resolveClientToken,
+  classifyContainerStatus,
+  selectRowsReadyToPublish,
+  shouldPublish,
+} from '../../src/lib/publishQueuePhases.ts';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
@@ -81,6 +91,79 @@ export default async function handler(req, res) {
       const updateError = await updateRow(row.id, { status: 'error', error_message: err.message });
       results.push({ id: row.id, status: 'error', error: err.message, update_error: updateError?.message ?? null });
     }
+  }
+
+  // --- Fase 2: confirmar que el container ya terminó de procesar ---
+  const { data: containerizingRows, error: containerizingQueryError } = await supabase
+    .from('scheduled_posts')
+    .select('*')
+    .eq('status', 'containerizing');
+
+  if (!containerizingQueryError) {
+    for (const row of containerizingRows || []) {
+      try {
+        const accessToken = resolveClientToken(row.client_id, process.env);
+        const statusCode = await getContainerStatus({ containerId: row.container_id, accessToken });
+        const classification = classifyContainerStatus(statusCode);
+
+        if (classification === 'ready') {
+          const updateError = await updateRow(row.id, { status: 'ready' });
+          results.push({ id: row.id, status: 'ready', update_error: updateError?.message ?? null });
+        } else if (classification === 'error') {
+          const updateError = await updateRow(row.id, { status: 'error', error_message: `Meta status_code: ${statusCode}` });
+          results.push({ id: row.id, status: 'error', error: statusCode, update_error: updateError?.message ?? null });
+        }
+        // 'still_waiting': no se toca la fila, se reintenta en el próximo tick.
+      } catch (err) {
+        const updateError = await updateRow(row.id, { status: 'error', error_message: err.message });
+        results.push({ id: row.id, status: 'error', error: err.message, update_error: updateError?.message ?? null });
+      }
+    }
+  } else {
+    console.error('[publish-queue] fallo consultando filas containerizing:', containerizingQueryError.message);
+  }
+
+  // --- Fase 3: publicar las filas listas cuyo horario ya llegó ---
+  const nowPublish = new Date();
+  const { data: readyRows, error: readyQueryError } = await supabase
+    .from('scheduled_posts')
+    .select('*')
+    .eq('status', 'ready');
+
+  if (!readyQueryError) {
+    const rowsDue = selectRowsReadyToPublish(readyRows || [], nowPublish);
+
+    for (const row of rowsDue) {
+      try {
+        // Releer la fila por id antes de publicar: si otro tick solapado ya
+        // la dejó en 'publishing'/'published', shouldPublish corta acá y no
+        // se publica dos veces.
+        const { data: freshRow, error: freshError } = await supabase
+          .from('scheduled_posts')
+          .select('*')
+          .eq('id', row.id)
+          .single();
+
+        if (freshError || !freshRow || !shouldPublish(freshRow)) {
+          continue;
+        }
+
+        await updateRow(row.id, { status: 'publishing' });
+        const accessToken = resolveClientToken(row.client_id, process.env);
+        const mediaId = await publishContainer({
+          igAccountId: row.ig_account_id,
+          accessToken,
+          containerId: row.container_id,
+        });
+        const updateError = await updateRow(row.id, { status: 'published', published_media_id: mediaId });
+        results.push({ id: row.id, status: 'published', published_media_id: mediaId, update_error: updateError?.message ?? null });
+      } catch (err) {
+        const updateError = await updateRow(row.id, { status: 'error', error_message: err.message });
+        results.push({ id: row.id, status: 'error', error: err.message, update_error: updateError?.message ?? null });
+      }
+    }
+  } else {
+    console.error('[publish-queue] fallo consultando filas ready:', readyQueryError.message);
   }
 
   return res.status(200).json({ processed: results.length, results });

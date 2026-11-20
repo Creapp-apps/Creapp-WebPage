@@ -71,3 +71,17 @@ export async function containerizeRow(
   });
   return { containerId };
 }
+
+export function classifyContainerStatus(statusCode: string): 'ready' | 'still_waiting' | 'error' {
+  if (statusCode === 'FINISHED') return 'ready';
+  if (statusCode === 'ERROR' || statusCode === 'EXPIRED') return 'error';
+  return 'still_waiting';
+}
+
+export function selectRowsReadyToPublish(rows: ScheduledPostRow[], now: Date): ScheduledPostRow[] {
+  return rows.filter((row) => row.status === 'ready' && new Date(row.scheduled_at) <= now);
+}
+
+export function shouldPublish(freshRow: ScheduledPostRow): boolean {
+  return freshRow.status === 'ready';
+}

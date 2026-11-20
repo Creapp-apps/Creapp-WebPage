@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { selectRowsToContainerize, containerizeRow, resolveClientToken } from './publishQueuePhases.ts';
+import { selectRowsToContainerize, containerizeRow, resolveClientToken, classifyContainerStatus, selectRowsReadyToPublish, shouldPublish } from './publishQueuePhases.ts';
 
 test('selectRowsToContainerize excluye filas que no están queued', () => {
   const now = new Date('2026-12-01T00:00:00Z');
@@ -64,4 +64,27 @@ test('containerizeRow arma un reel con mediaType REELS', async () => {
   } finally {
     globalThis.fetch = original;
   }
+});
+
+test('classifyContainerStatus mapea FINISHED/ERROR/EXPIRED/otros', () => {
+  assert.equal(classifyContainerStatus('FINISHED'), 'ready');
+  assert.equal(classifyContainerStatus('ERROR'), 'error');
+  assert.equal(classifyContainerStatus('EXPIRED'), 'error');
+  assert.equal(classifyContainerStatus('IN_PROGRESS'), 'still_waiting');
+});
+
+test('selectRowsReadyToPublish filtra por status ready y horario cumplido', () => {
+  const now = new Date('2026-12-01T19:00:00Z');
+  const rows = [
+    { id: '1', status: 'ready', scheduled_at: '2026-12-01T18:00:00Z' },
+    { id: '2', status: 'ready', scheduled_at: '2026-12-01T20:00:00Z' },
+    { id: '3', status: 'containerizing', scheduled_at: '2026-12-01T18:00:00Z' },
+  ] as any;
+  assert.deepEqual(selectRowsReadyToPublish(rows, now).map((r: any) => r.id), ['1']);
+});
+
+test('shouldPublish es false si la fila releída ya no está ready (tick solapado)', () => {
+  assert.equal(shouldPublish({ status: 'ready' } as any), true);
+  assert.equal(shouldPublish({ status: 'publishing' } as any), false);
+  assert.equal(shouldPublish({ status: 'published' } as any), false);
 });
