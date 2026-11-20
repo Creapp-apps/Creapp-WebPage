@@ -1,4 +1,10 @@
 {
+  "crons": [
+    {
+      "path": "/api/cron/publish-queue",
+      "schedule": "*/15 * * * *"
+    }
+  ],
   "rewrites": [
     {
       "source": "/propuesta/:slug",
