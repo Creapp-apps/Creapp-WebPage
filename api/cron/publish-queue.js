@@ -148,7 +148,15 @@ export default async function handler(req, res) {
           continue;
         }
 
-        await updateRow(row.id, { status: 'publishing' });
+        // Este write es el que protege contra el doble-publish: si Supabase
+        // lo rechaza, la fila sigue en 'ready' y un tick solapado podría
+        // publicarla de nuevo. No seguir de largo si falla.
+        const publishingUpdateError = await updateRow(row.id, { status: 'publishing' });
+        if (publishingUpdateError) {
+          results.push({ id: row.id, status: 'error', error: 'No se pudo marcar publishing', update_error: publishingUpdateError.message });
+          continue;
+        }
+
         const accessToken = resolveClientToken(row.client_id, process.env);
         const mediaId = await publishContainer({
           igAccountId: row.ig_account_id,
