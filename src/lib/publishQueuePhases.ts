@@ -68,6 +68,7 @@ export async function containerizeRow(
     mediaType,
     mediaUrl: row.media_r2_urls[0],
     caption: row.caption ?? undefined,
+    coverUrl: row.cover_r2_url ?? undefined,
   });
   return { containerId };
 }

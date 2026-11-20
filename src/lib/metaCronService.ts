@@ -7,6 +7,10 @@ export interface CreateMediaContainerParams {
   mediaUrl: string;
   caption?: string;
   isCarouselItem?: boolean;
+  /** Solo tiene efecto para mediaType REELS: Meta documenta `cover_url` como
+   * "For Reels only" (ig-media reference). Para cualquier otro mediaType se
+   * ignora, no se manda en el body. */
+  coverUrl?: string;
 }
 
 async function postJson(url: string, body: Record<string, unknown>): Promise<any> {
@@ -24,7 +28,7 @@ async function postJson(url: string, body: Record<string, unknown>): Promise<any
 }
 
 export async function createMediaContainer(params: CreateMediaContainerParams): Promise<string> {
-  const { igAccountId, accessToken, mediaType, mediaUrl, caption, isCarouselItem } = params;
+  const { igAccountId, accessToken, mediaType, mediaUrl, caption, isCarouselItem, coverUrl } = params;
   const body: Record<string, unknown> = {
     media_type: mediaType,
     access_token: accessToken,
@@ -39,6 +43,9 @@ export async function createMediaContainer(params: CreateMediaContainerParams): 
   }
   if (isCarouselItem) {
     body.is_carousel_item = true;
+  }
+  if (coverUrl && mediaType === 'REELS') {
+    body.cover_url = coverUrl;
   }
   const data = await postJson(`${GRAPH_API_BASE}/${igAccountId}/media`, body);
   return data.id;

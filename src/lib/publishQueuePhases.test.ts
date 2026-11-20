@@ -66,6 +66,47 @@ test('containerizeRow arma un reel con mediaType REELS', async () => {
   }
 });
 
+test('containerizeRow propaga cover_r2_url como coverUrl del reel', async () => {
+  const original = globalThis.fetch;
+  const calls: any[] = [];
+  globalThis.fetch = (async (url: any, init: any) => {
+    calls.push(init);
+    return { ok: true, status: 200, json: async () => ({ id: 'c1' }) };
+  }) as any;
+  try {
+    await containerizeRow(
+      {
+        platform: 'instagram_reel', media_r2_urls: ['a.mp4'], ig_account_id: '178',
+        caption: 'hi', cover_r2_url: 'https://pub.r2.dev/cover.png',
+      } as any,
+      'tok',
+    );
+    const body = JSON.parse(calls[0].body);
+    assert.equal(body.cover_url, 'https://pub.r2.dev/cover.png');
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+
+test('containerizeRow no manda cover_url si la fila no tiene cover_r2_url', async () => {
+  const original = globalThis.fetch;
+  const calls: any[] = [];
+  globalThis.fetch = (async (url: any, init: any) => {
+    calls.push(init);
+    return { ok: true, status: 200, json: async () => ({ id: 'c1' }) };
+  }) as any;
+  try {
+    await containerizeRow(
+      { platform: 'instagram_reel', media_r2_urls: ['a.mp4'], ig_account_id: '178', cover_r2_url: null } as any,
+      'tok',
+    );
+    const body = JSON.parse(calls[0].body);
+    assert.equal('cover_url' in body, false);
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+
 test('classifyContainerStatus mapea FINISHED/ERROR/EXPIRED/otros', () => {
   assert.equal(classifyContainerStatus('FINISHED'), 'ready');
   assert.equal(classifyContainerStatus('ERROR'), 'error');
