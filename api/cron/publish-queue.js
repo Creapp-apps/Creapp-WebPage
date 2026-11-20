@@ -14,7 +14,6 @@ import {
   resolveClientToken,
   classifyContainerStatus,
   selectRowsReadyToPublish,
-  shouldPublish,
 } from '../../src/lib/publishQueuePhases.ts';
 
 export default async function handler(req, res) {
@@ -24,6 +23,9 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
+  if (!process.env.CRON_SECRET) {
+    return res.status(500).json({ error: 'CRON_SECRET not configured on server' });
+  }
   const authHeader = req.headers.authorization;
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return res.status(401).json({ error: 'Unauthorized' });
@@ -65,6 +67,26 @@ export default async function handler(req, res) {
     return error;
   }
 
+  // Reclamo atómico: solo escribe si la fila SIGUE en `fromStatus` en este
+  // mismo instante (compare-and-swap vía `.eq('status', fromStatus)`).
+  // Vercel puede entregar el mismo evento de cron más de una vez, y dos
+  // ticks solapados pueden pasar un chequeo de lectura+decisión+escritura no
+  // atómico al mismo tiempo — esto es lo que lo vuelve seguro de verdad,
+  // no solo "poco probable".
+  async function claimRow(id, fromStatus, patch) {
+    const { data, error } = await supabase
+      .from('scheduled_posts')
+      .update(patch)
+      .eq('id', id)
+      .eq('status', fromStatus)
+      .select('id');
+    if (error) {
+      console.error(`[publish-queue] fallo al reclamar scheduled_posts.id=${id}:`, error.message);
+      return { claimed: false, error };
+    }
+    return { claimed: (data || []).length === 1, error: null };
+  }
+
   for (const row of rows) {
     try {
       const accessToken = resolveClientToken(row.client_id, process.env);
@@ -76,16 +98,16 @@ export default async function handler(req, res) {
         continue;
       }
 
-      const updateError = await updateRow(row.id, {
+      const { claimed, error: claimError } = await claimRow(row.id, 'queued', {
         status: 'containerizing',
         container_id: outcome.containerId,
         child_container_ids: outcome.childContainerIds ?? null,
       });
       results.push({
         id: row.id,
-        status: 'containerizing',
+        status: claimed ? 'containerizing' : 'skipped_race',
         container_id: outcome.containerId,
-        update_error: updateError?.message ?? null,
+        update_error: claimError?.message ?? null,
       });
     } catch (err) {
       const updateError = await updateRow(row.id, { status: 'error', error_message: err.message });
@@ -101,8 +123,19 @@ export default async function handler(req, res) {
 
   if (!containerizingQueryError) {
     for (const row of containerizingRows || []) {
+      let accessToken;
       try {
-        const accessToken = resolveClientToken(row.client_id, process.env);
+        accessToken = resolveClientToken(row.client_id, process.env);
+      } catch (err) {
+        // Falta de configuración (token no seteado) no es transitorio —
+        // no se va a arreglar solo en el próximo tick. Terminal, igual que
+        // en las Fases 1 y 3.
+        const updateError = await updateRow(row.id, { status: 'error', error_message: err.message });
+        results.push({ id: row.id, status: 'error', error: err.message, update_error: updateError?.message ?? null });
+        continue;
+      }
+
+      try {
         const statusCode = await getContainerStatus({ containerId: row.container_id, accessToken });
         const classification = classifyContainerStatus(statusCode);
 
@@ -115,8 +148,15 @@ export default async function handler(req, res) {
         }
         // 'still_waiting': no se toca la fila, se reintenta en el próximo tick.
       } catch (err) {
-        const updateError = await updateRow(row.id, { status: 'error', error_message: err.message });
-        results.push({ id: row.id, status: 'error', error: err.message, update_error: updateError?.message ?? null });
+        // Un fallo ACÁ (red, 5xx de Meta, rate limit) es, la mayoría de las
+        // veces, transitorio: el container sigue existiendo en Meta y puede
+        // terminar de procesar bien. Pasarla a `error` de forma permanente
+        // tiraría a la basura una pieza que iba a publicarse igual. Se deja
+        // en `containerizing` para que el próximo tick la vuelva a
+        // consultar — solo Meta diciendo ERROR/EXPIRED de verdad
+        // (clasificado arriba) es terminal.
+        console.error(`[publish-queue] fallo transitorio consultando estado de scheduled_posts.id=${row.id} (se reintenta):`, err.message);
+        results.push({ id: row.id, status: 'containerizing', error: err.message, retry: true });
       }
     }
   } else {
@@ -135,25 +175,16 @@ export default async function handler(req, res) {
 
     for (const row of rowsDue) {
       try {
-        // Releer la fila por id antes de publicar: si otro tick solapado ya
-        // la dejó en 'publishing'/'published', shouldPublish corta acá y no
-        // se publica dos veces.
-        const { data: freshRow, error: freshError } = await supabase
-          .from('scheduled_posts')
-          .select('*')
-          .eq('id', row.id)
-          .single();
-
-        if (freshError || !freshRow || !shouldPublish(freshRow)) {
-          continue;
-        }
-
-        // Este write es el que protege contra el doble-publish: si Supabase
-        // lo rechaza, la fila sigue en 'ready' y un tick solapado podría
-        // publicarla de nuevo. No seguir de largo si falla.
-        const publishingUpdateError = await updateRow(row.id, { status: 'publishing' });
-        if (publishingUpdateError) {
-          results.push({ id: row.id, status: 'error', error: 'No se pudo marcar publishing', update_error: publishingUpdateError.message });
+        // Reclamo atómico 'ready' -> 'publishing': si otro tick solapado ya
+        // reclamó esta fila (o Meta entregó el mismo evento de cron dos
+        // veces), ese `.eq('status', 'ready')` deja de matchear y
+        // `claimed` da false acá. No hay ventana entre leer y escribir —
+        // es la única operación que decide quién publica.
+        const { claimed, error: claimError } = await claimRow(row.id, 'ready', { status: 'publishing' });
+        if (!claimed) {
+          if (claimError) {
+            results.push({ id: row.id, status: 'error', error: 'No se pudo reclamar publishing', update_error: claimError.message });
+          }
           continue;
         }
 
