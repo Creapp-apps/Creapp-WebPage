@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { CheckCircle2, MessageSquareWarning, Clock, ImageOff, Film, Send, Undo2, ExternalLink, MessageSquare } from 'lucide-react';
 import { sendPiece, unpublishPiece } from '@/lib/contentTrackerService';
 import { motorStudio } from '@/lib/motorStudio';
-import type { TrackerPiece } from '@/lib/contentTrackerTypes';
+import type { PublishStatus, TrackerPiece } from '@/lib/contentTrackerTypes';
 import { PieceThread } from './PieceThread';
 import { STATUS_LABEL, relativeTime, pieceTitle } from '@/lib/contentTrackerView';
 
@@ -15,6 +15,20 @@ const CHIP: Record<TrackerPiece['status'], { cls: string; Icon: React.ComponentT
 const STAGE_LABEL: Record<string, string> = {
   guion: 'Guion', voz: 'Voz', broll: 'B-roll', render: 'Render', qa: 'QA',
   listo: 'Listo',
+};
+
+const PUBLISH_LABEL: Record<PublishStatus, string> = {
+  queued: 'Programada', containerizing: 'Preparando', ready: 'Lista',
+  publishing: 'Publicando', published: 'Publicada', error: 'Error al publicar',
+};
+
+const PUBLISH_CLS: Record<PublishStatus, string> = {
+  queued: 'bg-zinc-500/10 text-zinc-300 border-zinc-500/20',
+  containerizing: 'bg-amber-500/10 text-amber-300 border-amber-500/20',
+  ready: 'bg-sky-500/10 text-sky-300 border-sky-500/20',
+  publishing: 'bg-sky-500/10 text-sky-300 border-sky-500/20',
+  published: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+  error: 'bg-rose-500/10 text-rose-400 border-rose-500/25',
 };
 
 export const PieceStatusRow: React.FC<{ piece: TrackerPiece; onChanged: () => void }> = ({ piece, onChanged }) => {
@@ -71,6 +85,14 @@ export const PieceStatusRow: React.FC<{ piece: TrackerPiece; onChanged: () => vo
             <Film size={11} />
             {piece.rendered ? 'Renderizada' : 'Sin render'}
           </span>
+          {piece.publishStatus && (
+            <span
+              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border ${PUBLISH_CLS[piece.publishStatus]}`}
+              title={piece.publishStatus === 'error' ? (piece.publishErrorMessage ?? undefined) : undefined}
+            >
+              {PUBLISH_LABEL[piece.publishStatus]}
+            </span>
+          )}
         </div>
         <div className="flex flex-wrap gap-1.5 pt-1">
           {!piece.clientVisible && (
