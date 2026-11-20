@@ -7,7 +7,14 @@ export type { TrackerOverview, TrackerClient, TrackerCampaign, TrackerPiece, Tra
 /** Solo lectura bajo RLS de equipo (anon key). */
 export async function getTrackerOverview(): Promise<TrackerOverview> {
   const sb = getSupabase();
-  const [cl, ca, jo, as, ap, pr, sp] = await Promise.all([
+  // scheduled_posts es un agregado opcional (feature nueva, con una migración
+  // de RLS que el equipo puede no haber aplicado todavía). Se dispara en
+  // paralelo con el resto, pero su falla no tumba el tracker entero — el
+  // estado de publicación simplemente no se muestra, en vez de que toda la
+  // pantalla deje de cargar por una tabla que llegó después.
+  const spPromise = sb.from('scheduled_posts').select('client_id, job_id, status, error_message');
+
+  const [cl, ca, jo, as, ap, pr] = await Promise.all([
     sb.from('clients').select('id, slug, name, logo_url').order('name', { ascending: true }),
     sb.from('content_campaigns').select('id, client_id, title, month, slug, status')
       .order('month', { ascending: false }).order('created_at', { ascending: false }),
@@ -15,13 +22,21 @@ export async function getTrackerOverview(): Promise<TrackerOverview> {
     sb.from('content_assets').select('job_id, kind, url').in('kind', ['cover_9_16', 'slide']).order('created_at', { ascending: true }),
     sb.from('content_approvals').select('job_id, client_user_id, decision, comment, created_at'),
     sb.from('user_profiles').select('id, email, full_name'),
-    sb.from('scheduled_posts').select('client_id, job_id, status, error_message'),
   ]);
-  for (const r of [cl, ca, jo, as, ap, pr, sp]) if (r.error) throw r.error;
+  for (const r of [cl, ca, jo, as, ap, pr]) if (r.error) throw r.error;
+
+  let scheduledPosts: TScheduledPostRow[] = [];
+  const sp = await spPromise;
+  if (sp.error) {
+    console.warn('[contentTracker] no se pudo leer scheduled_posts (¿falta aplicar la migración de RLS?):', sp.error.message);
+  } else {
+    scheduledPosts = (sp.data ?? []) as TScheduledPostRow[];
+  }
+
   return mapTracker(
     (cl.data ?? []) as TClientRow[], (ca.data ?? []) as TCampaignRow[], (jo.data ?? []) as TJobRow[],
     (as.data ?? []) as TAssetRow[], (ap.data ?? []) as TApprovalRow[], (pr.data ?? []) as TProfileRow[],
-    (sp.data ?? []) as TScheduledPostRow[],
+    scheduledPosts,
   );
 }
 
