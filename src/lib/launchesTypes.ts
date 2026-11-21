@@ -84,6 +84,7 @@ export interface LaunchPiece {
 
 export interface LaunchesOverview {
   pieces: LaunchPiece[];
+  clients: { slug: string; name: string }[];
   cronRuns: CronRunRow[];
   logEvents: CronLogEventRow[];
   deployEvents: DeployEventRow[];

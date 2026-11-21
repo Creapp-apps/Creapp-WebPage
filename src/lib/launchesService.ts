@@ -51,7 +51,8 @@ export async function getLaunchesOverview(): Promise<LaunchesOverview> {
     (sp.data ?? []) as LScheduledRow[], (cl.data ?? []) as LClientRow[],
     (jo.data ?? []) as LJobRow[], (as.data ?? []) as LAssetRow[], cronHealthy, now,
   );
-  return { pieces, cronRuns, logEvents, deployEvents, healthErrors, fetchedAt: now.toISOString() };
+  const clients = ((cl.data ?? []) as LClientRow[]).map((c) => ({ slug: c.slug, name: c.name })).sort((a, b) => a.name.localeCompare(b.name));
+  return { pieces, clients, cronRuns, logEvents, deployEvents, healthErrors, fetchedAt: now.toISOString() };
 }
 
 /** Realtime sobre las 4 tablas. Devuelve cleanup. */

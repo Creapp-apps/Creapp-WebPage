@@ -4,6 +4,9 @@ import { getLaunchesOverview, subscribeLaunches } from '@/lib/launchesService';
 import type { LaunchesOverview } from '@/lib/launchesTypes';
 import { HealthBanner } from './HealthBanner';
 import { LaunchRow, STATUS_LABEL } from './LaunchRow';
+import { FilterDropdown } from './FilterDropdown';
+
+const STATUSES = ['queued', 'containerizing', 'ready', 'publishing', 'published', 'error', 'cancelled'];
 
 export const LaunchesTab: React.FC<{ readOnly?: boolean }> = ({ readOnly = false }) => {
   const [overview, setOverview] = useState<LaunchesOverview | null>(null);
@@ -41,10 +44,9 @@ export const LaunchesTab: React.FC<{ readOnly?: boolean }> = ({ readOnly = false
   }, [load]);
 
   const pieces = overview?.pieces ?? [];
-  const clients = Array.from(new Set(pieces.map((p) => p.clientName))).sort();
-  const statuses = Array.from(new Set(pieces.map((p) => p.status)));
+  const clientOptions = [{ value: 'all', label: 'Todos los clientes' }, ...(overview?.clients ?? []).map((c) => ({ value: c.name, label: c.name }))];
+  const statusOptions = [{ value: 'all', label: 'Todos los estados' }, ...STATUSES.map((s) => ({ value: s, label: STATUS_LABEL[s] ?? s }))];
   const shown = pieces.filter((p) => (client === 'all' || p.clientName === client) && (status === 'all' || p.status === status));
-  const sel = 'px-3 py-2 rounded-xl bg-[#0e0e12] border border-white/5 text-sm text-white focus:outline-none focus:border-indigo-500/40';
 
   return (
     <div className="space-y-6">
@@ -71,14 +73,8 @@ export const LaunchesTab: React.FC<{ readOnly?: boolean }> = ({ readOnly = false
           {error && <p className="text-xs text-amber-400">No se pudo actualizar; mostrando datos anteriores.</p>}
           <HealthBanner overview={overview} readOnly={readOnly} onChanged={load} />
           <div className="flex flex-wrap items-center gap-3">
-            <select value={client} onChange={(e) => setClient(e.target.value)} className={sel} aria-label="Cliente">
-              <option value="all">Todos los clientes</option>
-              {clients.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
-            <select value={status} onChange={(e) => setStatus(e.target.value)} className={sel} aria-label="Estado">
-              <option value="all">Todos los estados</option>
-              {statuses.map((s) => <option key={s} value={s}>{STATUS_LABEL[s] ?? s}</option>)}
-            </select>
+            <FilterDropdown value={client} onChange={setClient} options={clientOptions} ariaLabel="Cliente" />
+            <FilterDropdown value={status} onChange={setStatus} options={statusOptions} ariaLabel="Estado" />
           </div>
           {shown.length === 0 ? (
             <div className="rounded-2xl border border-white/5 bg-[#0e0e12] p-10 text-center text-sm text-zinc-400">
