@@ -1,0 +1,48 @@
+// Filas crudas de Supabase para el centro de control "Lanzamientos".
+// Columnas según supabase/migrations/20261121_lanzamientos_health.sql.
+
+export interface CronRunRow {
+  id: string;
+  cron_name: string;
+  started_at: string;
+  finished_at: string | null;
+  outcome: string | null; // 'ok' | 'error' | null (en curso)
+  processed_count: number;
+  published_count: number;
+  error_count: number;
+  error_text: string | null;
+  deployment_id: string | null;
+  git_sha: string | null;
+}
+
+export interface CronLogEventRow {
+  id: string;
+  received_at: string;
+  deployment_id: string | null;
+  request_id: string | null;
+  level: string | null;
+  message: string | null;
+  request_path: string | null;
+  raw: unknown;
+}
+
+export interface DeployEventRow {
+  id: string;
+  received_at: string;
+  type: string | null;
+  deployment_id: string | null;
+  git_sha: string | null;
+  state: string | null;
+  raw: unknown;
+}
+
+export interface ScheduledPostRow {
+  id: string;
+  client_id: string;
+  job_id: string;
+  status: string; // queued | containerizing | ready | publishing | published | error | cancelled ...
+  error_message: string | null;
+  updated_at: string;
+  permalink?: string | null;
+  published_media_id?: string | null;
+}
