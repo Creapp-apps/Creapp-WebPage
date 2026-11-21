@@ -46,3 +46,21 @@ export interface ScheduledPostRow {
   permalink?: string | null;
   published_media_id?: string | null;
 }
+
+// Inserts (sin id / received_at) para las tablas de ingesta de Vercel.
+export interface CronLogEventInsert {
+  deployment_id: string | null;
+  request_id: string | null;
+  level: string;
+  message: string | null;
+  request_path: string;
+  raw: unknown;
+}
+
+export interface DeployEventInsert {
+  type: string;
+  deployment_id: string | null;
+  git_sha: string | null;
+  state: string;
+  raw: unknown;
+}
