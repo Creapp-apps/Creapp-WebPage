@@ -107,3 +107,17 @@ export async function publishContainer(params: {
   });
   return data.id;
 }
+
+export async function getMediaPermalink(params: {
+  mediaId: string;
+  accessToken: string;
+}): Promise<string | null> {
+  const { mediaId, accessToken } = params;
+  const url = `${GRAPH_API_BASE}/${mediaId}?fields=permalink&access_token=${encodeURIComponent(accessToken)}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data?.error?.message || `Meta Graph API error (status ${res.status})`);
+  }
+  return data.permalink ?? null;
+}

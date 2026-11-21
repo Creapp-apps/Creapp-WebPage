@@ -7,7 +7,8 @@
 // =========================================================================
 
 import { createClient } from '@supabase/supabase-js';
-import { getContainerStatus, publishContainer } from '../../src/lib/metaCronService.js';
+import { getContainerStatus, publishContainer, getMediaPermalink } from '../../src/lib/metaCronService.js';
+import { buildRunStart, buildRunEnd } from '../../src/lib/cronHeartbeat.js';
 import {
   selectRowsToContainerize,
   containerizeRow,
@@ -37,6 +38,20 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Supabase credentials not configured on server' });
   }
   const supabase = createClient(supabaseUrl, supabaseKey);
+
+  // Heartbeat: fila `started` (no debe romper el cron si falla).
+  let runId = null;
+  try {
+    const { data: runRow, error: runErr } = await supabase
+      .from('cron_runs')
+      .insert(buildRunStart(process.env))
+      .select('id')
+      .single();
+    if (runErr) console.error('[publish-queue] heartbeat start fallo:', runErr.message);
+    else runId = runRow?.id ?? null;
+  } catch (err) {
+    console.error('[publish-queue] heartbeat start fallo:', err.message);
+  }
 
   const now = new Date();
   const windowEnd = new Date(now.getTime() + 20 * 60 * 60 * 1000);
@@ -194,7 +209,14 @@ export default async function handler(req, res) {
           accessToken,
           containerId: row.container_id,
         });
-        const updateError = await updateRow(row.id, { status: 'published', published_media_id: mediaId });
+        // Permalink best-effort: nunca falla la publicación.
+        let permalink = null;
+        try {
+          permalink = await getMediaPermalink({ mediaId, accessToken });
+        } catch (permErr) {
+          console.error(`[publish-queue] no se pudo traer permalink de scheduled_posts.id=${row.id}:`, permErr.message);
+        }
+        const updateError = await updateRow(row.id, { status: 'published', published_media_id: mediaId, permalink });
         results.push({ id: row.id, status: 'published', published_media_id: mediaId, update_error: updateError?.message ?? null });
       } catch (err) {
         const updateError = await updateRow(row.id, { status: 'error', error_message: err.message });
@@ -203,6 +225,18 @@ export default async function handler(req, res) {
     }
   } else {
     console.error('[publish-queue] fallo consultando filas ready:', readyQueryError.message);
+  }
+
+  if (runId) {
+    try {
+      const { error: endErr } = await supabase
+        .from('cron_runs')
+        .update({ finished_at: new Date().toISOString(), ...buildRunEnd(results) })
+        .eq('id', runId);
+      if (endErr) console.error('[publish-queue] heartbeat end fallo:', endErr.message);
+    } catch (err) {
+      console.error('[publish-queue] heartbeat end fallo:', err.message);
+    }
   }
 
   return res.status(200).json({ processed: results.length, results });
