@@ -33,6 +33,7 @@ import {
   Download,
   Share2,
   Megaphone,
+  Rocket,
   Terminal,
 } from 'lucide-react';
 import creappLogoOfficial from '@/assets/CREAPP LOGO VECTOR.png';
@@ -52,6 +53,7 @@ export type AdminTab =
   | 'finances'
   | 'telemetry'
   | 'content_campaigns'
+  | 'launches'
   | 'content_creator';
 
 interface AdminLayoutProps {
@@ -195,6 +197,11 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
           id: 'content_campaigns',
           label: 'Campañas de Contenido',
           icon: Megaphone,
+        },
+        {
+          id: 'launches',
+          label: 'Lanzamientos',
+          icon: Rocket,
         },
       ],
     },

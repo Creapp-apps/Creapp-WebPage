@@ -34,6 +34,7 @@ import SubscriptionsTab from '@/components/admin/SubscriptionsTab';
 import FinancesTab from '@/components/admin/FinancesTab';
 import TelemetryTab from '@/components/admin/TelemetryTab';
 import ContentCampaignsTab from '@/components/admin/campaigns/ContentCampaignsTab';
+import LaunchesTab from '@/components/admin/launches/LaunchesTab';
 import ContentCreatorTab from '@/components/admin/campaigns/ContentCreatorTab';
 import { useAuth } from '@/context/AuthContext';
 
@@ -463,6 +464,9 @@ const AdminPanel: React.FC = () => {
 
       {activeTab === 'content_creator' && <ContentCreatorTab />}
       {activeTab === 'content_campaigns' && <ContentCampaignsTab />}
+
+      {/* Lanzamientos: vendedor en solo lectura, sin acciones */}
+      {activeTab === 'launches' && <LaunchesTab readOnly={!isAdmin} />}
 
       {/* MODAL: SELECCIÓN DE PROPUESTA COMERCIAL */}
       <AnimatePresence>
