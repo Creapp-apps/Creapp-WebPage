@@ -64,3 +64,30 @@ export interface DeployEventInsert {
   state: string;
   raw: unknown;
 }
+
+// ---- Tipos de vista (consumidos por la UI) ----
+export interface LaunchPiece {
+  id: string;
+  clientId: string; // slug del cliente (como lo escribe el motor)
+  clientName: string;
+  jobId: string; // job_id del motor
+  title: string | null;
+  type: string | null;
+  coverUrl: string | null;
+  status: string;
+  scheduledAt: string | null;
+  updatedAt: string;
+  errorMessage: string | null;
+  permalink: string | null;
+  stuck: boolean;
+}
+
+export interface LaunchesOverview {
+  pieces: LaunchPiece[];
+  cronRuns: CronRunRow[];
+  logEvents: CronLogEventRow[];
+  deployEvents: DeployEventRow[];
+  /** Tablas de salud que fallaron al leerse (aisladas, no tumban la pantalla). */
+  healthErrors: string[];
+  fetchedAt: string;
+}
