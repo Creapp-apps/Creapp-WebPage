@@ -7,14 +7,14 @@
 // =========================================================================
 
 import { createClient } from '@supabase/supabase-js';
-import { getContainerStatus, publishContainer } from '../../src/lib/metaCronService.ts';
+import { getContainerStatus, publishContainer } from '../../src/lib/metaCronService.js';
 import {
   selectRowsToContainerize,
   containerizeRow,
   resolveClientToken,
   classifyContainerStatus,
   selectRowsReadyToPublish,
-} from '../../src/lib/publishQueuePhases.ts';
+} from '../../src/lib/publishQueuePhases.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');

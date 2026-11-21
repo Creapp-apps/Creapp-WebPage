@@ -1,4 +1,4 @@
-import { createMediaContainer, createCarouselContainer } from './metaCronService.ts';
+import { createMediaContainer, createCarouselContainer } from './metaCronService.js';
 
 export interface ScheduledPostRow {
   id: string;
