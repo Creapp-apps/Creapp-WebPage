@@ -37,6 +37,9 @@ test('drain error del cron -> objeto', () => {
   assert.equal(r.level, 'error');
   assert.equal(r.request_path, '/api/cron/publish-queue');
 });
+test('drain error de path con sufijo (-foo) -> null', () => {
+  assert.equal(parseDrainLine({ level: 'error', path: '/api/cron/publish-queue-foo' }), null);
+});
 test('drain basura -> null', () => {
   assert.equal(parseDrainLine(null), null);
   assert.equal(parseDrainLine('x'), null);

@@ -78,7 +78,7 @@ export const HealthBanner: React.FC<Props> = ({ overview, readOnly, onChanged })
             </button>
           )}
           {!readOnly && (
-            <button type="button" onClick={() => setConfirm(true)}
+            <button type="button" onClick={() => { setMsg(null); setConfirm(true); }}
               className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-500/25">
               <Play size={12} /> Correr tick ahora
             </button>

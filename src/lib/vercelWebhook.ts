@@ -26,7 +26,7 @@ export function parseDrainLine(entry: unknown): CronLogEventInsert | null {
   if (!isObj(entry)) return null;
   const proxy = isObj(entry.proxy) ? entry.proxy : {};
   const path = str(proxy.path) ?? str(entry.path) ?? str(entry.requestPath) ?? str(entry.request_path);
-  if (!path || !path.includes(CRON_PATH)) return null;
+  if (!path || path.split(/[?#]/)[0].replace(/\/+$/, '') !== CRON_PATH) return null;
   const level = (str(entry.level) ?? str(entry.severity) ?? '').toLowerCase();
   if (!ERROR_LEVELS.has(level)) return null;
   return {

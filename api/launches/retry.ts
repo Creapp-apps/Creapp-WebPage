@@ -35,6 +35,10 @@ export default async function handler(req, res) {
   const updatedMs = row.updated_at ? new Date(row.updated_at).getTime() : NaN;
   const stuck = Number.isFinite(updatedMs) && Date.now() - updatedMs > STUCK_MS;
 
+  // Defensa en profundidad: nunca resetear publishing/ready/published/cancelled.
+  if (!['queued', 'containerizing', 'error'].includes(row.status)) {
+    return res.status(409).json({ error: actionError('retry', row.status, stuck) || `No se puede reintentar una publicación en estado "${row.status}".` });
+  }
   const guard = actionError('retry', row.status, stuck);
   if (guard) return res.status(409).json({ error: guard });
 

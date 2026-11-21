@@ -64,15 +64,23 @@ export default async function handler(req, res) {
     }
   }
 
-  // Cron tick: cola completa, sin filtro de id.
-  const { results, phase1Error } = await runPublishQueue(supabase, {});
+  // Cron tick: cola completa, sin filtro de id. finally garantiza cerrar el heartbeat.
+  let finished = false;
+  try {
+    const { results, phase1Error } = await runPublishQueue(supabase, {});
 
-  if (phase1Error) {
-    await finishRun({ outcome: 'error', processed_count: 0, published_count: 0, error_count: 1, error_text: phase1Error });
-    return res.status(500).json({ error: 'Failed to query scheduled_posts', details: phase1Error });
+    if (phase1Error) {
+      finished = true;
+      await finishRun({ outcome: 'error', processed_count: 0, published_count: 0, error_count: 1, error_text: phase1Error });
+      return res.status(500).json({ error: 'Failed to query scheduled_posts', details: phase1Error });
+    }
+
+    finished = true;
+    await finishRun(buildRunEnd(results));
+    return res.status(200).json({ processed: results.length, results });
+  } finally {
+    if (!finished) {
+      await finishRun({ outcome: 'error', processed_count: 0, published_count: 0, error_count: 1, error_text: 'runPublishQueue lanzó una excepción' });
+    }
   }
-
-  await finishRun(buildRunEnd(results));
-
-  return res.status(200).json({ processed: results.length, results });
 }

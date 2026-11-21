@@ -8,11 +8,17 @@ export type { LaunchesOverview, LaunchPiece } from './launchesTypes';
 /** Solo lectura bajo RLS de equipo (anon key). scheduled_posts es la fuente principal; las tablas de salud se aíslan. */
 export async function getLaunchesOverview(): Promise<LaunchesOverview> {
   const sb = getSupabase();
-  const [sp, cl, jo, as, runs, logs, deploys] = await Promise.all([
-    sb.from('scheduled_posts').select('*').order('updated_at', { ascending: false }).limit(300),
-    sb.from('clients').select('id, slug, name'),
-    sb.from('content_jobs').select('id, client_id, type, title, job_id_motor'),
-    sb.from('content_assets').select('job_id, kind, url').in('kind', ['cover_9_16', 'slide']).order('created_at', { ascending: true }),
+  const sp = await sb.from('scheduled_posts').select('*').order('updated_at', { ascending: false }).limit(300);
+  if (sp.error) throw sp.error;
+  const jobIds = [...new Set(((sp.data ?? []) as { job_id?: string | null }[]).map((r) => r.job_id).filter((x): x is string => !!x))];
+  const [cl, jo, as, runs, logs, deploys] = await Promise.all([
+    sb.from('clients').select('id, slug, name').limit(1000),
+    jobIds.length
+      ? sb.from('content_jobs').select('id, client_id, type, title, job_id_motor').in('id', jobIds)
+      : Promise.resolve({ data: [], error: null }),
+    jobIds.length
+      ? sb.from('content_assets').select('job_id, kind, url').in('kind', ['cover_9_16', 'slide']).in('job_id', jobIds).order('created_at', { ascending: true }).limit(5000)
+      : Promise.resolve({ data: [], error: null }),
     sb.from('cron_runs').select('*').order('started_at', { ascending: false }).limit(50),
     sb.from('cron_log_events').select('*').order('received_at', { ascending: false }).limit(100),
     sb.from('deploy_events').select('*').order('received_at', { ascending: false }).limit(30),

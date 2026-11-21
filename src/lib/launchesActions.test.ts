@@ -19,7 +19,10 @@ test('canRetry: error or stuck, never published/cancelled', () => {
   assert.equal(canRetry('published'), false);
   assert.equal(canRetry('cancelled'), false);
   assert.equal(canRetry('queued'), false);
-  assert.equal(canRetry('publishing', true), true);
+  assert.equal(canRetry('queued', true), true);
+  assert.equal(canRetry('containerizing', true), true);
+  assert.equal(canRetry('publishing', true), false);
+  assert.equal(canRetry('ready', true), false);
   assert.equal(canRetry('published', true), false);
 });
 test('actionError', () => {
@@ -28,7 +31,8 @@ test('actionError', () => {
   assert.equal(actionError('cancel', 'queued'), null);
   assert.equal(actionError('retry', 'error'), null);
   assert.ok(actionError('retry', 'published'));
-  assert.equal(actionError('retry', 'publishing', true), null);
+  assert.ok(actionError('retry', 'publishing', true));
+  assert.equal(actionError('retry', 'queued', true), null);
   assert.ok(actionError('reschedule', 'containerizing'));
   assert.ok(actionError('force', 'error'));
 });

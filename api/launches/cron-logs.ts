@@ -23,12 +23,16 @@ export default async function handler(req, res) {
 
   const qs = VERCEL_TEAM_ID ? `?teamId=${encodeURIComponent(VERCEL_TEAM_ID)}` : '';
   const url = `https://api.vercel.com/v1/projects/${encodeURIComponent(VERCEL_PROJECT_ID)}/deployments/${encodeURIComponent(deploymentId)}/runtime-logs${qs}`;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 8000);
   try {
-    const r = await fetch(url, { headers: { Authorization: `Bearer ${VERCEL_TOKEN}` } });
+    const r = await fetch(url, { headers: { Authorization: `Bearer ${VERCEL_TOKEN}` }, signal: ctrl.signal });
     const text = await r.text();
     if (!r.ok) return res.status(502).json({ error: `Vercel respondió ${r.status}`, detail: text.slice(0, 500) });
     return res.status(200).json({ ok: true, deploymentId, logs: text });
   } catch (e) {
-    return res.status(502).json({ error: e.message });
+    return res.status(502).json({ error: e.name === 'AbortError' ? 'Timeout leyendo logs de Vercel' : e.message });
+  } finally {
+    clearTimeout(timer);
   }
 }

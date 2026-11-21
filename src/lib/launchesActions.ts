@@ -12,9 +12,9 @@ const ALLOWED: Record<'cancel' | 'reschedule' | 'force', readonly string[]> = {
 export const canCancel = (status: string): boolean => ALLOWED.cancel.includes(status);
 export const canReschedule = (status: string): boolean => ALLOWED.reschedule.includes(status);
 export const canForce = (status: string): boolean => ALLOWED.force.includes(status);
-// Reintentar: fila en error, o trabada (el caller pasa `stuck`). Nunca published/cancelled.
+// Reintentar: fila en error, o trabada (el caller pasa `stuck`). Solo queued/containerizing trabadas; nunca publishing/ready/published/cancelled.
 export const canRetry = (status: string, stuck = false): boolean =>
-  status === 'error' || (stuck && status !== 'published' && status !== 'cancelled');
+  status === 'error' || (stuck && (status === 'queued' || status === 'containerizing'));
 
 export function actionError(action: LaunchAction, status: string, stuck = false): string | null {
   const ok = action === 'retry' ? canRetry(status, stuck) : ALLOWED[action].includes(status);

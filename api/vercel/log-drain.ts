@@ -10,6 +10,13 @@ export const config = { api: { bodyParser: false } };
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
+  // Handshake de creación/verificación del drain: eco de x-vercel-verify, sin firma.
+  const verify = req.headers?.['x-vercel-verify'];
+  if (verify) {
+    res.setHeader('x-vercel-verify', String(verify));
+    return res.status(200).end();
+  }
+
   const secret = process.env.VERCEL_LOG_DRAIN_SECRET;
   if (!secret) return res.status(500).json({ error: 'VERCEL_LOG_DRAIN_SECRET no configurado' });
 

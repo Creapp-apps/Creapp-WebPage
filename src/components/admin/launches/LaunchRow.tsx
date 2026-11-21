@@ -85,7 +85,7 @@ export const LaunchRow: React.FC<Props> = ({ piece, readOnly, onChanged }) => {
           )}
           {!readOnly && canForce(piece.status) && (
             <button type="button" disabled={busy} className={btn}
-              onClick={() => run('force', () => callForce({ id: piece.id }), '¿Forzar la publicación ahora? Se publica de verdad.')}>Forzar</button>
+              onClick={() => run('force', () => callForce({ id: piece.id }), '¿Forzar? Avanza la pieza hasta donde su horario lo permite (no publica antes de hora). Puede publicar de verdad.')}>Forzar</button>
           )}
           {!readOnly && canReschedule(piece.status) && resched === null && (
             <button type="button" disabled={busy} className={btn} onClick={() => setResched(toLocalInput(piece.scheduledAt))}>Reprogramar</button>
