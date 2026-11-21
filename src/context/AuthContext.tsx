@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabaseClient';
+import { isDefaultAdminEmail } from '../lib/adminEmails';
 
 export type UserRole = 'admin' | 'vendedor' | 'client';
 
@@ -33,19 +34,6 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-// Helper para determinar si un correo es considerado master admin por defecto
-const isDefaultAdminEmail = (email?: string | null): boolean => {
-  if (!email) return false;
-  const lower = email.toLowerCase().trim();
-  return (
-    lower === 'creapp.ar@gmail.com' ||
-    lower === 'creapp@creapp.com' ||
-    lower === 'admin@creapp.com.ar' ||
-    lower === 'admin@creapp.com' ||
-    lower.startsWith('admin@')
-  );
-};
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
