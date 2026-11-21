@@ -114,10 +114,16 @@ export async function getMediaPermalink(params: {
 }): Promise<string | null> {
   const { mediaId, accessToken } = params;
   const url = `${GRAPH_API_BASE}/${mediaId}?fields=permalink&access_token=${encodeURIComponent(accessToken)}`;
-  const res = await fetch(url);
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data?.error?.message || `Meta Graph API error (status ${res.status})`);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 5000);
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data?.error?.message || `Meta Graph API error (status ${res.status})`);
+    }
+    return data.permalink ?? null;
+  } finally {
+    clearTimeout(timer);
   }
-  return data.permalink ?? null;
 }

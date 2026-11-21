@@ -53,6 +53,20 @@ export default async function handler(req, res) {
     console.error('[publish-queue] heartbeat start fallo:', err.message);
   }
 
+  // Cierra la fila de heartbeat (nunca rompe el cron si falla).
+  async function finishRun(end) {
+    if (!runId) return;
+    try {
+      const { error: endErr } = await supabase
+        .from('cron_runs')
+        .update({ finished_at: new Date().toISOString(), ...end })
+        .eq('id', runId);
+      if (endErr) console.error('[publish-queue] heartbeat end fallo:', endErr.message);
+    } catch (err) {
+      console.error('[publish-queue] heartbeat end fallo:', err.message);
+    }
+  }
+
   const now = new Date();
   const windowEnd = new Date(now.getTime() + 20 * 60 * 60 * 1000);
 
@@ -63,6 +77,7 @@ export default async function handler(req, res) {
     .lte('scheduled_at', windowEnd.toISOString());
 
   if (queryError) {
+    await finishRun({ outcome: 'error', processed_count: 0, published_count: 0, error_count: 1, error_text: queryError.message });
     return res.status(500).json({ error: 'Failed to query scheduled_posts', details: queryError.message });
   }
 
@@ -209,14 +224,20 @@ export default async function handler(req, res) {
           accessToken,
           containerId: row.container_id,
         });
-        // Permalink best-effort: nunca falla la publicación.
-        let permalink = null;
-        try {
-          permalink = await getMediaPermalink({ mediaId, accessToken });
-        } catch (permErr) {
-          console.error(`[publish-queue] no se pudo traer permalink de scheduled_posts.id=${row.id}:`, permErr.message);
+        // Transición crítica sola: si falla, el permalink no puede bloquearla.
+        const updateError = await updateRow(row.id, { status: 'published', published_media_id: mediaId });
+        // Permalink best-effort, aparte: nunca afecta el estado published.
+        if (!updateError) {
+          try {
+            const permalink = await getMediaPermalink({ mediaId, accessToken });
+            if (permalink) {
+              const { error: permWriteErr } = await supabase.from('scheduled_posts').update({ permalink }).eq('id', row.id);
+              if (permWriteErr) console.error(`[publish-queue] fallo escribiendo permalink de scheduled_posts.id=${row.id}:`, permWriteErr.message);
+            }
+          } catch (permErr) {
+            console.error(`[publish-queue] no se pudo traer permalink de scheduled_posts.id=${row.id}:`, permErr.message);
+          }
         }
-        const updateError = await updateRow(row.id, { status: 'published', published_media_id: mediaId, permalink });
         results.push({ id: row.id, status: 'published', published_media_id: mediaId, update_error: updateError?.message ?? null });
       } catch (err) {
         const updateError = await updateRow(row.id, { status: 'error', error_message: err.message });
@@ -225,19 +246,10 @@ export default async function handler(req, res) {
     }
   } else {
     console.error('[publish-queue] fallo consultando filas ready:', readyQueryError.message);
+    results.push({ id: 'phase3-query', status: 'error', error: readyQueryError.message });
   }
 
-  if (runId) {
-    try {
-      const { error: endErr } = await supabase
-        .from('cron_runs')
-        .update({ finished_at: new Date().toISOString(), ...buildRunEnd(results) })
-        .eq('id', runId);
-      if (endErr) console.error('[publish-queue] heartbeat end fallo:', endErr.message);
-    } catch (err) {
-      console.error('[publish-queue] heartbeat end fallo:', err.message);
-    }
-  }
+  await finishRun(buildRunEnd(results));
 
   return res.status(200).json({ processed: results.length, results });
 }
