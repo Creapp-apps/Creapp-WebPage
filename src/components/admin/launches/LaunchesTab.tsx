@@ -3,7 +3,7 @@ import { Loader2, Rocket } from 'lucide-react';
 import { getLaunchesOverview, subscribeLaunches } from '@/lib/launchesService';
 import type { LaunchesOverview } from '@/lib/launchesTypes';
 import { HealthBanner } from './HealthBanner';
-import { LaunchRow } from './LaunchRow';
+import { LaunchRow, STATUS_LABEL } from './LaunchRow';
 
 export const LaunchesTab: React.FC<{ readOnly?: boolean }> = ({ readOnly = false }) => {
   const [overview, setOverview] = useState<LaunchesOverview | null>(null);
@@ -68,6 +68,7 @@ export const LaunchesTab: React.FC<{ readOnly?: boolean }> = ({ readOnly = false
       )}
       {overview && (
         <>
+          {error && <p className="text-xs text-amber-400">No se pudo actualizar; mostrando datos anteriores.</p>}
           <HealthBanner overview={overview} readOnly={readOnly} onChanged={load} />
           <div className="flex flex-wrap items-center gap-3">
             <select value={client} onChange={(e) => setClient(e.target.value)} className={sel} aria-label="Cliente">
@@ -76,7 +77,7 @@ export const LaunchesTab: React.FC<{ readOnly?: boolean }> = ({ readOnly = false
             </select>
             <select value={status} onChange={(e) => setStatus(e.target.value)} className={sel} aria-label="Estado">
               <option value="all">Todos los estados</option>
-              {statuses.map((s) => <option key={s} value={s}>{s}</option>)}
+              {statuses.map((s) => <option key={s} value={s}>{STATUS_LABEL[s] ?? s}</option>)}
             </select>
           </div>
           {shown.length === 0 ? (

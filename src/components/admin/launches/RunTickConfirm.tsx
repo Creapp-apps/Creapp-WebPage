@@ -5,12 +5,13 @@ import type { LaunchPiece } from '@/lib/launchesTypes';
 interface Props {
   pieces: LaunchPiece[];
   busy: boolean;
+  error?: string | null;
   onConfirm: () => void;
   onCancel: () => void;
 }
 
 /** Piezas que el tick va a tomar: en cola / preparando / listas. */
-export const RunTickConfirm: React.FC<Props> = ({ pieces, busy, onConfirm, onCancel }) => {
+export const RunTickConfirm: React.FC<Props> = ({ pieces, busy, error, onConfirm, onCancel }) => {
   const due = pieces.filter((p) => ['queued', 'containerizing', 'ready'].includes(p.status));
   const clients = Array.from(new Set(due.map((p) => p.clientName)));
   return (
@@ -29,6 +30,7 @@ export const RunTickConfirm: React.FC<Props> = ({ pieces, busy, onConfirm, onCan
             ))}
           </ul>
         )}
+        {error && <p className="text-xs text-rose-400">{error}</p>}
         <div className="flex justify-end gap-2">
           <button type="button" onClick={onCancel} disabled={busy}
             className="px-3 py-2 rounded-xl text-xs font-semibold border border-white/10 text-zinc-300 hover:bg-white/5 disabled:opacity-50">

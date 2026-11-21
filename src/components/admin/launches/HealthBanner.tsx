@@ -71,10 +71,12 @@ export const HealthBanner: React.FC<Props> = ({ overview, readOnly, onChanged })
           <span className={`text-sm font-bold ${ok ? 'text-emerald-300' : 'text-rose-300'}`}>{label}</span>
         </div>
         <div className="flex items-center gap-2">
+          {!readOnly && (
           <button type="button" onClick={showLogs} disabled={logsBusy}
-            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border border-white/10 text-zinc-300 hover:bg-white/5 disabled:opacity-50">
-            {logsBusy ? <Loader2 size={12} className="animate-spin" /> : <ScrollText size={12} />} Ver logs del tick
-          </button>
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border border-white/10 text-zinc-300 hover:bg-white/5 disabled:opacity-50">
+              {logsBusy ? <Loader2 size={12} className="animate-spin" /> : <ScrollText size={12} />} Ver logs del tick
+            </button>
+          )}
           {!readOnly && (
             <button type="button" onClick={() => setConfirm(true)}
               className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-500/25">
@@ -92,11 +94,11 @@ export const HealthBanner: React.FC<Props> = ({ overview, readOnly, onChanged })
           {infraErrors.map((l) => <li key={l.id} className="truncate">• {l.message ?? 'error sin mensaje'}</li>)}
         </ul>
       )}
-      {msg && <p className={`text-xs ${msg.ok ? 'text-emerald-400' : 'text-rose-400'}`}>{msg.text}</p>}
+      {msg && (msg.ok || !confirm) && <p className={`text-xs ${msg.ok ? 'text-emerald-400' : 'text-rose-400'}`}>{msg.text}</p>}
       {logs && (
         <pre className="max-h-64 overflow-auto rounded-xl bg-black/40 border border-white/5 p-3 text-[11px] text-zinc-300 whitespace-pre-wrap">{logs}</pre>
       )}
-      {confirm && <RunTickConfirm pieces={overview.pieces} busy={busy} onConfirm={runTick} onCancel={() => setConfirm(false)} />}
+      {confirm && <RunTickConfirm pieces={overview.pieces} busy={busy} error={msg && !msg.ok ? msg.text : null} onConfirm={runTick} onCancel={() => setConfirm(false)} />}
     </div>
   );
 };

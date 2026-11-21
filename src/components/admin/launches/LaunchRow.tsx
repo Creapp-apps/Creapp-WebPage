@@ -4,7 +4,7 @@ import { actionError, canCancel, canForce, canReschedule, canRetry, type LaunchA
 import { callCancel, callForce, callReschedule, callRetry } from '@/lib/launchesService';
 import type { LaunchPiece } from '@/lib/launchesTypes';
 
-const STATUS_LABEL: Record<string, string> = {
+export const STATUS_LABEL: Record<string, string> = {
   queued: 'Programada', containerizing: 'Preparando', ready: 'Lista', publishing: 'Publicando',
   published: 'Publicada', error: 'Error', cancelled: 'Cancelada',
 };
@@ -36,13 +36,13 @@ export const LaunchRow: React.FC<Props> = ({ piece, readOnly, onChanged }) => {
   const [err, setErr] = useState<string | null>(null);
   const [resched, setResched] = useState<string | null>(null);
 
-  const run = async (action: LaunchAction, fn: () => Promise<unknown>, confirmText?: string) => {
-    if (busy) return;
+  const run = async (action: LaunchAction, fn: () => Promise<unknown>, confirmText?: string): Promise<boolean> => {
+    if (busy) return false;
     const guard = actionError(action, piece.status, piece.stuck);
-    if (guard) { setErr(guard); return; }
-    if (confirmText && !window.confirm(confirmText)) return;
+    if (guard) { setErr(guard); return false; }
+    if (confirmText && !window.confirm(confirmText)) return false;
     setBusy(true); setErr(null);
-    try { await fn(); onChanged(); } catch (e) { setErr(errMsg(e)); } finally { setBusy(false); }
+    try { await fn(); onChanged(); return true; } catch (e) { setErr(errMsg(e)); return false; } finally { setBusy(false); }
   };
 
   const btn = 'inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold border border-white/10 text-zinc-300 hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed';
@@ -104,8 +104,7 @@ export const LaunchRow: React.FC<Props> = ({ piece, readOnly, onChanged }) => {
               onClick={async () => {
                 const d = new Date(resched);
                 if (Number.isNaN(d.getTime())) { setErr('Fecha inválida.'); return; }
-                await run('reschedule', () => callReschedule({ id: piece.id, scheduled_at: d.toISOString() }));
-                setResched(null);
+                if (await run('reschedule', () => callReschedule({ id: piece.id, scheduled_at: d.toISOString() }))) setResched(null);
               }}>Guardar</button>
             <button type="button" className={btn} onClick={() => setResched(null)}>Cerrar</button>
           </div>
