@@ -14,6 +14,7 @@ const subscribe = (channel) => (cb) => {
 contextBridge.exposeInMainWorld('creappDesktop', {
   onToast: subscribe('desktop:toast'),
   onConnectivity: subscribe('desktop:connectivity'),
+  onMotorStatus: subscribe('desktop:motor-status'),
   retry: (id) => ipcRenderer.send('desktop:retry', id),
   gitPush: () => ipcRenderer.invoke('desktop:git-push'),
   gitPull: () => ipcRenderer.invoke('desktop:git-pull'),

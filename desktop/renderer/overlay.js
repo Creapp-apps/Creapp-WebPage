@@ -18,10 +18,26 @@
   txt.textContent = 'Conectando…';
   dot.append(led, txt);
 
+  // Chip de estado del motor: qué pieza procesa en vivo. Flota arriba de la píldora
+  // de conectividad, no bloquea clics (pointer-events:none), oculto cuando no hay nada.
+  const motorChip = document.createElement('div');
+  motorChip.title = 'Estado del motor';
+  motorChip.style.cssText = 'position:absolute;right:12px;bottom:48px;display:none;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:#070709;border:1px solid #A855F7;color:#fff;font-size:12px;pointer-events:none';
+  const motorLed = document.createElement('span');
+  motorLed.style.cssText = 'width:8px;height:8px;border-radius:50%;background:#A855F7;box-shadow:0 0 8px #A855F7';
+  const motorTxt = document.createElement('span');
+  motorChip.append(motorLed, motorTxt);
+
   const stack = document.createElement('div');
   stack.style.cssText = 'position:absolute;left:50%;top:16px;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;align-items:center';
-  root.append(stack, dot);
+  root.append(stack, dot, motorChip);
   document.body.appendChild(root);
+
+  api.onMotorStatus((s) => {
+    if (!s || !s.active) { motorChip.style.display = 'none'; return; }
+    motorTxt.textContent = s.chipText;
+    motorChip.style.display = 'flex';
+  });
 
   api.onConnectivity((s) => {
     if (!s || s.online == null) {
