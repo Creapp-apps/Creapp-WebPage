@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, shell, Notification } from 'electron';
 import http from 'node:http';
 import fsp from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
@@ -14,6 +14,7 @@ import { runWithRetry } from './src/resilience.mjs';
 import { toToastPayload } from './src/ipcPayload.mjs';
 import { createRealProbes } from './src/probes.mjs';
 import { gitPush, gitPull, observeMotorUpload } from './src/heavyOps.mjs';
+import { startPreflightWatch } from './src/preflightWatch.mjs';
 import fs from 'node:fs';
 
 let mainWindow = null;
@@ -197,6 +198,23 @@ async function launchMotor() {
     // /admin/login; con sesión activa, entra al panel. Nunca la landing pública.
     if (mainWindow && !mainWindow.isDestroyed()) mainWindow.loadURL(uiServer.url + 'admin');
     startConnectivity();
+    // Avisa (notificación nativa + badge del dock) cuando una campaña queda lista
+    // para revisar en el pre-flight, así no se autoriza ninguna sin revisarla.
+    startPreflightWatch({
+      motorPort: motor.port,
+      intervalMs: 20000,
+      notify: (c) => {
+        try {
+          new Notification({
+            title: 'Nuevo preflight disponible',
+            body: `${c.business_name || c.client_id} · ${c.campaign_id}`,
+          }).show();
+        } catch { /* notificación best-effort */ }
+      },
+      setBadge: (n) => {
+        try { app.dock?.setBadge(n ? String(n) : ''); } catch { /* macOS only */ }
+      },
+    });
   } catch (err) {
     console.error(`[creapp] motor no arrancó: ${err.message}${err.code != null ? ` (code ${err.code})` : ''}`);
   } finally {
