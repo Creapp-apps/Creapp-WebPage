@@ -14,7 +14,7 @@ import { runWithRetry } from './src/resilience.mjs';
 import { toToastPayload } from './src/ipcPayload.mjs';
 import { createRealProbes } from './src/probes.mjs';
 import { gitPush, gitPull, observeMotorUpload } from './src/heavyOps.mjs';
-import { startPreflightWatch } from './src/preflightWatch.mjs';
+import { startPreflightWatch, preflightDeepLink } from './src/preflightWatch.mjs';
 import fs from 'node:fs';
 
 let mainWindow = null;
@@ -205,10 +205,22 @@ async function launchMotor() {
       intervalMs: 20000,
       notify: (c) => {
         try {
-          new Notification({
+          const n = new Notification({
             title: 'Nuevo preflight disponible',
             body: `${c.business_name || c.client_id} · ${c.campaign_id}`,
-          }).show();
+          });
+          // Click del banner nativo → traer la ventana al frente y abrir el deep-link
+          // del pre-flight de esa campaña (full reload del SPA a la ruta).
+          n.on('click', () => {
+            try {
+              if (mainWindow && !mainWindow.isDestroyed()) {
+                mainWindow.show();
+                mainWindow.focus();
+                if (uiServer) mainWindow.loadURL(preflightDeepLink(uiServer.url, c.campaign_id));
+              }
+            } catch { /* click best-effort */ }
+          });
+          n.show();
         } catch { /* notificación best-effort */ }
       },
       setBadge: (n) => {

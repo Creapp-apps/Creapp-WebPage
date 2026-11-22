@@ -5,6 +5,12 @@ import http from 'node:http';
 // y los efectos (notificar, badge) para poder testearlo y para mapearlos en el
 // main a `Notification` nativa de Electron + `app.dock.setBadge`.
 
+// Ruta del deep-link al tab Creador de Contenidos con el pre-flight de una campaña.
+// `base` es la url del uiServer (ej. http://127.0.0.1:4599/).
+export function preflightDeepLink(base, campaignId) {
+  return `${base}admin?tab=content_creator&preflight=${encodeURIComponent(campaignId)}`;
+}
+
 // Dado el set de ids ya notificados y la lista actual de campañas pendientes,
 // devuelve: a cuáles notificar (las nuevas), el próximo set de ids (las presentes
 // ahora, así una que desaparece y vuelve re-notifica) y el badge (cantidad pendiente).

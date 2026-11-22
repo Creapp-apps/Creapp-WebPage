@@ -1,6 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { diffPending } from './preflightWatch.mjs';
+import { diffPending, preflightDeepLink } from './preflightWatch.mjs';
+
+test('preflightDeepLink arma la ruta del tab Creador de Contenidos con ?preflight', () => {
+  assert.equal(
+    preflightDeepLink('http://127.0.0.1:4599/', 'stacked_noviembre_2026'),
+    'http://127.0.0.1:4599/admin?tab=content_creator&preflight=stacked_noviembre_2026',
+  );
+});
 
 test('diffPending: campañas nuevas se notifican y se cuentan', () => {
   const r = diffPending(new Set(), [{ campaign_id: 'c1' }, { campaign_id: 'c2' }]);

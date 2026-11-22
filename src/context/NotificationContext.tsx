@@ -165,6 +165,31 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   useEffect(() => {
     if (!userId) return;
     seenDbIds.current = new Set();
+
+    // Fetch inicial: el realtime sólo captura INSERTs nuevos; sin esto, las filas
+    // insertadas antes de abrir la app (ej. un pre-flight sometido con la app cerrada)
+    // nunca aparecerían en la campanita. RLS filtra por rol/usuario.
+    (async () => {
+      try {
+        const { data } = await getSupabase()
+          .from('app_notifications')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(50);
+        if (data && data.length) {
+          const items = (data as DbNotificationRow[]).map((row) => mapDbNotification(row));
+          items.forEach((it) => seenDbIds.current.add(it.id));
+          setNotifications((prev) => {
+            const have = new Set(prev.map((n) => n.id));
+            const fresh = items.filter((it) => !have.has(it.id));
+            return [...fresh, ...prev].slice(0, 50);
+          });
+        }
+      } catch (e) {
+        console.warn('[Notifications] fetch inicial de app_notifications falló:', e);
+      }
+    })();
+
     let channel: ReturnType<ReturnType<typeof getSupabase>['channel']> | null = null;
     try {
       const sb = getSupabase();
