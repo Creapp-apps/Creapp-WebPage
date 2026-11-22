@@ -31,7 +31,14 @@ export default function EmbeddedTerminal() {
       fontSize: 13,
       fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
       cursorBlink: true,
-      theme: { background: '#0E0E14', foreground: '#ECECEF', cursor: '#A855F7' },
+      // Estética CreAPP: negro #070709 + violeta #A855F7 (tokens de @theme en src/index.css).
+      theme: {
+        background: '#070709',
+        foreground: '#ECECEF',
+        cursor: '#A855F7',
+        cursorAccent: '#070709',
+        selectionBackground: 'rgba(168,85,247,0.30)',
+      },
     });
     const fit = new FitAddon();
     term.loadAddon(fit);
@@ -63,5 +70,10 @@ export default function EmbeddedTerminal() {
     };
   }, []);
 
-  return <div ref={containerRef} style={{ width: '100%', height: '100%' }} />;
+  return (
+    <div
+      ref={containerRef}
+      style={{ width: '100%', height: '100%', padding: '8px 10px', background: '#070709', boxSizing: 'border-box' }}
+    />
+  );
 }
