@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useNotifications, NotificationItem } from '@/context/NotificationContext';
 import { useNavigate } from 'react-router-dom';
+import { preflightIdFromUrl } from '@/lib/adminDeepLink';
 
 export const NotificationBell: React.FC = () => {
   const navigate = useNavigate();
@@ -62,6 +63,12 @@ export const NotificationBell: React.FC = () => {
         window.open(item.url, '_blank', 'noopener,noreferrer');
       } else {
         navigate(item.url);
+        // Si es un deep-link de preflight, avisar al Studio embebido para que reabra
+        // el modal aunque navigate() sea no-op (misma URL ya activa → no recarga el iframe).
+        const pf = preflightIdFromUrl(item.url);
+        if (pf) {
+          window.dispatchEvent(new CustomEvent('creapp:open-preflight', { detail: { campaignId: pf } }));
+        }
       }
     }
   };

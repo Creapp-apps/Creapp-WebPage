@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Settings, X } from 'lucide-react';
 import { PresenceSemaphore } from './PresenceSemaphore';
 import { ConnectMotorPrompt } from './ConnectMotorPrompt';
@@ -135,6 +135,23 @@ function TerminalLauncher() {
 function StudioEmbed({ connected, fill = false, preflight }: { connected: boolean; fill?: boolean; preflight?: string }) {
   const esHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
   const src = studioSrc(STUDIO_URL, preflight);
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+
+  // Reabrir el preflight a demanda: al reclickear la notificación, navigate() a la
+  // misma URL es no-op y el iframe no recarga, así que el deep-link de boot no vuelve
+  // a correr. En su lugar, postMesseamos al Studio ya cargado para que reabra el modal.
+  useEffect(() => {
+    const onOpen = (e: Event) => {
+      const campaignId = (e as CustomEvent<{ campaignId?: string }>).detail?.campaignId;
+      if (!campaignId) return;
+      iframeRef.current?.contentWindow?.postMessage(
+        { type: 'creapp:open-preflight', campaignId },
+        new URL(STUDIO_URL).origin,
+      );
+    };
+    window.addEventListener('creapp:open-preflight', onOpen as EventListener);
+    return () => window.removeEventListener('creapp:open-preflight', onOpen as EventListener);
+  }, []);
 
   if (!connected) {
     return (
@@ -169,6 +186,7 @@ function StudioEmbed({ connected, fill = false, preflight }: { connected: boolea
   if (fill) {
     return (
       <iframe
+        ref={iframeRef}
         src={src}
         title="Studio del motor"
         className="w-full h-full"
@@ -180,6 +198,7 @@ function StudioEmbed({ connected, fill = false, preflight }: { connected: boolea
   return (
     <div className="rounded-2xl border border-white/10 bg-[#0e0e14] overflow-hidden">
       <iframe
+        ref={iframeRef}
         src={src}
         title="Studio del motor"
         className="w-full"
