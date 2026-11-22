@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { motorStatusFrom, startJobsActiveWatch, applyMotorStatus } from './jobsActiveWatch.mjs';
+import { motorStatusFrom, startJobsActiveWatch, applyMotorStatus, IDLE } from './jobsActiveWatch.mjs';
 
 const flush = () => new Promise((r) => setImmediate(r));
 
@@ -89,6 +89,34 @@ test('startJobsActiveWatch: stop() limpia el interval', () => {
   });
   stop();
   assert.equal(cleared, 42);
+});
+
+test('IDLE exportado == estado idle del reducer', () => {
+  assert.deepEqual(motorStatusFrom([]), IDLE);
+  assert.equal(IDLE.windowTitle, 'CreAPP Suite');
+  assert.equal(IDLE.active, false);
+});
+
+test('startJobsActiveWatch: no apila ticks mientras uno está en vuelo', async () => {
+  let calls = 0;
+  let resolveFetch = null;
+  let intervalFn = null;
+  const fakeTimers = { setInterval: (fn) => { intervalFn = fn; return 7; }, clearInterval: () => {} };
+  startJobsActiveWatch({
+    fetchJson: () => { calls++; return new Promise((r) => { resolveFetch = r; }); },
+    timers: fakeTimers,
+    onStatus: () => {},
+  });
+  await flush();                 // tick inmediato: fetch #1 en vuelo
+  assert.equal(calls, 1);
+  intervalFn();                  // otro tick mientras #1 sigue en vuelo
+  await flush();
+  assert.equal(calls, 1);        // no se re-llamó: hay uno en vuelo
+  resolveFetch([]);              // #1 resuelve
+  await flush();
+  intervalFn();                  // ahora sí procede el próximo
+  await flush();
+  assert.equal(calls, 2);
 });
 
 test('applyMotorStatus: activo => send + setTitle + setTray con el label', () => {

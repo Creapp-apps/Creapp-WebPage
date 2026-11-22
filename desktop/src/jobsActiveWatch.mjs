@@ -5,7 +5,7 @@ import http from 'node:http';
 // empuja el estado por `onStatus` para que el main lo mapee a overlay (chip),
 // título de ventana y Tray. Espeja el patrón de `preflightWatch.mjs`.
 
-const IDLE = Object.freeze({
+export const IDLE = Object.freeze({
   active: false,
   count: 0,
   chipText: '',
@@ -66,13 +66,18 @@ export function startJobsActiveWatch({
   timers = globalThis,
 } = {}) {
   const doFetch = fetchJson || defaultFetchJson;
+  let inFlight = false; // evita apilar ticks a 1.5s si una respuesta tarda
 
   async function tick() {
+    if (inFlight) return; // hay un fetch sin resolver: no lanzamos otro
+    inFlight = true;
     let jobs;
     try {
       jobs = await doFetch(`http://127.0.0.1:${motorPort}/api/jobs/active`);
     } catch {
       jobs = []; // motor caído / error => idle, se reintenta al próximo tick
+    } finally {
+      inFlight = false;
     }
     const status = motorStatusFrom(jobs);
     try { onStatus?.(status); } catch { /* un consumidor que lanza no corta el poll */ }
@@ -85,7 +90,7 @@ export function startJobsActiveWatch({
 
 function defaultFetchJson(url) {
   return new Promise((resolve, reject) => {
-    http.get(url, (res) => {
+    const req = http.get(url, (res) => {
       if (res.statusCode < 200 || res.statusCode >= 300) {
         res.resume();
         return reject(new Error('status ' + res.statusCode));
@@ -95,6 +100,9 @@ function defaultFetchJson(url) {
       res.on('end', () => {
         try { resolve(JSON.parse(body)); } catch (e) { reject(e); }
       });
-    }).on('error', reject);
+    });
+    req.on('error', reject);
+    // Endpoint colgado: cortar a 1s para no apilar fetches lentos a 1.5s de cadencia.
+    req.setTimeout(1000, () => req.destroy(new Error('timeout')));
   });
 }

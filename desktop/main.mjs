@@ -15,7 +15,7 @@ import { toToastPayload } from './src/ipcPayload.mjs';
 import { createRealProbes } from './src/probes.mjs';
 import { gitPush, gitPull, observeMotorUpload } from './src/heavyOps.mjs';
 import { startPreflightWatch, preflightDeepLink } from './src/preflightWatch.mjs';
-import { startJobsActiveWatch, applyMotorStatus } from './src/jobsActiveWatch.mjs';
+import { startJobsActiveWatch, applyMotorStatus, IDLE } from './src/jobsActiveWatch.mjs';
 import { createPtyTerminal } from './src/ptyTerminal.mjs';
 import fs from 'node:fs';
 
@@ -61,7 +61,7 @@ function createWindow() {
       overlayReady = true;
       // Replay: estado de conectividad actual (null = sin monitoreo) + toasts pendientes.
       win.webContents.send('desktop:connectivity', lastConnectivity ?? { online: null });
-      win.webContents.send('desktop:motor-status', lastMotorStatus ?? { active: false, count: 0, chipText: '', windowTitle: 'CreAPP Suite', trayTitle: '' });
+      win.webContents.send('desktop:motor-status', lastMotorStatus ?? IDLE);
       for (const t of pendingToasts.splice(0)) win.webContents.send('desktop:toast', t);
     }).catch((e) => console.error('[creapp] overlay:', e.message));
   });
