@@ -15,6 +15,7 @@ import { toToastPayload } from './src/ipcPayload.mjs';
 import { createRealProbes } from './src/probes.mjs';
 import { gitPush, gitPull, observeMotorUpload } from './src/heavyOps.mjs';
 import { startPreflightWatch, preflightDeepLink } from './src/preflightWatch.mjs';
+import { createPtyTerminal } from './src/ptyTerminal.mjs';
 import fs from 'node:fs';
 
 let mainWindow = null;
@@ -145,6 +146,33 @@ ipcMain.on('desktop:retry', (_e, id) => {
 });
 ipcMain.on('desktop:dismiss', (_e, id) => { pendingRetries.delete(id); });
 
+// ── Terminal embebido (PTY en el main, xterm en el renderer) ──────────────
+let ptyTerm = null;
+function sendTerm(channel, payload) {
+  if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send(channel, payload);
+}
+ipcMain.handle('term:start', async (_e, { cols, rows } = {}) => {
+  if (ptyTerm) return { ok: true, already: true };
+  try {
+    const { loadConfig } = await import('./src/config.mjs');
+    ptyTerm = await createPtyTerminal({
+      cwd: loadConfig().motorPath,
+      env: process.env,
+      onData: (d) => sendTerm('term:data', d),
+      onExit: (ex) => { sendTerm('term:exit', ex); ptyTerm = null; },
+    });
+    if (cols && rows) ptyTerm.resize(cols, rows);
+    return { ok: true };
+  } catch (err) {
+    console.error('[creapp] terminal embebido no arrancó:', err?.message ?? err);
+    ptyTerm = null;
+    return { ok: false, error: String(err?.message ?? err) };
+  }
+});
+ipcMain.on('term:write', (_e, data) => { ptyTerm?.write(data); });
+ipcMain.on('term:resize', (_e, { cols, rows } = {}) => { if (cols && rows) ptyTerm?.resize(cols, rows); });
+ipcMain.on('term:dispose', () => { ptyTerm?.dispose(); ptyTerm = null; });
+
 let monitor = null;
 function startConnectivity() {
   if (monitor) return;
@@ -243,6 +271,8 @@ app.on('app:proceed', () => { launchMotor(); });
 let quitting = false;
 app.on('before-quit', (e) => {
   if (quitting) return;
+  // Matar el PTY del terminal embebido siempre (incluso si el motor no corría).
+  if (ptyTerm) { try { ptyTerm.dispose(); } catch { /* ignore */ } ptyTerm = null; }
   const pending = motorStarting;
   if (!motor && !pending) return;
   e.preventDefault();

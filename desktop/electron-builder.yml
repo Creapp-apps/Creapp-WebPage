@@ -9,6 +9,9 @@ files:
   - src/**/*
   - renderer/**/*
   - "!**/*.test.mjs"
+# node-pty es nativo (.node): no puede ejecutarse desde dentro del asar → se desempaqueta.
+asarUnpack:
+  - "**/node_modules/node-pty/**"
 mac:
   target: dir
   identity: null

@@ -21,3 +21,13 @@ contextBridge.exposeInMainWorld('creappDesktop', {
   dismiss: (id) => ipcRenderer.send('desktop:dismiss', id),
   openMotorTerminal: (command) => ipcRenderer.invoke('desktop:open-motor-terminal', command),
 });
+
+// Terminal embebido: el renderer (xterm) habla con el PTY del main.
+contextBridge.exposeInMainWorld('creappTerm', {
+  start: (size) => ipcRenderer.invoke('term:start', size),
+  onData: subscribe('term:data'),
+  onExit: subscribe('term:exit'),
+  write: (data) => ipcRenderer.send('term:write', data),
+  resize: (cols, rows) => ipcRenderer.send('term:resize', { cols, rows }),
+  dispose: () => ipcRenderer.send('term:dispose'),
+});
