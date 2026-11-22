@@ -3,6 +3,7 @@ import { Settings, X } from 'lucide-react';
 import { PresenceSemaphore } from './PresenceSemaphore';
 import { ConnectMotorPrompt } from './ConnectMotorPrompt';
 import { usePresence } from './usePresence';
+import { studioSrc } from '@/lib/adminDeepLink';
 
 const STUDIO_URL = 'http://localhost:8000/';
 
@@ -131,8 +132,9 @@ function TerminalLauncher() {
 // El Studio del motor embebido. Se habilita SOLO con la conexión confirmada (🟢).
 // En desktop/dev local (página http) va en iframe; desde la web https (mixed content)
 // no se puede embeber → botón para abrirlo aparte.
-function StudioEmbed({ connected, fill = false }: { connected: boolean; fill?: boolean }) {
+function StudioEmbed({ connected, fill = false, preflight }: { connected: boolean; fill?: boolean; preflight?: string }) {
   const esHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+  const src = studioSrc(STUDIO_URL, preflight);
 
   if (!connected) {
     return (
@@ -153,7 +155,7 @@ function StudioEmbed({ connected, fill = false }: { connected: boolean; fill?: b
           Desde la web no puedo embeber el Studio local (mixed content). Abrilo en otra pestaña:
         </p>
         <a
-          href={STUDIO_URL}
+          href={src}
           target="_blank"
           rel="noreferrer"
           className="inline-block rounded-lg bg-indigo-600 hover:bg-indigo-500 px-3 py-1.5 text-xs font-medium text-white transition-colors"
@@ -167,7 +169,7 @@ function StudioEmbed({ connected, fill = false }: { connected: boolean; fill?: b
   if (fill) {
     return (
       <iframe
-        src={STUDIO_URL}
+        src={src}
         title="Studio del motor"
         className="w-full h-full"
         style={{ border: 0 }}
@@ -178,7 +180,7 @@ function StudioEmbed({ connected, fill = false }: { connected: boolean; fill?: b
   return (
     <div className="rounded-2xl border border-white/10 bg-[#0e0e14] overflow-hidden">
       <iframe
-        src={STUDIO_URL}
+        src={src}
         title="Studio del motor"
         className="w-full"
         style={{ height: '80vh', border: 0 }}
@@ -201,7 +203,7 @@ function PasosConexion() {
   );
 }
 
-export default function ContentCreatorTab() {
+export default function ContentCreatorTab({ preflight }: { preflight?: string } = {}) {
   const p = usePresence('http://localhost:8000');
   const [pasosAbiertos, setPasosAbiertos] = useState(false);
 
@@ -254,7 +256,7 @@ export default function ContentCreatorTab() {
       </div>
 
       <div className="flex-1 min-h-0 bg-[#0e0e14]">
-        <StudioEmbed connected fill />
+        <StudioEmbed connected fill preflight={preflight} />
       </div>
     </div>
   );

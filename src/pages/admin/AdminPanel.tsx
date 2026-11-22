@@ -462,7 +462,7 @@ const AdminPanel: React.FC = () => {
       {/* 9. CENTRO DE CONTROL & TELEMETRÍA NOC (SOLO ADMIN) */}
       {activeTab === 'telemetry' && isAdmin && <TelemetryTab />}
 
-      {activeTab === 'content_creator' && <ContentCreatorTab />}
+      {activeTab === 'content_creator' && <ContentCreatorTab preflight={searchParams.get('preflight') || undefined} />}
       {activeTab === 'content_campaigns' && <ContentCampaignsTab />}
 
       {/* Lanzamientos: vendedor en solo lectura, sin acciones */}
