@@ -41,6 +41,8 @@ import { useAuth } from '@/context/AuthContext';
 import TeamManagementModal from './TeamManagementModal';
 import UserProfileModal from './UserProfileModal';
 import { NotificationBell } from './NotificationBell';
+import { Terminal as TerminalIcon } from 'lucide-react';
+import EmbeddedTerminal from '../terminal/EmbeddedTerminal';
 
 export type AdminTab = 
   | 'dashboard'
@@ -87,6 +89,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
   const navigate = useNavigate();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
+  const [terminalOpen, setTerminalOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [teamModalOpen, setTeamModalOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
@@ -1170,6 +1173,28 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
           onClose={() => setTeamModalOpen(false)}
         />
       )}
+
+      {/* Terminal embebido (cajón inferior tipo VS Code) — keep-mounted para no matar el PTY. */}
+      <button
+        onClick={() => setTerminalOpen((v) => !v)}
+        title="Terminal (Claude)"
+        style={{ position: 'fixed', right: 20, bottom: terminalOpen ? 'calc(35vh + 16px)' : 20, zIndex: 60 }}
+        className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#17171F] px-3 py-2 text-xs font-semibold text-zinc-200 shadow-lg transition-colors hover:bg-white/10"
+      >
+        <TerminalIcon size={14} /> Terminal
+      </button>
+      <div
+        style={{ position: 'fixed', left: 0, right: 0, bottom: 0, height: '35vh', zIndex: 55, display: terminalOpen ? 'block' : 'none' }}
+        className="border-t border-white/10 bg-[#0E0E14] shadow-2xl"
+      >
+        <div className="flex items-center justify-between border-b border-white/5 px-3 py-1.5">
+          <span className="text-xs font-semibold text-zinc-400">Terminal · Claude</span>
+          <button onClick={() => setTerminalOpen(false)} className="px-2 text-sm text-zinc-500 hover:text-white">✕</button>
+        </div>
+        <div style={{ height: 'calc(35vh - 32px)' }}>
+          <EmbeddedTerminal />
+        </div>
+      </div>
     </div>
   );
 };
