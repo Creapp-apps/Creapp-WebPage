@@ -44,6 +44,17 @@ export function motorStatusFrom(jobs) {
   };
 }
 
+// Mapea un estado reducido a los efectos del main (overlay chip, título, tray),
+// cada uno best-effort para que un efecto que lanza no corte los demás.
+// `setTray(title, tooltip)`: en idle, título vacío y tooltip "CreAPP Suite".
+export function applyMotorStatus(status, { send, setTitle, setTray } = {}) {
+  try { send?.('desktop:motor-status', status); } catch { /* best-effort */ }
+  try { setTitle?.(status.windowTitle); } catch { /* best-effort */ }
+  try {
+    setTray?.(status.active ? status.trayTitle : '', status.active ? status.trayTitle : 'CreAPP Suite');
+  } catch { /* best-effort */ }
+}
+
 // Arranca el poll a /api/jobs/active. `onStatus(status)` se llama en cada tick
 // (primer tick inmediato). Motor caído / error de red / JSON inválido => se emite
 // estado idle (el chip/título/tray se limpian) y se reintenta. Devuelve stop().

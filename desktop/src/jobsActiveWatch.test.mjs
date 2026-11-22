@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { motorStatusFrom, startJobsActiveWatch } from './jobsActiveWatch.mjs';
+import { motorStatusFrom, startJobsActiveWatch, applyMotorStatus } from './jobsActiveWatch.mjs';
 
 const flush = () => new Promise((r) => setImmediate(r));
 
@@ -89,4 +89,37 @@ test('startJobsActiveWatch: stop() limpia el interval', () => {
   });
   stop();
   assert.equal(cleared, 42);
+});
+
+test('applyMotorStatus: activo => send + setTitle + setTray con el label', () => {
+  const calls = { send: [], title: [], tray: [] };
+  const s = motorStatusFrom([{ display_name: 'C', current_step_label: 'Rendereando…' }]);
+  applyMotorStatus(s, {
+    send: (ch, p) => calls.send.push([ch, p]),
+    setTitle: (t) => calls.title.push(t),
+    setTray: (title, tip) => calls.tray.push([title, tip]),
+  });
+  assert.deepEqual(calls.send[0], ['desktop:motor-status', s]);
+  assert.equal(calls.title[0], s.windowTitle);
+  assert.deepEqual(calls.tray[0], [s.trayTitle, s.trayTitle]);
+});
+
+test('applyMotorStatus: idle => tray vacío y tooltip "CreAPP Suite"', () => {
+  const calls = { tray: [] };
+  applyMotorStatus(motorStatusFrom([]), {
+    send: () => {},
+    setTitle: () => {},
+    setTray: (title, tip) => calls.tray.push([title, tip]),
+  });
+  assert.deepEqual(calls.tray[0], ['', 'CreAPP Suite']);
+});
+
+test('applyMotorStatus: un efecto que lanza no corta los demás (best-effort)', () => {
+  let titled = false;
+  assert.doesNotThrow(() => applyMotorStatus(motorStatusFrom([]), {
+    send: () => { throw new Error('send roto'); },
+    setTitle: () => { titled = true; },
+    setTray: () => {},
+  }));
+  assert.equal(titled, true);
 });

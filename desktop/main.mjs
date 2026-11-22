@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell, Notification } from 'electron';
+import { app, BrowserWindow, ipcMain, shell, Notification, Tray, Menu, nativeImage } from 'electron';
 import http from 'node:http';
 import fsp from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
@@ -15,11 +15,14 @@ import { toToastPayload } from './src/ipcPayload.mjs';
 import { createRealProbes } from './src/probes.mjs';
 import { gitPush, gitPull, observeMotorUpload } from './src/heavyOps.mjs';
 import { startPreflightWatch, preflightDeepLink } from './src/preflightWatch.mjs';
+import { startJobsActiveWatch, applyMotorStatus } from './src/jobsActiveWatch.mjs';
 import { createPtyTerminal } from './src/ptyTerminal.mjs';
 import fs from 'node:fs';
 
 let mainWindow = null;
 let uiServer = null;
+let tray = null;
+let stopJobsWatch = null;
 
 const preloadPath = fileURLToPath(new URL('./preload.mjs', import.meta.url));
 
@@ -58,6 +61,7 @@ function createWindow() {
       overlayReady = true;
       // Replay: estado de conectividad actual (null = sin monitoreo) + toasts pendientes.
       win.webContents.send('desktop:connectivity', lastConnectivity ?? { online: null });
+      win.webContents.send('desktop:motor-status', lastMotorStatus ?? { active: false, count: 0, chipText: '', windowTitle: 'CreAPP Suite', trayTitle: '' });
       for (const t of pendingToasts.splice(0)) win.webContents.send('desktop:toast', t);
     }).catch((e) => console.error('[creapp] overlay:', e.message));
   });
@@ -72,6 +76,7 @@ const pendingRetries = new Map();
 const MAX_PENDING = 50;
 let retrySeq = 0;
 let lastConnectivity = null;
+let lastMotorStatus = null;
 let overlayReady = false;
 const pendingToasts = []; // toasts emitidos antes de que el overlay esté cargado
 const sendToRenderer = (channel, payload) => {
@@ -255,6 +260,19 @@ async function launchMotor() {
         try { app.dock?.setBadge(n ? String(n) : ''); } catch { /* macOS only */ }
       },
     });
+    // Estado en vivo del motor: qué pieza procesa (overlay chip + título + Tray).
+    // NO toca el dock badge (lo usa el preflight watcher de arriba).
+    stopJobsWatch = startJobsActiveWatch({
+      motorPort: motor.port,
+      onStatus: (s) => {
+        lastMotorStatus = s;
+        applyMotorStatus(s, {
+          send: (ch, p) => sendToRenderer(ch, p),
+          setTitle: (t) => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.setTitle(t); },
+          setTray: (title, tip) => { if (tray) { tray.setTitle(title); tray.setToolTip(tip); } },
+        });
+      },
+    });
   } catch (err) {
     console.error(`[creapp] motor no arrancó: ${err.message}${err.code != null ? ` (code ${err.code})` : ''}`);
   } finally {
@@ -273,6 +291,8 @@ app.on('before-quit', (e) => {
   if (quitting) return;
   // Matar el PTY del terminal embebido siempre (incluso si el motor no corría).
   if (ptyTerm) { try { ptyTerm.dispose(); } catch { /* ignore */ } ptyTerm = null; }
+  if (stopJobsWatch) { try { stopJobsWatch(); } catch { /* ignore */ } stopJobsWatch = null; }
+  if (tray) { try { tray.destroy(); } catch { /* ignore */ } tray = null; }
   const pending = motorStarting;
   if (!motor && !pending) return;
   e.preventDefault();
@@ -291,6 +311,16 @@ app.on('before-quit', (e) => {
 
 app.whenReady().then(() => {
   createWindow();
+  // Tray en la barra de menú: refleja el estado del motor (texto en macOS vía setTitle).
+  try {
+    tray = new Tray(nativeImage.createEmpty());
+    tray.setToolTip('CreAPP Suite');
+    tray.setContextMenu(Menu.buildFromTemplate([
+      { label: 'Abrir CreAPP Suite', click: () => { if (mainWindow && !mainWindow.isDestroyed()) { mainWindow.show(); mainWindow.focus(); } } },
+      { type: 'separator' },
+      { label: 'Salir', click: () => app.quit() },
+    ]));
+  } catch { /* tray best-effort (headless/CI) */ }
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
