@@ -43,6 +43,7 @@ export interface ScheduledPostRow {
   status: string; // queued | containerizing | ready | publishing | published | error | cancelled ...
   error_message: string | null;
   updated_at: string;
+  scheduled_at?: string | null; // hora programada: decide si una queued ya es elegible para containerizar
   permalink?: string | null;
   published_media_id?: string | null;
 }

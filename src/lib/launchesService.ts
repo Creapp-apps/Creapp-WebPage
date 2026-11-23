@@ -55,11 +55,12 @@ export async function getLaunchesOverview(): Promise<LaunchesOverview> {
   return { pieces, clients, cronRuns, logEvents, deployEvents, healthErrors, fetchedAt: now.toISOString() };
 }
 
-/** Realtime sobre las 4 tablas. Devuelve cleanup. */
+/** Realtime sobre las tablas que alimentan Lanzamientos. Devuelve cleanup.
+ *  `clients` incluida: un alta de cliente en el motor refresca el dropdown al instante. */
 export function subscribeLaunches(onChange: () => void): () => void {
   const sb = getSupabase();
   let ch = sb.channel('launches');
-  for (const table of ['scheduled_posts', 'cron_runs', 'cron_log_events', 'deploy_events']) {
+  for (const table of ['scheduled_posts', 'cron_runs', 'cron_log_events', 'deploy_events', 'clients']) {
     ch = ch.on('postgres_changes', { event: '*', schema: 'public', table }, () => onChange());
   }
   const channel = ch.subscribe();

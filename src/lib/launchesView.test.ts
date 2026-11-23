@@ -7,7 +7,9 @@ const ago = (min: number) => new Date(now.getTime() - min * 60000).toISOString()
 const run = (min: number, outcome: string | null = 'ok'): any => ({
   id: 'r' + min, cron_name: 'publish-queue', started_at: ago(min), finished_at: outcome ? ago(min) : null, outcome,
 });
-const row = (status: string, min: number): any => ({ id: 'p', status, updated_at: ago(min) });
+// scheduledInH: horas desde `now` hasta scheduled_at (default 1 = dentro de la ventana del cron).
+const inH = (h: number) => new Date(now.getTime() + h * 3600000).toISOString();
+const row = (status: string, min: number, scheduledInH = 1): any => ({ id: 'p', status, updated_at: ago(min), scheduled_at: inH(scheduledInH) });
 
 test('constantes', () => {
   assert.equal(STALE_MIN, 18);
@@ -28,10 +30,18 @@ test('computeCronHealth', () => {
 });
 
 test('isStuck', () => {
-  assert.equal(isStuck(row('queued', 25), true, now), true);
+  assert.equal(isStuck(row('queued', 25), true, now), true); // queued dentro de la ventana y vieja
   assert.equal(isStuck(row('containerizing', 25), true, now), true);
-  assert.equal(isStuck(row('queued', 25), false, now), false);
+  assert.equal(isStuck(row('queued', 25), false, now), false); // cron caído != trabada
   assert.equal(isStuck(row('published', 25), true, now), false);
-  assert.equal(isStuck(row('queued', 20), true, now), false); // borde exclusivo
+  assert.equal(isStuck(row('queued', 20), true, now), false); // borde exclusivo (updated_at)
   assert.equal(isStuck(row('queued', 5), true, now), false);
+  // El bug real: queued encolada hace rato pero con scheduled_at lejano NO está trabada.
+  assert.equal(isStuck(row('queued', 25, 30 * 24), true, now), false); // dentro de 30 días
+  assert.equal(isStuck(row('queued', 25, 21), true, now), false); // apenas fuera de la ventana (21h > 20h)
+  assert.equal(isStuck(row('queued', 25, 19), true, now), true); // dentro de la ventana (19h)
+  // containerizing viejo: trabado aunque su scheduled_at sea lejano (ya está en el pipeline).
+  assert.equal(isStuck(row('containerizing', 25, 30 * 24), true, now), true);
+  // queued sin scheduled_at confiable: no alarmar.
+  assert.equal(isStuck({ id: 'p', status: 'queued', updated_at: ago(25) } as any, true, now), false);
 });

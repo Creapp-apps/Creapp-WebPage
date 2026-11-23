@@ -61,7 +61,10 @@ export const LaunchRow: React.FC<Props> = ({ piece, readOnly, onChanged }) => {
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
             {piece.stuck && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border bg-amber-500/10 text-amber-300 border-amber-500/25">
+              <span
+                title={piece.errorMessage
+                  || 'En cola sin avanzar: ya pasó su ventana de preparación y el cron está sano, pero la pieza no progresó. Probá Reintentar o Forzar.'}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border bg-amber-500/10 text-amber-300 border-amber-500/25 cursor-help">
                 <TriangleAlert size={11} /> Fila trabada
               </span>
             )}

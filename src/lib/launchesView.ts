@@ -2,6 +2,10 @@ import type { CronRunRow, ScheduledPostRow } from './launchesTypes';
 
 export const STALE_MIN = 18;
 export const STUCK_MIN = 20;
+// Ventana (horas) en la que el cron containeriza una fila queued. Debe coincidir con
+// CONTAINERIZE_WINDOW_HOURS de publishQueuePhases.ts. Una queued cuyo scheduled_at cae
+// más allá de esta ventana todavía NO es elegible: espera su turno, no está trabada.
+export const CONTAINERIZE_WINDOW_H = 20;
 
 export type CronState = 'ok' | 'stale' | 'down' | 'error';
 export interface CronHealth { state: CronState; lastRunAt: string | null; ageMin: number | null }
@@ -30,13 +34,23 @@ export function computeCronHealth(runs: CronRunRow[], now: Date): CronHealth {
 }
 
 /**
- * Fila trabada: queued/containerizing sin cambios > STUCK_MIN min y cron sano.
- * Con el cron caído/atrasado no es "fila trabada" sino caída de cron.
+ * Fila trabada: una pieza que el cron DEBERÍA haber avanzado y no avanzó, estando el cron sano.
+ * - Con el cron caído/atrasado no es "fila trabada" sino caída de cron.
+ * - `containerizing`: ya entró al pipeline; si quedó viejo (> STUCK_MIN) está realmente trabado.
+ * - `queued`: solo está trabada si ya es ELEGIBLE para containerizar, es decir su scheduled_at
+ *   cae dentro de la ventana del cron (<= now + CONTAINERIZE_WINDOW_H). Una queued con fecha
+ *   futura lejana está sana esperando su turno, aunque lleve semanas sin cambios.
  */
 export function isStuck(row: ScheduledPostRow, cronHealthy: boolean, now: Date): boolean {
   if (!cronHealthy) return false;
   if (row.status !== 'queued' && row.status !== 'containerizing') return false;
   const t = ms(row.updated_at);
   if (Number.isNaN(t)) return false;
-  return minutesBetween(t, now) > STUCK_MIN;
+  if (minutesBetween(t, now) <= STUCK_MIN) return false;
+  if (row.status === 'containerizing') return true;
+  // queued: exigir que ya haya entrado a la ventana de containerización.
+  const due = ms(row.scheduled_at);
+  if (Number.isNaN(due)) return false; // sin fecha confiable, no alarmamos (evita falsos positivos)
+  const windowEnd = now.getTime() + CONTAINERIZE_WINDOW_H * 60 * 60 * 1000;
+  return due <= windowEnd;
 }
