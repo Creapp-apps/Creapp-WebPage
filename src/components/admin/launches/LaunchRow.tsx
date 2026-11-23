@@ -69,8 +69,13 @@ export const LaunchRow: React.FC<Props> = ({ piece, readOnly, onChanged, onPrevi
     <div
       role="button"
       tabIndex={0}
-      onClick={() => onPreview?.(piece)}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPreview?.(piece); } }}
+      onClick={(e) => {
+        // Abrir la preview al clickear cualquier parte del chip, EXCEPTO sobre un
+        // control real (botón/link/input). Así el fondo negro siempre abre.
+        if ((e.target as HTMLElement).closest('button, a, input, select, textarea')) return;
+        onPreview?.(piece);
+      }}
+      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); onPreview?.(piece); } }}
       title="Ver vista previa"
       className="group/row flex gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.045] hover:border-indigo-500/25 transition-colors cursor-pointer">
       <div className="w-12 h-12 rounded-lg overflow-hidden bg-zinc-900 border border-white/5 shrink-0 flex items-center justify-center text-zinc-600 group-hover/row:border-indigo-500/40 transition-colors">
@@ -102,7 +107,7 @@ export const LaunchRow: React.FC<Props> = ({ piece, readOnly, onChanged, onPrevi
         </div>
         {piece.errorMessage && <p className="text-xs text-rose-300 leading-relaxed">{piece.errorMessage}</p>}
         {err && <p className="text-xs text-rose-400">{err}</p>}
-        <div className="flex flex-wrap items-center gap-1.5 pt-0.5" onClick={(e) => e.stopPropagation()}>
+        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
           {piece.permalink && (
             <a href={piece.permalink} target="_blank" rel="noreferrer" className={btn}><ExternalLink size={11} /> Abrir post</a>
           )}
@@ -124,7 +129,7 @@ export const LaunchRow: React.FC<Props> = ({ piece, readOnly, onChanged, onPrevi
           {busy && <Loader2 size={13} className="animate-spin text-zinc-500" />}
         </div>
         {!readOnly && resched !== null && (
-          <div className="flex items-center gap-2 pt-1" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center gap-2 pt-1">
             <input type="datetime-local" value={resched} onChange={(e) => setResched(e.target.value)}
               className="px-2 py-1 rounded-lg bg-[#0e0e12] border border-white/10 text-xs text-white" />
             <button type="button" disabled={busy || !resched} className={btn}
