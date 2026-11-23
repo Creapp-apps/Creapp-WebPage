@@ -21,6 +21,10 @@ contextBridge.exposeInMainWorld('creappDesktop', {
   observeUpload: (jobId) => ipcRenderer.invoke('desktop:observe-upload', jobId),
   dismiss: (id) => ipcRenderer.send('desktop:dismiss', id),
   openMotorTerminal: (command) => ipcRenderer.invoke('desktop:open-motor-terminal', command),
+  // Confirmación de salida: el main pide el modal (onConfirmQuit) y el renderer responde.
+  onConfirmQuit: subscribe('desktop:confirm-quit'),
+  confirmQuit: () => ipcRenderer.send('desktop:quit-confirmed'),
+  cancelQuit: () => ipcRenderer.send('desktop:quit-cancelled'),
 });
 
 // Terminal embebido: el renderer (xterm) habla con el PTY del main.

@@ -18,7 +18,7 @@ import { startPreflightWatch, preflightDeepLink } from './src/preflightWatch.mjs
 import { startJobsActiveWatch, applyMotorStatus, IDLE } from './src/jobsActiveWatch.mjs';
 import { createPtyTerminal } from './src/ptyTerminal.mjs';
 import { buildClaudeLaunch } from './src/claudeLaunch.mjs';
-import { shouldQuitOnAllWindowsClosed, shouldHideInsteadOfClose } from './src/backgroundMode.mjs';
+import { shouldQuitOnAllWindowsClosed, shouldHideInsteadOfClose, shouldConfirmBeforeQuit } from './src/backgroundMode.mjs';
 import fs from 'node:fs';
 
 let mainWindow = null;
@@ -28,6 +28,17 @@ let stopJobsWatch = null;
 // Modo barra de menú: la ventana se oculta al cerrar; solo salimos de verdad por Tray/Cmd+Q.
 let isQuitting = false;
 let backgroundNoticeShown = false;
+// Salir de verdad (Dock/Tray/Cmd+Q) pide confirmación en la UI primero; esto pasa a true
+// recién cuando el usuario aprieta "Sí, cerrar" en el modal.
+let quitConfirmed = false;
+
+/** Trae la ventana al frente y le pide a la UI que muestre el modal de confirmación de salida. */
+function askQuitConfirmation() {
+  showMainWindow();
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('desktop:confirm-quit');
+  }
+}
 
 /** Muestra y enfoca la ventana principal (la recrea si fue destruida). */
 function showMainWindow() {
@@ -192,6 +203,11 @@ ipcMain.on('desktop:retry', (_e, id) => {
 });
 ipcMain.on('desktop:dismiss', (_e, id) => { pendingRetries.delete(id); });
 
+// Modal de confirmación de salida: "Sí, cerrar" confirma y dispara el cierre real (que ahora
+// pasa el gate con quitConfirmed=true y hace la limpieza/stop del motor). "Cancelar" no hace nada.
+ipcMain.on('desktop:quit-confirmed', () => { quitConfirmed = true; app.quit(); });
+ipcMain.on('desktop:quit-cancelled', () => { /* el usuario se queda; no tocamos estado */ });
+
 // ── Terminal embebido (PTY en el main, xterm en el renderer) ──────────────
 let ptyTerm = null;
 function sendTerm(channel, payload) {
@@ -333,6 +349,14 @@ app.on('app:proceed', () => { launchMotor(); });
 // Sin huérfanos: esperamos el exit de uvicorn antes de cerrar.
 let quitting = false;
 app.on('before-quit', (e) => {
+  // Gate de confirmación: antes de tocar nada (tray/pty/motor), si corresponde preguntar,
+  // frenamos la salida y mostramos el modal en la UI. Cancelar deja todo intacto; salir de
+  // verdad ocurre recién cuando el usuario confirma y volvemos a entrar con quitConfirmed=true.
+  if (shouldConfirmBeforeQuit({ quitConfirmed, overlayReady, hasWindow: !!(mainWindow && !mainWindow.isDestroyed()) })) {
+    e.preventDefault();
+    askQuitConfirmation();
+    return;
+  }
   isQuitting = true; // habilita el cierre real de la ventana (sale del modo barra de menú)
   if (quitting) return;
   // Matar el PTY del terminal embebido siempre (incluso si el motor no corría).
@@ -371,7 +395,7 @@ app.whenReady().then(() => {
     tray.setContextMenu(Menu.buildFromTemplate([
       { label: 'Abrir CreAPP Suite', click: () => showMainWindow() },
       { type: 'separator' },
-      { label: 'Salir', click: () => { isQuitting = true; app.quit(); } },
+      { label: 'Salir', click: () => app.quit() },
     ]));
     tray.on('click', () => showMainWindow());
   } catch { /* tray best-effort (headless/CI) */ }

@@ -18,3 +18,14 @@ export function shouldQuitOnAllWindowsClosed(platform) {
 export function shouldHideInsteadOfClose(isQuitting) {
   return !isQuitting;
 }
+
+/**
+ * Al pedir salir de verdad (Dock → Salir, Tray → Salir, Cmd+Q), ¿hay que mostrar antes
+ * el modal de confirmación en la UI en vez de cerrar directo?
+ * Sí solo si: todavía no se confirmó, hay una ventana viva y el overlay está inyectado
+ * (tiene dónde mostrarse). Si el overlay no está listo (ej. aún en el preflight), se deja
+ * salir sin modal para no dejar la app imposible de cerrar.
+ */
+export function shouldConfirmBeforeQuit({ quitConfirmed, overlayReady, hasWindow }) {
+  return !quitConfirmed && !!hasWindow && !!overlayReady;
+}
