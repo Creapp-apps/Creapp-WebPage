@@ -3,7 +3,7 @@ import { Loader2, Rocket } from 'lucide-react';
 import { getLaunchesOverview, subscribeLaunches } from '@/lib/launchesService';
 import type { LaunchesOverview, LaunchPiece } from '@/lib/launchesTypes';
 import { HealthBanner } from './HealthBanner';
-import { LaunchRow, STATUS_LABEL } from './LaunchRow';
+import { LaunchRow, STATUS_LABEL, KIND_LABEL, kindFromPlatform } from './LaunchRow';
 import { FilterDropdown } from './FilterDropdown';
 import { LaunchPreviewModal } from './LaunchPreviewModal';
 
@@ -15,6 +15,7 @@ export const LaunchesTab: React.FC<{ readOnly?: boolean }> = ({ readOnly = false
   const [error, setError] = useState(false);
   const [client, setClient] = useState('all');
   const [status, setStatus] = useState('all');
+  const [kind, setKind] = useState('all');
   const [preview, setPreview] = useState<LaunchPiece | null>(null);
 
   const reqId = useRef(0);
@@ -48,8 +49,16 @@ export const LaunchesTab: React.FC<{ readOnly?: boolean }> = ({ readOnly = false
   const pieces = overview?.pieces ?? [];
   const clientOptions = [{ value: 'all', label: 'Todos los clientes' }, ...(overview?.clients ?? []).map((c) => ({ value: c.name, label: c.name }))];
   const statusOptions = [{ value: 'all', label: 'Todos los estados' }, ...STATUSES.map((s) => ({ value: s, label: STATUS_LABEL[s] ?? s }))];
+  const kindOptions = [
+    { value: 'all', label: 'Todos los tipos' },
+    { value: 'reel', label: KIND_LABEL.reel },
+    { value: 'carousel', label: KIND_LABEL.carousel },
+    { value: 'story', label: KIND_LABEL.story },
+  ];
   const shown = pieces
-    .filter((p) => (client === 'all' || p.clientName === client) && (status === 'all' || p.status === status))
+    .filter((p) => (client === 'all' || p.clientName === client)
+      && (status === 'all' || p.status === status)
+      && (kind === 'all' || kindFromPlatform(p.platform) === kind))
     // Orden cronológico ascendente por fecha programada: la próxima a publicarse primero.
     // Las piezas sin fecha van al final.
     .sort((a, b) => {
@@ -84,6 +93,7 @@ export const LaunchesTab: React.FC<{ readOnly?: boolean }> = ({ readOnly = false
           <HealthBanner overview={overview} readOnly={readOnly} onChanged={load} />
           <div className="flex flex-wrap items-center gap-3">
             <FilterDropdown value={client} onChange={setClient} options={clientOptions} ariaLabel="Cliente" />
+            <FilterDropdown value={kind} onChange={setKind} options={kindOptions} ariaLabel="Tipo de pieza" />
             <FilterDropdown value={status} onChange={setStatus} options={statusOptions} ariaLabel="Estado" />
           </div>
           {shown.length === 0 ? (

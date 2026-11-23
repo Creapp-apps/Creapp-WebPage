@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ExternalLink, Eye, ImageOff, Loader2, TriangleAlert } from 'lucide-react';
+import { ExternalLink, ImageOff, Loader2, TriangleAlert } from 'lucide-react';
 import { actionError, canCancel, canForce, canReschedule, canRetry, type LaunchAction } from '@/lib/launchesActions';
 import { callCancel, callForce, callReschedule, callRetry } from '@/lib/launchesService';
 import type { LaunchPiece } from '@/lib/launchesTypes';
@@ -8,6 +8,20 @@ export const STATUS_LABEL: Record<string, string> = {
   queued: 'Programada', containerizing: 'Preparando', ready: 'Lista', publishing: 'Publicando',
   published: 'Publicada', error: 'Error', cancelled: 'Cancelada',
 };
+
+export type PieceKind = 'reel' | 'carousel' | 'story' | 'other';
+/** Tipo de pieza a partir de scheduled_posts.platform (fuente confiable). */
+export const kindFromPlatform = (platform: string | null | undefined): PieceKind => {
+  const p = (platform || '').toLowerCase();
+  if (p.includes('carousel')) return 'carousel';
+  if (p.includes('story')) return 'story';
+  if (p.includes('reel')) return 'reel';
+  return 'other';
+};
+export const KIND_LABEL: Record<PieceKind, string> = {
+  reel: 'Reel', carousel: 'Carrusel', story: 'Historia', other: 'Pieza',
+};
+const isVideoUrl = (u: string): boolean => /\.(mp4|mov|webm|m4v)(\?|$)/i.test(u);
 const STATUS_CLS: Record<string, string> = {
   queued: 'bg-zinc-500/10 text-zinc-300 border-zinc-500/20',
   containerizing: 'bg-amber-500/10 text-amber-300 border-amber-500/20',
@@ -48,21 +62,30 @@ export const LaunchRow: React.FC<Props> = ({ piece, readOnly, onChanged, onPrevi
   const btn = 'inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold border border-white/10 text-zinc-300 hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed';
   const when = piece.scheduledAt ? new Date(piece.scheduledAt).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }) : '—';
 
+  const kindLabel = KIND_LABEL[kindFromPlatform(piece.platform)];
+  const videoThumb = !piece.coverUrl ? piece.mediaUrls.find(isVideoUrl) : undefined;
+
   return (
-    <div className="flex gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/5">
-      <button
-        type="button"
-        onClick={() => onPreview?.(piece)}
-        title="Ver vista previa"
-        className="w-12 h-12 rounded-lg overflow-hidden bg-zinc-900 border border-white/5 shrink-0 flex items-center justify-center text-zinc-600 hover:border-indigo-500/40 hover:ring-2 hover:ring-indigo-500/20 transition-all cursor-pointer">
-        {piece.coverUrl ? <img src={piece.coverUrl} alt="" className="w-full h-full object-cover" loading="lazy" /> : <ImageOff size={16} />}
-      </button>
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => onPreview?.(piece)}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPreview?.(piece); } }}
+      title="Ver vista previa"
+      className="group/row flex gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.045] hover:border-indigo-500/25 transition-colors cursor-pointer">
+      <div className="w-12 h-12 rounded-lg overflow-hidden bg-zinc-900 border border-white/5 shrink-0 flex items-center justify-center text-zinc-600 group-hover/row:border-indigo-500/40 transition-colors">
+        {piece.coverUrl
+          ? <img src={piece.coverUrl} alt="" className="w-full h-full object-cover" loading="lazy" />
+          : videoThumb
+            ? <video src={`${videoThumb}#t=0.1`} muted playsInline preload="metadata" className="w-full h-full object-cover" />
+            : <ImageOff size={16} />}
+      </div>
       <div className="min-w-0 flex-1 space-y-1">
         <div className="flex items-start justify-between gap-2">
-          <button type="button" onClick={() => onPreview?.(piece)} className="min-w-0 text-left group/preview cursor-pointer">
-            <span className="text-sm text-white font-medium truncate block group-hover/preview:text-indigo-300 transition-colors">{piece.title || piece.jobId}</span>
-            <span className="text-[11px] text-zinc-500">{piece.clientName} · {piece.type ?? 'pieza'} · {when}</span>
-          </button>
+          <div className="min-w-0">
+            <span className="text-sm text-white font-medium truncate block group-hover/row:text-indigo-300 transition-colors">{piece.title || piece.jobId}</span>
+            <span className="text-[11px] text-zinc-500">{piece.clientName} · {kindLabel} · {when}</span>
+          </div>
           <div className="flex items-center gap-1.5 shrink-0">
             {piece.stuck && (
               <span
@@ -79,10 +102,7 @@ export const LaunchRow: React.FC<Props> = ({ piece, readOnly, onChanged, onPrevi
         </div>
         {piece.errorMessage && <p className="text-xs text-rose-300 leading-relaxed">{piece.errorMessage}</p>}
         {err && <p className="text-xs text-rose-400">{err}</p>}
-        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-          {piece.coverUrl && (
-            <a href={piece.coverUrl} target="_blank" rel="noreferrer" className={btn}><Eye size={11} /> Previsualizar</a>
-          )}
+        <div className="flex flex-wrap items-center gap-1.5 pt-0.5" onClick={(e) => e.stopPropagation()}>
           {piece.permalink && (
             <a href={piece.permalink} target="_blank" rel="noreferrer" className={btn}><ExternalLink size={11} /> Abrir post</a>
           )}
@@ -104,7 +124,7 @@ export const LaunchRow: React.FC<Props> = ({ piece, readOnly, onChanged, onPrevi
           {busy && <Loader2 size={13} className="animate-spin text-zinc-500" />}
         </div>
         {!readOnly && resched !== null && (
-          <div className="flex items-center gap-2 pt-1">
+          <div className="flex items-center gap-2 pt-1" onClick={(e) => e.stopPropagation()}>
             <input type="datetime-local" value={resched} onChange={(e) => setResched(e.target.value)}
               className="px-2 py-1 rounded-lg bg-[#0e0e12] border border-white/10 text-xs text-white" />
             <button type="button" disabled={busy || !resched} className={btn}

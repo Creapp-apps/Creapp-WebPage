@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight, ExternalLink, ImageOff, X } from 'lucide-react';
 import type { LaunchPiece } from '@/lib/launchesTypes';
-import { STATUS_LABEL } from './LaunchRow';
+import { STATUS_LABEL, KIND_LABEL, kindFromPlatform } from './LaunchRow';
 
 const isVideo = (u: string): boolean => /\.(mp4|mov|webm|m4v)(\?|$)/i.test(u);
 const isImage = (u: string): boolean => /\.(jpe?g|png|webp|gif)(\?|$)/i.test(u);
@@ -99,7 +99,7 @@ export const LaunchPreviewModal: React.FC<Props> = ({ piece, onClose }) => {
           <div className="min-w-0">
             <h3 className="text-sm font-bold text-white truncate">{piece.title || piece.jobId}</h3>
             <p className="text-[11px] text-zinc-500 truncate">
-              {piece.clientName} · {piece.type ?? 'pieza'}
+              {piece.clientName} · {KIND_LABEL[kindFromPlatform(piece.platform)]}
             </p>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
