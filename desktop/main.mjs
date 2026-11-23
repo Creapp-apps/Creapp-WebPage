@@ -17,12 +17,43 @@ import { gitPush, gitPull, observeMotorUpload } from './src/heavyOps.mjs';
 import { startPreflightWatch, preflightDeepLink } from './src/preflightWatch.mjs';
 import { startJobsActiveWatch, applyMotorStatus, IDLE } from './src/jobsActiveWatch.mjs';
 import { createPtyTerminal } from './src/ptyTerminal.mjs';
+import { shouldQuitOnAllWindowsClosed, shouldHideInsteadOfClose } from './src/backgroundMode.mjs';
 import fs from 'node:fs';
 
 let mainWindow = null;
 let uiServer = null;
 let tray = null;
 let stopJobsWatch = null;
+// Modo barra de menú: la ventana se oculta al cerrar; solo salimos de verdad por Tray/Cmd+Q.
+let isQuitting = false;
+let backgroundNoticeShown = false;
+
+/** Muestra y enfoca la ventana principal (la recrea si fue destruida). */
+function showMainWindow() {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.show();
+    mainWindow.focus();
+  } else {
+    createWindow();
+  }
+}
+
+/** Aviso nativo, una sola vez por sesión, de que la app sigue viva en la barra de menú. */
+function notifyBackgroundOnce() {
+  if (backgroundNoticeShown) return;
+  backgroundNoticeShown = true;
+  try {
+    if (Notification.isSupported()) {
+      const n = new Notification({
+        title: 'CreApp sigue activa en la barra de menú',
+        body: 'La agencia y las notificaciones siguen corriendo en segundo plano. Para cerrarla del todo: ícono de la barra → Salir.',
+        silent: true,
+      });
+      n.on('click', () => showMainWindow());
+      n.show();
+    }
+  } catch { /* notificación best-effort */ }
+}
 
 const preloadPath = fileURLToPath(new URL('./preload.mjs', import.meta.url));
 
@@ -64,6 +95,15 @@ function createWindow() {
       win.webContents.send('desktop:motor-status', lastMotorStatus ?? IDLE);
       for (const t of pendingToasts.splice(0)) win.webContents.send('desktop:toast', t);
     }).catch((e) => console.error('[creapp] overlay:', e.message));
+  });
+  // Cerrar la ventana NO cierra la app: la ocultamos y la agencia + watchers siguen
+  // vivos en la barra de menú disparando notificaciones. Se sale de verdad por Tray/Cmd+Q.
+  win.on('close', (e) => {
+    if (shouldHideInsteadOfClose(isQuitting)) {
+      e.preventDefault();
+      win.hide();
+      notifyBackgroundOnce();
+    }
   });
   win.loadFile(fileURLToPath(new URL('./renderer/preflight.html', import.meta.url)));
   mainWindow = win;
@@ -288,6 +328,7 @@ app.on('app:proceed', () => { launchMotor(); });
 // Sin huérfanos: esperamos el exit de uvicorn antes de cerrar.
 let quitting = false;
 app.on('before-quit', (e) => {
+  isQuitting = true; // habilita el cierre real de la ventana (sale del modo barra de menú)
   if (quitting) return;
   // Matar el PTY del terminal embebido siempre (incluso si el motor no corría).
   if (ptyTerm) { try { ptyTerm.dispose(); } catch { /* ignore */ } ptyTerm = null; }
@@ -313,19 +354,28 @@ app.whenReady().then(() => {
   createWindow();
   // Tray en la barra de menú: refleja el estado del motor (texto en macOS vía setTitle).
   try {
-    tray = new Tray(nativeImage.createEmpty());
-    tray.setToolTip('CreAPP Suite');
+    // Ícono visible en la barra de menú (el logo de la suite). setTitle (jobsActiveWatch)
+    // le suma el estado del motor al lado del ícono.
+    let trayImg = nativeImage.createEmpty();
+    try {
+      const img = nativeImage.createFromPath(fileURLToPath(new URL('./build/icon.png', import.meta.url)));
+      if (!img.isEmpty()) trayImg = img.resize({ height: 18 });
+    } catch { /* usa el vacío */ }
+    tray = new Tray(trayImg);
+    tray.setToolTip('CreAPP Suite · activa en segundo plano');
     tray.setContextMenu(Menu.buildFromTemplate([
-      { label: 'Abrir CreAPP Suite', click: () => { if (mainWindow && !mainWindow.isDestroyed()) { mainWindow.show(); mainWindow.focus(); } } },
+      { label: 'Abrir CreAPP Suite', click: () => showMainWindow() },
       { type: 'separator' },
-      { label: 'Salir', click: () => app.quit() },
+      { label: 'Salir', click: () => { isQuitting = true; app.quit(); } },
     ]));
+    tray.on('click', () => showMainWindow());
   } catch { /* tray best-effort (headless/CI) */ }
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    showMainWindow();
   });
 });
 
 app.on('window-all-closed', () => {
-  app.quit();
+  // En macOS la app queda viva en la barra de menú (no sale al cerrar la ventana).
+  if (shouldQuitOnAllWindowsClosed(process.platform)) app.quit();
 });
