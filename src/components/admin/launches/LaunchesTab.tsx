@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Loader2, Rocket } from 'lucide-react';
 import { getLaunchesOverview, subscribeLaunches } from '@/lib/launchesService';
-import type { LaunchesOverview } from '@/lib/launchesTypes';
+import type { LaunchesOverview, LaunchPiece } from '@/lib/launchesTypes';
 import { HealthBanner } from './HealthBanner';
 import { LaunchRow, STATUS_LABEL } from './LaunchRow';
 import { FilterDropdown } from './FilterDropdown';
+import { LaunchPreviewModal } from './LaunchPreviewModal';
 
 const STATUSES = ['queued', 'containerizing', 'ready', 'publishing', 'published', 'error', 'cancelled'];
 
@@ -14,6 +15,7 @@ export const LaunchesTab: React.FC<{ readOnly?: boolean }> = ({ readOnly = false
   const [error, setError] = useState(false);
   const [client, setClient] = useState('all');
   const [status, setStatus] = useState('all');
+  const [preview, setPreview] = useState<LaunchPiece | null>(null);
 
   const reqId = useRef(0);
   const load = useCallback(async () => {
@@ -46,7 +48,15 @@ export const LaunchesTab: React.FC<{ readOnly?: boolean }> = ({ readOnly = false
   const pieces = overview?.pieces ?? [];
   const clientOptions = [{ value: 'all', label: 'Todos los clientes' }, ...(overview?.clients ?? []).map((c) => ({ value: c.name, label: c.name }))];
   const statusOptions = [{ value: 'all', label: 'Todos los estados' }, ...STATUSES.map((s) => ({ value: s, label: STATUS_LABEL[s] ?? s }))];
-  const shown = pieces.filter((p) => (client === 'all' || p.clientName === client) && (status === 'all' || p.status === status));
+  const shown = pieces
+    .filter((p) => (client === 'all' || p.clientName === client) && (status === 'all' || p.status === status))
+    // Orden cronológico ascendente por fecha programada: la próxima a publicarse primero.
+    // Las piezas sin fecha van al final.
+    .sort((a, b) => {
+      const ta = a.scheduledAt ? new Date(a.scheduledAt).getTime() : Infinity;
+      const tb = b.scheduledAt ? new Date(b.scheduledAt).getTime() : Infinity;
+      return ta - tb;
+    });
 
   return (
     <div className="space-y-6">
@@ -82,11 +92,12 @@ export const LaunchesTab: React.FC<{ readOnly?: boolean }> = ({ readOnly = false
             </div>
           ) : (
             <div className="space-y-2">
-              {shown.map((p) => <LaunchRow key={p.id} piece={p} readOnly={readOnly} onChanged={load} />)}
+              {shown.map((p) => <LaunchRow key={p.id} piece={p} readOnly={readOnly} onChanged={load} onPreview={setPreview} />)}
             </div>
           )}
         </>
       )}
+      {preview && <LaunchPreviewModal piece={preview} onClose={() => setPreview(null)} />}
     </div>
   );
 };

@@ -44,6 +44,10 @@ export interface ScheduledPostRow {
   error_message: string | null;
   updated_at: string;
   scheduled_at?: string | null; // hora programada: decide si una queued ya es elegible para containerizar
+  cover_r2_url?: string | null; // portada ya subida a R2 para publicar: fuente directa del thumbnail
+  media_r2_urls?: string[] | null; // media final (reel mp4 / imágenes del carrusel) para la preview
+  caption?: string | null; // copy que se publica, para la preview
+  platform?: string | null; // instagram_reel | instagram_carousel | instagram_story | ...
   permalink?: string | null;
   published_media_id?: string | null;
 }
@@ -81,6 +85,9 @@ export interface LaunchPiece {
   errorMessage: string | null;
   permalink: string | null;
   stuck: boolean;
+  mediaUrls: string[]; // media final para la preview (reel mp4 / imágenes del carrusel)
+  caption: string | null; // copy que se publica
+  platform: string | null; // instagram_reel | instagram_carousel | instagram_story | ...
 }
 
 export interface LaunchesOverview {

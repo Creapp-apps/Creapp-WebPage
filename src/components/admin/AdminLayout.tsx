@@ -273,6 +273,10 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
 
   const userDisplayName = profile?.full_name || user?.email?.split('@')[0] || 'Usuario';
   const userInitials = (profile?.full_name || user?.email || 'U').slice(0, 2).toUpperCase();
+  // El perfil master usa el logo oficial de CreApp como foto; el equipo conserva sus iniciales.
+  const avatarInner = () => (isAdmin
+    ? <img src={creappLogoOfficial} alt="CreApp" className="w-full h-full object-contain p-0.5" />
+    : userInitials);
 
   // Modo Studio: en el Creador de Contenidos se trabaja de corrido, así que la
   // sidebar fija pasa a ser overlay flotante (drawer) y el contenido va full-bleed.
@@ -414,7 +418,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-purple-600 to-pink-500 flex items-center justify-center text-white text-[10px] font-black shrink-0 shadow-sm">
-                      {userInitials}
+                      {avatarInner()}
                     </div>
                     <div className="min-w-0">
                       <span className="text-white font-semibold truncate block group-hover:text-purple-300 transition-colors">
@@ -463,7 +467,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                   className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-600 to-pink-500 flex items-center justify-center text-white text-xs font-bold shadow-sm"
                   title={`Mi Perfil (${userDisplayName})`}
                 >
-                  {userInitials}
+                  {avatarInner()}
                 </button>
                 {isAdmin && (
                   <button
@@ -506,11 +510,22 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
               </button>
 
               <div className="flex items-center gap-1.5 sm:gap-2 text-xs font-mono min-w-0">
-                <span className="text-zinc-500 hidden sm:inline">creapp.os</span>
+                <button
+                  type="button"
+                  onClick={() => onTabChange('dashboard')}
+                  title="Ir al inicio"
+                  className="text-zinc-400 hover:text-white hidden sm:inline px-1.5 py-0.5 rounded-md hover:bg-white/5 active:scale-95 transition-all cursor-pointer"
+                >
+                  creapp.os
+                </button>
                 <span className="text-zinc-600 hidden sm:inline">/</span>
-                <span className="text-purple-300 font-semibold bg-purple-500/10 px-2 sm:px-2.5 py-1 rounded-lg border border-purple-500/20 truncate max-w-[125px] xs:max-w-[170px] sm:max-w-[260px]">
+                <button
+                  type="button"
+                  onClick={() => onTabChange(currentTab)}
+                  className="text-purple-300 font-semibold bg-purple-500/10 hover:bg-purple-500/20 px-2 sm:px-2.5 py-1 rounded-lg border border-purple-500/20 hover:border-purple-500/40 truncate max-w-[125px] xs:max-w-[170px] sm:max-w-[260px] active:scale-95 transition-all cursor-pointer"
+                >
                   {currentTabLabel}
-                </span>
+                </button>
                 {!isAdmin && (
                   <span className="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-1.5 py-0.5 rounded font-mono hidden xs:inline shrink-0">
                     Ventas
@@ -571,7 +586,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                   aria-label="Menú de perfil de usuario"
                 >
                   <div className="w-7 h-7 sm:w-7 sm:h-7 rounded-lg bg-gradient-to-tr from-purple-600 via-indigo-600 to-pink-500 flex items-center justify-center text-white text-[11px] font-black shadow-inner shrink-0">
-                    {userInitials}
+                    {avatarInner()}
                   </div>
                   <div className="hidden md:flex flex-col text-left">
                     <span className="text-[11px] font-bold text-white leading-tight truncate max-w-[110px]">
@@ -601,7 +616,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                       {/* Dropdown Header */}
                       <div className="p-3 bg-white/[0.02] rounded-xl border border-white/5 flex items-center gap-3">
                         <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-600 to-pink-500 flex items-center justify-center text-white text-xs font-black shrink-0">
-                          {userInitials}
+                          {avatarInner()}
                         </div>
                         <div className="min-w-0">
                           <p className="text-xs font-bold text-white truncate">{userDisplayName}</p>
@@ -673,7 +688,20 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                 : 'flex-1 p-3.5 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto pb-28 md:pb-8'
             }
           >
-            {children}
+            {studioMode ? children : (
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={currentTab}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                  className="w-full"
+                >
+                  {children}
+                </motion.div>
+              </AnimatePresence>
+            )}
           </main>
         </div>
       </div>
@@ -712,7 +740,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
               {/* Mobile User Card */}
               <div className="p-3 mb-3 bg-white/5 rounded-2xl border border-white/5 flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-600 to-pink-500 flex items-center justify-center text-white text-xs font-black shrink-0">
-                  {userInitials}
+                  {avatarInner()}
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs font-bold text-white truncate">{userDisplayName}</p>

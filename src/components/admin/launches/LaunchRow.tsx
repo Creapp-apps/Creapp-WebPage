@@ -29,9 +29,9 @@ const toLocalInput = (iso: string | null): string => {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
 };
 
-interface Props { piece: LaunchPiece; readOnly: boolean; onChanged: () => void }
+interface Props { piece: LaunchPiece; readOnly: boolean; onChanged: () => void; onPreview?: (piece: LaunchPiece) => void }
 
-export const LaunchRow: React.FC<Props> = ({ piece, readOnly, onChanged }) => {
+export const LaunchRow: React.FC<Props> = ({ piece, readOnly, onChanged, onPreview }) => {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [resched, setResched] = useState<string | null>(null);
@@ -50,15 +50,19 @@ export const LaunchRow: React.FC<Props> = ({ piece, readOnly, onChanged }) => {
 
   return (
     <div className="flex gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/5">
-      <div className="w-12 h-12 rounded-lg overflow-hidden bg-zinc-900 border border-white/5 shrink-0 flex items-center justify-center text-zinc-600">
+      <button
+        type="button"
+        onClick={() => onPreview?.(piece)}
+        title="Ver vista previa"
+        className="w-12 h-12 rounded-lg overflow-hidden bg-zinc-900 border border-white/5 shrink-0 flex items-center justify-center text-zinc-600 hover:border-indigo-500/40 hover:ring-2 hover:ring-indigo-500/20 transition-all cursor-pointer">
         {piece.coverUrl ? <img src={piece.coverUrl} alt="" className="w-full h-full object-cover" loading="lazy" /> : <ImageOff size={16} />}
-      </div>
+      </button>
       <div className="min-w-0 flex-1 space-y-1">
         <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <span className="text-sm text-white font-medium truncate block">{piece.title || piece.jobId}</span>
+          <button type="button" onClick={() => onPreview?.(piece)} className="min-w-0 text-left group/preview cursor-pointer">
+            <span className="text-sm text-white font-medium truncate block group-hover/preview:text-indigo-300 transition-colors">{piece.title || piece.jobId}</span>
             <span className="text-[11px] text-zinc-500">{piece.clientName} · {piece.type ?? 'pieza'} · {when}</span>
-          </div>
+          </button>
           <div className="flex items-center gap-1.5 shrink-0">
             {piece.stuck && (
               <span

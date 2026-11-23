@@ -29,13 +29,18 @@ export function mapLaunchPieces(
       jobId: p.job_id,
       title: job?.title ?? null,
       type: job?.type ?? null,
-      coverUrl: job ? cover.get(job.id) ?? null : null,
+      // La portada ya viaja en scheduled_posts.cover_r2_url (subida a R2 para publicar);
+      // es la fuente directa. content_assets queda de respaldo por si faltara.
+      coverUrl: p.cover_r2_url ?? (job ? cover.get(job.id) ?? null : null),
       status: p.status,
       scheduledAt: p.scheduled_at ?? null,
       updatedAt: p.updated_at,
       errorMessage: p.error_message,
       permalink: p.permalink ?? null,
       stuck: isStuck(p, cronHealthy, now),
+      mediaUrls: Array.isArray(p.media_r2_urls) ? p.media_r2_urls : [],
+      caption: p.caption ?? null,
+      platform: p.platform ?? null,
     };
   });
 }
