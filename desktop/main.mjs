@@ -17,6 +17,7 @@ import { gitPush, gitPull, observeMotorUpload } from './src/heavyOps.mjs';
 import { startPreflightWatch, preflightDeepLink } from './src/preflightWatch.mjs';
 import { startJobsActiveWatch, applyMotorStatus, IDLE } from './src/jobsActiveWatch.mjs';
 import { createPtyTerminal } from './src/ptyTerminal.mjs';
+import { buildClaudeLaunch } from './src/claudeLaunch.mjs';
 import { shouldQuitOnAllWindowsClosed, shouldHideInsteadOfClose } from './src/backgroundMode.mjs';
 import fs from 'node:fs';
 
@@ -200,9 +201,13 @@ ipcMain.handle('term:start', async (_e, { cols, rows } = {}) => {
   if (ptyTerm) return { ok: true, already: true };
   try {
     const { loadConfig } = await import('./src/config.mjs');
+    const cfg = loadConfig();
     ptyTerm = await createPtyTerminal({
-      cwd: loadConfig().motorPath,
+      cwd: cfg.motorPath,
       env: process.env,
+      // Claude arranca en el motor pero con el repo del portal/desktop sumado vía --add-dir,
+      // así puede grepear y leer ambos proyectos (sin fusionar repos).
+      autoLaunch: buildClaudeLaunch([cfg.creappPath]),
       onData: (d) => sendTerm('term:data', d),
       onExit: (ex) => { sendTerm('term:exit', ex); ptyTerm = null; },
     });
