@@ -79,7 +79,7 @@ export const PortalSplash: React.FC<Props> = ({ ready, accent, onDone }) => {
               <stop offset="0" stopColor="#e5e7f0" /><stop offset="1" stopColor="#9ca3c4" />
             </linearGradient>
             <linearGradient id="spAcc" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stopColor="var(--sp-acc)" /><stop offset="1" stopColor="var(--sp-deep)" />
+              <stop offset="0" style={{ stopColor: 'var(--sp-acc)' }} /><stop offset="1" style={{ stopColor: 'var(--sp-deep)' }} />
             </linearGradient>
           </defs>
           <g className="sp-flameG">
@@ -93,7 +93,7 @@ export const PortalSplash: React.FC<Props> = ({ ready, accent, onDone }) => {
           <g className={`sp-part${built > 1 ? ' on' : ''}`}>
             <path d="M38 120 L16 170 L40 160 Z" fill="url(#spAcc)" />
             <path d="M82 120 L104 170 L80 160 Z" fill="url(#spAcc)" />
-            <path d="M56 150 L60 176 L64 150 Z" fill="var(--sp-deep)" />
+            <path d="M56 150 L60 176 L64 150 Z" style={{ fill: 'var(--sp-deep)' }} />
           </g>
           <g className={`sp-part${built > 2 ? ' on' : ''}`}>
             <path d="M40 60 L80 60 L82 168 L38 168 Z" fill="url(#spBody)" />
@@ -104,7 +104,7 @@ export const PortalSplash: React.FC<Props> = ({ ready, accent, onDone }) => {
           </g>
           <g className={`sp-part${built > 4 ? ' on' : ''}`}>
             <circle cx="60" cy="94" r="14" fill="#1f2937" />
-            <circle cx="60" cy="94" r="14" fill="none" stroke="var(--sp-acc)" strokeWidth="3" strokeOpacity=".4" />
+            <circle cx="60" cy="94" r="14" fill="none" style={{ stroke: 'var(--sp-acc)' }} strokeWidth="3" strokeOpacity=".4" />
             <circle cx="60" cy="94" r="11" fill="#38bdf8" />
             <circle cx="56" cy="90" r="3.5" fill="#fff" opacity=".7" />
           </g>

@@ -9,7 +9,10 @@ import { orderReview, firstPendingIndex, nextPendingIndex } from '@/lib/reviewQu
 import { PieceReview } from '@/components/portal/PieceReview';
 import { AgencyFootCredit } from '@/components/portal/AgencyBadge';
 import PortalLoader from '@/components/portal/PortalLoader';
+import { PortalSplash } from '@/components/portal/PortalSplash';
 import { usePortalTheme } from '@/components/portal/usePortalTheme';
+import { themeFor } from '@/lib/portalThemes';
+import { hasSeenSplash, markSplashSeen } from '@/lib/splashSession';
 import '@/components/portal/portal.css';
 
 const PortalView: React.FC = () => {
@@ -20,6 +23,9 @@ const PortalView: React.FC = () => {
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [idx, setIdx] = useState(0);
+  const [splashDone, setSplashDone] = useState(false);
+  // La splash completa (cohete + despegue) corre una vez por sesión del navegador.
+  const shouldSplash = useMemo(() => !hasSeenSplash(), []);
   // Mínimo de loader diseñado (~2s): la carga se siente intencional, no un flash.
   const [minShown, setMinShown] = useState(false);
 
@@ -55,6 +61,11 @@ const PortalView: React.FC = () => {
   const state = campaignViewState(campaign);
   const pieces = useMemo(() => orderReview(campaign?.pieces ?? []), [campaign]);
   const { style: themeStyle, dataTheme } = usePortalTheme(campaign);
+  const accent = useMemo(() => {
+    if (!campaign) return null;
+    const t = themeFor(campaign.aesthetic, campaign.client.brandColors?.primary ?? null);
+    return { color: t.accent, deep: t.accentDeep, bg: t.bg };
+  }, [campaign]);
 
   // Al cambiar de campaña, arranca en la primera pendiente.
   useEffect(() => { setIdx(firstPendingIndex(pieces)); }, [campaign?.id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -63,6 +74,18 @@ const PortalView: React.FC = () => {
     const nxt = nextPendingIndex(pieces, idx);
     if (nxt !== null) setIdx(nxt);
   }, [pieces, idx]);
+
+  // Splash de arranque (una vez por sesión): cubre la carga y despega cuando los
+  // datos están listos; al terminar revela el contenido.
+  if (shouldSplash && !splashDone) {
+    return (
+      <PortalSplash
+        ready={campaigns !== undefined}
+        accent={accent}
+        onDone={() => { markSplashSeen(); setSplashDone(true); }}
+      />
+    );
+  }
 
   if (state === 'loading' || !minShown) {
     return <PortalLoader />;
@@ -97,7 +120,7 @@ const PortalView: React.FC = () => {
 
   return (
     <div className="portal" data-theme={dataTheme} style={themeStyle}>
-      <div className="wrap">
+      <div className="wrap sp-reveal">
         <div className="topbar">
           <div className="left">
             {campaigns && campaigns.length >= 2 ? (
