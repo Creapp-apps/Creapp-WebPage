@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Check } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { homePathForRole } from '@/lib/portalAccess';
 import { AuthShell, fieldCls, labelCls, primaryBtnCls, ErrorBox } from './authShell';
@@ -97,13 +97,16 @@ const PortalLogin: React.FC = () => {
           </div>
         </div>
 
-        <label className="mt-1 flex cursor-pointer select-none items-center gap-2 text-[13px] text-muted-foreground">
-          <input
-            type="checkbox"
-            checked={remember}
-            onChange={(e) => setRemember(e.target.checked)}
-            className="h-4 w-4 cursor-pointer rounded border-white/20 bg-white/5 accent-primary"
-          />
+        <label className="mt-1 flex cursor-pointer select-none items-center gap-2.5 text-[13px] text-muted-foreground transition-colors hover:text-white">
+          <span className="relative inline-flex h-[18px] w-[18px] items-center justify-center">
+            <input
+              type="checkbox"
+              checked={remember}
+              onChange={(e) => setRemember(e.target.checked)}
+              className="peer absolute inset-0 m-0 cursor-pointer appearance-none rounded-[5px] border border-white/20 bg-white/5 transition-colors checked:border-transparent checked:bg-gradient-to-br checked:from-primary checked:to-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+            />
+            <Check size={12} strokeWidth={3.5} className="pointer-events-none hidden text-white peer-checked:block" />
+          </span>
           Recordar mis datos
         </label>
 
