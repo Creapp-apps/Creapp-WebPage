@@ -40,7 +40,14 @@ const PortalLogin: React.FC = () => {
     setLoading(true); setError('');
     try {
       const { error: authError } = await supabase.auth.signInWithPassword({ email: cleanEmail, password });
-      if (authError) { setError('Credenciales inválidas. Revisá tu email y contraseña.'); setLoading(false); return; }
+      if (authError) {
+        const code = (authError as { code?: string }).code ?? '';
+        const notConfirmed = code === 'email_not_confirmed' || /not confirmed/i.test(authError.message);
+        setError(notConfirmed
+          ? 'Tu acceso todavía no está activado. Pedile a tu agencia que te reenvíe el acceso.'
+          : 'Credenciales inválidas. Revisá tu email y contraseña.');
+        setLoading(false); return;
+      }
       try {
         if (remember) localStorage.setItem(REMEMBER_KEY, JSON.stringify({ email: cleanEmail, password }));
         else localStorage.removeItem(REMEMBER_KEY);

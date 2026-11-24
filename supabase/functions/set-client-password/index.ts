@@ -121,9 +121,14 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 4. Asignar la contraseña (invalida la anterior).
+    // 4. Asignar la contraseña (invalida la anterior) y CONFIRMAR el email.
+    //    Entregamos una clave directa justamente para saltear la activación por
+    //    mail: si el cliente nunca abrió el link, su email sigue sin confirmar y
+    //    signInWithPassword falla con "email_not_confirmed" (que el front mostraba
+    //    como "Credenciales inválidas"). email_confirm:true lo deja usable al toque.
     const { error: updateError } = await admin.auth.admin.updateUserById(target.user_id, {
       password,
+      email_confirm: true,
     });
     if (updateError) {
       return json({ error: updateError.message, code: 'update_failed' }, 500);
