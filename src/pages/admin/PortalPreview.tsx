@@ -1,11 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getCampaignPreview, type CampaignPreview } from '@/lib/portalPreviewService';
-import { groupPieces } from '@/lib/portalView';
-import { CampaignHero } from '@/components/portal/CampaignHero';
-import { PieceRail } from '@/components/portal/PieceRail';
-import { PieceCard } from '@/components/portal/PieceCard';
-import { PiecePlayer } from '@/components/portal/PiecePlayer';
+import { orderReview, firstPendingIndex } from '@/lib/reviewQueue';
+import { PieceReview } from '@/components/portal/PieceReview';
 import PortalLoader from '@/components/portal/PortalLoader';
 import { usePortalTheme } from '@/components/portal/usePortalTheme';
 import '@/components/portal/portal.css';
@@ -17,7 +14,7 @@ const PortalPreview: React.FC = () => {
   const navigate = useNavigate();
   const [preview, setPreview] = useState<CampaignPreview | null | undefined>(undefined);
   const [loadError, setLoadError] = useState(false);
-  const [openId, setOpenId] = useState<string | null>(null);
+  const [idx, setIdx] = useState(0);
 
   useEffect(() => {
     let alive = true;
@@ -30,8 +27,10 @@ const PortalPreview: React.FC = () => {
     return () => { alive = false; };
   }, [clientId]);
 
-  const groups = useMemo(() => groupPieces(preview?.campaign.pieces ?? []), [preview]);
+  const pieces = useMemo(() => orderReview(preview?.campaign.pieces ?? []), [preview]);
   const { style: themeStyle, dataTheme } = usePortalTheme(preview ? preview.campaign : null);
+
+  useEffect(() => { setIdx(firstPendingIndex(pieces)); }, [preview?.campaign.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const banner = (
     <div style={{ position: 'sticky', top: 0, zIndex: 50, background: '#7c3aed', color: '#fff', padding: '10px 16px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8, fontSize: 13, fontWeight: 600 }}>
@@ -58,44 +57,21 @@ const PortalPreview: React.FC = () => {
     );
   }
 
-  const { campaign, draftJobIds } = preview;
-  const openPiece = openId ? campaign.pieces.find((p) => p.id === openId) : undefined;
   return (
     <div className="portal" data-theme={dataTheme} style={themeStyle}>
       {banner}
       <div className="wrap">
-        <CampaignHero campaign={campaign} />
-        {groups.map((g) => (
-          <PieceRail key={g.type} type={g.type} count={g.pieces.length}>
-            {g.pieces.map((p, i) => (
-              <PieceCard
-                key={p.id}
-                piece={p}
-                index={i}
-                busy={false}
-                error={undefined}
-                readOnly
-                draft={draftJobIds.includes(p.id)}
-                onOpen={() => setOpenId(p.id)}
-                onApprove={noop}
-                onRequestChanges={noop}
-              />
-            ))}
-          </PieceRail>
-        ))}
-      </div>
-
-      {openPiece && (
-        <PiecePlayer
-          key={openPiece.id}
-          piece={openPiece}
+        <PieceReview
+          pieces={pieces}
+          index={idx}
+          onIndex={setIdx}
           busy={false}
           readOnly
-          onClose={() => setOpenId(null)}
           onApprove={noop}
           onSendChanges={noop}
+          onApproveRemaining={noop}
         />
-      )}
+      </div>
     </div>
   );
 };
