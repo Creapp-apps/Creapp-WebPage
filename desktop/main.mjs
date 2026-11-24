@@ -15,6 +15,7 @@ import { toToastPayload } from './src/ipcPayload.mjs';
 import { createRealProbes } from './src/probes.mjs';
 import { gitPush, gitPull, observeMotorUpload } from './src/heavyOps.mjs';
 import { startPreflightWatch, preflightDeepLink } from './src/preflightWatch.mjs';
+import { startPreviewWatch, previewDeepLink } from './src/previewWatch.mjs';
 import { startJobsActiveWatch, applyMotorStatus, IDLE } from './src/jobsActiveWatch.mjs';
 import { createPtyTerminal } from './src/ptyTerminal.mjs';
 import { buildClaudeLaunch } from './src/claudeLaunch.mjs';
@@ -292,6 +293,16 @@ async function launchMotor() {
     // /admin/login; con sesión activa, entra al panel. Nunca la landing pública.
     if (mainWindow && !mainWindow.isDestroyed()) mainWindow.loadURL(uiServer.url + 'admin');
     startConnectivity();
+    // Dock badge compartido: preflight + previews (los dos watchers escriben su
+    // parte y el badge es la suma, para que no se pisen entre sí).
+    let _preflightBadge = 0;
+    let _previewBadge = 0;
+    const _setDockBadge = () => {
+      try {
+        const total = _preflightBadge + _previewBadge;
+        app.dock?.setBadge(total ? String(total) : '');
+      } catch { /* macOS only */ }
+    };
     // Avisa (notificación nativa + badge del dock) cuando una campaña queda lista
     // para revisar en el pre-flight, así no se autoriza ninguna sin revisarla.
     startPreflightWatch({
@@ -317,9 +328,32 @@ async function launchMotor() {
           n.show();
         } catch { /* notificación best-effort */ }
       },
-      setBadge: (n) => {
-        try { app.dock?.setBadge(n ? String(n) : ''); } catch { /* macOS only */ }
+      setBadge: (n) => { _preflightBadge = n || 0; _setDockBadge(); },
+    });
+    // Avisa cuando el CLI deja un "preview listo" en el motor (Pre-flight de Preview):
+    // Notification nativa + dock badge + deep-link a la sección Preview.
+    startPreviewWatch({
+      motorPort: motor.port,
+      intervalMs: 20000,
+      notify: (p) => {
+        try {
+          const n = new Notification({
+            title: 'Preview listo',
+            body: `${p.titulo || 'Pieza'}${p.cliente ? ' · ' + p.cliente : ''}`,
+          });
+          n.on('click', () => {
+            try {
+              if (mainWindow && !mainWindow.isDestroyed()) {
+                mainWindow.show();
+                mainWindow.focus();
+                if (uiServer) mainWindow.loadURL(previewDeepLink(uiServer.url, p.id));
+              }
+            } catch { /* click best-effort */ }
+          });
+          n.show();
+        } catch { /* notificación best-effort */ }
       },
+      setBadge: (n) => { _previewBadge = n || 0; _setDockBadge(); },
     });
     // Estado en vivo del motor: qué pieza procesa (overlay chip + título + Tray).
     // NO toca el dock badge (lo usa el preflight watcher de arriba).
