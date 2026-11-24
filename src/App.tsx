@@ -21,6 +21,7 @@ const PortalLogin = React.lazy(() => import('./pages/portal/PortalLogin'));
 const PortalActivate = React.lazy(() => import('./pages/portal/PortalActivate'));
 import PortalGuard from './components/auth/PortalGuard';
 import PortalLoader from './components/portal/PortalLoader';
+import { PortalBoot } from './components/portal/PortalBoot';
 
 // Detectar y redirigir invitaciones y recuperaciones de auth de Supabase a /admin/set-password
 const AuthRedirectHandler: React.FC = () => {
@@ -187,7 +188,7 @@ const App: React.FC = () => {
                     <Route path="/admin/portal-preview/:clientId" element={<AuthGuard allowedRoles={['admin', 'vendedor']}><PortalPreview /></AuthGuard>} />
                     <Route path="/portal/login" element={<Suspense fallback={<PortalLoader />}><PortalLogin /></Suspense>} />
                     <Route path="/portal/activar" element={<Suspense fallback={<PortalLoader />}><PortalActivate /></Suspense>} />
-                    <Route path="/portal" element={<PortalGuard><Suspense fallback={<PortalLoader />}><PortalView /></Suspense></PortalGuard>} />
+                    <Route path="/portal" element={<PortalBoot><PortalGuard><Suspense fallback={<PortalLoader />}><PortalView /></Suspense></PortalGuard></PortalBoot>} />
                   </Routes>
                 </Suspense>
               </LandingSmoothScrollWrapper>
