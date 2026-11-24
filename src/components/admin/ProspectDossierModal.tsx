@@ -16,6 +16,7 @@ import {
   TrendingUp,
   DollarSign,
   MessageSquare,
+  MessageCircle,
   PhoneCall,
   Mail,
   UserCheck,
@@ -246,6 +247,11 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
       const initialChannel = currentStage === 'no_answer' ? 'reactivation' : 'conversational';
       setPitchChannel(initialChannel);
       loadPitchForChannel(prospect, initialChannel);
+    } else {
+      // prospect === null: el padre cerró el modal (X/backdrop). Hay que limpiar el
+      // estado interno, si no `currentProspect` queda con el lead viejo y el modal
+      // nunca se oculta (la X "no cierra").
+      setCurrentProspect(null);
     }
   }, [prospect, currentStage]);
 
@@ -456,10 +462,13 @@ export const ProspectDossierModal: React.FC<ProspectDossierModalProps> = ({
             <div className="flex items-center gap-3 text-zinc-400 flex-wrap">
               {currentProspect.phone ? (
                 <a
-                  href={`tel:${cleanPhone}`}
-                  className="flex items-center gap-1.5 text-zinc-300 hover:text-purple-400 font-mono transition-colors"
+                  href={formatWhatsAppUrl(currentProspect.phone || '', '')}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Abrir WhatsApp"
+                  className="flex items-center gap-1.5 text-zinc-300 hover:text-emerald-400 font-mono transition-colors"
                 >
-                  <Phone size={13} className="text-purple-400" />
+                  <MessageCircle size={13} className="text-emerald-400" />
                   <span>{currentProspect.phone}</span>
                 </a>
               ) : (

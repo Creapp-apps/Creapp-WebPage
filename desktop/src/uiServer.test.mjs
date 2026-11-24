@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
-import { startUiServer } from './uiServer.mjs';
+import { startUiServer, injectMapsKey } from './uiServer.mjs';
 
 const config = { creappPath: '/app', uiPort: 5199 };
 const dist = path.join('/app', 'dist');
@@ -60,6 +60,20 @@ test('SPA fallback: ruta profunda y query devuelven index.html 200', async () =>
     assert.match(r.headers['Content-Type'], /text\/html/);
     assert.equal(r.body.toString(), '<html>INDEX</html>');
   }
+});
+
+test('injectMapsKey: sin key no toca el html', () => {
+  const buf = Buffer.from('<head><title>x</title></head>');
+  assert.equal(injectMapsKey(buf, { googleMapsApiKey: '' }).toString(), '<head><title>x</title></head>');
+  assert.equal(injectMapsKey(buf, {}).toString(), '<head><title>x</title></head>');
+});
+
+test('injectMapsKey: con key siembra localStorage antes del bundle', () => {
+  const out = injectMapsKey(Buffer.from('<head></head><body></body>'), { googleMapsApiKey: 'AIzaKEY123' }).toString();
+  assert.match(out, /creapp_google_maps_api_key/);
+  assert.match(out, /"AIzaKEY123"/);
+  // el script va dentro del <head>, antes del cuerpo/bundle
+  assert.ok(out.indexOf('<script>') < out.indexOf('<body>'));
 });
 
 test('path traversal no escapa de dist', async () => {

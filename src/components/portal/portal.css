@@ -207,3 +207,41 @@
 .portal .signout{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:500;color:var(--muted);background:rgba(255,255,255,.03);border:1px solid var(--line);padding:9px 16px;border-radius:999px;cursor:pointer;transition:color .2s,border-color .2s,background .2s;white-space:nowrap}
 .portal .signout:hover{color:var(--cream);border-color:rgba(var(--wood-rgb),.5);background:rgba(var(--wood-rgb),.08)}
 .portal .signout:focus-visible{outline:none;border-color:var(--wood);box-shadow:0 0 0 3px rgba(var(--wood-rgb),.2)}
+
+/* ===== Visor de piezas tipo reel (one-by-one) ===== */
+.portal .viewer{max-width:1040px;margin:24px auto 0;display:flex;flex-direction:column;gap:14px}
+.portal .vprog{display:flex;gap:6px;padding:0 2px}
+.portal .vprog-seg{flex:1;height:4px;border-radius:999px;background:rgba(255,255,255,.14);border:0;padding:0;cursor:pointer;transition:background .2s}
+.portal .vprog-seg.done{background:rgba(var(--wood-rgb),.45)}
+.portal .vprog-seg.on{background:var(--wood)}
+.portal .vcount{text-align:center;color:var(--muted);font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:600}
+.portal .vstage{position:relative;display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);gap:30px;align-items:start}
+.portal .vmedia{display:grid;place-items:center;position:relative;min-height:320px}
+.portal .vmedia .pvid,.portal .vmedia .vslides{width:100%}
+.portal .vslide{display:block;max-height:68vh;max-width:100%;border-radius:14px;object-fit:contain;margin:0 auto}
+.portal .vmedia-empty{color:var(--muted);font-size:14px;padding:60px 0}
+.portal .vslides{display:flex;flex-direction:column;gap:10px;align-items:center}
+.portal .vside{display:flex;flex-direction:column;gap:12px;padding-top:6px}
+.portal .vside h3{font-family:var(--font-display),Georgia,serif;font-weight:var(--fw-display);font-size:26px;margin:0;line-height:1.12}
+.portal .vside .cap{color:var(--muted);font-size:14px;white-space:pre-wrap;max-height:30vh;overflow:auto}
+.portal .varrow{position:absolute;top:34%;transform:translateY(-50%);width:44px;height:44px;border-radius:999px;display:grid;place-items:center;background:rgba(0,0,0,.42);backdrop-filter:blur(8px);border:1px solid rgba(var(--wood-rgb),.35);color:var(--cream);cursor:pointer;z-index:4;transition:background .2s,opacity .2s;box-shadow:0 8px 24px rgba(0,0,0,.45)}
+.portal .varrow:hover:not(:disabled){background:rgba(var(--wood-rgb),.28)}
+.portal .varrow:disabled{opacity:.25;cursor:default}
+.portal .varrow.l{left:-10px}
+.portal .varrow.r{right:-10px}
+.portal .vsummary{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;justify-content:space-between;border-top:1px solid var(--line);padding:14px 2px 24px;margin-top:4px}
+.portal .vsummary>span{font-size:13px;color:var(--muted)}
+.portal .vsummary>span b{color:var(--ink)}
+.portal .vskip{font-size:13px;font-weight:600;color:var(--cream);background:rgba(var(--wood-rgb),.12);border:1px solid rgba(var(--wood-rgb),.45);padding:9px 16px;border-radius:999px;cursor:pointer;transition:background .2s}
+.portal .vskip:hover:not(:disabled){background:rgba(var(--wood-rgb),.22)}
+.portal .vskip:disabled{opacity:.5;cursor:default}
+@media(max-width:760px){
+  .portal .viewer{margin-top:12px}
+  .portal .vstage{grid-template-columns:1fr;gap:16px}
+  /* En mobile se navega tocando los segmentos de progreso (anchos) + auto-avance;
+     las flechas flotantes se ocultan para no pisar la conversación. */
+  .portal .varrow{display:none}
+  .portal .vprog-seg{height:6px}
+  .portal .vmedia{min-height:0}
+  .portal .vslide{max-height:56vh}
+}

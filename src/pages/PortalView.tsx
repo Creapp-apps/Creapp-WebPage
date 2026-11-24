@@ -3,12 +3,10 @@ import { useSearchParams } from 'react-router-dom';
 import { ChevronDown, LogOut } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { getMyCampaigns, submitDecision } from '@/lib/portalService';
-import type { PortalCampaign, PortalDecision, PortalPiece } from '@/lib/portalTypes';
-import { campaignViewState, pickCampaign, groupPieces, progressSummary } from '@/lib/portalView';
-import { CampaignHero } from '@/components/portal/CampaignHero';
-import { PieceRail } from '@/components/portal/PieceRail';
-import { PieceCard } from '@/components/portal/PieceCard';
-import { PiecePlayer } from '@/components/portal/PiecePlayer';
+import type { PortalCampaign, PortalDecision } from '@/lib/portalTypes';
+import { campaignViewState, pickCampaign } from '@/lib/portalView';
+import { orderReview, firstPendingIndex, nextPendingIndex } from '@/lib/reviewQueue';
+import { PieceReview } from '@/components/portal/PieceReview';
 import { AgencyFootCredit } from '@/components/portal/AgencyBadge';
 import PortalLoader from '@/components/portal/PortalLoader';
 import { usePortalTheme } from '@/components/portal/usePortalTheme';
@@ -21,7 +19,7 @@ const PortalView: React.FC = () => {
   const [loadError, setLoadError] = useState(false);
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [open, setOpen] = useState<{ id: string; changes: boolean } | null>(null);
+  const [idx, setIdx] = useState(0);
   // Mínimo de loader diseñado (~2s): la carga se siente intencional, no un flash.
   const [minShown, setMinShown] = useState(false);
 
@@ -55,11 +53,16 @@ const PortalView: React.FC = () => {
 
   const campaign: PortalCampaign | null | undefined = campaigns === undefined ? undefined : pickCampaign(campaigns, params.get('campaign'));
   const state = campaignViewState(campaign);
-  const pieces = campaign?.pieces ?? [];
-  const groups = useMemo(() => groupPieces(pieces), [pieces]);
-  const prog = progressSummary(pieces);
-  const openPiece: PortalPiece | undefined = open ? pieces.find((p) => p.id === open.id) : undefined;
+  const pieces = useMemo(() => orderReview(campaign?.pieces ?? []), [campaign]);
   const { style: themeStyle, dataTheme } = usePortalTheme(campaign);
+
+  // Al cambiar de campaña, arranca en la primera pendiente.
+  useEffect(() => { setIdx(firstPendingIndex(pieces)); }, [campaign?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const advance = useCallback(() => {
+    const nxt = nextPendingIndex(pieces, idx);
+    if (nxt !== null) setIdx(nxt);
+  }, [pieces, idx]);
 
   if (state === 'loading' || !minShown) {
     return <PortalLoader />;
@@ -87,7 +90,10 @@ const PortalView: React.FC = () => {
     );
   }
 
-  const approvePending = async () => { for (const id of prog.pendingIds) await decide(id, 'approved'); };
+  const current = pieces[idx];
+  const approveCurrent = async () => { if (current && await decide(current.id, 'approved')) advance(); };
+  const sendChangesCurrent = async (c: string) => { if (current && await decide(current.id, 'changes_requested', c)) advance(); };
+  const approveRemaining = async () => { for (const p of pieces) if (p.status === 'sent') await decide(p.id, 'approved'); };
 
   return (
     <div className="portal" data-theme={dataTheme} style={themeStyle}>
@@ -100,7 +106,7 @@ const PortalView: React.FC = () => {
                 <div className="cs-field">
                   <select
                     value={campaign.id}
-                    onChange={(e) => { setOpen(null); setParams({ campaign: e.target.value }, { replace: true }); }}
+                    onChange={(e) => setParams({ campaign: e.target.value }, { replace: true })}
                   >
                     {campaigns.map((c, i) => (
                       <option key={c.id} value={c.id}>{[c.month, c.title].filter(Boolean).join(' · ') || `Campaña ${i + 1}`}</option>
@@ -115,49 +121,20 @@ const PortalView: React.FC = () => {
             <LogOut size={14} aria-hidden /> Cerrar sesión
           </button>
         </div>
-        <CampaignHero campaign={campaign} />
-        {groups.map((g) => (
-          <PieceRail key={g.type} type={g.type} count={g.pieces.length}>
-            {g.pieces.map((p, i) => (
-              <PieceCard
-                key={p.id}
-                piece={p}
-                index={i}
-                busy={busyIds.has(p.id)}
-                error={errors[p.id]}
-                onOpen={() => setOpen({ id: p.id, changes: false })}
-                onApprove={() => decide(p.id, 'approved')}
-                onRequestChanges={() => setOpen({ id: p.id, changes: true })}
-              />
-            ))}
-          </PieceRail>
-        ))}
+
+        <PieceReview
+          pieces={pieces}
+          index={idx}
+          onIndex={setIdx}
+          busy={!!current && busyIds.has(current.id)}
+          error={current ? errors[current.id] : null}
+          onApprove={approveCurrent}
+          onSendChanges={sendChangesCurrent}
+          onApproveRemaining={approveRemaining}
+        />
+
         <AgencyFootCredit />
       </div>
-
-      <div className="footer">
-        <div className="in">
-          <span><b>{prog.approved} de {prog.total}</b> aprobadas · {prog.pending > 0 && `${prog.pending} ${prog.pending === 1 ? 'espera' : 'esperan'} tu mirada`}{prog.pending > 0 && prog.changes > 0 && ' · '}{prog.changes > 0 && `${prog.changes} con cambios pedidos`}{prog.pending === 0 && prog.changes === 0 && 'todo listo'}</span>
-          {prog.pending > 0 && (
-            <div className="cta">
-              <button type="button" className="btn approve approve-all" disabled={busyIds.size > 0} onClick={approvePending}>Aprobar pendientes</button>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {openPiece && (
-        <PiecePlayer
-          key={openPiece.id}
-          piece={openPiece}
-          startWithChanges={open?.changes}
-          busy={busyIds.has(openPiece.id)}
-          error={errors[openPiece.id]}
-          onClose={() => setOpen(null)}
-          onApprove={async () => { if (await decide(openPiece.id, 'approved')) setOpen(null); }}
-          onSendChanges={async (c) => { if (await decide(openPiece.id, 'changes_requested', c)) setOpen(null); }}
-        />
-      )}
     </div>
   );
 };

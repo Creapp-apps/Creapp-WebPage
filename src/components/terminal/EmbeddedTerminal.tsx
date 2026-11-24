@@ -48,6 +48,20 @@ export default function EmbeddedTerminal() {
     let disposed = false;
     const offData = creappTerm.onData((d) => { if (!disposed) term.write(d); });
     const onInput = term.onData((d) => creappTerm.write(d));
+
+    // Shift+Enter = salto de línea, no envío. xterm por defecto manda `\r` pelado
+    // (igual que Enter) y Claude Code lo lee como "enviar". Lo mapeamos a la
+    // secuencia meta-enter (`\x1b\r`), la misma que produce Option+Enter en Mac,
+    // que Claude Code interpreta como newline. Devolver false corta el default de
+    // xterm (no se dispara onData para esa tecla).
+    term.attachCustomKeyEventHandler((e) => {
+      if (e.type === 'keydown' && e.key === 'Enter' && e.shiftKey) {
+        if (!disposed) creappTerm.write('\x1b\r');
+        return false;
+      }
+      return true;
+    });
+
     creappTerm.start({ cols: term.cols, rows: term.rows });
 
     const ro = new ResizeObserver(() => {
