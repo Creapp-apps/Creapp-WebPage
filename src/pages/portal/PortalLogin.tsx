@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabaseClient';
 import { homePathForRole } from '@/lib/portalAccess';
-import '@/components/portal/portal.css';
-import { shell, card, input, label, button, errorBox } from './portalAuthStyles';
+import { AuthShell, fieldCls, labelCls, primaryBtnCls, ErrorBox } from './authShell';
 
 const PortalLogin: React.FC = () => {
   const navigate = useNavigate();
@@ -29,33 +28,46 @@ const PortalLogin: React.FC = () => {
   };
 
   return (
-    <div className="portal" style={shell}>
-      <form style={card} onSubmit={submit} noValidate>
-        <div className="eyebrow">Tu agencia te presenta</div>
-        <h1 className="serif" style={{ fontWeight: 500, fontSize: 30, margin: '12px 0 4px' }}>Ingresá a tu portal</h1>
-        <p style={{ color: 'var(--muted)', fontSize: 14, margin: 0 }}>Acá ves tu campaña y las piezas listas para aprobar.</p>
+    <AuthShell
+      eyebrow="Tu agencia te presenta"
+      title="Ingresá a tu portal"
+      subtitle="Acá ves tu campaña y las piezas listas para aprobar."
+      footer={
+        <>
+          <button
+            type="button"
+            onClick={() => setForgot((v) => !v)}
+            className="text-[13px] text-muted-foreground underline underline-offset-2 transition-colors hover:text-white"
+          >
+            Olvidé mi contraseña
+          </button>
+          {forgot && (
+            <p className="mx-auto mt-2 max-w-xs text-[13px] text-muted-foreground">
+              Pedile a tu agencia que te reenvíe la invitación y vas a poder crear una contraseña nueva.
+            </p>
+          )}
+        </>
+      }
+    >
+      <form onSubmit={submit} noValidate className="grid gap-3">
+        <div>
+          <label className={labelCls} htmlFor="p-email">Email</label>
+          <input id="p-email" type="email" autoComplete="email" className={fieldCls}
+            value={email} onChange={(e) => setEmail(e.target.value)} />
+        </div>
+        <div>
+          <label className={labelCls} htmlFor="p-pass">Contraseña</label>
+          <input id="p-pass" type="password" autoComplete="current-password" className={fieldCls}
+            value={password} onChange={(e) => setPassword(e.target.value)} />
+        </div>
 
-        <label style={label} htmlFor="p-email">Email</label>
-        <input id="p-email" type="email" autoComplete="email" style={input} value={email} onChange={(e) => setEmail(e.target.value)} />
-        <label style={label} htmlFor="p-pass">Contraseña</label>
-        <input id="p-pass" type="password" autoComplete="current-password" style={input} value={password} onChange={(e) => setPassword(e.target.value)} />
+        {error && <ErrorBox>{error}</ErrorBox>}
 
-        {error && <div role="alert" style={errorBox}>{error}</div>}
-        <button type="submit" style={{ ...button, opacity: loading ? 0.6 : 1 }} disabled={loading}>
+        <button type="submit" className={primaryBtnCls} disabled={loading}>
           {loading ? 'Ingresando…' : 'Ingresar'}
         </button>
-
-        <button type="button" onClick={() => setForgot((v) => !v)}
-          style={{ background: 'none', border: 'none', color: 'var(--muted)', fontSize: 13, marginTop: 16, cursor: 'pointer', textDecoration: 'underline' }}>
-          Olvidé mi contraseña
-        </button>
-        {forgot && (
-          <p style={{ color: 'var(--muted)', fontSize: 13, margin: '8px 0 0' }}>
-            Pedile a tu agencia que te reenvíe la invitación y vas a poder crear una contraseña nueva.
-          </p>
-        )}
       </form>
-    </div>
+    </AuthShell>
   );
 };
 

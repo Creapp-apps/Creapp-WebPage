@@ -7,6 +7,7 @@ import { PieceRail } from '@/components/portal/PieceRail';
 import { PieceCard } from '@/components/portal/PieceCard';
 import { PiecePlayer } from '@/components/portal/PiecePlayer';
 import PortalLoader from '@/components/portal/PortalLoader';
+import { usePortalTheme } from '@/components/portal/usePortalTheme';
 import '@/components/portal/portal.css';
 
 const noop = () => {};
@@ -30,6 +31,7 @@ const PortalPreview: React.FC = () => {
   }, [clientId]);
 
   const groups = useMemo(() => groupPieces(preview?.campaign.pieces ?? []), [preview]);
+  const { style: themeStyle, dataTheme } = usePortalTheme(preview ? preview.campaign : null);
 
   const banner = (
     <div style={{ position: 'sticky', top: 0, zIndex: 50, background: '#7c3aed', color: '#fff', padding: '10px 16px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8, fontSize: 13, fontWeight: 600 }}>
@@ -44,7 +46,7 @@ const PortalPreview: React.FC = () => {
 
   if (!preview) {
     return (
-      <div className="portal">
+      <div className="portal" data-theme={dataTheme} style={themeStyle}>
         {banner}
         <div className="empty">
           <div>
@@ -59,7 +61,7 @@ const PortalPreview: React.FC = () => {
   const { campaign, draftJobIds } = preview;
   const openPiece = openId ? campaign.pieces.find((p) => p.id === openId) : undefined;
   return (
-    <div className="portal">
+    <div className="portal" data-theme={dataTheme} style={themeStyle}>
       {banner}
       <div className="wrap">
         <CampaignHero campaign={campaign} />

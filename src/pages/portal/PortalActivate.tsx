@@ -2,8 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabaseClient';
 import { homePathForRole } from '@/lib/portalAccess';
-import '@/components/portal/portal.css';
-import { shell, card, input, label, button, errorBox } from './portalAuthStyles';
+import { AuthShell, fieldCls, labelCls, primaryBtnCls, ErrorBox } from './authShell';
 
 const MIN_LEN = 8;
 
@@ -62,39 +61,46 @@ const PortalActivate: React.FC = () => {
     navigate(homePathForRole('client'), { replace: true });
   };
 
-  return (
-    <div className="portal" style={shell}>
-      <form style={card} onSubmit={submit} noValidate>
-        <div className="eyebrow">Tu agencia te presenta</div>
-        <h1 className="serif" style={{ fontWeight: 500, fontSize: 30, margin: '12px 0 4px' }}>Creá tu contraseña</h1>
-        <p style={{ color: 'var(--muted)', fontSize: 14, margin: 0 }}>Con esto activás tu acceso al portal de tu campaña.</p>
+  const secondaryBtnCls =
+    'mt-4 w-full rounded-full border border-white/15 bg-white/5 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10';
 
-        {checking ? (
-          <p style={{ color: 'var(--muted)', marginTop: 20 }}>Verificando tu invitación…</p>
-        ) : hasSession && !consumedToken ? (
-          <>
-            <p style={{ color: 'var(--muted)', marginTop: 20 }}>Ya tenés una sesión abierta.</p>
-            <button type="button" style={button} onClick={() => navigate('/portal')}>Ir a mi portal</button>
-          </>
-        ) : !hasSession ? (
-          <>
-            {error && <div role="alert" style={errorBox}>{error}</div>}
-            <button type="button" style={button} onClick={() => navigate('/portal/login')}>Ir a ingresar</button>
-          </>
-        ) : (
-          <>
-            <label style={label} htmlFor="a-pass">Contraseña nueva</label>
-            <input id="a-pass" type="password" autoComplete="new-password" style={input} value={password} onChange={(e) => setPassword(e.target.value)} />
-            <label style={label} htmlFor="a-conf">Repetí la contraseña</label>
-            <input id="a-conf" type="password" autoComplete="new-password" style={input} value={confirm} onChange={(e) => setConfirm(e.target.value)} />
-            {error && <div role="alert" style={errorBox}>{error}</div>}
-            <button type="submit" style={{ ...button, opacity: saving ? 0.6 : 1 }} disabled={saving}>
-              {saving ? 'Guardando…' : 'Activar mi acceso'}
-            </button>
-          </>
-        )}
-      </form>
-    </div>
+  return (
+    <AuthShell
+      eyebrow="Tu agencia te presenta"
+      title="Creá tu contraseña"
+      subtitle="Con esto activás tu acceso al portal de tu campaña."
+    >
+      {checking ? (
+        <p className="text-center text-sm text-muted-foreground">Verificando tu invitación…</p>
+      ) : hasSession && !consumedToken ? (
+        <>
+          <p className="text-center text-sm text-muted-foreground">Ya tenés una sesión abierta.</p>
+          <button type="button" className={secondaryBtnCls} onClick={() => navigate('/portal')}>Ir a mi portal</button>
+        </>
+      ) : !hasSession ? (
+        <>
+          {error && <ErrorBox>{error}</ErrorBox>}
+          <button type="button" className={secondaryBtnCls} onClick={() => navigate('/portal/login')}>Ir a ingresar</button>
+        </>
+      ) : (
+        <form onSubmit={submit} noValidate className="grid gap-3">
+          <div>
+            <label className={labelCls} htmlFor="a-pass">Contraseña nueva</label>
+            <input id="a-pass" type="password" autoComplete="new-password" className={fieldCls}
+              value={password} onChange={(e) => setPassword(e.target.value)} />
+          </div>
+          <div>
+            <label className={labelCls} htmlFor="a-conf">Repetí la contraseña</label>
+            <input id="a-conf" type="password" autoComplete="new-password" className={fieldCls}
+              value={confirm} onChange={(e) => setConfirm(e.target.value)} />
+          </div>
+          {error && <ErrorBox>{error}</ErrorBox>}
+          <button type="submit" className={primaryBtnCls} disabled={saving}>
+            {saving ? 'Guardando…' : 'Activar mi acceso'}
+          </button>
+        </form>
+      )}
+    </AuthShell>
   );
 };
 

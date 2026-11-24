@@ -11,6 +11,7 @@ import { PieceCard } from '@/components/portal/PieceCard';
 import { PiecePlayer } from '@/components/portal/PiecePlayer';
 import { AgencyFootCredit } from '@/components/portal/AgencyBadge';
 import PortalLoader from '@/components/portal/PortalLoader';
+import { usePortalTheme } from '@/components/portal/usePortalTheme';
 import '@/components/portal/portal.css';
 
 const PortalView: React.FC = () => {
@@ -58,13 +59,14 @@ const PortalView: React.FC = () => {
   const groups = useMemo(() => groupPieces(pieces), [pieces]);
   const prog = progressSummary(pieces);
   const openPiece: PortalPiece | undefined = open ? pieces.find((p) => p.id === open.id) : undefined;
+  const { style: themeStyle, dataTheme } = usePortalTheme(campaign);
 
   if (state === 'loading' || !minShown) {
     return <PortalLoader />;
   }
   if (state === 'empty' || !campaign) {
     return (
-      <div className="portal">
+      <div className="portal" data-theme={dataTheme} style={themeStyle}>
         <div className="wrap">
           <div className="topbar">
             <span />
@@ -88,7 +90,7 @@ const PortalView: React.FC = () => {
   const approvePending = async () => { for (const id of prog.pendingIds) await decide(id, 'approved'); };
 
   return (
-    <div className="portal">
+    <div className="portal" data-theme={dataTheme} style={themeStyle}>
       <div className="wrap">
         <div className="topbar">
           <div className="left">
