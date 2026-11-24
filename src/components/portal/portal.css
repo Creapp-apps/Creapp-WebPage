@@ -149,7 +149,8 @@
 .portal .modal .cap{color:var(--muted);font-size:14px;white-space:pre-wrap;max-height:30vh;overflow:auto}
 .portal .modal .close{align-self:flex-end;background:none;border:0;color:var(--muted);font-size:22px;cursor:pointer}
 .portal .slidenav{display:flex;gap:12px;align-items:center;color:var(--muted);font-size:13px}
-.portal .slidenav button{background:rgba(255,255,255,.06);border:1px solid var(--line);color:var(--cream);border-radius:999px;width:34px;height:34px;cursor:pointer}
+.portal .slidenav button{background:var(--wood);border:none;color:var(--cream);border-radius:999px;width:34px;height:34px;cursor:pointer;font-weight:700;transition:background .2s}
+.portal .slidenav button:hover{background:var(--wood-light)}
 
 /* ---- loader del portal (estética campaña) ---- */
 .portal .ploader{min-height:100vh;display:grid;place-content:center;justify-items:center;gap:14px;text-align:center;padding:24px}
@@ -215,7 +216,15 @@
 .portal .vprog-seg.done{background:rgba(var(--wood-rgb),.45)}
 .portal .vprog-seg.on{background:var(--wood)}
 .portal .vcount{text-align:center;color:var(--muted);font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:600}
-.portal .vstage{position:relative;display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);gap:30px;align-items:start;padding:0 58px}
+.portal .vstage{position:relative;padding:0 58px}
+.portal .vstage-body{display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);gap:30px;align-items:start}
+.portal .vstage-body.from-right{animation:vPieceInR .42s cubic-bezier(.16,1,.3,1) both}
+.portal .vstage-body.from-left{animation:vPieceInL .42s cubic-bezier(.16,1,.3,1) both}
+@keyframes vPieceInR{from{opacity:0;transform:translateX(44px)}to{opacity:1;transform:none}}
+@keyframes vPieceInL{from{opacity:0;transform:translateX(-44px)}to{opacity:1;transform:none}}
+.portal .vslide-in{animation:vSlideIn .35s cubic-bezier(.16,1,.3,1) both}
+@keyframes vSlideIn{from{opacity:0;transform:translateX(26px) scale(.985)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.portal .vstage-body,.portal .vslide-in{animation:none}}
 .portal .vmedia{display:grid;place-items:center;position:relative;min-height:320px}
 .portal .vmedia .pvid,.portal .vmedia .vslides{width:100%}
 .portal .vslide{display:block;max-height:68vh;max-width:100%;border-radius:14px;object-fit:contain;margin:0 auto}
@@ -224,8 +233,8 @@
 .portal .vside{display:flex;flex-direction:column;gap:12px;padding-top:6px}
 .portal .vside h3{font-family:var(--font-display),Georgia,serif;font-weight:var(--fw-display);font-size:26px;margin:0;line-height:1.12}
 .portal .vside .cap{color:var(--muted);font-size:14px;white-space:pre-wrap;max-height:30vh;overflow:auto}
-.portal .varrow{position:absolute;top:34%;transform:translateY(-50%);width:44px;height:44px;border-radius:999px;display:grid;place-items:center;background:rgba(0,0,0,.42);backdrop-filter:blur(8px);border:1px solid rgba(var(--wood-rgb),.35);color:var(--cream);cursor:pointer;z-index:4;transition:background .2s,opacity .2s;box-shadow:0 8px 24px rgba(0,0,0,.45)}
-.portal .varrow:hover:not(:disabled){background:rgba(var(--wood-rgb),.28)}
+.portal .varrow{position:absolute;top:36%;transform:translateY(-50%);width:44px;height:44px;border-radius:999px;display:grid;place-items:center;background:var(--wood);border:none;color:var(--cream);cursor:pointer;z-index:4;transition:background .2s,transform .2s,opacity .2s;box-shadow:0 8px 24px rgba(0,0,0,.45)}
+.portal .varrow:hover:not(:disabled){background:var(--wood-light);transform:translateY(-50%) scale(1.08)}
 .portal .varrow:disabled{opacity:.25;cursor:default}
 .portal .varrow.l{left:2px}
 .portal .varrow.r{right:2px}
@@ -237,7 +246,8 @@
 .portal .vskip:disabled{opacity:.5;cursor:default}
 @media(max-width:760px){
   .portal .viewer{margin-top:12px}
-  .portal .vstage{grid-template-columns:1fr;gap:16px;padding:0}
+  .portal .vstage{padding:0}
+  .portal .vstage-body{grid-template-columns:1fr;gap:16px}
   /* En mobile se navega tocando los segmentos de progreso (anchos) + auto-avance;
      las flechas flotantes se ocultan para no pisar la conversación. */
   .portal .varrow{display:none}

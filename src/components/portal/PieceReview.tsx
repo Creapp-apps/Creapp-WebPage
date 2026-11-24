@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { PortalPiece } from '@/lib/portalTypes';
 import { typeMeta } from '@/lib/portalView';
@@ -29,6 +29,11 @@ export const PieceReview: React.FC<Props> = ({
   const piece = pieces[index];
   const total = pieces.length;
   const summary = reviewSummary(pieces);
+
+  // Dirección de la navegación para animar la entrada hacia el lado correcto.
+  const prevIdx = useRef(index);
+  const dir = index >= prevIdx.current ? 1 : -1;
+  useEffect(() => { prevIdx.current = index; }, [index]);
 
   // Reset de estado local al cambiar de pieza.
   useEffect(() => { setSlide(0); setAsking(false); setComment(''); }, [piece?.id]);
@@ -72,12 +77,13 @@ export const PieceReview: React.FC<Props> = ({
           <ChevronLeft size={22} />
         </button>
 
+        <div className={`vstage-body ${dir >= 0 ? 'from-right' : 'from-left'}`} key={piece.id}>
         <div className="vmedia">
           {piece.mediaUrl ? (
             <PortalVideo src={piece.mediaUrl} poster={piece.coverUrl} />
           ) : piece.slides.length > 0 ? (
             <div className="vslides">
-              <img className="vslide" src={piece.slides[slide]} alt={`Lámina ${slide + 1}`} />
+              <img className="vslide vslide-in" key={slide} src={piece.slides[slide]} alt={`Lámina ${slide + 1}`} />
               <div className="slidenav">
                 <button type="button" aria-label="Lámina anterior" onClick={() => setSlide((s) => Math.max(0, s - 1))}>‹</button>
                 <span>{slide + 1} / {piece.slides.length}</span>
@@ -134,6 +140,7 @@ export const PieceReview: React.FC<Props> = ({
               <PieceThread jobId={piece.id} mode="client" variant="portal" />
             </div>
           )}
+        </div>
         </div>
 
         <button type="button" className="varrow r" aria-label="Pieza siguiente" disabled={index === total - 1} onClick={() => go(index + 1)}>
