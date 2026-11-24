@@ -182,9 +182,9 @@
 .portal .pvid{position:relative;width:100%;display:flex;align-items:center;justify-content:center;border-radius:12px;overflow:hidden;background:#02080f}
 .portal .pvid video{max-height:68vh;max-width:100%;border-radius:12px;object-fit:contain;display:block;cursor:pointer}
 .portal .pvid.idle video{cursor:none}
-.portal .pvid-big{position:absolute;inset:0;margin:auto;width:72px;height:72px;border-radius:50%;border:1px solid rgba(var(--wood-rgb),.5);background:rgba(4,16,31,.55);backdrop-filter:blur(6px);color:var(--cream);display:grid;place-items:center;cursor:pointer;transition:transform .2s,background .2s;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.portal .pvid-big{position:absolute;inset:0;margin:auto;width:72px;height:72px;border-radius:50%;border:none;background:var(--wood);color:var(--cream);display:grid;place-items:center;cursor:pointer;transition:transform .2s,background .2s;box-shadow:0 10px 30px rgba(0,0,0,.5)}
 .portal .pvid-big svg{margin-left:3px}
-.portal .pvid-big:hover{transform:scale(1.06);background:rgba(var(--wood-rgb),.22);border-color:rgba(var(--wood-rgb),.8)}
+.portal .pvid-big:hover{transform:scale(1.06);background:var(--wood-light)}
 .portal .pvid-bar{position:absolute;left:10px;right:10px;bottom:10px;display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:12px;background:linear-gradient(180deg,rgba(2,8,15,.1),rgba(2,8,15,.85));backdrop-filter:blur(8px);border:1px solid var(--line);transition:opacity .3s,transform .3s}
 .portal .pvid.idle .pvid-bar{opacity:0;transform:translateY(8px);pointer-events:none}
 .portal .pvid-ic{background:none;border:0;color:var(--cream);cursor:pointer;display:grid;place-items:center;padding:3px;border-radius:7px;opacity:.9;transition:opacity .15s,color .15s}
@@ -215,7 +215,7 @@
 .portal .vprog-seg.done{background:rgba(var(--wood-rgb),.45)}
 .portal .vprog-seg.on{background:var(--wood)}
 .portal .vcount{text-align:center;color:var(--muted);font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:600}
-.portal .vstage{position:relative;display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);gap:30px;align-items:start}
+.portal .vstage{position:relative;display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);gap:30px;align-items:start;padding:0 58px}
 .portal .vmedia{display:grid;place-items:center;position:relative;min-height:320px}
 .portal .vmedia .pvid,.portal .vmedia .vslides{width:100%}
 .portal .vslide{display:block;max-height:68vh;max-width:100%;border-radius:14px;object-fit:contain;margin:0 auto}
@@ -227,17 +227,17 @@
 .portal .varrow{position:absolute;top:34%;transform:translateY(-50%);width:44px;height:44px;border-radius:999px;display:grid;place-items:center;background:rgba(0,0,0,.42);backdrop-filter:blur(8px);border:1px solid rgba(var(--wood-rgb),.35);color:var(--cream);cursor:pointer;z-index:4;transition:background .2s,opacity .2s;box-shadow:0 8px 24px rgba(0,0,0,.45)}
 .portal .varrow:hover:not(:disabled){background:rgba(var(--wood-rgb),.28)}
 .portal .varrow:disabled{opacity:.25;cursor:default}
-.portal .varrow.l{left:-10px}
-.portal .varrow.r{right:-10px}
+.portal .varrow.l{left:2px}
+.portal .varrow.r{right:2px}
 .portal .vsummary{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;justify-content:space-between;border-top:1px solid var(--line);padding:14px 2px 24px;margin-top:4px}
 .portal .vsummary>span{font-size:13px;color:var(--muted)}
 .portal .vsummary>span b{color:var(--ink)}
-.portal .vskip{font-size:13px;font-weight:600;color:var(--cream);background:rgba(var(--wood-rgb),.12);border:1px solid rgba(var(--wood-rgb),.45);padding:9px 16px;border-radius:999px;cursor:pointer;transition:background .2s}
-.portal .vskip:hover:not(:disabled){background:rgba(var(--wood-rgb),.22)}
+.portal .vskip{font-size:13px;font-weight:700;color:var(--cream);background:var(--wood);border:none;padding:10px 18px;border-radius:999px;cursor:pointer;transition:background .2s,filter .2s}
+.portal .vskip:hover:not(:disabled){background:var(--wood-light)}
 .portal .vskip:disabled{opacity:.5;cursor:default}
 @media(max-width:760px){
   .portal .viewer{margin-top:12px}
-  .portal .vstage{grid-template-columns:1fr;gap:16px}
+  .portal .vstage{grid-template-columns:1fr;gap:16px;padding:0}
   /* En mobile se navega tocando los segmentos de progreso (anchos) + auto-avance;
      las flechas flotantes se ocultan para no pisar la conversación. */
   .portal .varrow{display:none}
