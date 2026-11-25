@@ -9,6 +9,7 @@ import { BrandMarkView } from '@/components/portal/BrandMark';
 import { getMyCalendarPieces } from '@/lib/calendarService';
 import type { CalendarPiece } from '@/lib/calendarTypes';
 import { nextPublication, upcomingPublications } from '@/lib/portalHome';
+import { liveStats } from '@/lib/portalLive';
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 const mesLabel = (month: string | null): string => {
@@ -37,10 +38,13 @@ export const PortalHome: React.FC<Props> = ({ campaign, campaignId, onNavigate, 
     return () => { alive = false; };
   }, [campaignId]);
 
+  const live = !!campaign.live;
   const prog = progressSummary(campaign.pieces);
   const mes = mesLabel(campaign.month);
   const upcoming = useMemo(() => (cal ? upcomingPublications(cal, now, 3) : []), [cal, now]);
   const next = useMemo(() => (cal ? nextPublication(cal, now) : null), [cal, now]);
+  // En vivo las tarjetas y el rail salen del calendario (no de campaign.pieces=[]).
+  const stats = useMemo(() => (cal ? liveStats(cal, now) : null), [cal, now]);
 
   return (
     <div className="home">
@@ -52,26 +56,48 @@ export const PortalHome: React.FC<Props> = ({ campaign, campaignId, onNavigate, 
       </header>
 
       <div className="home-stats">
-        <div className="home-stat">
-          <div className="home-stat-ic"><Layers size={18} /></div>
-          <div className="home-stat-num">{prog.total}</div>
-          <div className="home-stat-lab">{prog.total === 1 ? 'pieza esta campaña' : 'piezas esta campaña'}</div>
-        </div>
-        <div className="home-stat">
-          <div className="home-stat-ic ok"><CheckCircle2 size={18} /></div>
-          <div className="home-stat-num">{prog.approved}</div>
-          <div className="home-stat-lab">aprobadas</div>
-        </div>
-        <div className="home-stat">
-          <div className="home-stat-ic warn"><Clock size={18} /></div>
-          <div className="home-stat-num">{prog.pending}</div>
-          <div className="home-stat-lab">{prog.pending === 1 ? 'espera tu mirada' : 'esperan tu mirada'}</div>
-        </div>
-        <div className="home-stat">
-          <div className="home-stat-ic accent"><CalendarClock size={18} /></div>
-          <div className="home-stat-num home-stat-sm">{cal === undefined ? '·' : next?.date ? dayLabel(next.date) : '—'}</div>
-          <div className="home-stat-lab">{cal === undefined ? 'cargando…' : next?.date ? 'próxima publicación' : 'en revisión'}</div>
-        </div>
+        {live ? (
+          <>
+            <div className="home-stat">
+              <div className="home-stat-ic"><Layers size={18} /></div>
+              <div className="home-stat-num">{stats ? stats.total : '·'}</div>
+              <div className="home-stat-lab">{stats && stats.total === 1 ? 'publicación' : 'publicaciones'}</div>
+            </div>
+            <div className="home-stat">
+              <div className="home-stat-ic ok"><CheckCircle2 size={18} /></div>
+              <div className="home-stat-num">{stats ? stats.published : '·'}</div>
+              <div className="home-stat-lab">publicadas</div>
+            </div>
+            <div className="home-stat">
+              <div className="home-stat-ic accent"><CalendarClock size={18} /></div>
+              <div className="home-stat-num home-stat-sm">{cal === undefined ? '·' : stats?.next ? dayLabel(stats.next) : '—'}</div>
+              <div className="home-stat-lab">{cal === undefined ? 'cargando…' : stats?.next ? 'próxima publicación' : 'todo publicado'}</div>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="home-stat">
+              <div className="home-stat-ic"><Layers size={18} /></div>
+              <div className="home-stat-num">{prog.total}</div>
+              <div className="home-stat-lab">{prog.total === 1 ? 'pieza esta campaña' : 'piezas esta campaña'}</div>
+            </div>
+            <div className="home-stat">
+              <div className="home-stat-ic ok"><CheckCircle2 size={18} /></div>
+              <div className="home-stat-num">{prog.approved}</div>
+              <div className="home-stat-lab">aprobadas</div>
+            </div>
+            <div className="home-stat">
+              <div className="home-stat-ic warn"><Clock size={18} /></div>
+              <div className="home-stat-num">{prog.pending}</div>
+              <div className="home-stat-lab">{prog.pending === 1 ? 'espera tu mirada' : 'esperan tu mirada'}</div>
+            </div>
+            <div className="home-stat">
+              <div className="home-stat-ic accent"><CalendarClock size={18} /></div>
+              <div className="home-stat-num home-stat-sm">{cal === undefined ? '·' : next?.date ? dayLabel(next.date) : '—'}</div>
+              <div className="home-stat-lab">{cal === undefined ? 'cargando…' : next?.date ? 'próxima publicación' : 'en revisión'}</div>
+            </div>
+          </>
+        )}
       </div>
 
       {upcoming.length > 0 && (
@@ -94,9 +120,24 @@ export const PortalHome: React.FC<Props> = ({ campaign, campaignId, onNavigate, 
       <section className="home-sec">
         <div className="home-sec-head">
           <h2>Tus piezas</h2>
-          <button type="button" className="home-link" onClick={() => onNavigate('revision')}>Revisar {pendingCount > 0 ? `(${pendingCount})` : ''} <ArrowRight size={14} /></button>
+          <button type="button" className="home-link" onClick={() => onNavigate(live ? 'calendario' : 'revision')}>
+            {live ? 'Ver calendario' : `Revisar ${pendingCount > 0 ? `(${pendingCount})` : ''}`} <ArrowRight size={14} />
+          </button>
         </div>
-        {campaign.pieces.length > 0 ? (
+        {live ? (
+          cal && cal.length > 0 ? (
+            <div className="home-rail">
+              {cal.map((p) => (
+                <button type="button" key={p.id} className="home-piece" aria-label="Ver en el calendario" onClick={() => onNavigate('calendario')}>
+                  {p.coverUrl ? <img src={p.coverUrl} alt="" loading="lazy" /> : <span className="home-piece-noc" />}
+                  {p.published && <span className="home-piece-ok"><CheckCircle2 size={14} /></span>}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <p className="home-empty">Cuando se publiquen tus piezas vas a verlas acá.</p>
+          )
+        ) : campaign.pieces.length > 0 ? (
           <div className="home-rail">
             {campaign.pieces.map((pc) => (
               <button type="button" key={pc.id} className="home-piece" aria-label={`Revisar ${pc.title}`} onClick={() => onNavigate('revision')} title={pc.title}>
@@ -113,7 +154,7 @@ export const PortalHome: React.FC<Props> = ({ campaign, campaignId, onNavigate, 
       </section>
 
       <div className="home-shortcuts">
-        <button type="button" onClick={() => onNavigate('revision')}><ClipboardCheck size={17} /> Revisión</button>
+        {!live && <button type="button" onClick={() => onNavigate('revision')}><ClipboardCheck size={17} /> Revisión</button>}
         <button type="button" onClick={() => onNavigate('calendario')}><CalendarDays size={17} /> Calendario</button>
         <button type="button" onClick={() => onNavigate('insights')}><BarChart3 size={17} /> Insights</button>
       </div>

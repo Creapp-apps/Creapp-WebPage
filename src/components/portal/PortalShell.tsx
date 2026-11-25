@@ -16,6 +16,8 @@ interface Props {
   onSignOut: () => void;
   /** Marca del cliente para el mark superior del sidebar (logo + monograma). */
   brand?: PortalCampaign['client'] | null;
+  /** Modo en vivo: oculta Revisión (campaña ya publicada, nada para revisar). */
+  hideReview?: boolean;
   children: React.ReactNode;
 }
 
@@ -34,7 +36,8 @@ const NAV: NavDef[] = [
 ];
 
 /** Shell del portal del cliente: sidebar colapsable (chrome CreAPP) + contenido. Spec §5.3. */
-export const PortalShell: React.FC<Props> = ({ active, onNavigate, pendingCount = 0, onSignOut, brand, children }) => {
+export const PortalShell: React.FC<Props> = ({ active, onNavigate, pendingCount = 0, onSignOut, brand, hideReview, children }) => {
+  const nav = hideReview ? NAV.filter((n) => n.id !== 'revision') : NAV;
   const initial = (brand?.name ?? 'C').trim().charAt(0).toUpperCase() || 'C';
   const [collapsed, setCollapsed] = useState(readCollapsed);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -72,7 +75,7 @@ export const PortalShell: React.FC<Props> = ({ active, onNavigate, pendingCount 
         </div>
 
         <nav className="psb-nav">
-          {NAV.map(({ id, label, icon: Icon }) => (
+          {nav.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
               type="button"
