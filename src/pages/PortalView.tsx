@@ -6,7 +6,10 @@ import { getMyCampaigns, submitDecision } from '@/lib/portalService';
 import type { PortalCampaign, PortalDecision } from '@/lib/portalTypes';
 import { campaignViewState, pickCampaign } from '@/lib/portalView';
 import { orderReview, firstPendingIndex, nextPendingIndex } from '@/lib/reviewQueue';
-import { PieceReview } from '@/components/portal/PieceReview';
+import { PortalShell, type PortalSection } from '@/components/portal/PortalShell';
+import { PortalReviewSection } from '@/components/portal/PortalReviewSection';
+import { CampaignCalendar } from '@/components/portal/CampaignCalendar';
+import { CampaignHero } from '@/components/portal/CampaignHero';
 import { AgencyFootCredit } from '@/components/portal/AgencyBadge';
 import PortalLoader from '@/components/portal/PortalLoader';
 import { usePortalTheme } from '@/components/portal/usePortalTheme';
@@ -22,6 +25,7 @@ const PortalView: React.FC = () => {
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [idx, setIdx] = useState(0);
+  const [active, setActive] = useState<PortalSection>('revision');
   const boot = usePortalBoot();
   // Mínimo de loader diseñado (~2s): la carga se siente intencional, no un flash.
   const [minShown, setMinShown] = useState(false);
@@ -57,6 +61,7 @@ const PortalView: React.FC = () => {
   const campaign: PortalCampaign | null | undefined = campaigns === undefined ? undefined : pickCampaign(campaigns, params.get('campaign'));
   const state = campaignViewState(campaign);
   const pieces = useMemo(() => orderReview(campaign?.pieces ?? []), [campaign]);
+  const pendingCount = useMemo(() => pieces.filter((p) => p.status === 'sent').length, [pieces]);
   const { style: themeStyle, dataTheme } = usePortalTheme(campaign);
   const accent = useMemo(() => {
     if (!campaign) return null;
@@ -112,44 +117,45 @@ const PortalView: React.FC = () => {
 
   return (
     <div className="portal" data-theme={dataTheme} style={themeStyle}>
-      <div className={`wrap${boot.splashActive ? '' : ' sp-reveal'}`}>
-        <div className="topbar">
-          <div className="left">
-            {campaigns && campaigns.length >= 2 ? (
-              <div className="campaign-switch">
-                <span className="cs-lab">Campaña</span>
-                <div className="cs-field">
-                  <select
-                    value={campaign.id}
-                    onChange={(e) => setParams({ campaign: e.target.value }, { replace: true })}
-                  >
-                    {campaigns.map((c, i) => (
-                      <option key={c.id} value={c.id}>{[c.month, c.title].filter(Boolean).join(' · ') || `Campaña ${i + 1}`}</option>
-                    ))}
-                  </select>
-                  <ChevronDown size={15} className="cs-chev" aria-hidden />
-                </div>
+      <PortalShell active={active} onNavigate={setActive} pendingCount={pendingCount} onSignOut={() => signOut()}>
+        <div className={boot.splashActive ? '' : 'sp-reveal'}>
+          {campaigns && campaigns.length >= 2 && (
+            <div className="campaign-switch cs-top">
+              <span className="cs-lab">Campaña</span>
+              <div className="cs-field">
+                <select
+                  value={campaign.id}
+                  onChange={(e) => setParams({ campaign: e.target.value }, { replace: true })}
+                >
+                  {campaigns.map((c, i) => (
+                    <option key={c.id} value={c.id}>{[c.month, c.title].filter(Boolean).join(' · ') || `Campaña ${i + 1}`}</option>
+                  ))}
+                </select>
+                <ChevronDown size={15} className="cs-chev" aria-hidden />
               </div>
-            ) : <span />}
-          </div>
-          <button type="button" className="signout" onClick={() => signOut()}>
-            <LogOut size={14} aria-hidden /> Cerrar sesión
-          </button>
+            </div>
+          )}
+
+          {active === 'campania' && <CampaignHero campaign={campaign} />}
+
+          {active === 'revision' && (
+            <PortalReviewSection
+              pieces={pieces}
+              index={idx}
+              onIndex={setIdx}
+              busy={!!current && busyIds.has(current.id)}
+              error={current ? errors[current.id] : null}
+              onApprove={approveCurrent}
+              onSendChanges={sendChangesCurrent}
+              onApproveRemaining={approveRemaining}
+            />
+          )}
+
+          {active === 'calendario' && <CampaignCalendar campaignId={campaign.id} />}
+
+          <AgencyFootCredit />
         </div>
-
-        <PieceReview
-          pieces={pieces}
-          index={idx}
-          onIndex={setIdx}
-          busy={!!current && busyIds.has(current.id)}
-          error={current ? errors[current.id] : null}
-          onApprove={approveCurrent}
-          onSendChanges={sendChangesCurrent}
-          onApproveRemaining={approveRemaining}
-        />
-
-        <AgencyFootCredit />
-      </div>
+      </PortalShell>
     </div>
   );
 };

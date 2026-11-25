@@ -402,3 +402,5 @@
   .portal .pshell-mtop{display:flex;align-items:center;gap:12px;padding:16px 2px;position:sticky;top:0;z-index:20}
   .portal .pshell-burger{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;color:var(--ink);background:rgba(255,255,255,.05);border:1px solid var(--line);cursor:pointer}
 }
+
+.portal .campaign-switch.cs-top{margin:0 0 22px}
