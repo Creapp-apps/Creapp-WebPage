@@ -76,12 +76,8 @@ const PortalView: React.FC = () => {
     if (campaigns !== undefined) { boot.setReady(true); boot.setAccent(accent); }
   }, [campaigns, accent]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Al cambiar de campaña, arranca en la primera pendiente. En vivo (sin review),
-  // la sección inicial es Campaña (no Revisión).
-  useEffect(() => {
-    setIdx(firstPendingIndex(pieces));
-    if (campaign?.live) setActive((a) => (a === 'revision' ? 'campania' : a));
-  }, [campaign?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Al cambiar de campaña, arranca en la primera pendiente.
+  useEffect(() => { setIdx(firstPendingIndex(pieces)); }, [campaign?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const advance = useCallback(() => {
     const nxt = nextPendingIndex(pieces, idx);
@@ -121,9 +117,12 @@ const PortalView: React.FC = () => {
   const sendChangesCurrent = async (c: string) => { if (current && await decide(current.id, 'changes_requested', c)) advance(); };
   const approveRemaining = async () => { for (const p of pieces) if (p.status === 'sent') await decide(p.id, 'approved'); };
 
+  // En vivo no hay Revisión: si el estado quedó ahí, se muestra Campaña (sin flash).
+  const section = live && active === 'revision' ? 'campania' : active;
+
   return (
     <div className="portal" data-theme={dataTheme} style={themeStyle}>
-      <PortalShell active={active} onNavigate={setActive} pendingCount={pendingCount} onSignOut={() => signOut()} brand={campaign.client} hideReview={live}>
+      <PortalShell active={section} onNavigate={setActive} pendingCount={pendingCount} onSignOut={() => signOut()} brand={campaign.client} hideReview={live}>
         <div className={boot.splashActive ? '' : 'sp-reveal'}>
           {campaigns && campaigns.length >= 2 && (
             <div className="campaign-switch cs-top">
@@ -142,9 +141,9 @@ const PortalView: React.FC = () => {
             </div>
           )}
 
-          {active === 'campania' && <PortalHome campaign={campaign} campaignId={live ? null : campaign.id} onNavigate={setActive} pendingCount={pendingCount} />}
+          {section === 'campania' && <PortalHome campaign={campaign} campaignId={live ? null : campaign.id} onNavigate={setActive} pendingCount={pendingCount} />}
 
-          {active === 'revision' && (
+          {section === 'revision' && (
             <PortalReviewSection
               pieces={pieces}
               index={idx}
@@ -157,9 +156,9 @@ const PortalView: React.FC = () => {
             />
           )}
 
-          {active === 'calendario' && <CampaignCalendar campaignId={live ? null : campaign.id} />}
+          {section === 'calendario' && <CampaignCalendar campaignId={live ? null : campaign.id} />}
 
-          {active === 'insights' && <PortalInsights />}
+          {section === 'insights' && <PortalInsights />}
 
           <AgencyFootCredit />
         </div>

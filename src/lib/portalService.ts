@@ -29,8 +29,11 @@ export async function getMyCampaigns(): Promise<PortalCampaign[]> {
   if (campRows.length === 0) {
     // Modo en vivo: el cliente no tiene content_campaigns pero sí scheduled_posts
     // (ya publicó sin pasar por review). RLS devuelve solo las suyas. Ver spec §4.2.
+    // Ordenado asc (nulls last) + limit(1): detecta live (≥1 fila) y da el
+    // scheduled_at más temprano para el mes del header. Sin order, un cliente con
+    // >50 posts tomaría un mes arbitrario.
     const { data: sp, error: spErr } = await sb
-      .from('scheduled_posts').select('scheduled_at').limit(50);
+      .from('scheduled_posts').select('scheduled_at').order('scheduled_at', { ascending: true }).limit(1);
     if (spErr) throw spErr;
     const rows = (sp ?? []) as { scheduled_at: string | null }[];
     if (rows.length === 0) return [];
