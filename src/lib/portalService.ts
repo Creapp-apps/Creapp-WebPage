@@ -2,6 +2,7 @@ import { getSupabase } from '@/lib/supabaseClient';
 import { mapCampaign, type AssetRow, type ApprovalRow, type CampaignRow, type ClientRow, type JobRow } from './portalMapper';
 import { submitDecisionWith, type ApprovalClient } from './portalApproval';
 import type { PortalCampaign, PortalDecision } from './portalTypes';
+import { buildLiveCampaign } from './portalLive';
 
 export type { PortalCampaign, PortalPiece, PortalDecision } from './portalTypes';
 
@@ -25,7 +26,17 @@ export async function getMyCampaigns(): Promise<PortalCampaign[]> {
     .order('created_at', { ascending: false });
   if (kErr) throw kErr;
   const campRows = (campaigns ?? []) as CampaignRow[];
-  if (campRows.length === 0) return [];
+  if (campRows.length === 0) {
+    // Modo en vivo: el cliente no tiene content_campaigns pero sí scheduled_posts
+    // (ya publicó sin pasar por review). RLS devuelve solo las suyas. Ver spec §4.2.
+    const { data: sp, error: spErr } = await sb
+      .from('scheduled_posts').select('scheduled_at').limit(50);
+    if (spErr) throw spErr;
+    const rows = (sp ?? []) as { scheduled_at: string | null }[];
+    if (rows.length === 0) return [];
+    const c = client as ClientRow;
+    return [buildLiveCampaign({ name: c.name, logoUrl: c.logo_url, brandColors: c.brand_colors }, rows)];
+  }
 
   const { data: jobs, error: jErr } = await sb
     .from('content_jobs').select('id, campaign_id, type, title, caption, description, hashtags, created_at')
