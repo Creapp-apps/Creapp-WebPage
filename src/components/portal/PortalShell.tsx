@@ -4,6 +4,8 @@ import {
   LogOut, PanelLeftClose, PanelLeft, Menu, X,
 } from 'lucide-react';
 import { AgencyBadge } from '@/components/portal/AgencyBadge';
+import { BrandMarkView } from '@/components/portal/CampaignHero';
+import type { PortalCampaign } from '@/lib/portalTypes';
 
 export type PortalSection = 'campania' | 'revision' | 'calendario' | 'insights';
 
@@ -12,6 +14,8 @@ interface Props {
   onNavigate: (s: PortalSection) => void;
   pendingCount?: number;
   onSignOut: () => void;
+  /** Marca del cliente para el mark superior del sidebar (logo + monograma). */
+  brand?: PortalCampaign['client'] | null;
   children: React.ReactNode;
 }
 
@@ -30,7 +34,8 @@ const NAV: NavDef[] = [
 ];
 
 /** Shell del portal del cliente: sidebar colapsable (chrome CreAPP) + contenido. Spec §5.3. */
-export const PortalShell: React.FC<Props> = ({ active, onNavigate, pendingCount = 0, onSignOut, children }) => {
+export const PortalShell: React.FC<Props> = ({ active, onNavigate, pendingCount = 0, onSignOut, brand, children }) => {
+  const initial = (brand?.name ?? 'C').trim().charAt(0).toUpperCase() || 'C';
   const [collapsed, setCollapsed] = useState(readCollapsed);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -57,9 +62,9 @@ export const PortalShell: React.FC<Props> = ({ active, onNavigate, pendingCount 
 
       <aside className="psb">
         <div className="psb-top">
-          <div className="psb-brand">
-            <span className="psb-mark">C</span>
-            <b className="psb-name creapp">CreAPP</b>
+          <div className="psb-brand" title={brand?.name ?? undefined}>
+            <span className="psb-mark">{initial}</span>
+            <span className="psb-logo">{brand ? <BrandMarkView client={brand} /> : <b className="psb-name">Tu marca</b>}</span>
           </div>
           <button type="button" className="psb-collapse" aria-label={collapsed ? 'Expandir' : 'Colapsar'} onClick={toggleCollapsed}>
             {collapsed ? <PanelLeft size={18} /> : <PanelLeftClose size={18} />}
@@ -96,7 +101,7 @@ export const PortalShell: React.FC<Props> = ({ active, onNavigate, pendingCount 
           <button type="button" className="pshell-burger" aria-label="Abrir menú" onClick={() => setMobileOpen(true)}>
             {mobileOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
-          <b className="creapp">CreAPP</b>
+          {brand && <span className="pshell-mbrand"><BrandMarkView client={brand} /></span>}
         </header>
         {children}
       </main>
