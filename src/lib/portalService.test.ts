@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mapCampaign } from './portalMapper.ts';
 
-const client = { name: 'Cardoso', logo_url: 'l.png', brand_colors: { primary: '#002655' } };
+const client = { name: 'Cardoso', logo_url: 'l.png', brand_colors: { primary: '#002655' }, brand_font: null };
 const campaign = { id: 'c1', title: 'Nov', month: '2026-11', concept: 'x', aesthetic_archetype: 'cinematic_broll' };
 const jobs = [
   { id: 'j1', type: 'reel' as const, title: 'R1', caption: 'cap' },

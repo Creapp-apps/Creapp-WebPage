@@ -20,6 +20,6 @@ export type PortalCampaign = {
   month: string | null;
   concept: string | null;
   aesthetic: string | null;
-  client: { name: string; logoUrl: string | null; brandColors: Record<string, string> | null };
+  client: { name: string; logoUrl: string | null; brandColors: Record<string, string> | null; brandFont: string | null };
   pieces: PortalPiece[];
 };

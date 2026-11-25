@@ -15,7 +15,7 @@ export async function getMyCampaigns(): Promise<PortalCampaign[]> {
   const sb = getSupabase();
 
   const { data: client, error: cErr } = await sb
-    .from('client_public').select('name, logo_url, brand_colors').limit(1).maybeSingle();
+    .from('client_public').select('name, logo_url, brand_colors, brand_font').limit(1).maybeSingle();
   if (cErr) throw cErr;
   if (!client) return [];
 
@@ -38,7 +38,7 @@ export async function getMyCampaigns(): Promise<PortalCampaign[]> {
     const rows = (sp ?? []) as { scheduled_at: string | null }[];
     if (rows.length === 0) return [];
     const c = client as ClientRow;
-    return [buildLiveCampaign({ name: c.name, logoUrl: c.logo_url, brandColors: c.brand_colors }, rows)];
+    return [buildLiveCampaign({ name: c.name, logoUrl: c.logo_url, brandColors: c.brand_colors, brandFont: c.brand_font }, rows)];
   }
 
   const { data: jobs, error: jErr } = await sb

@@ -155,14 +155,35 @@ export function pickAccent(theme: PortalTheme, brandPrimary?: string | null): { 
   return { accent: theme.accent, accentInk: theme.accentInk };
 }
 
-/** Resuelve el tema de una campaña por su archetype + marca del cliente. */
+// Fuentes de marca que no son Google Fonts (vienen de Fontshare).
+const FONTSHARE: Record<string, string> = {
+  'cabinet grotesk': 'cabinet-grotesk', 'general sans': 'general-sans',
+  'clash display': 'clash-display', 'clash grotesk': 'clash-grotesk',
+  'satoshi': 'satoshi', 'switzer': 'switzer', 'bespoke serif': 'bespoke-serif',
+};
+
+/** URL del stylesheet para cargar una fuente de marca (Fontshare si corresponde,
+ *  si no Google Fonts). Devuelve null si no hay fuente. */
+export function fontStylesheetHref(name: string | null | undefined): string | null {
+  const n = (name ?? '').trim();
+  if (!n) return null;
+  const slug = FONTSHARE[n.toLowerCase()];
+  if (slug) return `https://api.fontshare.com/v2/css?f[]=${slug}@400,500,700,800&display=swap`;
+  return `https://fonts.googleapis.com/css2?family=${n.replace(/ /g, '+')}:wght@400;500;700;800&display=swap`;
+}
+
+/** Resuelve el tema de una campaña por su archetype + marca del cliente.
+ *  `brandFont`: la tipografía de marca del cliente; si existe, manda sobre la del
+ *  archetype (el portal usa la MISMA fuente que las piezas). */
 export function themeFor(
   aesthetic: string | null | undefined,
   brandPrimary?: string | null,
+  brandFont?: string | null,
 ): PortalTheme {
   const base = (aesthetic && PORTAL_THEMES[aesthetic]) || PORTAL_THEMES.default;
   const { accent, accentInk } = pickAccent(base, brandPrimary);
-  return { ...base, accent, accentInk };
+  const bf = (brandFont ?? '').trim();
+  return { ...base, accent, accentInk, fontDisplay: bf || base.fontDisplay };
 }
 
 /** Vars CSS para inyectar en el contenedor .portal (style={{...}}). */

@@ -1,6 +1,6 @@
 import type { PortalCampaign, PortalPiece } from './portalTypes.ts';
 
-export type ClientRow = { name: string; logo_url: string | null; brand_colors: Record<string, string> | null };
+export type ClientRow = { name: string; logo_url: string | null; brand_colors: Record<string, string> | null; brand_font: string | null };
 export type CampaignRow = {
   id: string; title: string | null; month: string | null; concept: string | null;
   aesthetic_archetype: string | null;
@@ -47,7 +47,7 @@ export function mapCampaign(
     month: campaign.month,
     concept: campaign.concept,
     aesthetic: campaign.aesthetic_archetype,
-    client: { name: client.name, logoUrl: client.logo_url, brandColors: client.brand_colors },
+    client: { name: client.name, logoUrl: client.logo_url, brandColors: client.brand_colors, brandFont: client.brand_font },
     pieces,
   };
 }
