@@ -8,7 +8,7 @@ import { PieceStatusRow } from './PieceStatusRow';
 
 export const CampaignGroup: React.FC<{ campaign: TrackerCampaign; brandName: string; onChanged: () => void }> = ({ campaign, brandName, onChanged }) => {
   const isActive = campaign.status === 'active';
-  const [open, setOpen] = useState(isActive);
+  const [open, setOpen] = useState(false); // colapsado por default: la lista de piezas es larga
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [notifyMsg, setNotifyMsg] = useState<{ ok: boolean; text: string } | null>(null);
