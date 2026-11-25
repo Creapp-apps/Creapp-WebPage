@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  Sparkles, ClipboardCheck, CalendarDays, BarChart3, Lock,
+  Sparkles, ClipboardCheck, CalendarDays, BarChart3,
   LogOut, PanelLeftClose, PanelLeft, Menu, X,
 } from 'lucide-react';
 import { AgencyBadge } from '@/components/portal/AgencyBadge';
 
-export type PortalSection = 'campania' | 'revision' | 'calendario';
+export type PortalSection = 'campania' | 'revision' | 'calendario' | 'insights';
 
 interface Props {
   active: PortalSection;
@@ -26,6 +26,7 @@ const NAV: NavDef[] = [
   { id: 'campania', label: 'Campaña', icon: Sparkles },
   { id: 'revision', label: 'Revisión', icon: ClipboardCheck },
   { id: 'calendario', label: 'Calendario', icon: CalendarDays },
+  { id: 'insights', label: 'Insights', icon: BarChart3 },
 ];
 
 /** Shell del portal del cliente: sidebar colapsable (chrome CreAPP) + contenido. Spec §5.3. */
@@ -80,12 +81,6 @@ export const PortalShell: React.FC<Props> = ({ active, onNavigate, pendingCount 
               {id === 'revision' && pendingCount > 0 && <span className="psb-badge">{pendingCount}</span>}
             </button>
           ))}
-
-          <button type="button" className="psb-item locked" disabled title="Insights · Muy pronto">
-            <span className="psb-ic"><BarChart3 size={19} /></span>
-            <span className="psb-lbl">Insights</span>
-            <span className="psb-lock"><Lock size={13} /></span>
-          </button>
         </nav>
 
         <div className="psb-foot">

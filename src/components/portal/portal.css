@@ -407,3 +407,49 @@
 .portal .cal-daynav{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:10px;font-size:13px;font-weight:600;color:var(--muted)}
 .portal .cal-daynav button{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-size:18px;line-height:1;color:var(--ink);background:rgba(255,255,255,.05);border:1px solid var(--line);cursor:pointer}
 .portal .cal-daynav button:disabled{opacity:.35;cursor:default}
+
+/* ===== Insights (sección Insights del portal) ===== */
+.portal .ins{max-width:760px;margin:0 auto}
+.portal .ins-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+.portal .ins-fresh{font-size:12px;color:var(--muted)}
+.portal .ins-refresh{display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--ink);font-size:13px;font-weight:600;cursor:pointer}
+.portal .ins-refresh:hover:not(:disabled){background:rgba(var(--wood-rgb),.12);border-color:rgba(var(--wood-rgb),.4)}
+.portal .ins-refresh:disabled{opacity:.5;cursor:default}
+.portal .ins-spin{animation:insSpin 1s linear infinite}
+@keyframes insSpin{to{transform:rotate(360deg)}}
+.portal .ins-sec{margin-bottom:38px}
+.portal .ins-sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.portal .ins-sec-title{font-family:var(--font-display),Georgia,serif;font-weight:var(--fw-display);font-size:24px;margin:0 0 16px}
+.portal .ins-sec-head .ins-sec-title{margin:0}
+.portal .ins-sort{display:flex;gap:6px}
+.portal .ins-sort button{padding:6px 13px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer}
+.portal .ins-sort button.on{color:var(--ink);background:rgba(var(--wood-rgb),.14);border-color:rgba(var(--wood-rgb),.4)}
+/* Stat tiles */
+.portal .ins-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px}
+.portal .ins-tile{border:1px solid var(--line);border-radius:16px;padding:16px 18px;background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,0))}
+.portal .ins-tile-head{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.portal .ins-tile-num{font-family:var(--font-display),Georgia,serif;font-size:36px;color:var(--ink);margin:6px 0 10px;font-variant-numeric:tabular-nums}
+.portal .ins-tile-hero{grid-column:1/-1;background:linear-gradient(135deg,rgba(var(--wood-rgb),.14),rgba(255,255,255,0));border-color:rgba(var(--wood-rgb),.3)}
+.portal .ins-tile-hero .ins-tile-num{font-size:48px}
+/* Sparkline (una serie, accent del cliente) */
+.portal .ins-spark{width:100%;height:30px;display:block;overflow:visible}
+.portal .ins-spark-empty{opacity:.3}
+.portal .ins-spark-area{fill:rgba(var(--wood-rgb),.16);stroke:none}
+.portal .ins-spark-line{fill:none;stroke:var(--wood);stroke-width:2;stroke-linejoin:round;stroke-linecap:round;vector-effect:non-scaling-stroke}
+.portal .ins-spark-dot{fill:var(--wood-light)}
+/* Piezas */
+.portal .ins-pieces{display:flex;flex-direction:column;gap:10px}
+.portal .ins-piece{display:flex;align-items:center;gap:14px;border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:rgba(255,255,255,.02)}
+.portal .ins-piece-cover{width:52px;height:52px;border-radius:10px;object-fit:cover;flex:0 0 auto}
+.portal .ins-piece-nocover{background:rgba(255,255,255,.06)}
+.portal .ins-piece-body{flex:1;min-width:0}
+.portal .ins-piece-cap{margin:0 0 6px;font-size:13px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.portal .ins-piece-metrics{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.portal .ins-piece-metrics span{display:inline-flex;align-items:center;gap:5px}
+.portal .ins-piece-link{flex:0 0 auto;width:38px;height:38px;border-radius:10px;display:grid;place-items:center;color:var(--wood);background:rgba(var(--wood-rgb),.1);border:1px solid rgba(var(--wood-rgb),.3)}
+/* Estados */
+.portal .ins-state{max-width:520px;margin:40px auto;text-align:center;color:var(--muted);padding:34px 24px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,0))}
+.portal .ins-state h3{font-family:var(--font-display),Georgia,serif;font-size:24px;color:var(--ink);margin:0 0 10px}
+.portal .ins-retry{margin-top:14px;padding:9px 18px;border-radius:999px;border:1px solid rgba(var(--wood-rgb),.4);background:rgba(var(--wood-rgb),.12);color:var(--cream);cursor:pointer;font-weight:600}
+.portal .ins-note{color:var(--muted);font-size:14px;margin:6px 2px}
+@media(prefers-reduced-motion:reduce){.portal .ins-spin{animation:none}}
