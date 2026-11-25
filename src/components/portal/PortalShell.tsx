@@ -4,7 +4,7 @@ import {
   LogOut, PanelLeftClose, PanelLeft, Menu, X,
 } from 'lucide-react';
 import { AgencyBadge } from '@/components/portal/AgencyBadge';
-import { BrandMarkView } from '@/components/portal/CampaignHero';
+import { BrandMarkView } from '@/components/portal/BrandMark';
 import type { PortalCampaign } from '@/lib/portalTypes';
 
 export type PortalSection = 'campania' | 'revision' | 'calendario' | 'insights';

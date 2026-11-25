@@ -5,7 +5,7 @@ import {
 import type { PortalCampaign } from '@/lib/portalTypes';
 import type { PortalSection } from '@/components/portal/PortalShell';
 import { progressSummary } from '@/lib/portalView';
-import { BrandMarkView } from '@/components/portal/CampaignHero';
+import { BrandMarkView } from '@/components/portal/BrandMark';
 import { getMyCalendarPieces } from '@/lib/calendarService';
 import type { CalendarPiece } from '@/lib/calendarTypes';
 import { nextPublication, upcomingPublications } from '@/lib/portalHome';
@@ -69,8 +69,8 @@ export const PortalHome: React.FC<Props> = ({ campaign, campaignId, onNavigate, 
         </div>
         <div className="home-stat">
           <div className="home-stat-ic accent"><CalendarClock size={18} /></div>
-          <div className="home-stat-num home-stat-sm">{next?.date ? dayLabel(next.date) : '—'}</div>
-          <div className="home-stat-lab">{next?.date ? 'próxima publicación' : 'en revisión'}</div>
+          <div className="home-stat-num home-stat-sm">{cal === undefined ? '·' : next?.date ? dayLabel(next.date) : '—'}</div>
+          <div className="home-stat-lab">{cal === undefined ? 'cargando…' : next?.date ? 'próxima publicación' : 'en revisión'}</div>
         </div>
       </div>
 
@@ -82,7 +82,7 @@ export const PortalHome: React.FC<Props> = ({ campaign, campaignId, onNavigate, 
           </div>
           <div className="home-upcoming">
             {upcoming.map((p) => (
-              <button type="button" key={p.id} className="home-up" onClick={() => onNavigate('calendario')}>
+              <button type="button" key={p.id} className="home-up" aria-label={`Ver ${p.date ? dayLabel(p.date) : 'publicación'} en el calendario`} onClick={() => onNavigate('calendario')}>
                 {p.coverUrl && <img src={p.coverUrl} alt="" loading="lazy" />}
                 <span className="home-up-date">{p.date ? dayLabel(p.date) : ''}</span>
               </button>
@@ -96,16 +96,20 @@ export const PortalHome: React.FC<Props> = ({ campaign, campaignId, onNavigate, 
           <h2>Tus piezas</h2>
           <button type="button" className="home-link" onClick={() => onNavigate('revision')}>Revisar {pendingCount > 0 ? `(${pendingCount})` : ''} <ArrowRight size={14} /></button>
         </div>
-        <div className="home-rail">
-          {campaign.pieces.map((pc) => (
-            <button type="button" key={pc.id} className="home-piece" onClick={() => onNavigate('revision')} title={pc.title}>
-              {pc.coverUrl
-                ? <img src={pc.coverUrl} alt="" loading="lazy" />
-                : <span className="home-piece-noc" />}
-              {pc.status === 'approved' && <span className="home-piece-ok"><CheckCircle2 size={14} /></span>}
-            </button>
-          ))}
-        </div>
+        {campaign.pieces.length > 0 ? (
+          <div className="home-rail">
+            {campaign.pieces.map((pc) => (
+              <button type="button" key={pc.id} className="home-piece" aria-label={`Revisar ${pc.title}`} onClick={() => onNavigate('revision')} title={pc.title}>
+                {pc.coverUrl
+                  ? <img src={pc.coverUrl} alt="" loading="lazy" />
+                  : <span className="home-piece-noc" />}
+                {pc.status === 'approved' && <span className="home-piece-ok"><CheckCircle2 size={14} /></span>}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <p className="home-empty">Todavía estamos preparando las piezas de esta campaña.</p>
+        )}
       </section>
 
       <div className="home-shortcuts">

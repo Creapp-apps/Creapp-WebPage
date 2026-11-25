@@ -499,3 +499,5 @@
 .portal .home-shortcuts{display:flex;flex-wrap:wrap;gap:12px;margin-top:8px}
 .portal .home-shortcuts button{display:inline-flex;align-items:center;gap:9px;padding:12px 18px;border-radius:13px;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--ink);font-size:14px;font-weight:600;cursor:pointer;transition:background .16s ease,border-color .16s ease}
 .portal .home-shortcuts button:hover{background:rgba(var(--wood-rgb),.12);border-color:rgba(var(--wood-rgb),.4)}
+
+.portal .home-empty{color:var(--muted);font-size:14px;margin:4px 2px;padding:14px 16px;border:1px dashed var(--line);border-radius:12px}
