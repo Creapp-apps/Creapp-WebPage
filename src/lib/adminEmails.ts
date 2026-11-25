@@ -1,12 +1,10 @@
 // Fuente única de los emails admin por defecto (front y server).
+// SOLO casillas exactas que controla CreAPP. Nunca prefijos ni dominios ajenos:
+// antes cualquier "admin@loquesea" pasaba como admin (un cliente con casilla
+// admin@sudominio.com pasaba requireAdmin en /api/launches).
+const DEFAULT_ADMIN_EMAILS = new Set(['creapp.ar@gmail.com', 'admin@creapp.com.ar']);
+
 export const isDefaultAdminEmail = (email?: string | null): boolean => {
   if (!email) return false;
-  const lower = email.toLowerCase().trim();
-  return (
-    lower === 'creapp.ar@gmail.com' ||
-    lower === 'creapp@creapp.com' ||
-    lower === 'admin@creapp.com.ar' ||
-    lower === 'admin@creapp.com' ||
-    lower.startsWith('admin@')
-  );
+  return DEFAULT_ADMIN_EMAILS.has(email.toLowerCase().trim());
 };
