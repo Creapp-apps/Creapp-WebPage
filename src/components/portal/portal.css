@@ -304,3 +304,53 @@
 .portal .sp-reveal > *:nth-child(3){animation-delay:.22s}
 @keyframes spRevealIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
 @media(prefers-reduced-motion:reduce){.portal .sp-reveal > *{animation:none}}
+
+/* ===== Calendario de campaña (sección Calendario del portal) ===== */
+.portal .cal{max-width:760px;margin:8px auto 0}
+.portal .cal-head{display:flex;align-items:center;justify-content:center;gap:18px;margin-bottom:18px}
+.portal .cal-month{font-family:var(--font-display),Georgia,serif;font-weight:var(--fw-display);font-size:24px;margin:0;text-transform:capitalize;min-width:220px;text-align:center}
+.portal .cal-nav{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;color:var(--ink);background:rgba(255,255,255,.04);border:1px solid var(--line);cursor:pointer}
+.portal .cal-nav:hover:not(:disabled){background:rgba(var(--wood-rgb),.14);border-color:rgba(var(--wood-rgb),.4)}
+.portal .cal-nav:disabled{opacity:.3;cursor:default}
+.portal .cal-dow{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:8px}
+.portal .cal-dow span{text-align:center;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.portal .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+.portal .cal-cell{position:relative;aspect-ratio:1;border-radius:13px;border:1px solid var(--line);background:rgba(255,255,255,.02);overflow:hidden;padding:0;cursor:default;color:var(--ink)}
+.portal .cal-cell.cal-empty-cell{background:transparent;border-color:transparent}
+.portal .cal-cell.has{cursor:pointer}
+.portal .cal-cell .cal-day{position:absolute;top:6px;left:8px;font-size:12px;font-weight:600;color:var(--ink);z-index:3;text-shadow:0 1px 3px rgba(0,0,0,.8)}
+.portal .cal-cover{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1}
+.portal .cal-veil{position:absolute;inset:0;z-index:2;background:linear-gradient(180deg,rgba(4,16,31,.35),rgba(4,16,31,.72))}
+.portal .cal-cell .cal-badge{position:absolute;bottom:6px;right:7px;z-index:3;display:flex;align-items:center;gap:3px;font-size:10px;font-weight:700;color:#fff;background:rgba(0,0,0,.42);padding:3px 6px;border-radius:999px;backdrop-filter:blur(2px)}
+.portal .cal-cell .cal-more{position:absolute;bottom:6px;left:7px;z-index:3;font-size:10px;font-weight:700;color:#fff;background:rgba(var(--wood-rgb),.85);padding:2px 6px;border-radius:999px}
+/* Estados */
+.portal .cal-cell.st-future .cal-veil{background:linear-gradient(180deg,rgba(4,16,31,.1),rgba(4,16,31,.55))}
+.portal .cal-cell.st-future{box-shadow:inset 0 0 0 1px rgba(var(--wood-rgb),.25)}
+.portal .cal-cell.st-in_process .cal-cover{filter:grayscale(.5) brightness(.8)}
+.portal .cal-cell.st-in_process .cal-badge{background:rgba(245,196,81,.9);color:#1a1205}
+.portal .cal-cell.st-published .cal-cover{filter:blur(6px) brightness(.72)}
+.portal .cal-cell.st-published .cal-veil{background:linear-gradient(180deg,rgba(4,16,31,.4),rgba(4,16,31,.78))}
+.portal .cal-cell.st-published .cal-badge{background:rgba(74,222,128,.9);color:#05210f}
+.portal .cal-cell.today{box-shadow:0 0 0 2px var(--wood),0 0 16px rgba(var(--wood-rgb),.5)}
+.portal .cal-cell.today.st-published .cal-cover{filter:none;opacity:.9}
+/* Leyenda */
+.portal .cal-legend{display:flex;gap:18px;justify-content:center;margin-top:18px;font-size:12px;color:var(--muted)}
+.portal .cal-legend span{display:flex;align-items:center;gap:6px}
+.portal .cal-legend .lg{width:11px;height:11px;border-radius:4px}
+.portal .cal-legend .lg-future{background:rgba(var(--wood-rgb),.6)}
+.portal .cal-legend .lg-proc{background:#f5c451}
+.portal .cal-legend .lg-pub{background:#4ade80}
+/* Estados vacío/error */
+.portal .cal-state{max-width:520px;margin:40px auto;text-align:center;color:var(--muted);padding:34px 24px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,0))}
+.portal .cal-state h3{font-family:var(--font-display),Georgia,serif;font-size:24px;color:var(--ink);margin:0 0 10px}
+.portal .cal-retry{margin-top:14px;padding:9px 18px;border-radius:999px;border:1px solid rgba(var(--wood-rgb),.4);background:rgba(var(--wood-rgb),.12);color:var(--cream);cursor:pointer;font-weight:600}
+/* Modal */
+.portal .cal-modal{position:fixed;inset:0;z-index:200;display:grid;place-items:center;padding:20px;background:rgba(2,8,16,.78);backdrop-filter:blur(6px);animation:calFade .2s ease}
+@keyframes calFade{from{opacity:0}to{opacity:1}}
+.portal .cal-sheet{position:relative;width:100%;max-width:420px;background:var(--navy2);border:1px solid var(--line);border-radius:20px;padding:16px;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.portal .cal-close{position:absolute;top:-14px;right:-14px;z-index:5;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--navy2);border:1px solid var(--line);color:var(--ink);cursor:pointer}
+.portal .cal-caption{margin:14px 2px 0;font-size:14px;color:var(--muted);line-height:1.55;white-space:pre-wrap}
+.portal .cal-iglink{display:inline-flex;align-items:center;gap:7px;margin-top:14px;padding:9px 16px;border-radius:999px;background:linear-gradient(135deg,#b06cff,#ff5ea8);color:#fff;font-weight:600;font-size:13px;text-decoration:none}
+.portal .cal-nomedia{aspect-ratio:9/16;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--muted);background:rgba(255,255,255,.03);border-radius:14px}
+.portal .vtype{position:absolute;top:10px;left:10px;z-index:4;display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:#fff;background:rgba(0,0,0,.45);padding:4px 9px;border-radius:999px}
+@media(max-width:560px){.portal .cal-grid,.portal .cal-dow{gap:5px}.portal .cal-month{font-size:20px;min-width:160px}}
