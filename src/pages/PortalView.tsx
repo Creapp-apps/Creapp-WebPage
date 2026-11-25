@@ -10,7 +10,7 @@ import { PortalShell, type PortalSection } from '@/components/portal/PortalShell
 import { PortalReviewSection } from '@/components/portal/PortalReviewSection';
 import { CampaignCalendar } from '@/components/portal/CampaignCalendar';
 import { PortalInsights } from '@/components/portal/PortalInsights';
-import { CampaignHero } from '@/components/portal/CampaignHero';
+import { PortalHome } from '@/components/portal/PortalHome';
 import { AgencyFootCredit } from '@/components/portal/AgencyBadge';
 import PortalLoader from '@/components/portal/PortalLoader';
 import { usePortalTheme } from '@/components/portal/usePortalTheme';
@@ -118,7 +118,7 @@ const PortalView: React.FC = () => {
 
   return (
     <div className="portal" data-theme={dataTheme} style={themeStyle}>
-      <PortalShell active={active} onNavigate={setActive} pendingCount={pendingCount} onSignOut={() => signOut()}>
+      <PortalShell active={active} onNavigate={setActive} pendingCount={pendingCount} onSignOut={() => signOut()} brand={campaign.client}>
         <div className={boot.splashActive ? '' : 'sp-reveal'}>
           {campaigns && campaigns.length >= 2 && (
             <div className="campaign-switch cs-top">
@@ -137,7 +137,7 @@ const PortalView: React.FC = () => {
             </div>
           )}
 
-          {active === 'campania' && <CampaignHero campaign={campaign} />}
+          {active === 'campania' && <PortalHome campaign={campaign} campaignId={campaign.id} onNavigate={setActive} pendingCount={pendingCount} />}
 
           {active === 'revision' && (
             <PortalReviewSection
