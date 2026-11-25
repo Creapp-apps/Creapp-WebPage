@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { deriveType, toLocalDayKey, cellState, mapScheduledRows, monthGrid } from './calendarMapper';
+import type { CalendarPiece } from './calendarTypes';
 
 test('deriveType mapea plataforma', () => {
   assert.equal(deriveType('instagram_reel'), 'reel');
@@ -17,7 +18,7 @@ test('toLocalDayKey respeta TZ AR cerca de medianoche', () => {
 
 test('cellState: publicado gana; pasado-no-publicado = in_process; futuro = future', () => {
   const now = new Date('2026-12-05T12:00:00Z');
-  const base = { id:'x', jobIdMotor:'j', campaignId:'c', type:'reel', platform:'instagram_reel', coverUrl:null, mediaUrls:[], caption:null, permalink:null } as const;
+  const base: Omit<CalendarPiece, 'date' | 'published'> = { id:'x', jobIdMotor:'j', campaignId:'c', type:'reel', platform:'instagram_reel', coverUrl:null, mediaUrls:[], caption:null, permalink:null };
   assert.equal(cellState({ ...base, date: new Date('2026-12-10T12:00:00Z'), published:false }, now), 'future');
   assert.equal(cellState({ ...base, date: new Date('2026-12-01T12:00:00Z'), published:true }, now), 'published');
   // pasó su hora pero NO se publicó → honesto, no "published"
