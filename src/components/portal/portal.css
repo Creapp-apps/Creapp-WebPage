@@ -458,3 +458,44 @@
 @media(prefers-reduced-motion:reduce){.portal .ins-spin{animation:none}}
 
 .portal .ins-fresh-err{color:var(--warn)}
+
+/* ===== Home del portal (sección Campaña: resumen con valor) ===== */
+.portal .home{max-width:860px;margin:0 auto}
+.portal .home-head{margin-bottom:26px}
+.portal .home-brand{margin-bottom:14px}
+.portal .home-brand .brandlogo{height:40px;width:auto;max-width:220px;object-fit:contain}
+.portal .home-eyebrow{color:var(--wood);letter-spacing:.14em;text-transform:uppercase;font-size:12px;font-weight:700}
+.portal .home-title{font-family:var(--font-display),Georgia,serif;font-weight:var(--fw-display);font-size:clamp(30px,4.5vw,46px);line-height:1.04;margin:8px 0 0;color:var(--ink)}
+.portal .home-concept{max-width:620px;margin:12px 0 0;color:var(--muted);font-size:15px;line-height:1.5}
+/* Tarjetas de estado */
+.portal .home-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:34px}
+.portal .home-stat{border:1px solid var(--line);border-radius:16px;padding:16px 18px;background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,0))}
+.portal .home-stat-ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;color:var(--muted);background:rgba(255,255,255,.04);margin-bottom:10px}
+.portal .home-stat-ic.ok{color:var(--ok);background:rgba(74,222,128,.12)}
+.portal .home-stat-ic.warn{color:var(--warn);background:rgba(245,196,81,.14)}
+.portal .home-stat-ic.accent{color:var(--wood);background:rgba(var(--wood-rgb),.14)}
+.portal .home-stat-num{font-family:var(--font-display),Georgia,serif;font-size:38px;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums}
+.portal .home-stat-num.home-stat-sm{font-size:26px;text-transform:capitalize}
+.portal .home-stat-lab{margin-top:6px;color:var(--muted);font-size:13px}
+/* Secciones */
+.portal .home-sec{margin-bottom:30px}
+.portal .home-sec-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px}
+.portal .home-sec-head h2{font-family:var(--font-display),Georgia,serif;font-weight:var(--fw-display);font-size:22px;margin:0;color:var(--ink)}
+.portal .home-link{display:inline-flex;align-items:center;gap:6px;background:transparent;border:0;color:var(--wood);font-size:13px;font-weight:700;cursor:pointer}
+/* Próximas publicaciones */
+.portal .home-upcoming{display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px}
+.portal .home-upcoming::-webkit-scrollbar{display:none}
+.portal .home-up{flex:0 0 auto;width:92px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:rgba(255,255,255,.02);cursor:pointer;padding:0;position:relative}
+.portal .home-up img{width:100%;height:118px;object-fit:cover;display:block}
+.portal .home-up-date{display:block;padding:7px 8px;font-size:12px;font-weight:700;color:var(--ink);text-transform:capitalize}
+/* Rail de piezas */
+.portal .home-rail{display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px}
+.portal .home-rail::-webkit-scrollbar{display:none}
+.portal .home-piece{flex:0 0 auto;width:104px;height:150px;border-radius:13px;overflow:hidden;border:1px solid var(--line);background:rgba(255,255,255,.03);cursor:pointer;padding:0;position:relative}
+.portal .home-piece img{width:100%;height:100%;object-fit:cover;display:block}
+.portal .home-piece-noc{display:block;width:100%;height:100%;background:rgba(255,255,255,.05)}
+.portal .home-piece-ok{position:absolute;top:7px;right:7px;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;color:#05210f;background:var(--ok)}
+/* Atajos */
+.portal .home-shortcuts{display:flex;flex-wrap:wrap;gap:12px;margin-top:8px}
+.portal .home-shortcuts button{display:inline-flex;align-items:center;gap:9px;padding:12px 18px;border-radius:13px;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--ink);font-size:14px;font-weight:600;cursor:pointer;transition:background .16s ease,border-color .16s ease}
+.portal .home-shortcuts button:hover{background:rgba(var(--wood-rgb),.12);border-color:rgba(var(--wood-rgb),.4)}
