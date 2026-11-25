@@ -453,3 +453,5 @@
 .portal .ins-retry{margin-top:14px;padding:9px 18px;border-radius:999px;border:1px solid rgba(var(--wood-rgb),.4);background:rgba(var(--wood-rgb),.12);color:var(--cream);cursor:pointer;font-weight:600}
 .portal .ins-note{color:var(--muted);font-size:14px;margin:6px 2px}
 @media(prefers-reduced-motion:reduce){.portal .ins-spin{animation:none}}
+
+.portal .ins-fresh-err{color:var(--warn)}

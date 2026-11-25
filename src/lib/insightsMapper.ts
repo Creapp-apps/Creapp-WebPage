@@ -61,6 +61,14 @@ export function freshnessLabel(fetchedAtISO: string, now: Date): string {
 
 const sum = (vals: { value: number }[]): number => vals.reduce((a, v) => a + (v.value ?? 0), 0);
 
+/** Normaliza un dato de /insights de cuenta a `values[]`, tolerando ambas formas
+ *  de Graph: `metric_type=time_series` (`values[]`) y `total_value` (un valor). */
+export function normalizeAccountDatum(d: any): { value: number; end_time?: string }[] | null {
+  if (Array.isArray(d?.values)) return d.values;
+  if (d?.total_value && typeof d.total_value.value === 'number') return [{ value: d.total_value.value }];
+  return null;
+}
+
 /** Métricas de cuenta → tiles con serie + followerCount. Tolera métricas ausentes. */
 export function mapAccountInsights(raw: RawMetric[]): { account: AccountMetric[]; followerCount: number | null } {
   const byName = new Map(raw.map((m) => [m.name, m]));

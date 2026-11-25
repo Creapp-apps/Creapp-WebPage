@@ -75,14 +75,21 @@ export const PortalInsights: React.FC = () => {
   const [data, setData] = useState<InsightsResult | undefined>(undefined);
   const [error, setError] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [refreshError, setRefreshError] = useState(false);
   const [sortBy, setSortBy] = useState<'reach' | 'saved'>('reach');
 
-  const load = useCallback((refresh = false) => {
-    if (refresh) setRefreshing(true);
+  const load = useCallback(() => {
     setError(false);
-    getMyInsights(refresh ? { refresh: true } : undefined)
+    getMyInsights().then((d) => setData(d)).catch(() => setError(true));
+  }, []);
+
+  // Refresh: un fallo transitorio NO borra los datos ya cargados.
+  const refresh = useCallback(() => {
+    setRefreshing(true);
+    setRefreshError(false);
+    getMyInsights({ refresh: true })
       .then((d) => setData(d))
-      .catch(() => setError(true))
+      .catch(() => setRefreshError(true))
       .finally(() => setRefreshing(false));
   }, []);
 
@@ -115,8 +122,11 @@ export const PortalInsights: React.FC = () => {
   return (
     <div className="ins">
       <div className="ins-head">
-        <div className="ins-fresh">Actualizado {freshnessLabel(data!.fetchedAt, new Date())}</div>
-        <button type="button" className="ins-refresh" disabled={refreshing} onClick={() => load(true)}>
+        <div className="ins-fresh">
+          Actualizado {freshnessLabel(data!.fetchedAt, new Date())}
+          {refreshError && <span className="ins-fresh-err"> · no pudimos actualizar, probá de nuevo</span>}
+        </div>
+        <button type="button" className="ins-refresh" disabled={refreshing} onClick={refresh}>
           <RefreshCw size={14} className={refreshing ? 'ins-spin' : undefined} /> Actualizar
         </button>
       </div>

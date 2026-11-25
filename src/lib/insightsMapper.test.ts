@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   pickClientSlug, isCacheFresh, canForceRefresh,
   mapAccountInsights, mapPieceInsights, topPieces, freshnessLabel,
+  normalizeAccountDatum,
 } from './insightsMapper';
 
 const minsAgo = (now: Date, m: number) => new Date(now.getTime() - m * 60_000).toISOString();
@@ -27,6 +28,21 @@ test('canForceRefresh: piso 5 min y sin caché', () => {
   assert.equal(canForceRefresh(null, now), true);
   assert.equal(canForceRefresh(minsAgo(now, 2), now), false); // 2<5
   assert.equal(canForceRefresh(minsAgo(now, 10), now), true); // 10>=5
+});
+
+test('normalizeAccountDatum: tolera values[] y total_value y nada', () => {
+  // forma time_series → values[]
+  assert.deepEqual(
+    normalizeAccountDatum({ name: 'reach', values: [{ value: 3 }, { value: 7 }] } as any),
+    [{ value: 3 }, { value: 7 }],
+  );
+  // forma total_value → se sintetiza un punto único
+  assert.deepEqual(
+    normalizeAccountDatum({ name: 'reach', total_value: { value: 42 } } as any),
+    [{ value: 42 }],
+  );
+  // ninguna → null (se omite)
+  assert.equal(normalizeAccountDatum({ name: 'reach' } as any), null);
 });
 
 test('mapAccountInsights: arma series/total, extrae followerCount, tolera ausentes', () => {

@@ -7,6 +7,7 @@ import { applyPortalCors } from '../_lib/portalCors.js';
 import { resolveClientToken } from '../../src/lib/publishQueuePhases.js';
 import {
   pickClientSlug, isCacheFresh, canForceRefresh, mapAccountInsights, mapPieceInsights,
+  normalizeAccountDatum,
 } from '../../src/lib/insightsMapper.js';
 
 const GRAPH_API_BASE = 'https://graph.facebook.com/v21.0';
@@ -35,8 +36,8 @@ async function graphGet(url: string, ms = 8000): Promise<any | null> {
 async function fetchAccountMetric(ig: string, token: string, metric: string, extra: string) {
   const url = `${GRAPH_API_BASE}/${ig}/insights?metric=${metric}&${extra}&access_token=${encodeURIComponent(token)}`;
   const j = await graphGet(url);
-  const d = j?.data?.[0];
-  return d?.values ? { name: metric, values: d.values } : null;
+  const values = normalizeAccountDatum(j?.data?.[0]);
+  return values ? { name: metric, values } : null;
 }
 
 async function fetchPieceMetrics(mediaId: string, token: string) {
@@ -103,7 +104,7 @@ export default async function handler(req, res) {
     // bien dentro del límite del serverless (no hace falta Vercel Workflow).
     const [accountResults, pieceResults] = await Promise.all([
       Promise.all([
-        ...ACCOUNT_TS.map((metric) => fetchAccountMetric(igAccountId, token, metric, 'period=day&metric_type=total_value')),
+        ...ACCOUNT_TS.map((metric) => fetchAccountMetric(igAccountId, token, metric, 'period=day&metric_type=time_series')),
         fetchAccountMetric(igAccountId, token, 'follower_count', 'period=day'),
       ]),
       Promise.all(rows.map((row) => fetchPieceMetrics(row.published_media_id, token))),
