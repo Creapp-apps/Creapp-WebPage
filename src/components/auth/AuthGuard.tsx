@@ -1,5 +1,6 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
+import AccessUnverified from '@/components/auth/AccessUnverified';
 import { useAuth, UserRole } from '@/context/AuthContext';
 import { resolveAdminAccess } from '@/lib/portalAccess';
 
@@ -9,9 +10,9 @@ interface AuthGuardProps {
 }
 
 const AuthGuard: React.FC<AuthGuardProps> = ({ children, allowedRoles }) => {
-  const { user, role, loading } = useAuth();
+  const { user, role, loading, roleResolved } = useAuth();
 
-  const access = resolveAdminAccess({ loading, user, role, allowedRoles });
+  const access = resolveAdminAccess({ loading, user, role, allowedRoles, roleResolved });
 
   if (access === 'loading') {
     return (
@@ -21,6 +22,7 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children, allowedRoles }) => {
     );
   }
   if (access === 'login') return <Navigate to="/admin/login" replace />;
+  if (access === 'unverified') return <AccessUnverified />;
   // Un cliente nunca queda atrapado en el panel: va a su portal.
   if (access === 'redirect-portal') return <Navigate to="/portal" replace />;
   // Ruta con rol específico (ej: solo 'admin' en Control Center)

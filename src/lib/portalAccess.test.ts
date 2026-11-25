@@ -30,3 +30,11 @@ test('portal sin sesión -> login (el guard lo manda a /portal/login)', () => {
   assert.equal(resolvePortalAccess({ loading: false, user: null, role: 'admin' }), 'login');
   assert.equal(homePathForRole('client'), '/portal');
 });
+
+test('rol sin verificar -> unverified en ambos guards (fail-closed)', () => {
+  assert.equal(resolveAdminAccess({ loading: false, user: u, role: 'vendedor', roleResolved: false }), 'unverified');
+  assert.equal(resolveAdminAccess({ loading: false, user: u, role: 'admin', roleResolved: false }), 'unverified');
+  assert.equal(resolvePortalAccess({ loading: false, user: u, role: 'client', roleResolved: false }), 'unverified');
+  assert.equal(resolveAdminAccess({ loading: true, user: u, role: 'vendedor', roleResolved: false }), 'loading');
+  assert.equal(resolveAdminAccess({ loading: false, user: null, role: 'vendedor', roleResolved: false }), 'login');
+});

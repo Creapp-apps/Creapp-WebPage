@@ -19,6 +19,7 @@ interface AuthContextType {
   role: UserRole;
   isAdmin: boolean;
   isVendedor: boolean;
+  roleResolved: boolean;
   loading: boolean;
   signOut: () => Promise<void>;
   listUsers: () => Promise<UserProfile[]>;
@@ -42,47 +43,70 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Para distinguir un login real (usuario distinto) de un simple token-refresh
   // del mismo usuario y así volver a loading SOLO cuando hace falta.
   const lastUserIdRef = useRef<string | null>(null);
+  // true solo cuando el rol salió de la base (o es Master Admin por email).
+  const [roleResolved, setRoleResolved] = useState(false);
+  const fetchingRef = useRef(false);
+  // Usuario cuyo rol ya se verificó: un refresh fallido no lo expulsa.
+  const resolvedUserIdRef = useRef<string | null>(null);
 
+  // Lee el rol REAL de la base. Fail-closed: si no se puede leer (timeout, red,
+  // fila faltante) el rol queda SIN verificar y los guards no dejan pasar.
+  // Antes se asumía 'vendedor' a los 2,5 s: un cliente con red móvil lenta
+  // entraba al panel interno (incidente Materalia, 2026-11-24).
   const fetchProfile = async (currentUser: User) => {
+    fetchingRef.current = true;
     try {
-      const queryPromise = supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', currentUser.id)
-        .maybeSingle();
+      const ATTEMPTS = 3;
+      const TIMEOUT_MS = 8000;
+      for (let attempt = 1; attempt <= ATTEMPTS; attempt++) {
+        let data: any = null;
+        let error: any = null;
+        try {
+          const queryPromise = supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('id', currentUser.id)
+            .maybeSingle();
+          const timeoutPromise = new Promise<{ data: any; error: any }>((resolve) =>
+            setTimeout(() => resolve({ data: null, error: new Error('Timeout al consultar perfil') }), TIMEOUT_MS)
+          );
+          ({ data, error } = await Promise.race([queryPromise, timeoutPromise]));
+        } catch (err) {
+          error = err;
+        }
 
-      const timeoutPromise = new Promise<{ data: any; error: any }>((resolve) =>
-        setTimeout(() => resolve({ data: null, error: new Error('Timeout al consultar perfil') }), 2500)
-      );
-
-      const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
-
-      if (error) {
-        console.warn('Advertencia al consultar user_profiles:', error.message);
+        if (data) {
+          setProfile(data as UserProfile);
+          setRoleResolved(true);
+          resolvedUserIdRef.current = currentUser.id;
+          return;
+        }
+        if (error) {
+          console.warn(`Perfil no disponible (intento ${attempt}/${ATTEMPTS}):`, error?.message || error);
+          continue;
+        }
+        break; // respondió sin fila: reintentar no cambia nada
       }
 
-      if (data) {
-        setProfile(data as UserProfile);
-      } else {
-        const defaultRole: UserRole = isDefaultAdminEmail(currentUser.email) ? 'admin' : 'vendedor';
+      // Sin perfil legible. Solo los Master Admin por email entran igual.
+      if (isDefaultAdminEmail(currentUser.email)) {
         setProfile({
           id: currentUser.id,
           email: currentUser.email || '',
-          role: defaultRole,
+          role: 'admin',
           full_name: currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0],
         });
+        setRoleResolved(true);
+        resolvedUserIdRef.current = currentUser.id;
+      } else if (resolvedUserIdRef.current !== currentUser.id) {
+        // Nunca se verificó a este usuario: sin acceso. Si ya estaba verificado
+        // (refresh de token con red caída) se conserva el perfil que tenía.
+        setProfile(null);
+        setRoleResolved(false);
       }
-    } catch (err) {
-      console.warn('Error al cargar perfil:', err);
-      const defaultRole: UserRole = isDefaultAdminEmail(currentUser.email) ? 'admin' : 'vendedor';
-      setProfile({
-        id: currentUser.id,
-        email: currentUser.email || '',
-        role: defaultRole,
-      });
     } finally {
-      // El rol ya está resuelto (real o default): recién acá soltamos el loading,
-      // para que los guards nunca redirijan con un rol adivinado (evita el flash de /admin).
+      fetchingRef.current = false;
+      // Recién acá soltamos el loading: los guards nunca evalúan con un rol adivinado.
       setLoading(false);
     }
   };
@@ -92,7 +116,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Timeout de seguridad estricto: después de 3 segundos NUNCA dejar la app congelada en loading
     const safetyTimer = setTimeout(() => {
-      if (isMounted && loading) {
+      // Si el perfil todavía se está consultando, NO soltar: lo suelta fetchProfile.
+      if (isMounted && loading && !fetchingRef.current) {
         console.warn('Safety timeout: desbloqueando loading de AuthGuard.');
         setLoading(false);
       }
@@ -148,6 +173,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // que los guards no evalúen con el rol DEFAULT ('vendedor') antes de tener
           // el perfil real. Eso causaba el flash de /admin al entrar un cliente.
           setProfile(null);
+          setRoleResolved(false);
+          resolvedUserIdRef.current = null;
           setLoading(true);
         }
         // Ejecutar en background fuera del ciclo de eventos de auth.
@@ -172,6 +199,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const refreshProfile = async () => {
     if (user) {
+      if (!roleResolved) setLoading(true);
       await fetchProfile(user);
     }
   };
@@ -184,6 +212,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } finally {
       setUser(null);
       setProfile(null);
+      setRoleResolved(false);
     }
   };
 
@@ -318,7 +347,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const role: UserRole = profile?.role || (isDefaultAdminEmail(user?.email) ? 'admin' : 'vendedor');
+  // Último recurso = menor privilegio ('client'), nunca 'vendedor'.
+  const role: UserRole = profile?.role || (isDefaultAdminEmail(user?.email) ? 'admin' : 'client');
   const isAdmin = role === 'admin';
   const isVendedor = role === 'vendedor';
 
@@ -330,6 +360,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         role,
         isAdmin,
         isVendedor,
+        roleResolved,
         loading,
         signOut,
         listUsers,
