@@ -345,14 +345,30 @@
 .portal .cal-state h3{font-family:var(--font-display),Georgia,serif;font-size:24px;color:var(--ink);margin:0 0 10px}
 .portal .cal-retry{margin-top:14px;padding:9px 18px;border-radius:999px;border:1px solid rgba(var(--wood-rgb),.4);background:rgba(var(--wood-rgb),.12);color:var(--cream);cursor:pointer;font-weight:600}
 /* Modal */
-.portal .cal-modal{position:fixed;inset:0;z-index:200;display:grid;place-items:center;padding:20px;background:rgba(2,8,16,.78);backdrop-filter:blur(6px);animation:calFade .2s ease}
+.portal .cal-modal{position:fixed;inset:0;z-index:300;display:grid;place-items:center;padding:24px;background:rgba(2,8,16,.82);backdrop-filter:blur(6px);animation:calFade .2s ease}
 @keyframes calFade{from{opacity:0}to{opacity:1}}
-.portal .cal-sheet{position:relative;width:100%;max-width:420px;background:var(--navy2);border:1px solid var(--line);border-radius:20px;padding:16px;box-shadow:0 30px 80px rgba(0,0,0,.6)}
-.portal .cal-close{position:absolute;top:-14px;right:-14px;z-index:5;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--navy2);border:1px solid var(--line);color:var(--ink);cursor:pointer}
-.portal .cal-caption{margin:14px 2px 0;font-size:14px;color:var(--muted);line-height:1.55;white-space:pre-wrap}
-.portal .cal-iglink{display:inline-flex;align-items:center;gap:7px;margin-top:14px;padding:9px 16px;border-radius:999px;background:linear-gradient(135deg,var(--wood),var(--wood-deep));color:#fff;font-weight:600;font-size:13px;text-decoration:none}
-.portal .cal-nomedia{aspect-ratio:9/16;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--muted);background:rgba(255,255,255,.03);border-radius:14px}
+/* Modal de pieza: 2 columnas (media izquierda tamaño fijo · info derecha scrolleable) */
+.portal .cal-sheet{position:relative;display:flex;width:100%;max-width:880px;max-height:88vh;background:var(--navy2);border:1px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.portal .cal-close{position:absolute;top:12px;right:12px;z-index:6;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:rgba(0,0,0,.5);border:1px solid var(--line);color:#fff;cursor:pointer}
+.portal .cal-media{flex:0 0 auto;width:min(44vw,340px);height:min(84vh,600px);max-height:88vh;display:flex;align-items:center;justify-content:center;background:#05080f;overflow:hidden;position:relative}
+.portal .cal-media .pvid,.portal .cal-media .vslides{width:100%;height:100%}
+.portal .cal-media .vslides{display:flex;flex-direction:column;gap:8px;padding:10px}
+.portal .cal-media .vslide-frame{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;border-radius:10px;overflow:hidden}
+.portal .cal-media .vslide-frame .vslide{width:100%;height:100%;max-height:none;object-fit:contain;border-radius:0;margin:0}
+.portal .cal-media .pvid video{width:100%;height:100%;object-fit:contain}
+.portal .cal-media .cal-nomedia{width:100%;height:100%;aspect-ratio:auto}
+.portal .cal-info{flex:1;min-width:0;display:flex;flex-direction:column;padding:22px 22px 24px;overflow-y:auto;max-height:88vh}
+.portal .cal-info-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.portal .cal-type{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--wood)}
+.portal .cal-caption{margin:0;font-size:14px;color:var(--ink);line-height:1.6;white-space:pre-wrap;opacity:.92}
+.portal .cal-iglink{display:inline-flex;align-items:center;gap:7px;margin-top:16px;align-self:flex-start;padding:10px 18px;border-radius:999px;background:linear-gradient(135deg,var(--wood),var(--wood-deep));color:var(--cream);font-weight:700;font-size:13px;text-decoration:none}
+.portal .cal-nomedia{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--muted)}
 .portal .vtype{position:absolute;top:10px;left:10px;z-index:4;display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:#fff;background:rgba(0,0,0,.45);padding:4px 9px;border-radius:999px}
+@media(max-width:760px){
+  .portal .cal-sheet{flex-direction:column;max-height:90vh}
+  .portal .cal-media{width:100%;max-width:300px;height:auto;aspect-ratio:9/16;max-height:52vh;margin:14px auto 0;border-radius:14px}
+  .portal .cal-info{max-height:none;padding:16px 18px 20px}
+}
 @media(max-width:560px){.portal .cal-grid,.portal .cal-dow{gap:5px}.portal .cal-month{font-size:20px;min-width:160px}}
 
 /* ===== Shell del portal: sidebar colapsable (tematizado por cliente) ===== */

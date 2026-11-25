@@ -6,6 +6,7 @@ import type { CalendarPiece } from '@/lib/calendarTypes';
 import { PortalVideo } from '@/components/portal/PortalVideo';
 
 const WEEKDAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+const TYPE_LABEL: Record<string, string> = { reel: 'Reel', carousel: 'Carrusel', story: 'Historia' };
 
 const monthLabel = (year: number, month0: number): string =>
   new Intl.DateTimeFormat('es-AR', { month: 'long', year: 'numeric' }).format(new Date(year, month0, 1));
@@ -180,20 +181,25 @@ export const CampaignCalendar: React.FC<{ campaignId: string | null }> = ({ camp
               <button type="button" className="cal-close" aria-label="Cerrar" onClick={() => setSelectedDay(null)}>
                 <X size={18} />
               </button>
-              {many && (
-                <div className="cal-daynav">
-                  <button type="button" aria-label="Pieza anterior" disabled={selIdx === 0} onClick={() => setSelIdx((s) => Math.max(0, s - 1))}>‹</button>
-                  <span>Pieza {selIdx + 1} / {selectedDay.length}</span>
-                  <button type="button" aria-label="Pieza siguiente" disabled={selIdx === selectedDay.length - 1} onClick={() => setSelIdx((s) => Math.min(selectedDay.length - 1, s + 1))}>›</button>
+              <div className="cal-media"><PieceViewer key={sel.id} piece={sel} /></div>
+              <div className="cal-info">
+                <div className="cal-info-head">
+                  <span className="cal-type">{TYPE_LABEL[sel.type]}</span>
+                  {many && (
+                    <div className="cal-daynav">
+                      <button type="button" aria-label="Pieza anterior" disabled={selIdx === 0} onClick={() => setSelIdx((s) => Math.max(0, s - 1))}>‹</button>
+                      <span>{selIdx + 1} / {selectedDay.length}</span>
+                      <button type="button" aria-label="Pieza siguiente" disabled={selIdx === selectedDay.length - 1} onClick={() => setSelIdx((s) => Math.min(selectedDay.length - 1, s + 1))}>›</button>
+                    </div>
+                  )}
                 </div>
-              )}
-              <PieceViewer key={sel.id} piece={sel} />
-              {sel.caption && <p className="cal-caption">{sel.caption}</p>}
-              {sel.permalink && (
-                <a className="cal-iglink" href={sel.permalink} target="_blank" rel="noopener noreferrer">
-                  <Instagram size={15} /> Ver en Instagram
-                </a>
-              )}
+                {sel.caption && <p className="cal-caption">{sel.caption}</p>}
+                {sel.permalink && (
+                  <a className="cal-iglink" href={sel.permalink} target="_blank" rel="noopener noreferrer">
+                    <Instagram size={15} /> Ver en Instagram
+                  </a>
+                )}
+              </div>
             </div>
           </div>
         );
@@ -212,7 +218,9 @@ const PieceViewer: React.FC<{ piece: CalendarPiece }> = ({ piece }) => {
   if (slides.length > 0) {
     return (
       <div className="vslides">
-        <img className="vslide vslide-in" key={slide} src={slides[slide]} alt={`Lámina ${slide + 1}`} />
+        <div className="vslide-frame">
+          <img className="vslide vslide-in" key={slide} src={slides[slide]} alt={`Lámina ${slide + 1}`} />
+        </div>
         <div className="slidenav">
           <button type="button" aria-label="Lámina anterior" onClick={() => setSlide((s) => Math.max(0, s - 1))}>‹</button>
           <span>{slide + 1} / {slides.length}</span>
