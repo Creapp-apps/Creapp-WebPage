@@ -20,6 +20,7 @@ test('campaignViewState', () => {
   assert.equal(campaignViewState(null), 'empty');
   assert.equal(campaignViewState({ pieces: [] } as never), 'empty');
   assert.equal(campaignViewState({ pieces: [{ id: 'a' }] } as never), 'ready');
+  assert.equal(campaignViewState({ live: true, pieces: [] } as never), 'ready');
 });
 
 test('paletteSwatches: usa brandColors validos, fallback neutro si falta', () => {

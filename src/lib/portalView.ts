@@ -10,9 +10,11 @@ export function pickBrandMark(client: { name: string; logoUrl: string | null }):
   return url ? { kind: 'logo', url, name: client.name } : { kind: 'name', name: client.name };
 }
 
-export function campaignViewState(c: Pick<PortalCampaign, 'pieces'> | null | undefined): 'loading' | 'empty' | 'ready' {
+export function campaignViewState(c: Pick<PortalCampaign, 'pieces' | 'live'> | null | undefined): 'loading' | 'empty' | 'ready' {
   if (c === undefined) return 'loading';
-  if (c === null || !c.pieces || c.pieces.length === 0) return 'empty';
+  if (c === null) return 'empty';
+  if (c.live) return 'ready';
+  if (!c.pieces || c.pieces.length === 0) return 'empty';
   return 'ready';
 }
 

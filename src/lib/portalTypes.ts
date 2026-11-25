@@ -15,6 +15,7 @@ export type PortalPiece = {
 
 export type PortalCampaign = {
   id: string;
+  live?: boolean;
   title: string | null;
   month: string | null;
   concept: string | null;
