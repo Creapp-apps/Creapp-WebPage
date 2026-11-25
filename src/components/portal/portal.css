@@ -350,7 +350,7 @@
 .portal .cal-sheet{position:relative;width:100%;max-width:420px;background:var(--navy2);border:1px solid var(--line);border-radius:20px;padding:16px;box-shadow:0 30px 80px rgba(0,0,0,.6)}
 .portal .cal-close{position:absolute;top:-14px;right:-14px;z-index:5;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--navy2);border:1px solid var(--line);color:var(--ink);cursor:pointer}
 .portal .cal-caption{margin:14px 2px 0;font-size:14px;color:var(--muted);line-height:1.55;white-space:pre-wrap}
-.portal .cal-iglink{display:inline-flex;align-items:center;gap:7px;margin-top:14px;padding:9px 16px;border-radius:999px;background:linear-gradient(135deg,#b06cff,#ff5ea8);color:#fff;font-weight:600;font-size:13px;text-decoration:none}
+.portal .cal-iglink{display:inline-flex;align-items:center;gap:7px;margin-top:14px;padding:9px 16px;border-radius:999px;background:linear-gradient(135deg,var(--wood),var(--wood-deep));color:#fff;font-weight:600;font-size:13px;text-decoration:none}
 .portal .cal-nomedia{aspect-ratio:9/16;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--muted);background:rgba(255,255,255,.03);border-radius:14px}
 .portal .vtype{position:absolute;top:10px;left:10px;z-index:4;display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:#fff;background:rgba(0,0,0,.45);padding:4px 9px;border-radius:999px}
 @media(max-width:560px){.portal .cal-grid,.portal .cal-dow{gap:5px}.portal .cal-month{font-size:20px;min-width:160px}}
@@ -404,3 +404,6 @@
 }
 
 .portal .campaign-switch.cs-top{margin:0 0 22px}
+.portal .cal-daynav{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:10px;font-size:13px;font-weight:600;color:var(--muted)}
+.portal .cal-daynav button{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-size:18px;line-height:1;color:var(--ink);background:rgba(255,255,255,.05);border:1px solid var(--line);cursor:pointer}
+.portal .cal-daynav button:disabled{opacity:.35;cursor:default}

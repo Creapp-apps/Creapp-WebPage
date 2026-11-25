@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, Check, Clock, Instagram, X, Images, Film } from 'lucide-react';
 import { getMyCalendarPieces, subscribeMyCalendar } from '@/lib/calendarService';
-import { cellState, monthGrid, toLocalDayKey } from '@/lib/calendarMapper';
+import { cellState, monthGrid, toLocalDayKey, firstPieceMonth } from '@/lib/calendarMapper';
 import type { CalendarPiece } from '@/lib/calendarTypes';
 import { PortalVideo } from '@/components/portal/PortalVideo';
 
@@ -15,8 +15,6 @@ const timeLabel = (d: Date): string =>
 
 type MonthKey = { year: number; month0: number };
 
-const keyOf = (m: MonthKey): string => `${m.year}-${m.month0}`;
-
 /** Calendario de la campaña del cliente: scheduled_posts en vivo, blur por publicado,
  * player embebido. Ver spec §5.4. Acentos = tema del cliente (chrome-only CreAPP). */
 export const CampaignCalendar: React.FC<{ campaignId: string | null }> = ({ campaignId }) => {
@@ -24,7 +22,8 @@ export const CampaignCalendar: React.FC<{ campaignId: string | null }> = ({ camp
   const [error, setError] = useState(false);
   const [now, setNow] = useState(() => new Date());
   const [month, setMonth] = useState<MonthKey | null>(null);
-  const [selected, setSelected] = useState<CalendarPiece | null>(null);
+  const [selectedDay, setSelectedDay] = useState<CalendarPiece[] | null>(null);
+  const [selIdx, setSelIdx] = useState(0);
 
   const load = useCallback(() => {
     setError(false);
@@ -40,13 +39,8 @@ export const CampaignCalendar: React.FC<{ campaignId: string | null }> = ({ camp
     return () => window.clearInterval(t);
   }, []);
 
-  // Mes inicial: el de la primera pieza con fecha; si no, el mes actual.
-  useEffect(() => {
-    if (!pieces || month) return;
-    const first = pieces.find((p) => p.date);
-    const d = first?.date ?? new Date();
-    setMonth({ year: d.getFullYear(), month0: d.getMonth() });
-  }, [pieces, month]);
+  // Al cambiar de campaña, volvé a "auto" para que el mes se re-derive de la nueva.
+  useEffect(() => { setMonth(null); }, [campaignId]);
 
   // Piezas por día local (clave YYYY-MM-DD).
   const byDay = useMemo(() => {
@@ -59,21 +53,27 @@ export const CampaignCalendar: React.FC<{ campaignId: string | null }> = ({ camp
     return m;
   }, [pieces]);
 
-  // Meses que tienen piezas (para clamp de navegación).
+  // Meses (AR-local) que tienen piezas, para clamp de navegación.
   const monthsWithPieces = useMemo(() => {
     const s = new Set<string>();
-    for (const p of pieces ?? []) if (p.date) s.add(`${p.date.getFullYear()}-${p.date.getMonth()}`);
+    for (const p of pieces ?? []) {
+      if (!p.date) continue;
+      const [y, m] = toLocalDayKey(p.date.toISOString()).split('-').map(Number);
+      s.add(`${y}-${m - 1}`);
+    }
     return s;
   }, [pieces]);
 
+  // Mes visible: override del usuario, o el default derivado de las piezas (AR-local).
+  const base: MonthKey = month ?? firstPieceMonth(pieces ?? [], now);
+
   const shift = (delta: number) => {
-    if (!month) return;
-    const d = new Date(month.year, month.month0 + delta, 1);
+    const d = new Date(base.year, base.month0 + delta, 1);
     setMonth({ year: d.getFullYear(), month0: d.getMonth() });
   };
   const canShift = (delta: number): boolean => {
-    if (!month || monthsWithPieces.size === 0) return false;
-    const d = new Date(month.year, month.month0 + delta, 1);
+    if (monthsWithPieces.size === 0) return false;
+    const d = new Date(base.year, base.month0 + delta, 1);
     // habilita si hay algún mes con piezas en esa dirección
     for (const k of monthsWithPieces) {
       const [y, m] = k.split('-').map(Number);
@@ -85,11 +85,11 @@ export const CampaignCalendar: React.FC<{ campaignId: string | null }> = ({ camp
 
   // Cierre del modal con Escape.
   useEffect(() => {
-    if (!selected) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setSelected(null); };
+    if (!selectedDay) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setSelectedDay(null); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [selected]);
+  }, [selectedDay]);
 
   if (pieces === undefined) {
     return <div className="cal-state">Cargando tu calendario…</div>;
@@ -111,7 +111,7 @@ export const CampaignCalendar: React.FC<{ campaignId: string | null }> = ({ camp
     );
   }
 
-  const grid = month ? monthGrid(month.year, month.month0) : [];
+  const grid = monthGrid(base.year, base.month0);
   const todayKey = toLocalDayKey(now.toISOString());
 
   return (
@@ -120,7 +120,7 @@ export const CampaignCalendar: React.FC<{ campaignId: string | null }> = ({ camp
         <button type="button" className="cal-nav" aria-label="Mes anterior" disabled={!canShift(-1)} onClick={() => shift(-1)}>
           <ChevronLeft size={18} />
         </button>
-        <h2 className="cal-month">{month ? monthLabel(month.year, month.month0) : ''}</h2>
+        <h2 className="cal-month">{monthLabel(base.year, base.month0)}</h2>
         <button type="button" className="cal-nav" aria-label="Mes siguiente" disabled={!canShift(1)} onClick={() => shift(1)}>
           <ChevronRight size={18} />
         </button>
@@ -144,7 +144,7 @@ export const CampaignCalendar: React.FC<{ campaignId: string | null }> = ({ camp
               key={i}
               className={`cal-cell${head ? ' has' : ''}${isToday ? ' today' : ''}${state ? ` st-${state}` : ''}`}
               disabled={!head}
-              onClick={() => head && setSelected(head)}
+              onClick={() => { if (head) { setSelectedDay(dayPieces); setSelIdx(0); } }}
               aria-label={head ? `${dayNum}: ${head.caption ?? 'pieza programada'}` : `${dayNum}`}
             >
               <span className="cal-day">{dayNum}</span>
@@ -171,22 +171,33 @@ export const CampaignCalendar: React.FC<{ campaignId: string | null }> = ({ camp
         <span><i className="lg lg-pub" /> Publicado</span>
       </div>
 
-      {selected && (
-        <div className="cal-modal" role="dialog" aria-modal="true" onClick={() => setSelected(null)}>
-          <div className="cal-sheet" onClick={(e) => e.stopPropagation()}>
-            <button type="button" className="cal-close" aria-label="Cerrar" onClick={() => setSelected(null)}>
-              <X size={18} />
-            </button>
-            <PieceViewer piece={selected} />
-            {selected.caption && <p className="cal-caption">{selected.caption}</p>}
-            {selected.permalink && (
-              <a className="cal-iglink" href={selected.permalink} target="_blank" rel="noopener noreferrer">
-                <Instagram size={15} /> Ver en Instagram
-              </a>
-            )}
+      {selectedDay && selectedDay[selIdx] && (() => {
+        const sel = selectedDay[selIdx];
+        const many = selectedDay.length > 1;
+        return (
+          <div className="cal-modal" role="dialog" aria-modal="true" aria-label="Pieza de la campaña" onClick={() => setSelectedDay(null)}>
+            <div className="cal-sheet" onClick={(e) => e.stopPropagation()}>
+              <button type="button" className="cal-close" aria-label="Cerrar" onClick={() => setSelectedDay(null)}>
+                <X size={18} />
+              </button>
+              {many && (
+                <div className="cal-daynav">
+                  <button type="button" aria-label="Pieza anterior" disabled={selIdx === 0} onClick={() => setSelIdx((s) => Math.max(0, s - 1))}>‹</button>
+                  <span>Pieza {selIdx + 1} / {selectedDay.length}</span>
+                  <button type="button" aria-label="Pieza siguiente" disabled={selIdx === selectedDay.length - 1} onClick={() => setSelIdx((s) => Math.min(selectedDay.length - 1, s + 1))}>›</button>
+                </div>
+              )}
+              <PieceViewer key={sel.id} piece={sel} />
+              {sel.caption && <p className="cal-caption">{sel.caption}</p>}
+              {sel.permalink && (
+                <a className="cal-iglink" href={sel.permalink} target="_blank" rel="noopener noreferrer">
+                  <Instagram size={15} /> Ver en Instagram
+                </a>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 };

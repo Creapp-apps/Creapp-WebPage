@@ -63,6 +63,18 @@ export function mapScheduledRows(
   return out;
 }
 
+/** Mes (AR-local) a mostrar por default: el de la primera pieza con fecha; si no, el de `now`. */
+export function firstPieceMonth(
+  pieces: { date: Date | null }[],
+  now: Date = new Date(),
+  tz: string = DEFAULT_TZ,
+): { year: number; month0: number } {
+  const dated = pieces.find((p) => p.date);
+  const key = toLocalDayKey((dated?.date ?? now).toISOString(), tz); // YYYY-MM-DD
+  const [y, m] = key.split('-').map(Number);
+  return { year: y, month0: m - 1 };
+}
+
 const pad = (n: number): string => String(n).padStart(2, '0');
 
 /** Grilla de 42 celdas (6×7) del mes; semana arranca lunes; valores `YYYY-MM-DD` o null. */

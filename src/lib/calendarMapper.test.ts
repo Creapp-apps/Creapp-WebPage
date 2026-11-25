@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { deriveType, toLocalDayKey, cellState, mapScheduledRows, monthGrid } from './calendarMapper';
+import { deriveType, toLocalDayKey, cellState, mapScheduledRows, monthGrid, firstPieceMonth } from './calendarMapper';
 import type { CalendarPiece } from './calendarTypes';
 
 test('deriveType mapea plataforma', () => {
@@ -46,6 +46,18 @@ test('mapScheduledRows: scopea a la campaña activa y resuelve media con fallbac
 
 test('mapScheduledRows sin filas → []', () => {
   assert.deepEqual(mapScheduledRows([], [], { campaignId: 'C1' }), []);
+});
+
+test('firstPieceMonth: usa el mes AR de la primera pieza con fecha', () => {
+  assert.deepEqual(firstPieceMonth([{ date: null }, { date: new Date('2026-12-02T14:00:00Z') }]), { year: 2026, month0: 11 });
+});
+
+test('firstPieceMonth: TZ — pieza 02:00Z cae en noviembre AR', () => {
+  assert.deepEqual(firstPieceMonth([{ date: new Date('2026-12-01T02:00:00Z') }]), { year: 2026, month0: 10 });
+});
+
+test('firstPieceMonth sin piezas → mes AR de now', () => {
+  assert.deepEqual(firstPieceMonth([], new Date('2026-07-15T12:00:00Z')), { year: 2026, month0: 6 });
 });
 
 test('monthGrid: 42 celdas, arranca lunes, posiciona el 1', () => {
