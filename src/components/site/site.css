@@ -254,6 +254,90 @@ html[data-site] body {
     border-radius: 0;
 }
 
+/* ── Dropdowns (desktop) ── */
+.cw-group {
+    position: relative;
+}
+
+.cw-group-btn,
+.cw-nav-flat {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 12px;
+    font-size: 14px;
+    font-weight: 500;
+    font-family: inherit;
+    color: var(--soft);
+    background: transparent;
+    border: 0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: color .2s var(--ease);
+}
+
+.cw-group-btn:hover,
+.cw-group-btn.is-active,
+.cw-group-btn[aria-expanded="true"],
+.cw-nav-flat:hover {
+    color: var(--ink);
+}
+
+.cw-group-btn svg {
+    transition: transform .2s var(--ease);
+}
+
+.cw-group-btn[aria-expanded="true"] svg {
+    transform: rotate(180deg);
+}
+
+.cw-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    z-index: 60;
+    min-width: 264px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background: var(--nav-bg);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    backdrop-filter: blur(16px) saturate(140%);
+    box-shadow: 0 20px 50px -20px rgba(0, 0, 0, .6);
+}
+
+.cw-menu[hidden] {
+    display: none;
+}
+
+.cw-menu .cw-menu-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    color: var(--ink);
+    transition: background-color .15s var(--ease);
+}
+
+.cw-menu .cw-menu-item:hover,
+.cw-menu .cw-menu-item[aria-current="true"] {
+    background: var(--line);
+}
+
+.cw-menu .cw-menu-item b {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.cw-menu .cw-menu-item span {
+    font-size: 12px;
+    color: var(--soft);
+}
+
 .cw-icon-btn {
     width: 40px;
     height: 40px;
@@ -284,7 +368,7 @@ html[data-site] body {
 }
 
 @media (max-width: 920px) {
-    .cw-nav-links,
+    .cw-nav-desktop,
     .cw-nav .cw-nav-cta {
         display: none;
     }
@@ -330,6 +414,55 @@ html[data-site] body {
         font-family: var(--font-display-site);
         font-size: 24px;
         letter-spacing: -.02em;
+    }
+
+    /* Acordeón mobile por grupo */
+    .cw-acc {
+        border-bottom: 1px solid var(--line);
+    }
+
+    .cw-acc-head {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 0;
+        background: transparent;
+        border: 0;
+        cursor: pointer;
+        color: var(--ink);
+        font-family: var(--font-display-site);
+        font-size: 24px;
+        letter-spacing: -.02em;
+    }
+
+    .cw-acc-caret {
+        transition: transform .2s var(--ease);
+        color: var(--soft);
+    }
+
+    .cw-acc-caret.is-open {
+        transform: rotate(180deg);
+    }
+
+    .cw-acc-body {
+        display: flex;
+        flex-direction: column;
+        padding: 0 0 14px 4px;
+    }
+
+    .cw-acc-body[hidden] {
+        display: none;
+    }
+
+    .cw-acc-item {
+        padding: 10px 0;
+        font-size: 16px;
+        color: var(--soft);
+    }
+
+    .cw-acc-item:hover {
+        color: var(--ink);
     }
 
     .cw-sheet .cw-btn {

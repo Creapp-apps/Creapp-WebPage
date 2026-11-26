@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { Menu, Moon, Sun, X } from 'lucide-react';
-import { NAV } from './content';
+import React, { useEffect, useRef, useState } from 'react';
+import { ChevronDown, Menu, Moon, Sun, X } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
 import type { SiteTheme } from './theme';
+import { GROUP_LABELS, servicePath, servicesByGroup, type ServiceGroup } from './services';
 
 interface SiteNavProps {
     theme: SiteTheme;
@@ -9,67 +10,105 @@ interface SiteNavProps {
     onContact: () => void;
 }
 
-export const SiteNav: React.FC<SiteNavProps> = ({ theme, onToggleTheme, onContact }) => {
-    const [scrolled, setScrolled] = useState(false);
-    const [open, setOpen] = useState(false);
-    const [active, setActive] = useState<string>('');
+const GROUP_ORDER: ServiceGroup[] = ['desarrollo', 'seguridad', 'marketing'];
 
-    // Fondo de la nav + link activo = última sección de la nav que ya pasó la mitad de la
-    // pantalla. Así los capítulos de las 6 áreas cuentan como "Servicios".
+export const SiteNav: React.FC<SiteNavProps> = ({ theme, onToggleTheme, onContact }) => {
+    const location = useLocation();
+    const byGroup = servicesByGroup();
+    const [scrolled, setScrolled] = useState(false);
+    const [sheetOpen, setSheetOpen] = useState(false);
+    const [openGroup, setOpenGroup] = useState<ServiceGroup | null>(null); // desktop dropdown
+    const [mobileGroup, setMobileGroup] = useState<ServiceGroup | null>(null); // mobile accordion
+    const navRef = useRef<HTMLElement>(null);
+
     useEffect(() => {
-        let raf = 0;
-        const update = () => {
-            raf = 0;
-            setScrolled(window.scrollY > 24);
-            const mid = window.innerHeight * 0.5;
-            let current = '';
-            for (const n of NAV) {
-                const el = document.querySelector(n.href);
-                if (el && el.getBoundingClientRect().top <= mid) current = n.href;
-            }
-            setActive(current);
-        };
-        const onScroll = () => {
-            if (!raf) raf = requestAnimationFrame(update);
-        };
-        update();
+        const onScroll = () => setScrolled(window.scrollY > 24);
+        onScroll();
         window.addEventListener('scroll', onScroll, { passive: true });
-        window.addEventListener('resize', onScroll);
+        return () => window.removeEventListener('scroll', onScroll);
+    }, []);
+
+    // Cerrar todo al navegar (ruta o ancla).
+    useEffect(() => {
+        setOpenGroup(null);
+        setMobileGroup(null);
+        setSheetOpen(false);
+    }, [location.pathname, location.hash]);
+
+    // Escape cierra dropdown / sheet; click afuera cierra el dropdown desktop.
+    useEffect(() => {
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                setOpenGroup(null);
+                setSheetOpen(false);
+            }
+        };
+        const onClickOutside = (e: MouseEvent) => {
+            if (navRef.current && !navRef.current.contains(e.target as Node)) setOpenGroup(null);
+        };
+        window.addEventListener('keydown', onKey);
+        window.addEventListener('click', onClickOutside);
         return () => {
-            cancelAnimationFrame(raf);
-            window.removeEventListener('scroll', onScroll);
-            window.removeEventListener('resize', onScroll);
+            window.removeEventListener('keydown', onKey);
+            window.removeEventListener('click', onClickOutside);
         };
     }, []);
 
-    useEffect(() => {
-        if (!open) return;
-        const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
-        window.addEventListener('keydown', onKey);
-        return () => window.removeEventListener('keydown', onKey);
-    }, [open]);
-
     const themeLabel = theme === 'dark' ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro';
+    const groupActive = (g: ServiceGroup) => location.pathname.startsWith(`/${g}`);
 
     return (
         <>
-            <header className={`cw-nav ${scrolled ? 'is-scrolled' : ''} ${open ? 'is-open' : ''}`}>
+            <header ref={navRef} className={`cw-nav ${scrolled ? 'is-scrolled' : ''} ${sheetOpen ? 'is-open' : ''}`}>
                 <div className="cw-wrap cw-nav-in">
-                    <a href="#top" className="cw-brand" aria-label="CreAPP · IT Solutions — inicio">
+                    <Link to="/" className="cw-brand" aria-label="CreAPP · Software & Agentic Lab — inicio">
                         <img src="/CREAPP%20LOGO%20VECTOR.png" alt="" width={17} height={30} />
                         <span className="cw-brand-name">CreAPP</span>
                         <span className="cw-brand-tag">IT SOLUTIONS</span>
-                    </a>
+                    </Link>
 
-                    <nav aria-label="Principal">
+                    <nav aria-label="Principal" className="cw-nav-desktop">
                         <ul className="cw-nav-links">
-                            {NAV.map((n) => (
-                                <li key={n.href}>
-                                    <a href={n.href} aria-current={active === n.href ? 'true' : undefined}>
-                                        {n.label}
-                                    </a>
+                            {GROUP_ORDER.map((g) => (
+                                <li
+                                    key={g}
+                                    className="cw-group"
+                                    onMouseEnter={() => setOpenGroup(g)}
+                                    onMouseLeave={() => setOpenGroup((cur) => (cur === g ? null : cur))}
+                                >
+                                    <button
+                                        type="button"
+                                        className={`cw-group-btn ${groupActive(g) ? 'is-active' : ''}`}
+                                        aria-expanded={openGroup === g}
+                                        aria-haspopup="true"
+                                        onClick={() => setOpenGroup((cur) => (cur === g ? null : g))}
+                                        onFocus={() => setOpenGroup(g)}
+                                    >
+                                        {GROUP_LABELS[g]}
+                                        <ChevronDown size={14} aria-hidden="true" />
+                                    </button>
+                                    <div className="cw-menu" role="menu" hidden={openGroup !== g}>
+                                        {byGroup[g].map((s) => (
+                                            <Link
+                                                key={s.slug}
+                                                to={servicePath(s)}
+                                                role="menuitem"
+                                                className="cw-menu-item"
+                                                aria-current={location.pathname === servicePath(s) ? 'true' : undefined}
+                                            >
+                                                <b>{s.title}</b>
+                                                <span>{s.eyebrow}</span>
+                                            </Link>
+                                        ))}
+                                    </div>
                                 </li>
                             ))}
+                            <li>
+                                <Link to="/#nosotros" className="cw-nav-flat">Nosotros</Link>
+                            </li>
+                            <li>
+                                <Link to="/#contacto" className="cw-nav-flat">Contacto</Link>
+                            </li>
                         </ul>
                     </nav>
 
@@ -90,35 +129,51 @@ export const SiteNav: React.FC<SiteNavProps> = ({ theme, onToggleTheme, onContac
                     <button
                         type="button"
                         className="cw-icon-btn cw-burger"
-                        onClick={() => setOpen((o) => !o)}
-                        aria-expanded={open}
+                        onClick={() => setSheetOpen((o) => !o)}
+                        aria-expanded={sheetOpen}
                         aria-controls="cw-sheet"
-                        aria-label={open ? 'Cerrar menú' : 'Abrir menú'}
+                        aria-label={sheetOpen ? 'Cerrar menú' : 'Abrir menú'}
                     >
-                        {open ? <X size={18} /> : <Menu size={18} />}
+                        {sheetOpen ? <X size={18} /> : <Menu size={18} />}
                     </button>
                 </div>
             </header>
 
-            <div id="cw-sheet" className={`cw-sheet ${open ? 'is-open' : ''}`} aria-hidden={!open}>
-                {NAV.map((n, i) => (
-                    <a
-                        key={n.href}
-                        href={n.href}
-                        className="cw-sheet-link"
-                        tabIndex={open ? 0 : -1}
-                        onClick={() => setOpen(false)}
-                    >
-                        {n.label}
-                        <span className="cw-mono">0{i + 1}</span>
-                    </a>
+            <div id="cw-sheet" className={`cw-sheet ${sheetOpen ? 'is-open' : ''}`} aria-hidden={!sheetOpen}>
+                {GROUP_ORDER.map((g) => (
+                    <div key={g} className="cw-acc">
+                        <button
+                            type="button"
+                            className="cw-acc-head"
+                            aria-expanded={mobileGroup === g}
+                            tabIndex={sheetOpen ? 0 : -1}
+                            onClick={() => setMobileGroup((cur) => (cur === g ? null : g))}
+                        >
+                            {GROUP_LABELS[g]}
+                            <ChevronDown size={18} aria-hidden="true" className={mobileGroup === g ? 'cw-acc-caret is-open' : 'cw-acc-caret'} />
+                        </button>
+                        <div className="cw-acc-body" hidden={mobileGroup !== g}>
+                            {byGroup[g].map((s) => (
+                                <Link
+                                    key={s.slug}
+                                    to={servicePath(s)}
+                                    className="cw-acc-item"
+                                    tabIndex={sheetOpen ? 0 : -1}
+                                >
+                                    {s.title}
+                                </Link>
+                            ))}
+                        </div>
+                    </div>
                 ))}
+                <Link to="/#nosotros" className="cw-sheet-link" tabIndex={sheetOpen ? 0 : -1}>Nosotros</Link>
+                <Link to="/#contacto" className="cw-sheet-link" tabIndex={sheetOpen ? 0 : -1}>Contacto</Link>
                 <button
                     type="button"
                     className="cw-btn cw-btn-primary"
-                    tabIndex={open ? 0 : -1}
+                    tabIndex={sheetOpen ? 0 : -1}
                     onClick={() => {
-                        setOpen(false);
+                        setSheetOpen(false);
                         onContact();
                     }}
                 >
