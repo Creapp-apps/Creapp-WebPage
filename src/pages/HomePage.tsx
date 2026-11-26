@@ -34,14 +34,22 @@ const HomePage: React.FC = () => {
         document.title = 'CreAPP · Software & Agentic Lab';
     }, []);
 
-    // Scroll al ancla si se llega con hash (p. ej. /#nosotros desde una página de servicio).
+    // Scroll al ancla al llegar con hash (p. ej. /#nosotros desde una página de servicio).
+    // Salto instantáneo tras un breve delay: no pelea con el RAF de Lenis y cae en la sección
+    // aunque la home recién montada reflowee con fuentes/imágenes.
     useEffect(() => {
-        if (!location.hash) return;
-        const el = document.querySelector(location.hash);
-        if (el) {
-            // Esperar un frame a que la vista esté montada.
-            requestAnimationFrame(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+        const hash = location.hash;
+        if (hash.length < 2) return; // ignora '' y '#'
+        let el: Element | null = null;
+        try {
+            el = document.querySelector(hash);
+        } catch {
+            return; // hash no es un selector válido
         }
+        if (!el) return;
+        const target = el as HTMLElement;
+        const id = window.setTimeout(() => target.scrollIntoView({ block: 'start' }), 120);
+        return () => window.clearTimeout(id);
     }, [location.hash]);
 
     return (

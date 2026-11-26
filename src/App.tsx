@@ -1,5 +1,5 @@
 import React, { useEffect, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import AuthGuard from './components/auth/AuthGuard';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
@@ -204,6 +204,9 @@ const App: React.FC = () => {
                     <Route path="/portal/login" element={<Suspense fallback={<PortalLoader />}><PortalLogin /></Suspense>} />
                     <Route path="/portal/activar" element={<Suspense fallback={<PortalLoader />}><PortalActivate /></Suspense>} />
                     <Route path="/portal" element={<PortalBoot><PortalGuard><Suspense fallback={<PortalLoader />}><PortalView /></Suspense></PortalGuard></PortalBoot>} />
+
+                    {/* Cualquier ruta no reconocida (grupo pelado /desarrollo, typos) vuelve al inicio, nunca pantalla en blanco. */}
+                    <Route path="*" element={<Navigate to="/" replace />} />
                   </Routes>
                 </Suspense>
               </LandingSmoothScrollWrapper>

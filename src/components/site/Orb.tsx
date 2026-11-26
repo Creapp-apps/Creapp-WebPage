@@ -1,11 +1,11 @@
 import React, { useEffect, useRef } from 'react';
-import { AREAS } from './content';
+import { GROUP_LABELS, type ServiceGroup } from './services';
 import { onThemeChange, readToken } from './theme';
 
 /**
  * Orbe stipple interactivo (canvas 2D, sin WebGL: un solo contexto liviano).
  * - Arrastrar = gira (con inercia). Hover = separa los puntos. Click = onda.
- * - Seis nodos rotulados = las 6 áreas: un solo sistema.
+ * - Tres nodos rotulados = los 3 frentes: un solo sistema.
  * - Lee los tokens del tema y recolorea. Pausa fuera de viewport / pestaña oculta.
  * - prefers-reduced-motion: frame fijo; solo se redibuja cuando el usuario lo mueve.
  */
@@ -60,12 +60,14 @@ export const Orb: React.FC<{ className?: string }> = ({ className }) => {
             jitter[i] = 0.75 + ((i * 9301 + 49297) % 233280) / 233280 * 0.6;
         }
 
-        // Nodos de las 6 áreas, repartidos sobre la esfera.
-        const nodes = AREAS.map((a, i) => {
+        // Nodos de los 3 frentes, repartidos sobre la esfera.
+        const FRENTES: ServiceGroup[] = ['desarrollo', 'seguridad', 'marketing'];
+        const nodes = FRENTES.map((g, i) => {
             const lat = (i % 2 === 0 ? 0.42 : -0.38) + (i % 3) * 0.06;
-            const lon = (i / AREAS.length) * Math.PI * 2;
+            const lon = (i / FRENTES.length) * Math.PI * 2;
             const r = Math.cos(lat);
-            return { label: `${a.n} ${a.short.toUpperCase()}`, x: Math.cos(lon) * r, y: Math.sin(lat), z: Math.sin(lon) * r };
+            const label = g === 'marketing' ? 'MARKETING' : GROUP_LABELS[g].toUpperCase();
+            return { label, x: Math.cos(lon) * r, y: Math.sin(lat), z: Math.sin(lon) * r };
         });
 
         let palette: string[] = [];
@@ -299,7 +301,7 @@ export const Orb: React.FC<{ className?: string }> = ({ className }) => {
             <canvas
                 ref={canvasRef}
                 role="img"
-                aria-label="Esfera de puntos interactiva con las seis áreas de CreAPP: software, IA, UX/UI, escala, ciberseguridad y marketing."
+                aria-label="Esfera de puntos interactiva con los tres frentes de CreAPP: desarrollo, seguridad y marketing."
             />
             <span className="cw-orb-hint cw-mono" aria-hidden="true">
                 Arrastrá para girar · click para una onda
