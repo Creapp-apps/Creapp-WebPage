@@ -246,3 +246,33 @@ export const LabGraphic: React.FC = () => {
         </Gfx>
     );
 };
+
+/* ── Marketing · Publicidad & Campañas: embudo que crece hasta el cliente ── */
+export const AdsGraphic: React.FC = () => {
+    const k = makeIso(150, 70, 30);
+    const SW = 1.25, GAP = 1.75;
+    const bars = [
+        { h: 1.3, label: 'ALCANCE' },
+        { h: 2.1, label: 'CLICS' },
+        { h: 3.0, label: 'LEADS' },
+        { h: 4.0, label: 'CLIENTES' },
+    ];
+    const xAt = (i: number) => i * GAP;
+    const trend = bars.map((b, i) => k.P(xAt(i) + SW / 2, SW / 2, b.h));
+    return (
+        <Gfx fig="06b" caption="Pauta que trae clientes, no likes">
+            <svg className="iso" viewBox="4 6 512 318" role="img" aria-label="Cuatro barras crecientes del alcance al cliente, con una línea de tendencia que sube.">
+                <polygon className="iso-floor" points={pts([k.P(-0.8, -0.8), k.P(xAt(3) + SW + 0.8, -0.8), k.P(xAt(3) + SW + 0.8, SW + 0.8), k.P(-0.8, SW + 0.8)])} />
+                {bars.map((b, i) => (
+                    <g key={b.label} className="asm" style={asm(i)}>
+                        <Box k={k} x={xAt(i)} y={0} z={0} w={SW} d={SW} h={b.h} tone={i === 3 ? 'a' : undefined} />
+                        <text x={k.P(xAt(i) + SW / 2, SW)[0]} y={k.P(xAt(i) + SW / 2, SW)[1] + 30} textAnchor="middle">{b.label}</text>
+                    </g>
+                ))}
+                <polyline className="iso-pulse" fill="none" points={pts(trend)} />
+                <circle className="iso-beacon-halo" cx={trend[3][0]} cy={trend[3][1]} r={8} />
+                <circle className="iso-beacon" cx={trend[3][0]} cy={trend[3][1]} r={3.5} />
+            </svg>
+        </Gfx>
+    );
+};
