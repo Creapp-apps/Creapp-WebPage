@@ -1,5 +1,5 @@
 import React, { useEffect, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation, useNavigate, useParams } from 'react-router-dom';
 import AuthGuard from './components/auth/AuthGuard';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
@@ -7,7 +7,8 @@ import { SmoothScroll } from './components/systems/SmoothScroll';
 import PwaSplashScreen from './components/systems/PwaSplashScreen';
 
 // Lazy loading de vistas para evitar cargar 4MB de golpe en dispositivos móviles
-const LandingPage = React.lazy(() => import('./pages/LandingPage'));
+const HomePage = React.lazy(() => import('./pages/HomePage'));
+const ServicePage = React.lazy(() => import('./components/site/ServicePage'));
 const ProposalView = React.lazy(() => import('./pages/ProposalView'));
 const ContractView = React.lazy(() => import('./pages/ContractView'));
 const AdminLogin = React.lazy(() => import('./pages/admin/AdminLogin'));
@@ -22,6 +23,19 @@ const PortalActivate = React.lazy(() => import('./pages/portal/PortalActivate'))
 import PortalGuard from './components/auth/PortalGuard';
 import PortalLoader from './components/portal/PortalLoader';
 import { PortalBoot } from './components/portal/PortalBoot';
+
+// Páginas públicas del sitio (home + servicios): comparten estética, cursor y
+// smooth-scroll; se distinguen de admin/portal.
+const SITE_GROUPS = ['desarrollo', 'seguridad', 'marketing'];
+const isSitePath = (pathname: string) =>
+  pathname === '/' || SITE_GROUPS.some((g) => pathname.startsWith(`/${g}/`));
+
+// Ruta dinámica de servicio: pasa group/slug a ServicePage, que resuelve el
+// servicio y redirige a / si el slug no existe.
+const ServicePageRoute: React.FC = () => {
+  const { group = '', slug = '' } = useParams();
+  return <ServicePage group={group} slug={slug} />;
+};
 
 // Detectar y redirigir invitaciones y recuperaciones de auth de Supabase a /admin/set-password
 const AuthRedirectHandler: React.FC = () => {
@@ -120,7 +134,7 @@ const CursorRestorer: React.FC<{ children: React.ReactNode }> = ({ children }) =
   const location = useLocation();
 
   useEffect(() => {
-    const isLanding = location.pathname === '/';
+    const isLanding = isSitePath(location.pathname);
     if (!isLanding) {
       document.body.classList.add('admin-cursor');
     } else {
@@ -137,7 +151,7 @@ const CursorRestorer: React.FC<{ children: React.ReactNode }> = ({ children }) =
 // SmoothScroll solo debe envolver la Landing Page
 const LandingSmoothScrollWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
-  const isLanding = location.pathname === '/';
+  const isLanding = isSitePath(location.pathname);
 
   if (!isLanding) {
     return <>{children}</>;
@@ -170,7 +184,8 @@ const App: React.FC = () => {
                 <Suspense fallback={<RouteLoadingFallback />}>
                   <Routes>
                     {/* Public Routes */}
-                    <Route path="/" element={<LandingPage />} />
+                    <Route path="/" element={<HomePage />} />
+                    <Route path="/:group/:slug" element={<ServicePageRoute />} />
                     <Route path="/propuesta/:slug" element={<ProposalView />} />
                     <Route path="/contrato/:id" element={<ContractView />} />
 
