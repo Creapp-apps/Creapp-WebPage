@@ -31,6 +31,9 @@ export const SmoothScroll: React.FC<SmoothScrollProps> = ({ children }) => {
         const lenis = new Lenis({
             lerp: 0.1,
             smoothWheel: true,
+            // Links de ancla (#servicios…) con scroll suave. El descuento de la nav fija
+            // sale de scroll-padding-top (site.css), que Lenis ya respeta.
+            anchors: true,
         });
 
         lenisRef.current = lenis;

@@ -187,7 +187,7 @@ export const ContactForm: React.FC<ContactFormProps> = ({ onSuccess, className =
                     <Input placeholder="Email" type="email" value={form.email} onChange={update('email')} required />
 
                     <textarea
-                        placeholder="Describe la problemática o idea..."
+                        placeholder="Contanos el problema o la idea…"
                         value={form.message}
                         onChange={update('message')}
                         className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-white placeholder:text-slate-600 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all resize-none h-24 md:h-32 text-sm"

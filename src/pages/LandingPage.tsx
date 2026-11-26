@@ -1,382 +1,303 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import {
-    Calendar,
-    Globe,
-    Smartphone,
-    Code2,
-    Brain,
-    Palette,
-    ArrowRight,
-    Mail,
-    ExternalLink,
-} from 'lucide-react';
+import React, { useState } from 'react';
+import { ArrowDownRight, ArrowRight, Calendar } from 'lucide-react';
 import { ContactForm } from '../components/ui/ContactForm';
 import { ContactModal } from '../components/ui/ContactModal';
-import { Navbar } from '../components/ui/Navbar';
-import MagneticButton from '../components/ui/MagneticButton';
-import CustomCursor from '../components/systems/CustomCursor';
-import Preloader from '../components/systems/Preloader';
-import WebGLCanvas from '../components/canvas/WebGLCanvas';
-import Lightfall from '../components/backgrounds/Lightfall';
-import ShowroomSection from '../components/landing/ShowroomSection';
-import RocketProcess from '../components/landing/RocketProcess';
+import { SiteNav } from '../components/site/SiteNav';
+import { Chapter, Reveal } from '../components/site/Chapter';
+import { Orb } from '../components/site/Orb';
+import { useSiteTheme } from '../components/site/theme';
+import { ABOUT_POINTS, AREAS, STACK, TEAM } from '../components/site/content';
+import { DesignGraphic, LabGraphic, MarketingGraphic, ScaleGraphic, SoftwareGraphic } from '../components/site/AreaGraphics';
+import { AgentDemo } from '../components/site/AgentDemo';
+import { ScanDemo } from '../components/site/ScanDemo';
+import { EngineLive } from '../components/site/EngineLive';
+import { Process } from '../components/site/Process';
+import { ClientShowcase, ProductShowcase } from '../components/site/Showcase';
+import '../components/site/site.css';
 
-gsap.registerPlugin(ScrollTrigger);
+// Gráfico de cada área: 4 por scroll + 2 con interacción real (IA y Ciberseguridad).
+const AREA_GRAPHIC: Record<string, React.FC> = {
+    'area-software': SoftwareGraphic,
+    'area-ia': AgentDemo,
+    'area-diseno': DesignGraphic,
+    'area-escala': ScaleGraphic,
+    'area-ciber': ScanDemo,
+    'area-marketing': MarketingGraphic,
+};
 
-// ── Services Data ──────────────────────────────────
-const SERVICES = [
-    {
-        title: 'Desarrollo Móvil',
-        desc: 'Apps nativas y multiplataforma con rendimiento de primer nivel y UX excepcional.',
-        icon: Smartphone,
-        accent: '#00F0FF',
-    },
-    {
-        title: 'Plataformas Web',
-        desc: 'Aplicaciones web escalables y de alto rendimiento construidas para el crecimiento.',
-        icon: Globe,
-        accent: '#8B5CF6',
-    },
-    {
-        title: 'Software a Medida',
-        desc: 'Soluciones empresariales personalizadas, integraciones de API y automatización.',
-        icon: Code2,
-        accent: '#EC4899',
-    },
-    {
-        title: 'IA / Machine Learning',
-        desc: 'Modelos predictivos, procesamiento de lenguaje natural y automatización inteligente.',
-        icon: Brain,
-        accent: '#00F0FF',
-    },
-    {
-        title: 'UX/UI Design',
-        desc: 'Interfaces centradas en el usuario que combinan estética premium con usabilidad excepcional.',
-        icon: Palette,
-        accent: '#8B5CF6',
-    },
-];
+// Sitio público CreAPP · IT Solutions.
+// Spec: docs/2026-11-25-rediseno-web-design-spec.md — Fases 1–4 (fundaciones, hero con orbe, gráficos de las 6 áreas, motor en vivo, proceso, productos).
+// Fase 5: Nosotros con el lab, clientes (S13), contacto y pulido mobile.
+// Pendiente: citas de clientes (solo se muestran con texto confirmado).
 
-// MARQUEE_TEXT removed — replaced by ShowroomSection and RocketProcess
-
-// ── Landing Page ───────────────────────────────────
 const LandingPage: React.FC = () => {
-    const [showPreloader, setShowPreloader] = useState(false);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [scrolled, setScrolled] = useState(false);
-    const [isMobileDevice, setIsMobileDevice] = useState(false);
-
-    useEffect(() => {
-        const checkMobile = () => {
-            const isSmall = window.innerWidth < 768;
-            const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-            setIsMobileDevice(isSmall || (isTouch && window.innerWidth < 1024));
-        };
-        checkMobile();
-        window.addEventListener('resize', checkMobile);
-        return () => window.removeEventListener('resize', checkMobile);
-    }, []);
-
-    // Refs shared between DOM and Canvas
-    const scrollProgress = useRef(0);
-
-    // DOM section refs
-    const mainRef = useRef<HTMLDivElement>(null);
-    const heroRef = useRef<HTMLElement>(null);
-    const heroTitleRef = useRef<HTMLHeadingElement>(null);
-    const heroSubRef = useRef<HTMLParagraphElement>(null);
-    const heroCTARef = useRef<HTMLDivElement>(null);
-    const footerRef = useRef<HTMLElement>(null);
-    const navRef = useRef<HTMLElement>(null);
-
-    // ── Hero Entrance Animation (sincronizada con el despegue de la Splash Screen) ──
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            const heroEls = [navRef.current, heroTitleRef.current, heroSubRef.current, heroCTARef.current].filter(Boolean);
-            gsap.fromTo(
-                heroEls,
-                { opacity: 0, y: 30, filter: 'blur(6px)' },
-                { opacity: 1, y: 0, filter: 'blur(0px)', stagger: 0.15, duration: 1.0, ease: 'power3.out' }
-            );
-        }, 1100);
-        return () => clearTimeout(timer);
-    }, []);
-
-    const handlePreloaderComplete = useCallback(() => {
-        setShowPreloader(false);
-    }, []);
-
-    // ── GSAP ScrollTrigger Setup ─────────────────────
-    useEffect(() => {
-        if (showPreloader) return;
-
-        // Delay ScrollTrigger setup to let entrance animation finish
-        const setupTimer = setTimeout(() => {
-            const ctx = gsap.context(() => {
-                // Track overall scroll progress for 3D scene
-                ScrollTrigger.create({
-                    trigger: mainRef.current,
-                    start: 'top top',
-                    end: 'bottom bottom',
-                    onUpdate: (self) => {
-                        scrollProgress.current = self.progress;
-                    },
-                });
-
-                // Nav scroll detection
-                ScrollTrigger.create({
-                    trigger: mainRef.current,
-                    start: '50px top',
-                    onEnter: () => setScrolled(true),
-                    onLeaveBack: () => setScrolled(false),
-                });
-
-                // Hero fade out on scroll — immediateRender:false prevents capturing opacity:0
-                gsap.to([heroTitleRef.current, heroSubRef.current, heroCTARef.current], {
-                    scrollTrigger: {
-                        trigger: heroRef.current,
-                        start: 'top top',
-                        end: '40% top',
-                        scrub: 1,
-                    },
-                    y: -60,
-                    opacity: 0,
-                    filter: 'blur(6px)',
-                    stagger: 0.05,
-                    immediateRender: false,
-                });
-
-                // Footer reveal
-                gsap.from(footerRef.current, {
-                    scrollTrigger: {
-                        trigger: footerRef.current,
-                        start: 'top 75%',
-                    },
-                    y: 80,
-                    opacity: 0,
-                    duration: 1.2,
-                    ease: 'power3.out',
-                });
-            }, mainRef);
-
-            ctxRef = ctx;
-        }, 1500); // Wait for entrance animation to finish
-
-        let ctxRef: gsap.Context | null = null;
-
-        return () => {
-            clearTimeout(setupTimer);
-            ctxRef?.revert();
-        };
-    }, [showPreloader]);
+    const { theme, toggle } = useSiteTheme();
+    const [contactOpen, setContactOpen] = useState(false);
+    const openContact = () => setContactOpen(true);
 
     return (
-        <>
-            {/* Custom cursor (desktop only) */}
-            <CustomCursor />
+        <div className="cw" id="top">
+            <a href="#contenido" className="cw-skip">Saltar al contenido</a>
+            <SiteNav theme={theme} onToggleTheme={toggle} onContact={openContact} />
 
-            {/* Preloader */}
-            <AnimatePresence>
-                {showPreloader && (
-                    <Preloader onComplete={handlePreloaderComplete} />
-                )}
-            </AnimatePresence>
-
-            {/* Fixed 3D Canvas background */}
-            <WebGLCanvas scrollProgress={scrollProgress} />
-
-            {/* Floating Lines background effect — deferred to avoid dual WebGL context crash, disabled on mobile */}
-            {!showPreloader && !isMobileDevice && (
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 0.35 }}
-                    transition={{ duration: 2, ease: "easeInOut" }}
-                    className="fixed inset-0 pointer-events-none"
-                    style={{ zIndex: 0 }}
-                >
-                    <Lightfall
-                        colors={['#FF2D78', '#9B30FF', '#EC4899', '#FF2D78']}
-                        backgroundColor="#030712"
-                        speed={0.45}
-                        streakCount={5}
-                        streakWidth={1.5}
-                        streakLength={1.0}
-                        glow={1.2}
-                        density={0.45}
-                        twinkle={0}
-                        zoom={2.2}
-                        backgroundGlow={0.2}
-                        opacity={0.35}
-                        mouseInteraction={true}
-                        mouseStrength={0.8}
-                        mouseRadius={0.7}
-                    />
-                </motion.div>
-            )}
-
-            {/* Mobile-optimized lightweight ambient glow (zero WebGL overhead) */}
-            {!showPreloader && isMobileDevice && (
-                <div 
-                    className="fixed inset-0 pointer-events-none opacity-30" 
-                    style={{ 
-                        zIndex: 0,
-                        background: 'radial-gradient(ellipse 80% 50% at 50% -20%, rgba(255, 45, 120, 0.25), rgba(155, 48, 255, 0.15), transparent 70%)'
-                    }} 
-                />
-            )}
-
-            {/* ═══════════════ DOM LAYER ═══════════════ */}
-            <div ref={mainRef} className="relative z-10">
-                {/* ── Floating Pill Navigation ── */}
-                <Navbar
-                    scrolled={scrolled}
-                    onOpenContact={() => setIsModalOpen(true)}
-                    navRef={navRef}
-                />
-
-                {/* ── HERO SECTION (0%) ── */}
-                <section
-                    ref={heroRef}
-                    className="relative min-h-screen flex items-center justify-center px-6"
-                >
-                    <div className="max-w-5xl mx-auto text-center">
-                        <h1
-                            ref={heroTitleRef}
-                            className="font-display text-[clamp(3rem,10vw,8rem)] font-bold leading-tight tracking-tighter mb-8 opacity-0 translate-y-10 blur-sm"
-                        >
-                            <span className="block text-white">Soluciones</span>
-                            <span className="block text-gradient-cyan pb-3">Digitales</span>
-                            <span className="block text-[clamp(1.5rem,5vw,4rem)] text-slate-300 font-light tracking-tight mt-4">
-                                que se ajustan a vos.
-                            </span>
-                        </h1>
-
-                        <p
-                            ref={heroSubRef}
-                            className="text-slate-400 text-lg md:text-xl max-w-xl mx-auto mb-12 leading-relaxed opacity-0 translate-y-10 blur-sm"
-                        >
-                            Desarrollamos software y aplicaciones a medida para negocios que
-                            quieren escalar.
-                        </p>
-
-                        <div ref={heroCTARef} className="flex flex-col sm:flex-row gap-4 justify-center opacity-0 translate-y-10 blur-sm">
-                            <MagneticButton
-                                onClick={() => setIsModalOpen(true)}
-                                className="px-10 py-4 rounded-full bg-gradient-to-r from-cyan-electric to-purple-digital text-black font-bold text-lg shadow-[0_0_40px_rgba(0,240,255,0.3)] hover:shadow-[0_0_60px_rgba(0,240,255,0.5)] transition-all duration-300"
-                            >
-                                Agenda una llamada
-                                <Calendar className="w-5 h-5" />
-                            </MagneticButton>
-
-                            <MagneticButton
-                                onClick={() =>
-                                    document
-                                        .getElementById('servicios')
-                                        ?.scrollIntoView({ behavior: 'smooth' })
-                                }
-                                className="px-10 py-4 rounded-full border border-white/10 text-white font-medium text-lg hover:bg-white/5 hover:border-white/20 transition-all duration-300 backdrop-blur-sm"
-                            >
-                                Explorar
-                                <ArrowRight className="w-5 h-5" />
-                            </MagneticButton>
-                        </div>
-                    </div>
-
-                    {/* Scroll indicator */}
-                    <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-slate-500">
-                        <span className="text-xs tracking-[0.3em] uppercase">Scroll</span>
-                        <div className="w-[1px] h-8 bg-gradient-to-b from-cyan-electric/60 to-transparent animate-pulse" />
-                    </div>
-                </section>
-
-                {/* ── SHOWROOM — Interactive Phone Mockup ── */}
-                <ShowroomSection />
-
-                {/* ── ROCKET PROCESS — Cómo Trabajamos ── */}
-                <RocketProcess />
-
-                {/* ── FOOTER / CTA SECTION (75-100%) ── */}
-                <section
-                    ref={footerRef}
-                    id="contacto"
-                    className="min-h-screen flex flex-col justify-center px-6 relative"
-                >
-                    <div className="max-w-4xl mx-auto glass-card rounded-[2.5rem] p-8 md:p-16 relative overflow-hidden w-full">
-                        {/* Background glows */}
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-electric/10 blur-[120px] rounded-full pointer-events-none" />
-                        <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-digital/10 blur-[120px] rounded-full pointer-events-none" />
-
-                        <div className="text-center mb-12 relative z-10">
-                            <h2 className="font-display text-4xl md:text-6xl font-bold mb-4">
-                                ¿Listo para{' '}
-                                <span className="text-gradient-cyan">innovar</span>?
-                            </h2>
-                            <p className="text-slate-400 text-lg">
-                                Envianos un mensaje, generalmente contestamos en las próximas 2
-                                horas.
-                            </p>
-                        </div>
-
-                        <div className="max-w-lg mx-auto relative z-10 bg-transparent">
-                            <ContactForm />
-                        </div>
-
-                        {/* Social links & info */}
-                        <div className="mt-12 pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
-                            <div className="flex items-center gap-6 text-slate-400 text-sm">
-                                <a
-                                    href="mailto:creapp.ar@gmail.com"
-                                    className="hover:text-white transition-colors flex items-center gap-2"
-                                    data-cursor-hover
-                                >
-                                    <Mail size={14} /> creapp.ar@gmail.com
-                                </a>
-                                <span className="flex items-center gap-2">
-                                    <Globe size={14} /> Buenos Aires, Argentina
-                                </span>
-                            </div>
-
-                            <div className="flex gap-3">
-                                {[
-                                    { label: 'Instagram', href: 'https://instagram.com/creapp.ar' },
-                                    { label: 'LinkedIn', href: 'https://linkedin.com/company/creapp' },
-                                    { label: 'GitHub', href: 'https://github.com/creapp' },
-                                ].map((social) => (
-                                    <a
-                                        key={social.label}
-                                        href={social.href}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-cyan-electric/10 hover:border-cyan-electric/30 border border-transparent hover:scale-110 transition-all text-slate-400 hover:text-cyan-electric"
-                                        data-cursor-hover
-                                        title={social.label}
-                                    >
-                                        <ExternalLink size={16} />
+            <main id="contenido">
+                {/* ── S1 · Hero ── */}
+                <section className="cw-hero" aria-labelledby="hero-t">
+                    <div className="cw-wrap cw-hero-grid">
+                        <div className="cw-hero-copy">
+                            <Reveal>
+                                <span className="cw-mono">CreAPP · IT Solutions</span>
+                                <h1 id="hero-t" className="cw-display">
+                                    El software y la <span className="cw-accent">IA</span> que tu negocio necesita.
+                                </h1>
+                                <p className="cw-hero-remate">Y te los mostramos funcionando.</p>
+                            </Reveal>
+                            <Reveal delay={120}>
+                                <p className="cw-hero-lead">
+                                    Un software lab AI-native con productos propios en producción. Dev a medida, IA,
+                                    diseño, infraestructura, ciberseguridad y marketing — bajo un mismo techo.
+                                </p>
+                                <div className="cw-hero-ctas">
+                                    <button type="button" className="cw-btn cw-btn-primary" onClick={openContact}>
+                                        Agendá una llamada <Calendar size={17} />
+                                    </button>
+                                    <a href="#servicios" className="cw-btn cw-btn-ghost">
+                                        Explorar <ArrowRight size={17} />
                                     </a>
-                                ))}
-                            </div>
+                                </div>
+                            </Reveal>
+                            <Reveal delay={220}>
+                                <ul className="cw-chips" aria-label="Las seis áreas">
+                                    {AREAS.map((a) => (
+                                        <li key={a.id}>
+                                            <a href={`#${a.id}`}>
+                                                <b>{a.n}</b>
+                                                {a.short}
+                                            </a>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </Reveal>
+                        </div>
+                        <div className="cw-hero-orb">
+                            <Orb />
                         </div>
                     </div>
-
-                    {/* Footer bottom */}
-                    <footer className="py-8 text-center text-slate-600 text-xs mt-8">
-                        <p>
-                            © 2026 CreAPP Soluciones y Desarrollos Tecnológicos. Todos los
-                            derechos reservados.
-                        </p>
-                    </footer>
                 </section>
-            </div>
 
-            {/* Contact Modal */}
-            <ContactModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-            />
-        </>
+                <hr className="cw-rule" />
+
+                {/* ── S2 · Qué hacemos: índice de las 6 áreas ── */}
+                <section id="servicios" className="cw-section" aria-labelledby="servicios-t">
+                    <div className="cw-wrap">
+                        <Reveal className="cw-intro-head">
+                            <div>
+                                <span className="cw-mono">Qué hacemos</span>
+                                <h2 id="servicios-t" className="cw-display cw-h2">
+                                    Seis áreas, un mismo techo.
+                                </h2>
+                            </div>
+                            <p className="cw-lead">
+                                Desarrollo a medida, inteligencia artificial, diseño de producto, infraestructura,
+                                ciberseguridad y marketing. Un solo equipo y un solo proceso para todo lo que tu
+                                producto necesita.
+                            </p>
+                        </Reveal>
+                        <ol className="cw-index">
+                            {AREAS.map((a) => (
+                                <li key={a.id}>
+                                    <a href={`#${a.id}`}>
+                                        <span className="cw-index-n cw-mono">
+                                            Área {a.n}
+                                            <ArrowDownRight size={18} aria-hidden="true" />
+                                        </span>
+                                        <span className="cw-index-t">{a.title}</span>
+                                    </a>
+                                </li>
+                            ))}
+                        </ol>
+                    </div>
+                </section>
+
+                {/* ── S3–S8 · Las 6 áreas ── */}
+                {AREAS.map((a, i) => (
+                    <React.Fragment key={a.id}>
+                        <hr className="cw-rule" />
+                        <Chapter
+                            id={a.id}
+                            eyebrow={`Área ${a.n} / 06`}
+                            mark={a.n}
+                            title={a.title}
+                            lead={a.lead}
+                            flip={i % 2 === 1}
+                            badge={a.isNew ? 'Nueva' : undefined}
+                        >
+                            <Reveal>{React.createElement(AREA_GRAPHIC[a.id])}</Reveal>
+                            <Reveal delay={80}>
+                                <div className="cw-deliver">
+                                    <span className="cw-mono">Entregables</span>
+                                    <ul>
+                                        {a.deliverables.map((d) => (
+                                            <li key={d}>{d}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                                <p className="cw-closing">{a.closing}</p>
+                            </Reveal>
+                        </Chapter>
+                    </React.Fragment>
+                ))}
+
+                <hr className="cw-rule" />
+
+                {/* ── S9 · El motor en vivo ── */}
+                <EngineLive />
+
+                {/* ── S10 · Cómo trabajamos ── */}
+                <Process />
+
+                <hr className="cw-rule" />
+
+                {/* ── S11 · Productos propios (prueba, sin precio ni CTA) ── */}
+                <Chapter
+                    id="productos"
+                    eyebrow="La prueba"
+                    title="Productos propios en producción."
+                    lead="No hablamos en abstracto. Construimos, lanzamos y sostenemos nuestros propios SaaS verticales — la mejor garantía de que podemos construir el tuyo."
+                    flip
+                >
+                    <Reveal>
+                        <ProductShowcase />
+                    </Reveal>
+                </Chapter>
+
+                <hr className="cw-rule" />
+
+                {/* ── S12 · Nosotros ── */}
+                <Chapter
+                    id="nosotros"
+                    eyebrow="Quiénes somos"
+                    title="No somos freelancers. Somos un lab."
+                    lead="CreAPP transforma ideas en productos digitales de alto impacto. Trabajamos con contrato formal, SLA y un proceso claro: sin sorpresas, sin freelancers que desaparecen a mitad del proyecto."
+                >
+                    <Reveal className="cw-team">
+                        {TEAM.map((t) => (
+                            <div key={t.name} className="cw-person">
+                                <span className="cw-monogram" aria-hidden="true">
+                                    {t.mono}
+                                </span>
+                                <div>
+                                    <b>{t.name}</b>
+                                    <span className="cw-mono">{t.role}</span>
+                                </div>
+                            </div>
+                        ))}
+                    </Reveal>
+                    <Reveal><LabGraphic /></Reveal>
+                    <Reveal delay={80}>
+                        <ul className="cw-points">
+                            {ABOUT_POINTS.map((p) => (
+                                <li key={p.t}>
+                                    <b>{p.t}</b>
+                                    <span>{p.d}</span>
+                                </li>
+                            ))}
+                        </ul>
+                        <ul className="cw-stack" aria-label="Stack tecnológico">
+                            {STACK.map((s) => (
+                                <li key={s}>{s}</li>
+                            ))}
+                        </ul>
+                    </Reveal>
+                </Chapter>
+
+                <hr className="cw-rule" />
+
+                {/* ── S13 · Clientes con su plataforma en producción ── */}
+                <section id="clientes" className="cw-section" aria-labelledby="clientes-t">
+                    <div className="cw-wrap">
+                        <Reveal className="cw-intro-head">
+                            <div>
+                                <span className="cw-mono">En producción</span>
+                                <h2 id="clientes-t" className="cw-display cw-h2">
+                                    Entrá y miralo funcionando.
+                                </h2>
+                            </div>
+                            <p className="cw-lead">
+                                Seis clientes con su plataforma en la calle. Elegí uno y usalo acá mismo, tal como
+                                lo usan hoy.
+                            </p>
+                        </Reveal>
+                        <Reveal>
+                            <ClientShowcase />
+                        </Reveal>
+                    </div>
+                </section>
+
+                <hr className="cw-rule" />
+
+                {/* ── S14 · Contacto ── */}
+                <section id="contacto" className="cw-section cw-contact" aria-labelledby="contacto-t">
+                    <div className="cw-wrap cw-contact-grid">
+                        <Reveal>
+                            <span className="cw-mono">Hablemos</span>
+                            <h2 id="contacto-t" className="cw-display cw-h2">
+                                Empecemos tu <span className="cw-accent">proyecto</span>.
+                            </h2>
+                            <p className="cw-lead" style={{ marginTop: 20 }}>
+                                Contanos qué necesitás resolver. Te respondemos rápido, con una propuesta clara y un
+                                plan de trabajo — sin vueltas.
+                            </p>
+                            <ul className="cw-contact-list">
+                                <li>
+                                    <span className="cw-mono">Email</span>
+                                    <a href="mailto:creapp.ar@gmail.com">creapp.ar@gmail.com</a>
+                                </li>
+                                <li>
+                                    <span className="cw-mono">Instagram</span>
+                                    <a href="https://instagram.com/creapp.ar" target="_blank" rel="noopener noreferrer">
+                                        @creapp.ar
+                                    </a>
+                                </li>
+                                <li>
+                                    <span className="cw-mono">LinkedIn</span>
+                                    <a href="https://linkedin.com/company/creapp" target="_blank" rel="noopener noreferrer">
+                                        linkedin.com/company/creapp
+                                    </a>
+                                </li>
+                                <li>
+                                    <span className="cw-mono">GitHub</span>
+                                    <a href="https://github.com/creapp" target="_blank" rel="noopener noreferrer">
+                                        github.com/creapp
+                                    </a>
+                                </li>
+                                <li>
+                                    <span className="cw-mono">Respuesta</span>
+                                    <span>En menos de 2 h</span>
+                                </li>
+                            </ul>
+                        </Reveal>
+                        <Reveal delay={100} className="cw-form-panel">
+                            <ContactForm />
+                        </Reveal>
+                    </div>
+                </section>
+            </main>
+
+            <footer className="cw-footer">
+                <div className="cw-wrap cw-footer-in">
+                    <a href="#top" className="cw-brand" aria-label="Volver arriba">
+                        <img src="/CREAPP%20LOGO%20VECTOR.png" alt="" width={17} height={30} />
+                        <span className="cw-brand-name">CreAPP</span>
+                        <span className="cw-brand-tag">IT SOLUTIONS</span>
+                    </a>
+                    <p>Buenos Aires, Argentina · Remote-first</p>
+                    <p>© 2026 CreAPP Soluciones y Desarrollos Tecnológicos.</p>
+                </div>
+            </footer>
+
+            <ContactModal isOpen={contactOpen} onClose={() => setContactOpen(false)} />
+        </div>
     );
 };
 
