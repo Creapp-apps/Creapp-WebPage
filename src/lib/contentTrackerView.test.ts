@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { plural, summaryText, relativeTime, sortClientsByUrgency, sortPieces, campaignProgress, needsAttention, sortCampaignsByAttention, formatCountdown } from './contentTrackerView.ts';
 
 test('formatCountdown: segundos, minutos, horas, días; <=0 publicando', () => {
-  assert.equal(formatCountdown(0), 'publicando…');
-  assert.equal(formatCountdown(-5000), 'publicando…');
+  assert.equal(formatCountdown(0), 'ahora');
+  assert.equal(formatCountdown(-5000), 'ahora');
   assert.equal(formatCountdown(30_000), 'en 30 s');
   assert.equal(formatCountdown(5 * 60_000), 'en 5 min');
   assert.equal(formatCountdown((2 * 3600 + 15 * 60) * 1000), 'en 2 h 15 min');

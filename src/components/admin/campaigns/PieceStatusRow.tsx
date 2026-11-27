@@ -69,7 +69,10 @@ export const PieceStatusRow: React.FC<{ piece: TrackerPiece; onChanged: () => vo
   if (piece.live) {
     const liveVideoThumb = !piece.coverUrl ? (piece.mediaUrls ?? []).find(isVideoUrl) : undefined;
     const published = piece.publishStatus === 'published';
-    const future = !!piece.publishAt && new Date(piece.publishAt).getTime() > Date.now();
+    // Countdown solo para estados en espera (programada/lista); nunca para error ni
+    // estados en vuelo (containerizing/publishing), que deben mostrar su propio badge.
+    const waiting = piece.publishStatus === 'queued' || piece.publishStatus === 'ready';
+    const future = waiting && !!piece.publishAt && new Date(piece.publishAt).getTime() > Date.now();
     const launchPiece: LaunchPiece = {
       id: piece.id, clientId: '', clientName: brandName ?? '', jobId: piece.jobIdMotor,
       title: pieceTitle(piece), type: piece.type, coverUrl: piece.coverUrl,
@@ -83,7 +86,7 @@ export const PieceStatusRow: React.FC<{ piece: TrackerPiece; onChanged: () => vo
           role="button"
           tabIndex={0}
           onClick={(e) => { if ((e.target as HTMLElement).closest('button, a, input, select, textarea')) return; setPreview(true); }}
-          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); setPreview(true); } }}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setPreview(true); } }}
           title="Ver vista previa"
           className="group/row flex gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.045] hover:border-indigo-500/25 transition-colors cursor-pointer"
         >

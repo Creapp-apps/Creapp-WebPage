@@ -82,7 +82,7 @@ export function livePublishedCount(campaign: TrackerCampaign): { published: numb
 
 /** Formatea el tiempo restante para el countdown en tiempo real (badge de pieza programada). */
 export function formatCountdown(msRemaining: number): string {
-  if (msRemaining <= 0) return 'publicando…';
+  if (msRemaining <= 0) return 'ahora';
   const s = Math.floor(msRemaining / 1000);
   if (s < 60) return `en ${s} s`;
   const m = Math.floor(s / 60);
