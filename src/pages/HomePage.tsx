@@ -168,9 +168,7 @@ const HomePage: React.FC = () => {
                 <hr className="cw-rule" />
 
                 {/* ── Nuestra agencia 24/7 ── */}
-                <RevealIn y={36}>
-                    <EngineLive />
-                </RevealIn>
+                <EngineLive />
 
                 <hr className="cw-rule" />
 

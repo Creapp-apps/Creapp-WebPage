@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { SplitReveal, TextReveal } from './motion';
 
 /** Marca .is-in al entrar en viewport (una vez). Con reduced-motion el CSS ya lo muestra fijo. */
 export function useReveal<T extends HTMLElement>() {
@@ -66,11 +67,11 @@ export const Chapter: React.FC<ChapterProps> = ({ id, eyebrow, mark, title, lead
                         {eyebrow}
                         {badge && <span className="cw-tag-new">{badge}</span>}
                     </div>
-                    <h2 id={`${id}-t`} className="cw-display cw-h2">
-                        {title}
-                    </h2>
-                    {lead && <p className="cw-lead">{lead}</p>}
                 </Reveal>
+                <SplitReveal as="h2" id={`${id}-t`} className="cw-display cw-h2">
+                    {title}
+                </SplitReveal>
+                {lead && <TextReveal as="p" className="cw-lead" preset="word-blur">{lead}</TextReveal>}
             </header>
             <div className="cw-chapter-body">{children}</div>
         </div>

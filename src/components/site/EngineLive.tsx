@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { reducedMotion, useLive } from './iso';
+import { SplitReveal, TextReveal, RevealIn, StaggerGroup } from './motion';
 
 /**
  * S9 · El motor en vivo. Terminal (xterm, carga diferida) que reproduce el recorrido real de
@@ -133,21 +134,23 @@ export const EngineLive: React.FC = () => {
         <section ref={sectionRef} id="motor" className="cw-engine" aria-labelledby="motor-t">
             <div className="cw-wrap cw-engine-grid">
                 <div className="cw-engine-copy">
-                    <span className="cw-mono cw-engine-eyebrow"><i />Nuestra agencia 24/7</span>
-                    <h2 id="motor-t" className="cw-display cw-h2">
+                    <RevealIn y={14}>
+                        <span className="cw-mono cw-engine-eyebrow"><i />Nuestra agencia 24/7</span>
+                    </RevealIn>
+                    <SplitReveal as="h2" id="motor-t" className="cw-display cw-h2">
                         Mientras dormís, nuestro sistema produce, revisa y publica.
-                    </h2>
-                    <p className="cw-lead">Esto no es una promesa: es nuestro propio motor.</p>
-                    <ol className="cw-stages" aria-label="Etapas del motor">
+                    </SplitReveal>
+                    <TextReveal as="p" className="cw-lead" preset="type-word">Esto no es una promesa: es nuestro propio motor.</TextReveal>
+                    <StaggerGroup as="ol" x={-30} className="cw-stages">
                         {STAGES.map((s, i) => (
                             <li key={s} className={i <= stage ? 'is-on' : ''}>
                                 <span className="cw-mono">0{i + 1}</span>
                                 {s}
                             </li>
                         ))}
-                    </ol>
+                    </StaggerGroup>
                 </div>
-                <div className="cw-term">
+                <RevealIn className="cw-term" x={40} y={0}>
                     <div className="cw-term-bar cw-mono">
                         <span>motor · pieza {String(piece).padStart(2, '0')}</span>
                         <span>Simulación del flujo</span>
@@ -157,7 +160,7 @@ export const EngineLive: React.FC = () => {
                         Simulación: el motor toma una pieza, escribe el guion, la renderiza, pasa control de
                         calidad y pre-flight, la programa y la publica sin intervención humana.
                     </p>
-                </div>
+                </RevealIn>
             </div>
         </section>
     );

@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { ArrowRight, Calendar } from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
 import { Chapter, Reveal } from './Chapter';
-import { ParallaxLayer, StaggerGroup } from './motion';
+import { SplitReveal, TextReveal, RevealIn, StaggerGroup } from './motion';
 import { useSiteChrome } from './SiteShell';
 import { GROUP_LABELS, getService } from './services';
 import { AdsGraphic, DesignGraphic, MarketingGraphic, ScaleGraphic, SoftwareGraphic } from './AreaGraphics';
@@ -45,7 +45,7 @@ const ServicePage: React.FC<ServicePageProps> = ({ group, slug }) => {
             <main id="contenido">
                 {/* Hero: gráfico + lead + CTA */}
                 <Chapter id="servicio" eyebrow={GROUP_LABELS[service.group]} title={service.title} lead={service.lead}>
-                    {Graphic && <ParallaxLayer speed={0.08}><Reveal><Graphic /></Reveal></ParallaxLayer>}
+                    {Graphic && <RevealIn x={44} y={0}><Reveal><Graphic /></Reveal></RevealIn>}
                     {/* Sin CTAs en el hero de ninguna página de servicio: duplicaban la banda de
                         cierre del final del scroll (decisión del usuario). */}
                 </Chapter>
@@ -55,12 +55,12 @@ const ServicePage: React.FC<ServicePageProps> = ({ group, slug }) => {
                 {/* Qué incluye — texto derecha / figura izquierda (alterna con el hero) */}
                 <section className="cw-section cw-svcsec" aria-labelledby="incluye-t">
                     <div className="cw-wrap cw-svcsec-grid is-flip">
-                        <StaggerGroup className="cw-svcsec-copy">
+                        <div className="cw-svcsec-copy">
                             <span className="cw-mono">Qué incluye</span>
-                            <h2 id="incluye-t" className="cw-display cw-h2">
+                            <SplitReveal as="h2" id="incluye-t" className="cw-display cw-h2">
                                 Todo lo que entra en {service.title}.
-                            </h2>
-                            <ul className="cw-fig-legend cw-fig-legend-rich">
+                            </SplitReveal>
+                            <StaggerGroup as="ul" x={-30} className="cw-fig-legend cw-fig-legend-rich">
                                 {service.includes.map((it, idx) => (
                                     <li key={it.t}>
                                         <b className="cw-fig-ix" aria-hidden="true">{String(idx + 1).padStart(2, '0')}</b>
@@ -70,13 +70,13 @@ const ServicePage: React.FC<ServicePageProps> = ({ group, slug }) => {
                                         </div>
                                     </li>
                                 ))}
-                            </ul>
-                        </StaggerGroup>
-                        <ParallaxLayer speed={0.06} className="cw-svcsec-fig">
-                            <Reveal delay={80}>
+                            </StaggerGroup>
+                        </div>
+                        <RevealIn className="cw-svcsec-fig" x={40} y={0}>
+                            <Reveal>
                                 <IncludesFor slug={service.slug} items={service.includes} />
                             </Reveal>
-                        </ParallaxLayer>
+                        </RevealIn>
                     </div>
                 </section>
 
@@ -85,25 +85,25 @@ const ServicePage: React.FC<ServicePageProps> = ({ group, slug }) => {
                 {/* Qué te llevás — texto izquierda / figura derecha */}
                 <section className="cw-section cw-svcsec" aria-labelledby="llevas-t">
                     <div className="cw-wrap cw-svcsec-grid">
-                        <StaggerGroup className="cw-svcsec-copy">
+                        <div className="cw-svcsec-copy">
                             <span className="cw-mono">Qué te llevás</span>
-                            <h2 id="llevas-t" className="cw-display cw-h2">
+                            <SplitReveal as="h2" id="llevas-t" className="cw-display cw-h2">
                                 Resultados concretos, no promesas.
-                            </h2>
-                            <ul className="cw-fig-legend">
+                            </SplitReveal>
+                            <StaggerGroup as="ul" x={-30} className="cw-fig-legend">
                                 {service.deliverables.map((d, idx) => (
                                     <li key={d}>
                                         <b className="cw-fig-ix" aria-hidden="true">{String(idx + 1).padStart(2, '0')}</b>
                                         <span>{d}</span>
                                     </li>
                                 ))}
-                            </ul>
-                        </StaggerGroup>
-                        <ParallaxLayer speed={0.06} className="cw-svcsec-fig">
-                            <Reveal delay={80}>
+                            </StaggerGroup>
+                        </div>
+                        <RevealIn className="cw-svcsec-fig" x={40} y={0}>
+                            <Reveal>
                                 <DeliverablesFor slug={service.slug} items={service.deliverables} />
                             </Reveal>
-                        </ParallaxLayer>
+                        </RevealIn>
                     </div>
                 </section>
 
@@ -112,24 +112,25 @@ const ServicePage: React.FC<ServicePageProps> = ({ group, slug }) => {
                 {/* Franja CTA liviana (el formulario vive en el modal) */}
                 <section className="cw-section cw-cta-band" aria-labelledby="cta-t">
                     <div className="cw-wrap cw-cta-inner">
-                        <StaggerGroup>
+                        <div>
                             <span className="cw-mono">Hablemos</span>
-                            <h2 id="cta-t" className="cw-display cw-h2">
+                            <SplitReveal as="h2" id="cta-t" className="cw-display cw-h2">
                                 ¿Arrancamos con <span className="cw-accent">{service.title}</span>?
-                            </h2>
-                            <p className="cw-lead">
-                                Contanos qué necesitás resolver. Te respondemos rápido, con una propuesta
-                                clara y un plan de trabajo — sin vueltas.
-                            </p>
-                            <div className="cw-hero-ctas cw-cta-actions">
-                                <button type="button" className="cw-btn cw-btn-primary" onClick={openContact}>
-                                    Agendá una llamada <Calendar size={17} />
-                                </button>
-                                <Link to="/#servicios" className="cw-btn cw-btn-ghost">
-                                    Ver todos los servicios <ArrowRight size={17} />
-                                </Link>
-                            </div>
-                        </StaggerGroup>
+                            </SplitReveal>
+                            <TextReveal as="p" className="cw-lead" preset="fade">
+                                Contanos qué necesitás resolver. Te respondemos rápido, con una propuesta clara y un plan de trabajo — sin vueltas.
+                            </TextReveal>
+                            <Reveal>
+                                <div className="cw-hero-ctas cw-cta-actions">
+                                    <button type="button" className="cw-btn cw-btn-primary" onClick={openContact}>
+                                        Agendá una llamada <Calendar size={17} />
+                                    </button>
+                                    <Link to="/#servicios" className="cw-btn cw-btn-ghost">
+                                        Ver todos los servicios <ArrowRight size={17} />
+                                    </Link>
+                                </div>
+                            </Reveal>
+                        </div>
                     </div>
                 </section>
             </main>
