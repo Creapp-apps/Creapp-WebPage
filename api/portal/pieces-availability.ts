@@ -7,6 +7,8 @@ import { buildAvailabilityMap } from '../../src/lib/pieceAvailability.js';
 export default async function handler(req: any, res: any) {
   if (applyPortalCors(req, res)) return res.status(200).end();
 
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+
   let member: any;
   try {
     member = await requireMember(req);
@@ -18,10 +20,12 @@ export default async function handler(req: any, res: any) {
   if (ids.length === 0) return res.status(200).json({ available: {} });
 
   const slugs: string[] = member.clients.map((c: any) => c.slug);
-  const { data: rows } = await serviceClient()
+  const { data: rows, error } = await serviceClient()
     .from('scheduled_posts')
     .select('id,client_id,status,media_r2_urls')
     .in('id', ids);
+
+  if (error) return res.status(500).json({ error: 'Error de servidor' });
 
   const urlById: Record<string, string | null> = {};
   for (const r of (rows ?? []) as any[]) {
