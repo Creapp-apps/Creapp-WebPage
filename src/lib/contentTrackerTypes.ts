@@ -20,6 +20,13 @@ export interface TrackerPiece {
   publishErrorMessage: string | null;
   /** Pieza publicada directo (vive solo en scheduled_posts, sin content_job/review). */
   live?: boolean;
+  // Campos extra solo para piezas en vivo: preview modal, countdown y thumbnail por video.
+  mediaUrls?: string[];
+  caption?: string | null;
+  permalink?: string | null;
+  /** scheduled_at: para el countdown en tiempo real de las piezas en vivo programadas. */
+  publishAt?: string | null;
+  platform?: string | null;
 }
 
 export interface TrackerCampaign {

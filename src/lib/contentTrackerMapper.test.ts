@@ -186,3 +186,15 @@ test('modo en vivo: cliente CON content_campaigns no recibe grupo en vivo aunque
   assert.equal(r.clients[0].campaigns.length, 2); // sus 2 campañas normales
   assert.ok(r.clients[0].campaigns.every((c) => !c.live));
 });
+
+test('modo en vivo: la pieza lleva mediaUrls, caption, permalink, publishAt y platform (preview/countdown)', () => {
+  const rows: any[] = [{ id: 'sp1', client_id: 'vacio', job_id: 'mv1', status: 'queued', error_message: null, cover_r2_url: null, scheduled_at: '2026-12-01T18:00:00Z', platform: 'instagram_story', caption: 'Hola', media_r2_urls: ['https://r2/final.mp4'], permalink: 'https://ig/p/x' }];
+  const r = mapTracker(clients, campaigns, jobs, assets, approvals, profiles, rows);
+  const p = r.clients[1].campaigns[0].pieces[0];
+  assert.deepEqual(p.mediaUrls, ['https://r2/final.mp4']);
+  assert.equal(p.caption, 'Hola');
+  assert.equal(p.permalink, 'https://ig/p/x');
+  assert.equal(p.publishAt, '2026-12-01T18:00:00Z');
+  assert.equal(p.platform, 'instagram_story');
+  assert.equal(p.type, 'story');
+});

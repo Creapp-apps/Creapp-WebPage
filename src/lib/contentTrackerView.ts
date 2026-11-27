@@ -80,6 +80,19 @@ export function livePublishedCount(campaign: TrackerCampaign): { published: numb
   return { published: campaign.pieces.filter((p) => p.publishStatus === 'published').length, total: campaign.pieces.length };
 }
 
+/** Formatea el tiempo restante para el countdown en tiempo real (badge de pieza programada). */
+export function formatCountdown(msRemaining: number): string {
+  if (msRemaining <= 0) return 'publicando…';
+  const s = Math.floor(msRemaining / 1000);
+  if (s < 60) return `en ${s} s`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `en ${m} min`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `en ${h} h ${m % 60} min`;
+  const d = Math.floor(h / 24);
+  return `en ${d} d ${h % 24} h`;
+}
+
 /** Campañas con alguna pieza en atención primero; el resto conserva su orden. */
 export function sortCampaignsByAttention(campaigns: TrackerCampaign[]): TrackerCampaign[] {
   const key = (k: TrackerCampaign) => (k.pieces.some(needsAttention) ? 0 : 1);

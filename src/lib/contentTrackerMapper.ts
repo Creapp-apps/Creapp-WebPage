@@ -11,6 +11,7 @@ export interface TScheduledPostRow {
   client_id: string; job_id: string; status: string; error_message: string | null;
   // Columnas extra para el modo en vivo (grupo sintetizado desde scheduled_posts).
   id?: string; cover_r2_url?: string | null; scheduled_at?: string | null; platform?: string | null; caption?: string | null;
+  media_r2_urls?: string[] | null; permalink?: string | null;
 }
 
 const COVER_KINDS = new Set(['cover_9_16', 'slide']);
@@ -89,6 +90,11 @@ export function mapTracker(
     publishStatus: toPublishStatus(s.status),
     publishErrorMessage: s.error_message ?? null,
     live: true,
+    mediaUrls: s.media_r2_urls ?? [],
+    caption: s.caption ?? null,
+    permalink: s.permalink ?? null,
+    publishAt: s.scheduled_at ?? null,
+    platform: s.platform ?? null,
   });
 
   /** Campaña en vivo sintetizada desde las scheduled_posts del cliente (ordenadas por fecha). */

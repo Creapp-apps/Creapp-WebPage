@@ -5,6 +5,11 @@ import { motorStudio } from '@/lib/motorStudio';
 import type { PublishStatus, TrackerPiece } from '@/lib/contentTrackerTypes';
 import { PieceThread } from './PieceThread';
 import { STATUS_LABEL, relativeTime, pieceTitle } from '@/lib/contentTrackerView';
+import type { LaunchPiece } from '@/lib/launchesTypes';
+import { LaunchPreviewModal } from '@/components/admin/launches/LaunchPreviewModal';
+import { Countdown } from './Countdown';
+
+const isVideoUrl = (u: string): boolean => /\.(mp4|mov|webm|m4v)(\?|$)/i.test(u);
 
 const CHIP: Record<TrackerPiece['status'], { cls: string; Icon: React.ComponentType<{ size?: number }> }> = {
   sent: { cls: 'bg-amber-500/10 text-amber-300 border-amber-500/20', Icon: Clock },
@@ -31,10 +36,11 @@ const PUBLISH_CLS: Record<PublishStatus, string> = {
   error: 'bg-rose-500/10 text-rose-400 border-rose-500/25',
 };
 
-export const PieceStatusRow: React.FC<{ piece: TrackerPiece; onChanged: () => void }> = ({ piece, onChanged }) => {
+export const PieceStatusRow: React.FC<{ piece: TrackerPiece; onChanged: () => void; brandName?: string }> = ({ piece, onChanged, brandName }) => {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [threadOpen, setThreadOpen] = useState(false);
+  const [preview, setPreview] = useState(false);
   const run = async (fn: () => Promise<void>) => {
     if (busy) return;
     setBusy(true);
@@ -56,30 +62,60 @@ export const PieceStatusRow: React.FC<{ piece: TrackerPiece; onChanged: () => vo
   const when = relativeTime(piece.lastDecisionAt);
   const meta = [piece.lastDecisionBy, when].filter(Boolean).join(' · ');
 
-  // Pieza en vivo (publicada directo, sin content_job/review): fila read-only,
-  // cover + título + estado de publicación. Sin chips ni acciones de revisión.
+  // Pieza en vivo (publicada directo, sin content_job/review): fila read-only clickable.
+  // Thumbnail = cover, o frame del video si no hay cover (historias no traen cover).
+  // Badge = countdown en tiempo real si está programada a futuro; si no, estado real.
+  // Al clickear (fuera de un control) abre el modal de revisualización (LaunchPreviewModal).
   if (piece.live) {
+    const liveVideoThumb = !piece.coverUrl ? (piece.mediaUrls ?? []).find(isVideoUrl) : undefined;
+    const published = piece.publishStatus === 'published';
+    const future = !!piece.publishAt && new Date(piece.publishAt).getTime() > Date.now();
+    const launchPiece: LaunchPiece = {
+      id: piece.id, clientId: '', clientName: brandName ?? '', jobId: piece.jobIdMotor,
+      title: pieceTitle(piece), type: piece.type, coverUrl: piece.coverUrl,
+      status: piece.publishStatus ?? 'queued', scheduledAt: piece.publishAt ?? null,
+      updatedAt: '', errorMessage: piece.publishErrorMessage, permalink: piece.permalink ?? null,
+      stuck: false, mediaUrls: piece.mediaUrls ?? [], caption: piece.caption ?? null, platform: piece.platform ?? null,
+    };
     return (
-      <div className="flex gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/5">
-        <div className="w-12 h-12 rounded-lg overflow-hidden bg-zinc-900 border border-white/5 shrink-0 flex items-center justify-center text-zinc-600">
-          {piece.coverUrl ? (
-            <img src={piece.coverUrl} alt="" className="w-full h-full object-cover" loading="lazy" />
-          ) : (
-            <ImageOff size={16} />
-          )}
+      <>
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={(e) => { if ((e.target as HTMLElement).closest('button, a, input, select, textarea')) return; setPreview(true); }}
+          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); setPreview(true); } }}
+          title="Ver vista previa"
+          className="group/row flex gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.045] hover:border-indigo-500/25 transition-colors cursor-pointer"
+        >
+          <div className="w-12 h-12 rounded-lg overflow-hidden bg-zinc-900 border border-white/5 shrink-0 flex items-center justify-center text-zinc-600 group-hover/row:border-indigo-500/40 transition-colors">
+            {piece.coverUrl ? (
+              <img src={piece.coverUrl} alt="" className="w-full h-full object-cover" loading="lazy" />
+            ) : liveVideoThumb ? (
+              <video src={`${liveVideoThumb}#t=0.1`} muted playsInline preload="metadata" className="w-full h-full object-cover" />
+            ) : (
+              <ImageOff size={16} />
+            )}
+          </div>
+          <div className="min-w-0 flex-1 flex items-center justify-between gap-2">
+            <span className="text-sm text-white font-medium truncate group-hover/row:text-indigo-300 transition-colors">{pieceTitle(piece)}</span>
+            <div className="shrink-0">
+              {published ? (
+                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${PUBLISH_CLS.published}`}>{PUBLISH_LABEL.published}</span>
+              ) : future ? (
+                <Countdown target={piece.publishAt!} />
+              ) : piece.publishStatus ? (
+                <span
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${PUBLISH_CLS[piece.publishStatus]}`}
+                  title={piece.publishStatus === 'error' ? (piece.publishErrorMessage ?? undefined) : undefined}
+                >
+                  {PUBLISH_LABEL[piece.publishStatus]}
+                </span>
+              ) : null}
+            </div>
+          </div>
         </div>
-        <div className="min-w-0 flex-1 flex items-center justify-between gap-2">
-          <span className="text-sm text-white font-medium truncate">{pieceTitle(piece)}</span>
-          {piece.publishStatus && (
-            <span
-              className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${PUBLISH_CLS[piece.publishStatus]}`}
-              title={piece.publishStatus === 'error' ? (piece.publishErrorMessage ?? undefined) : undefined}
-            >
-              {PUBLISH_LABEL[piece.publishStatus]}
-            </span>
-          )}
-        </div>
-      </div>
+        {preview && <LaunchPreviewModal piece={launchPiece} onClose={() => setPreview(false)} />}
+      </>
     );
   }
 

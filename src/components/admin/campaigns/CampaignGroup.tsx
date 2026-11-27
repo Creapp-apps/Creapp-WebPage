@@ -142,7 +142,7 @@ export const CampaignGroup: React.FC<{ campaign: TrackerCampaign; brandName: str
           {campaign.pieces.length === 0 ? (
             <p className="text-xs text-zinc-500 py-2">Esta campaña todavía no tiene piezas</p>
           ) : (
-            sortPieces(campaign.pieces).map((p) => <PieceStatusRow key={p.id} piece={p} onChanged={onChanged} />)
+            sortPieces(campaign.pieces).map((p) => <PieceStatusRow key={p.id} piece={p} onChanged={onChanged} brandName={brandName} />)
           )}
         </div>
       )}

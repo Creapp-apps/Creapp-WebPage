@@ -1,6 +1,15 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { plural, summaryText, relativeTime, sortClientsByUrgency, sortPieces, campaignProgress, needsAttention, sortCampaignsByAttention } from './contentTrackerView.ts';
+import { plural, summaryText, relativeTime, sortClientsByUrgency, sortPieces, campaignProgress, needsAttention, sortCampaignsByAttention, formatCountdown } from './contentTrackerView.ts';
+
+test('formatCountdown: segundos, minutos, horas, días; <=0 publicando', () => {
+  assert.equal(formatCountdown(0), 'publicando…');
+  assert.equal(formatCountdown(-5000), 'publicando…');
+  assert.equal(formatCountdown(30_000), 'en 30 s');
+  assert.equal(formatCountdown(5 * 60_000), 'en 5 min');
+  assert.equal(formatCountdown((2 * 3600 + 15 * 60) * 1000), 'en 2 h 15 min');
+  assert.equal(formatCountdown((3 * 24 * 3600 + 4 * 3600) * 1000), 'en 3 d 4 h');
+});
 
 const c = (name: string, changes: number, pending: number): any => ({
   name, counts: { total: 1, approved: 0, changes, pending },
