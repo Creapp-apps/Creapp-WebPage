@@ -68,6 +68,7 @@ export const PortalVideo: React.FC<Props> = ({ src, poster }) => {
         src={src}
         poster={poster ?? undefined}
         playsInline
+        preload="none"
         onClick={toggle}
         onPlay={() => { setPlaying(true); nudge(); }}
         onPause={() => { setPlaying(false); setUiHidden(false); }}

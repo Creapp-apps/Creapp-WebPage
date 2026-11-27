@@ -10,6 +10,11 @@ const TYPE_LABEL: Record<string, string> = { reel: 'Reel', carousel: 'Carrusel',
 const dateLabel = (d: Date | null): string =>
   d ? new Intl.DateTimeFormat('es-AR', { day: 'numeric', month: 'short', timeZone: 'America/Argentina/Buenos_Aires' }).format(d) : '';
 
+// Compartir archivo (mobile): solo ahí sirve prefetchear el blob.
+const canShareFile = typeof navigator !== 'undefined' && !!navigator.canShare && (() => {
+  try { return navigator.canShare({ files: [new File([], 'x.mp4', { type: 'video/mp4' })] }); } catch { return false; }
+})();
+
 type Blobbed = { blob: Blob; filename: string };
 
 const Cover: React.FC<{ piece: CalendarPiece }> = ({ piece }) => {
@@ -41,7 +46,7 @@ const Detail: React.FC<{ piece: CalendarPiece; onClose: () => void }> = ({ piece
 
   // Prefetch para que el tap de Compartir sea síncrono (iOS Safari).
   useEffect(() => {
-    if (isCarousel) return;
+    if (isCarousel || !canShareFile) return;
     let alive = true;
     setPre(null);
     setBusy(true);

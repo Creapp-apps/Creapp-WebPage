@@ -1,6 +1,7 @@
 // GET /api/download-video?post=<scheduled_posts.id>&i=<index=0>
-// Proxy de descarga autorizado del portal (Mis Piezas). Buffer completo (reels de pocos MB).
+// Proxy de descarga autorizado del portal (Mis Piezas). El archivo se STREAMEA (sin buffer completo en memoria).
 import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
 import { requireMember } from './_lib/requireMember.js';
 import { serviceClient } from './_lib/serviceClient.js';
 import { applyPortalCors } from './_lib/portalCors.js';
@@ -49,9 +50,12 @@ export default async function handler(req: any, res: any) {
     res.status(200);
     res.setHeader('Content-Type', upstream.headers.get('content-type') || 'application/octet-stream');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    Readable.fromWeb(upstream.body as any).pipe(res);
+    await pipeline(Readable.fromWeb(upstream.body as any), res);
   } catch {
-    if (!res.headersSent) return res.status(404).json({ error: 'No disponible' });
-    res.end();
+    if (!res.headersSent) {
+      res.status(404).json({ error: 'No disponible' });
+    } else {
+      res.end();
+    }
   }
 }

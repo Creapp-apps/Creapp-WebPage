@@ -34,7 +34,14 @@ export default async function handler(req: any, res: any) {
     }
   }
 
-  const available = await buildAvailabilityMap(urlById, (u) =>
-    fetch(u, { method: 'HEAD' }).then((r) => r.ok).catch(() => false));
+  const available = await buildAvailabilityMap(urlById, async (u: string) => {
+    try {
+      const r = await fetch(u, { method: 'GET', headers: { Range: 'bytes=0-0' } });
+      try { await r.body?.cancel(); } catch { /* ignore */ }
+      return r.ok; // 200 o 206
+    } catch {
+      return false;
+    }
+  });
   return res.status(200).json({ available });
 }

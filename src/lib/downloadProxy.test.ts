@@ -40,3 +40,10 @@ test('safeFilename: ext tomada del path ignorando query', () => {
     'x-story-2026-01-02.png',
   );
 });
+
+test('safeFilename trata guion bajo como separador', () => {
+  assert.equal(
+    safeFilename({ brand: 'cardoso_propiedades', type: 'reel', date: '2026-11-20T12:00:00Z', url: 'https://r2/x/final.mp4' }),
+    'cardoso-propiedades-reel-2026-11-20.mp4',
+  );
+});
