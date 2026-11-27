@@ -1,6 +1,6 @@
-import React, { Suspense, useState } from 'react';
-import { Reveal } from './Chapter';
+import React, { Suspense, useState, useLayoutEffect, useRef } from 'react';
 import { METHODOLOGY } from './methodology';
+import { SplitReveal, TextReveal, RevealIn, gsap, prefersReducedMotion, DUR, GSAP_EASE } from './motion';
 
 // La máquina 3D es pesada (three.js): se carga aparte y solo cuando esta sección
 // se monta, para no bloquear el resto de la home.
@@ -14,8 +14,30 @@ const AgenticLab3D = React.lazy(() => import('./AgenticLab3D'));
 const LabFeatures: React.FC = () => {
     // Todos colapsados por default; el usuario abre el que quiera (y lo cierra al reclicar).
     const [active, setActive] = useState<number | null>(null);
+    const olRef = useRef<HTMLOListElement>(null);
+
+    // Las filas del acordeón entran deslizándose lateralmente, una tras otra, al
+    // llegar a la sección. reduced-motion → visibles sin animación.
+    useLayoutEffect(() => {
+        const ol = olRef.current;
+        if (!ol || prefersReducedMotion()) return;
+        const items = Array.from(ol.children) as HTMLElement[];
+        const ctx = gsap.context(() => {
+            gsap.set(items, { autoAlpha: 0, x: -34 });
+            gsap.to(items, {
+                autoAlpha: 1,
+                x: 0,
+                duration: DUR.base,
+                ease: GSAP_EASE.cout,
+                stagger: 0.1,
+                scrollTrigger: { trigger: ol, start: 'top 82%', once: true },
+            });
+        }, ol);
+        return () => ctx.revert();
+    }, []);
+
     return (
-        <ol className="cw-lab-acc">
+        <ol className="cw-lab-acc" ref={olRef}>
             {METHODOLOGY.points.map((p, i) => {
                 const open = i === active;
                 return (
@@ -64,19 +86,19 @@ export const Methodology: React.FC = () => (
     <section id="metodologia" className="cw-section cw-lab" aria-labelledby="met-t">
         <div className="cw-wrap">
             <div className="cw-lab-split">
-                <Reveal className="cw-lab-copy">
-                    <h2 id="met-t" className="cw-display cw-h2">
+                <div className="cw-lab-copy">
+                    <SplitReveal as="h2" id="met-t" className="cw-display cw-h2">
                         {METHODOLOGY.title}
-                    </h2>
-                    <p className="cw-lead">{METHODOLOGY.lead}</p>
+                    </SplitReveal>
+                    <TextReveal as="p" className="cw-lead" preset="type-word">{METHODOLOGY.lead}</TextReveal>
                     <LabFeatures />
-                </Reveal>
+                </div>
 
-                <Reveal className="cw-lab-stage">
+                <RevealIn className="cw-lab-stage" x={48} y={0}>
                     <Suspense fallback={<div className="cw-lab-stage-ph" />}>
                         <AgenticLab3D embed centered height="100%" />
                     </Suspense>
-                </Reveal>
+                </RevealIn>
             </div>
         </div>
     </section>

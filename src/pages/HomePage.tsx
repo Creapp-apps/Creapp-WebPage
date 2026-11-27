@@ -5,7 +5,7 @@ import { SplitText } from 'gsap/SplitText';
 import { ContactForm } from '../components/ui/ContactForm';
 import { Reveal } from '../components/site/Chapter';
 import RocketHero from '../components/site/RocketHero';
-import { ParallaxLayer, PinScrub, SplitReveal, gsap, prefersReducedMotion, refreshScrollTriggers, onFontsAndLayoutReady, GSAP_EASE, DUR, STAGGER } from '../components/site/motion';
+import { ParallaxLayer, PinScrub, SplitReveal, TextReveal, RevealIn, gsap, prefersReducedMotion, refreshScrollTriggers, onFontsAndLayoutReady, GSAP_EASE, DUR, STAGGER } from '../components/site/motion';
 import { useSiteChrome } from '../components/site/SiteShell';
 import EcosystemOrbital from '../components/site/EcosystemOrbital';
 import { EngineLive } from '../components/site/EngineLive';
@@ -152,16 +152,15 @@ const HomePage: React.FC = () => {
                                 <SplitReveal as="h2" id="servicios-t" className="cw-display cw-h2">
                                     No somos freelancers. Somos un <span className="cw-accent">ecosistema</span>.
                                 </SplitReveal>
-                                <Reveal>
-                                    <p className="cw-lead">
-                                        Desarrollo, seguridad y marketing girando alrededor de un mismo núcleo.
-                                        Tocá un área y entrá.
-                                    </p>
-                                </Reveal>
+                                <TextReveal as="p" className="cw-lead" preset="word-blur">
+                                    Desarrollo, seguridad y marketing girando alrededor de un mismo núcleo. Tocá un área y entrá.
+                                </TextReveal>
                             </div>
-                            <ParallaxLayer speed={0.12} className="cw-lab-stage cw-svc-stage">
-                                <EcosystemOrbital radius={190} />
-                            </ParallaxLayer>
+                            <RevealIn className="cw-lab-stage cw-svc-stage" x={48} y={0}>
+                                <ParallaxLayer speed={0.12}>
+                                    <EcosystemOrbital radius={190} />
+                                </ParallaxLayer>
+                            </RevealIn>
                         </div>
                     </div>
                 </section>
@@ -169,7 +168,9 @@ const HomePage: React.FC = () => {
                 <hr className="cw-rule" />
 
                 {/* ── Nuestra agencia 24/7 ── */}
-                <EngineLive />
+                <RevealIn y={36}>
+                    <EngineLive />
+                </RevealIn>
 
                 <hr className="cw-rule" />
 
@@ -182,15 +183,13 @@ const HomePage: React.FC = () => {
                                     Entrá y miralo funcionando.
                                 </SplitReveal>
                             </div>
-                            <Reveal>
-                                <p className="cw-lead">
-                                    Clientes con su plataforma en la calle. Elegí uno y usalo acá mismo, tal como lo usan hoy.
-                                </p>
-                            </Reveal>
+                            <TextReveal as="p" className="cw-lead" preset="typewriter">
+                                Clientes con su plataforma en la calle. Elegí uno y usalo acá mismo, tal como lo usan hoy.
+                            </TextReveal>
                         </div>
-                        <Reveal>
+                        <RevealIn y={36}>
                             <ClientShowcase />
-                        </Reveal>
+                        </RevealIn>
                     </div>
                 </section>
 
@@ -203,11 +202,10 @@ const HomePage: React.FC = () => {
                             <SplitReveal as="h2" id="contacto-t" className="cw-display cw-h2">
                                 Empecemos tu <span className="cw-accent">proyecto</span>.
                             </SplitReveal>
+                            <TextReveal as="p" className="cw-lead" preset="fade" style={{ marginTop: 20 }}>
+                                Contanos qué necesitás resolver. Te respondemos rápido, con una propuesta clara y un plan de trabajo — sin vueltas.
+                            </TextReveal>
                             <Reveal>
-                            <p className="cw-lead" style={{ marginTop: 20 }}>
-                                Contanos qué necesitás resolver. Te respondemos rápido, con una propuesta clara y un plan
-                                de trabajo — sin vueltas.
-                            </p>
                             <ul className="cw-contact-list">
                                 <li>
                                     <span className="cw-mono">Email</span>
