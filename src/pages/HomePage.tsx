@@ -5,7 +5,7 @@ import { SplitText } from 'gsap/SplitText';
 import { ContactForm } from '../components/ui/ContactForm';
 import { Reveal } from '../components/site/Chapter';
 import RocketHero from '../components/site/RocketHero';
-import { ParallaxLayer, PinScrub, StaggerGroup, gsap, prefersReducedMotion, refreshScrollTriggers, onFontsAndLayoutReady, GSAP_EASE, DUR, STAGGER } from '../components/site/motion';
+import { ParallaxLayer, PinScrub, SplitReveal, gsap, prefersReducedMotion, refreshScrollTriggers, onFontsAndLayoutReady, GSAP_EASE, DUR, STAGGER } from '../components/site/motion';
 import { useSiteChrome } from '../components/site/SiteShell';
 import EcosystemOrbital from '../components/site/EcosystemOrbital';
 import { EngineLive } from '../components/site/EngineLive';
@@ -148,15 +148,17 @@ const HomePage: React.FC = () => {
                 <section id="servicios" className="cw-section" aria-labelledby="servicios-t">
                     <div className="cw-wrap">
                         <div className="cw-lab-split cw-svc-hero">
-                            <StaggerGroup className="cw-lab-copy">
-                                <h2 id="servicios-t" className="cw-display cw-h2">
+                            <div className="cw-lab-copy">
+                                <SplitReveal as="h2" id="servicios-t" className="cw-display cw-h2">
                                     No somos freelancers. Somos un <span className="cw-accent">ecosistema</span>.
-                                </h2>
-                                <p className="cw-lead">
-                                    Desarrollo, seguridad y marketing girando alrededor de un mismo núcleo.
-                                    Tocá un área y entrá.
-                                </p>
-                            </StaggerGroup>
+                                </SplitReveal>
+                                <Reveal>
+                                    <p className="cw-lead">
+                                        Desarrollo, seguridad y marketing girando alrededor de un mismo núcleo.
+                                        Tocá un área y entrá.
+                                    </p>
+                                </Reveal>
+                            </div>
                             <ParallaxLayer speed={0.12} className="cw-lab-stage cw-svc-stage">
                                 <EcosystemOrbital radius={190} />
                             </ParallaxLayer>
@@ -174,16 +176,18 @@ const HomePage: React.FC = () => {
                 {/* ── Clientes en producción ── */}
                 <section id="clientes" className="cw-section" aria-labelledby="clientes-t">
                     <div className="cw-wrap">
-                        <StaggerGroup className="cw-intro-head">
+                        <div className="cw-intro-head">
                             <div>
-                                <h2 id="clientes-t" className="cw-display cw-h2">
+                                <SplitReveal as="h2" id="clientes-t" className="cw-display cw-h2">
                                     Entrá y miralo funcionando.
-                                </h2>
+                                </SplitReveal>
                             </div>
-                            <p className="cw-lead">
-                                Clientes con su plataforma en la calle. Elegí uno y usalo acá mismo, tal como lo usan hoy.
-                            </p>
-                        </StaggerGroup>
+                            <Reveal>
+                                <p className="cw-lead">
+                                    Clientes con su plataforma en la calle. Elegí uno y usalo acá mismo, tal como lo usan hoy.
+                                </p>
+                            </Reveal>
+                        </div>
                         <Reveal>
                             <ClientShowcase />
                         </Reveal>
@@ -195,10 +199,11 @@ const HomePage: React.FC = () => {
                 {/* ── Contacto ── */}
                 <section id="contacto" className="cw-section cw-contact" aria-labelledby="contacto-t">
                     <div className="cw-wrap cw-contact-grid">
-                        <StaggerGroup>
-                            <h2 id="contacto-t" className="cw-display cw-h2">
+                        <div>
+                            <SplitReveal as="h2" id="contacto-t" className="cw-display cw-h2">
                                 Empecemos tu <span className="cw-accent">proyecto</span>.
-                            </h2>
+                            </SplitReveal>
+                            <Reveal>
                             <p className="cw-lead" style={{ marginTop: 20 }}>
                                 Contanos qué necesitás resolver. Te respondemos rápido, con una propuesta clara y un plan
                                 de trabajo — sin vueltas.
@@ -231,7 +236,8 @@ const HomePage: React.FC = () => {
                                     <span>En menos de 2 h</span>
                                 </li>
                             </ul>
-                        </StaggerGroup>
+                            </Reveal>
+                        </div>
                         <Reveal delay={100} className="cw-form-panel">
                             <ContactForm />
                         </Reveal>

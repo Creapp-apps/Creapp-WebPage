@@ -123,6 +123,34 @@ html[data-site] body {
 
 .cw-accent {
     color: var(--accent);
+    background-image: linear-gradient(100deg, var(--accent) 0%, var(--accent) 42%, #ffffff 50%, var(--accent) 58%, var(--accent) 100%);
+    background-size: 220% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: cwAccentShimmer 3.4s linear infinite;
+}
+
+@keyframes cwAccentShimmer {
+    0% { background-position: 130% 0; }
+    100% { background-position: -30% 0; }
+}
+
+/* Hero: que los descendentes (g, y) no se recorten en la máscara de líneas del reveal */
+.cw-hero-copy .cw-display {
+    line-height: 1.08;
+}
+.cw-hero-line,
+.cw-reveal-line {
+    padding-bottom: 0.09em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cw-accent {
+        animation: none;
+        -webkit-text-fill-color: var(--accent);
+        background: none;
+    }
 }
 
 /* ── Botones ───────────────────────────────────────── */
@@ -771,8 +799,7 @@ html[data-site] body {
 }
 
 .cw-chapter-head {
-    position: sticky;
-    top: calc(var(--nav-h) + 32px);
+    position: static;
 }
 
 .cw-chapter-n {
