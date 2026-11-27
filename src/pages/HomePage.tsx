@@ -7,7 +7,7 @@ import { ContactModal } from '../components/ui/ContactModal';
 import { SiteNav } from '../components/site/SiteNav';
 import { Reveal } from '../components/site/Chapter';
 import RocketHero from '../components/site/RocketHero';
-import { ParallaxLayer, PinScrub, gsap, prefersReducedMotion, GSAP_EASE, DUR, STAGGER } from '../components/site/motion';
+import { ParallaxLayer, PinScrub, StaggerGroup, gsap, prefersReducedMotion, refreshScrollTriggers, onFontsAndLayoutReady, GSAP_EASE, DUR, STAGGER } from '../components/site/motion';
 import { useSiteTheme } from '../components/site/theme';
 import EcosystemOrbital from '../components/site/EcosystemOrbital';
 import { EngineLive } from '../components/site/EngineLive';
@@ -35,6 +35,10 @@ const HomePage: React.FC = () => {
     useEffect(() => {
         document.title = 'CreAPP · Software & Agentic Lab';
     }, []);
+
+    // Las fuentes/escenas/imágenes cambian alturas al cargar: refrescar los triggers
+    // una vez estabilizado el layout para que las posiciones de scroll no queden corridas.
+    useEffect(() => onFontsAndLayoutReady(refreshScrollTriggers), []);
 
     // Intro cinematográfica del hero: H1 línea por línea (SplitText con máscara) +
     // fade-slide escalonado del resto, con los tokens de motion. Parallax del copy al
@@ -141,7 +145,7 @@ const HomePage: React.FC = () => {
                 <section id="servicios" className="cw-section" aria-labelledby="servicios-t">
                     <div className="cw-wrap">
                         <div className="cw-lab-split cw-svc-hero">
-                            <Reveal className="cw-lab-copy">
+                            <StaggerGroup className="cw-lab-copy">
                                 <span className="cw-mono">Quiénes somos</span>
                                 <h2 id="servicios-t" className="cw-display cw-h2">
                                     No somos freelancers. Somos un <span className="cw-accent">ecosistema</span>.
@@ -150,10 +154,10 @@ const HomePage: React.FC = () => {
                                     Desarrollo, seguridad y marketing girando alrededor de un mismo núcleo.
                                     Tocá un área y entrá.
                                 </p>
-                            </Reveal>
-                            <Reveal className="cw-lab-stage cw-svc-stage">
+                            </StaggerGroup>
+                            <ParallaxLayer speed={0.12} className="cw-lab-stage cw-svc-stage">
                                 <EcosystemOrbital radius={190} />
-                            </Reveal>
+                            </ParallaxLayer>
                         </div>
                     </div>
                 </section>
@@ -171,7 +175,7 @@ const HomePage: React.FC = () => {
                 {/* ── Clientes en producción ── */}
                 <section id="clientes" className="cw-section" aria-labelledby="clientes-t">
                     <div className="cw-wrap">
-                        <Reveal className="cw-intro-head">
+                        <StaggerGroup className="cw-intro-head">
                             <div>
                                 <span className="cw-mono">En producción</span>
                                 <h2 id="clientes-t" className="cw-display cw-h2">
@@ -181,7 +185,7 @@ const HomePage: React.FC = () => {
                             <p className="cw-lead">
                                 Clientes con su plataforma en la calle. Elegí uno y usalo acá mismo, tal como lo usan hoy.
                             </p>
-                        </Reveal>
+                        </StaggerGroup>
                         <Reveal>
                             <ClientShowcase />
                         </Reveal>
@@ -193,7 +197,7 @@ const HomePage: React.FC = () => {
                 {/* ── Contacto ── */}
                 <section id="contacto" className="cw-section cw-contact" aria-labelledby="contacto-t">
                     <div className="cw-wrap cw-contact-grid">
-                        <Reveal>
+                        <StaggerGroup>
                             <span className="cw-mono">Hablemos</span>
                             <h2 id="contacto-t" className="cw-display cw-h2">
                                 Empecemos tu <span className="cw-accent">proyecto</span>.
@@ -230,7 +234,7 @@ const HomePage: React.FC = () => {
                                     <span>En menos de 2 h</span>
                                 </li>
                             </ul>
-                        </Reveal>
+                        </StaggerGroup>
                         <Reveal delay={100} className="cw-form-panel">
                             <ContactForm />
                         </Reveal>
