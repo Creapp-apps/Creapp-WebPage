@@ -7,7 +7,7 @@ import { ContactModal } from '../components/ui/ContactModal';
 import { SiteNav } from '../components/site/SiteNav';
 import { Reveal } from '../components/site/Chapter';
 import RocketHero from '../components/site/RocketHero';
-import { ParallaxLayer, gsap, prefersReducedMotion, GSAP_EASE, DUR, STAGGER } from '../components/site/motion';
+import { ParallaxLayer, PinScrub, gsap, prefersReducedMotion, GSAP_EASE, DUR, STAGGER } from '../components/site/motion';
 import { useSiteTheme } from '../components/site/theme';
 import EcosystemOrbital from '../components/site/EcosystemOrbital';
 import { EngineLive } from '../components/site/EngineLive';
@@ -66,6 +66,14 @@ const HomePage: React.FC = () => {
         return () => { ctx.revert(); split?.revert(); };
     }, []);
 
+    // Momento firma: el Agentic Lab recorre sus modos con el scroll mientras la
+    // sección está clavada (PinScrub). Sólo cambia de modo al cruzar un umbral.
+    const labMode = useRef<string>('');
+    const onLabProgress = (p: number) => {
+        const mode = p < 0.25 ? 'assembled' : p < 0.5 ? 'cutaway' : p < 0.78 ? 'stations' : 'order';
+        if (mode !== labMode.current) { labMode.current = mode; window.__lab?.setMode(mode); }
+    };
+
     // Scroll al ancla al llegar con hash (p. ej. /#nosotros desde una página de servicio).
     // Salto instantáneo tras un breve delay: no pelea con el RAF de Lenis y cae en la sección
     // aunque la home recién montada reflowee con fuentes/imágenes.
@@ -123,7 +131,9 @@ const HomePage: React.FC = () => {
                 <hr className="cw-rule" />
 
                 {/* ── Metodología · Agentic Lab (diferencial) ── */}
-                <Methodology />
+                <PinScrub length={1.5} onProgress={onLabProgress}>
+                    <Methodology />
+                </PinScrub>
 
                 <hr className="cw-rule" />
 
