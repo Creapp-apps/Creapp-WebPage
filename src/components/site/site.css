@@ -258,11 +258,18 @@ html[data-site] body {
 .cw-pill-brand {
     display: flex;
     align-items: center;
+    margin-right: 18px; /* aire entre la marca y "Desarrollo" */
 }
 
 .cw-pill .cw-brand {
     margin: 0;
-    padding: 0 4px 0 8px;
+    padding: 0 2px 0 8px;
+}
+
+/* Más respiro del divisor "| IT SOLUTIONS" respecto a "CreAPP". */
+.cw-pill .cw-brand-tag {
+    margin-left: 4px;
+    padding-left: 14px;
 }
 
 .cw-pill-links {
