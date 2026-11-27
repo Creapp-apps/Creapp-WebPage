@@ -1,22 +1,23 @@
-import React, { useEffect, useState } from 'react';
-import { ArrowDownRight, ArrowRight, Calendar } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { ArrowRight, Calendar } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
+import { SplitText } from 'gsap/SplitText';
 import { ContactForm } from '../components/ui/ContactForm';
 import { ContactModal } from '../components/ui/ContactModal';
 import { SiteNav } from '../components/site/SiteNav';
-import { Chapter, Reveal } from '../components/site/Chapter';
-import { Orb } from '../components/site/Orb';
+import { Reveal } from '../components/site/Chapter';
+import RocketHero from '../components/site/RocketHero';
+import { ParallaxLayer, gsap, prefersReducedMotion, GSAP_EASE, DUR, STAGGER } from '../components/site/motion';
 import { useSiteTheme } from '../components/site/theme';
-import { ABOUT_POINTS, STACK, TEAM } from '../components/site/content';
-import { GROUP_LABELS, servicePath, servicesByGroup, type ServiceGroup } from '../components/site/services';
-import { LabGraphic } from '../components/site/AreaGraphics';
+import EcosystemOrbital from '../components/site/EcosystemOrbital';
 import { EngineLive } from '../components/site/EngineLive';
 import { Process } from '../components/site/Process';
-import { ClientShowcase, ProductShowcase } from '../components/site/Showcase';
+import { ClientShowcase } from '../components/site/Showcase';
 import { Methodology } from '../components/site/MethodologySection';
 import '../components/site/site.css';
 
-const GROUP_ORDER: ServiceGroup[] = ['desarrollo', 'seguridad', 'marketing'];
+gsap.registerPlugin(SplitText);
+
 
 // Home institucional: CreAPP · Software & Agentic Lab. Posicionamiento +
 // metodología (agentic) + índice de servicios + prueba en vivo (motor,
@@ -27,11 +28,42 @@ const HomePage: React.FC = () => {
     const { theme, toggle } = useSiteTheme();
     const [contactOpen, setContactOpen] = useState(false);
     const openContact = () => setContactOpen(true);
-    const byGroup = servicesByGroup();
     const location = useLocation();
+    const heroRef = useRef<HTMLElement>(null);
+    const heroCopyRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         document.title = 'CreAPP · Software & Agentic Lab';
+    }, []);
+
+    // Intro cinematográfica del hero: H1 línea por línea (SplitText con máscara) +
+    // fade-slide escalonado del resto, con los tokens de motion. Parallax del copy al
+    // scrollear. reduced-motion → todo visible, sin animación.
+    useLayoutEffect(() => {
+        const copy = heroCopyRef.current;
+        const section = heroRef.current;
+        if (!copy || !section) return;
+        const q = (s: string) => copy.querySelector<HTMLElement>(`[data-hero="${s}"]`);
+        const eyebrow = q('eyebrow'), title = q('title'), remate = q('remate'), lead = q('lead'), ctas = q('ctas');
+        const fade = [eyebrow, remate, lead, ctas].filter(Boolean) as HTMLElement[];
+        if (prefersReducedMotion()) { gsap.set([...fade, title].filter(Boolean), { autoAlpha: 1, y: 0 }); return; }
+        let split: SplitText | null = null;
+        const ctx = gsap.context(() => {
+            if (title) split = SplitText.create(title, { type: 'lines', mask: 'lines', linesClass: 'cw-hero-line' });
+            gsap.set(fade, { autoAlpha: 0, y: 18 });
+            if (split) gsap.set(split.lines, { yPercent: 100 });
+            const tl = gsap.timeline({ defaults: { ease: GSAP_EASE.cout } });
+            tl.to(eyebrow, { autoAlpha: 1, y: 0, duration: DUR.base }, 0);
+            if (split) tl.to(split.lines, { yPercent: 0, duration: DUR.slow, stagger: STAGGER }, 0.1);
+            tl.to(remate, { autoAlpha: 1, y: 0, duration: DUR.base }, 0.45);
+            tl.to(lead, { autoAlpha: 1, y: 0, duration: DUR.base }, 0.58);
+            tl.to(ctas, { autoAlpha: 1, y: 0, duration: DUR.base }, 0.68);
+            gsap.to(copy, {
+                yPercent: -6, ease: 'none',
+                scrollTrigger: { trigger: section, start: 'top top', end: 'bottom top', scrub: true },
+            });
+        }, section);
+        return () => { ctx.revert(); split?.revert(); };
     }, []);
 
     // Scroll al ancla al llegar con hash (p. ej. /#nosotros desde una página de servicio).
@@ -59,45 +91,31 @@ const HomePage: React.FC = () => {
 
             <main id="contenido">
                 {/* ── Hero ── */}
-                <section className="cw-hero" aria-labelledby="hero-t">
+                <section className="cw-hero" aria-labelledby="hero-t" ref={heroRef}>
                     <div className="cw-wrap cw-hero-grid">
-                        <div className="cw-hero-copy">
-                            <Reveal>
-                                <span className="cw-mono">CreAPP · Software & Agentic Lab</span>
-                                <h1 id="hero-t" className="cw-display">
-                                    El software y la <span className="cw-accent">IA</span> que tu negocio necesita.
-                                </h1>
-                                <p className="cw-hero-remate">Y te los mostramos funcionando.</p>
-                            </Reveal>
-                            <Reveal delay={120}>
-                                <p className="cw-hero-lead">
-                                    Un software lab AI-native con productos propios en producción. Desarrollo,
-                                    seguridad y marketing — bajo un mismo techo.
-                                </p>
-                                <div className="cw-hero-ctas">
-                                    <button type="button" className="cw-btn cw-btn-primary" onClick={openContact}>
-                                        Agendá una llamada <Calendar size={17} />
-                                    </button>
-                                    <a href="#servicios" className="cw-btn cw-btn-ghost">
-                                        Explorar <ArrowRight size={17} />
-                                    </a>
-                                </div>
-                            </Reveal>
-                            <Reveal delay={220}>
-                                <ul className="cw-chips" aria-label="Los tres frentes">
-                                    {GROUP_ORDER.map((g, i) => (
-                                        <li key={g}>
-                                            <a href="#servicios">
-                                                <b>0{i + 1}</b>
-                                                {GROUP_LABELS[g]}
-                                            </a>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </Reveal>
+                        <div className="cw-hero-copy" ref={heroCopyRef}>
+                            <span className="cw-mono" data-hero="eyebrow">CreAPP · Software & Agentic Lab</span>
+                            <h1 id="hero-t" className="cw-display" data-hero="title">
+                                Tenemos las piezas que faltan para hacer <span className="cw-accent">despegar</span> tu negocio.
+                            </h1>
+                            <p className="cw-hero-remate" data-hero="remate">Software, IA y seguridad, listos para ensamblar.</p>
+                            <p className="cw-hero-lead" data-hero="lead">
+                                Un software lab AI-native con productos propios en producción. Desarrollo,
+                                seguridad y marketing — bajo un mismo techo.
+                            </p>
+                            <div className="cw-hero-ctas" data-hero="ctas">
+                                <button type="button" className="cw-btn cw-btn-primary" onClick={openContact}>
+                                    Agendá una llamada <Calendar size={17} />
+                                </button>
+                                <a href="#servicios" className="cw-btn cw-btn-ghost">
+                                    Explorar <ArrowRight size={17} />
+                                </a>
+                            </div>
                         </div>
                         <div className="cw-hero-orb">
-                            <Orb />
+                            <ParallaxLayer speed={0.18}>
+                                <RocketHero />
+                            </ParallaxLayer>
                         </div>
                     </div>
                 </section>
@@ -112,36 +130,21 @@ const HomePage: React.FC = () => {
                 {/* ── Índice de servicios (3 grupos → 9 rutas) ── */}
                 <section id="servicios" className="cw-section" aria-labelledby="servicios-t">
                     <div className="cw-wrap">
-                        <Reveal className="cw-intro-head">
-                            <div>
-                                <span className="cw-mono">Qué hacemos</span>
+                        <div className="cw-lab-split cw-svc-hero">
+                            <Reveal className="cw-lab-copy">
+                                <span className="cw-mono">Quiénes somos</span>
                                 <h2 id="servicios-t" className="cw-display cw-h2">
-                                    Tres frentes, un mismo techo.
+                                    No somos freelancers. Somos un <span className="cw-accent">ecosistema</span>.
                                 </h2>
-                            </div>
-                            <p className="cw-lead">
-                                Desarrollo, seguridad y marketing. Un solo equipo y un solo proceso para todo lo que tu
-                                producto necesita. Elegí un servicio y entrá.
-                            </p>
-                        </Reveal>
-                        {GROUP_ORDER.map((g) => (
-                            <Reveal key={g}>
-                                <h3 className="cw-mono cw-svc-group-h">{GROUP_LABELS[g]}</h3>
-                                <ol className="cw-index">
-                                    {byGroup[g].map((s) => (
-                                        <li key={s.slug}>
-                                            <Link to={servicePath(s)}>
-                                                <span className="cw-index-n cw-mono">
-                                                    {s.eyebrow}
-                                                    <ArrowDownRight size={18} aria-hidden="true" />
-                                                </span>
-                                                <span className="cw-index-t">{s.title}</span>
-                                            </Link>
-                                        </li>
-                                    ))}
-                                </ol>
+                                <p className="cw-lead">
+                                    Desarrollo, seguridad y marketing girando alrededor de un mismo núcleo.
+                                    Tocá un área y entrá.
+                                </p>
                             </Reveal>
-                        ))}
+                            <Reveal className="cw-lab-stage cw-svc-stage">
+                                <EcosystemOrbital radius={190} />
+                            </Reveal>
+                        </div>
                     </div>
                 </section>
 
@@ -152,61 +155,6 @@ const HomePage: React.FC = () => {
 
                 {/* ── Cómo trabajamos ── */}
                 <Process />
-
-                <hr className="cw-rule" />
-
-                {/* ── Productos propios ── */}
-                <Chapter
-                    id="productos"
-                    eyebrow="La prueba"
-                    title="Productos propios en producción."
-                    lead="No hablamos en abstracto. Construimos, lanzamos y sostenemos nuestros propios SaaS verticales — la mejor garantía de que podemos construir el tuyo."
-                    flip
-                >
-                    <Reveal>
-                        <ProductShowcase />
-                    </Reveal>
-                </Chapter>
-
-                <hr className="cw-rule" />
-
-                {/* ── Nosotros ── */}
-                <Chapter
-                    id="nosotros"
-                    eyebrow="Quiénes somos"
-                    title="No somos freelancers. Somos un lab."
-                    lead="CreAPP transforma ideas en productos digitales de alto impacto. Trabajamos con contrato formal, SLA y un proceso claro: sin sorpresas, sin freelancers que desaparecen a mitad del proyecto."
-                >
-                    <Reveal className="cw-team">
-                        {TEAM.map((t) => (
-                            <div key={t.name} className="cw-person">
-                                <span className="cw-monogram" aria-hidden="true">
-                                    {t.mono}
-                                </span>
-                                <div>
-                                    <b>{t.name}</b>
-                                    <span className="cw-mono">{t.role}</span>
-                                </div>
-                            </div>
-                        ))}
-                    </Reveal>
-                    <Reveal><LabGraphic /></Reveal>
-                    <Reveal delay={80}>
-                        <ul className="cw-points">
-                            {ABOUT_POINTS.map((p) => (
-                                <li key={p.t}>
-                                    <b>{p.t}</b>
-                                    <span>{p.d}</span>
-                                </li>
-                            ))}
-                        </ul>
-                        <ul className="cw-stack" aria-label="Stack tecnológico">
-                            {STACK.map((s) => (
-                                <li key={s}>{s}</li>
-                            ))}
-                        </ul>
-                    </Reveal>
-                </Chapter>
 
                 <hr className="cw-rule" />
 
