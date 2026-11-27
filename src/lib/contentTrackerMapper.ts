@@ -1,4 +1,5 @@
 import type { PublishStatus, TrackerCampaign, TrackerClient, TrackerCounts, TrackerOverview, TrackerPiece, TrackerPieceStatus } from './contentTrackerTypes.ts';
+import { deriveType, toLocalDayKey } from './calendarMapper.ts';
 
 export interface TClientRow { id: string; slug: string; name: string; logo_url: string | null }
 export interface TCampaignRow { id: string; client_id: string; title: string | null; month: string | null; slug: string; status: string }
@@ -6,9 +7,18 @@ export interface TJobRow { id: string; campaign_id: string; client_id: string; t
 export interface TAssetRow { job_id: string; kind: string; url: string }
 export interface TApprovalRow { job_id: string; client_user_id: string; decision: string; comment: string | null; created_at: string }
 export interface TProfileRow { id: string; email: string | null; full_name: string | null }
-export interface TScheduledPostRow { client_id: string; job_id: string; status: string; error_message: string | null }
+export interface TScheduledPostRow {
+  client_id: string; job_id: string; status: string; error_message: string | null;
+  // Columnas extra para el modo en vivo (grupo sintetizado desde scheduled_posts).
+  id?: string; cover_r2_url?: string | null; scheduled_at?: string | null; platform?: string | null; caption?: string | null;
+}
 
 const COVER_KINDS = new Set(['cover_9_16', 'slide']);
+
+const PUBLISH_STATUSES = new Set<PublishStatus>(['queued', 'containerizing', 'ready', 'publishing', 'published', 'error']);
+/** Coacciona un status de scheduled_posts a PublishStatus; desconocido ('cancelled', etc.) => 'queued'. */
+const toPublishStatus = (s: string | null | undefined): PublishStatus =>
+  s && PUBLISH_STATUSES.has(s as PublishStatus) ? (s as PublishStatus) : 'queued';
 
 export function mapTracker(
   clients: TClientRow[], campaigns: TCampaignRow[], jobs: TJobRow[],
@@ -24,9 +34,13 @@ export function mapTracker(
   const slugById = new Map(clients.map(c => [c.id, c.slug]));
 
   const scheduledByKey = new Map<string, TScheduledPostRow>();
+  // Para el modo en vivo: todas las filas de un cliente, agrupadas por su SLUG.
+  const scheduledBySlug = new Map<string, TScheduledPostRow[]>();
   for (const s of scheduledPosts) {
     const key = `${s.client_id}:${s.job_id}`;
     if (!scheduledByKey.has(key)) scheduledByKey.set(key, s);
+    const arr = scheduledBySlug.get(s.client_id);
+    if (arr) arr.push(s); else scheduledBySlug.set(s.client_id, [s]);
   }
 
   const latest = new Map<string, TApprovalRow>();
@@ -62,6 +76,30 @@ export function mapTracker(
     };
   };
 
+  // Pieza en vivo: vive solo en scheduled_posts (sin content_job/review).
+  const toLivePiece = (s: TScheduledPostRow): TrackerPiece => ({
+    id: s.id ?? s.job_id,
+    type: deriveType(s.platform ?? null),
+    title: s.caption?.trim() || null,
+    coverUrl: s.cover_r2_url ?? null,
+    status: 'approved', // neutro: no se revisa ni se muestra en la variante live
+    lastComment: null, lastDecisionAt: null, lastDecisionBy: null,
+    clientVisible: true, sentAt: null, productionStage: null,
+    rendered: true, jobIdMotor: s.job_id,
+    publishStatus: toPublishStatus(s.status),
+    publishErrorMessage: s.error_message ?? null,
+    live: true,
+  });
+
+  /** Campaña en vivo sintetizada desde las scheduled_posts del cliente (ordenadas por fecha). */
+  const buildLiveCampaign = (slug: string, rows: TScheduledPostRow[]): TrackerCampaign => {
+    const sorted = [...rows].sort((a, b) => (a.scheduled_at ?? '').localeCompare(b.scheduled_at ?? ''));
+    const dates = sorted.map(s => s.scheduled_at).filter((x): x is string => !!x);
+    const earliest = dates.length ? dates.reduce((a, b) => (a < b ? a : b)) : null;
+    const month = earliest ? toLocalDayKey(earliest).slice(0, 7) : null; // YYYY-MM AR-local
+    return { id: `live:${slug}`, title: null, month, slug, status: 'active', pieces: sorted.map(toLivePiece), live: true };
+  };
+
   const empty = (): TrackerCounts => ({ total: 0, approved: 0, changes: 0, pending: 0, drafts: 0 });
   const totals = { clients: clients.length, ...empty() };
 
@@ -80,7 +118,14 @@ export function mapTracker(
     });
     totals.total += counts.total; totals.approved += counts.approved;
     totals.changes += counts.changes; totals.pending += counts.pending; totals.drafts += counts.drafts;
-    return { id: c.id, slug: c.slug, name: c.name, logoUrl: c.logo_url, campaigns: camps, counts };
+    // Modo en vivo: sin content_campaigns pero con scheduled_posts (publicó directo).
+    // Se sintetiza una campaña en vivo (igual que el portal). No toca los counts de review.
+    let finalCamps = camps;
+    if (camps.length === 0) {
+      const liveRows = scheduledBySlug.get(c.slug);
+      if (liveRows && liveRows.length > 0) finalCamps = [buildLiveCampaign(c.slug, liveRows)];
+    }
+    return { id: c.id, slug: c.slug, name: c.name, logoUrl: c.logo_url, campaigns: finalCamps, counts };
   });
 
   return { clients: out, totals };

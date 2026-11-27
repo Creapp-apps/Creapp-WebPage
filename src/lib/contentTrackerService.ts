@@ -25,7 +25,7 @@ export async function getTrackerOverview(): Promise<TrackerOverview> {
     sb.from('content_assets').select('job_id, kind, url').in('kind', ['cover_9_16', 'slide']).order('created_at', { ascending: true }),
     sb.from('content_approvals').select('job_id, client_user_id, decision, comment, created_at'),
     sb.from('user_profiles').select('id, email, full_name'),
-    sb.from('scheduled_posts').select('client_id, job_id, status, error_message'),
+    sb.from('scheduled_posts').select('id, client_id, job_id, status, error_message, cover_r2_url, scheduled_at, platform, caption'),
   ]);
   for (const r of [cl, ca, jo, as, ap, pr]) if (r.error) throw r.error;
 

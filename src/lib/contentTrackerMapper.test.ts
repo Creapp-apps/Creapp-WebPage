@@ -134,3 +134,38 @@ test('mapTracker sin scheduledPosts (parámetro omitido) sigue funcionando — r
   const r = mapTracker(clients, campaigns, jobs, assets, approvals, profiles);
   assert.equal(r.clients[0].campaigns[0].pieces[0].publishStatus, null);
 });
+
+// --- Modo en vivo: cliente que publicó directo (scheduled_posts sin content_campaigns) ---
+const liveRows: any[] = [
+  { id: 'sp1', client_id: 'vacio', job_id: 'mv1', status: 'published', error_message: null, cover_r2_url: 'https://r2/v1.png', scheduled_at: '2026-11-28T16:00:00Z', platform: 'instagram_reel', caption: 'Hola' },
+  { id: 'sp2', client_id: 'vacio', job_id: 'mv2', status: 'queued', error_message: null, cover_r2_url: null, scheduled_at: '2026-11-30T20:00:00Z', platform: 'instagram_carousel', caption: null },
+];
+
+test('modo en vivo: cliente sin content_campaigns + con scheduled_posts => 1 campaña live', () => {
+  const r = mapTracker(clients, campaigns, jobs, assets, approvals, profiles, liveRows);
+  const vacio = r.clients[1]; // c2 'vacio' no tiene content_campaigns
+  assert.equal(vacio.campaigns.length, 1);
+  const cg = vacio.campaigns[0];
+  assert.equal(cg.live, true);
+  assert.equal(cg.id, 'live:vacio');
+  assert.equal(cg.slug, 'vacio');
+  assert.equal(cg.month, '2026-11');
+  assert.equal(cg.pieces.length, 2);
+  const [a, b] = cg.pieces;
+  assert.equal(a.id, 'sp1');
+  assert.equal(a.live, true);
+  assert.equal(a.coverUrl, 'https://r2/v1.png');
+  assert.equal(a.publishStatus, 'published');
+  assert.equal(a.type, 'reel');
+  assert.equal(b.type, 'carousel');
+  assert.equal(b.publishStatus, 'queued');
+  // Las piezas en vivo NO inflan los counts de review.
+  assert.deepEqual(vacio.counts, { total: 0, approved: 0, changes: 0, pending: 0, drafts: 0 });
+});
+
+test('modo en vivo: cliente CON content_campaigns no recibe grupo en vivo aunque tenga scheduled_posts', () => {
+  const rows: any[] = [{ id: 'x', client_id: 'cardoso', job_id: 'z', status: 'published', error_message: null, cover_r2_url: null, scheduled_at: '2026-11-10T10:00:00Z', platform: 'instagram_reel', caption: null }];
+  const r = mapTracker(clients, campaigns, jobs, assets, approvals, profiles, rows);
+  assert.equal(r.clients[0].campaigns.length, 2); // sus 2 campañas normales
+  assert.ok(r.clients[0].campaigns.every((c) => !c.live));
+});

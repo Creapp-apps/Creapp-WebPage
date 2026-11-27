@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { TrackerCampaign } from '@/lib/contentTrackerTypes';
-import { campaignProgress, sortPieces, plural } from '@/lib/contentTrackerView';
+import { campaignProgress, sortPieces, plural, monthLabel, livePublishedCount } from '@/lib/contentTrackerView';
 import { setCampaignStatus } from '@/lib/contentTrackerService';
 import { notifyCampaignClient } from '@/lib/campaignNotifyService';
 import { PieceStatusRow } from './PieceStatusRow';
 
 export const CampaignGroup: React.FC<{ campaign: TrackerCampaign; brandName: string; onChanged: () => void }> = ({ campaign, brandName, onChanged }) => {
   const isActive = campaign.status === 'active';
+  const live = campaign.live === true; // publicó directo: grupo sintetizado desde scheduled_posts, sin review
+  const livePub = livePublishedCount(campaign);
   const [open, setOpen] = useState(false); // colapsado por default: la lista de piezas es larga
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -70,21 +72,28 @@ export const CampaignGroup: React.FC<{ campaign: TrackerCampaign; brandName: str
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0">
               {open ? <ChevronDown className="w-4 h-4 text-zinc-500 shrink-0" /> : <ChevronRight className="w-4 h-4 text-zinc-500 shrink-0" />}
-              <span className="text-sm font-semibold text-white truncate">{campaign.title || campaign.slug}</span>
-              {campaign.month && <span className="text-xs text-zinc-500 shrink-0">· {campaign.month}</span>}
+              <span className="text-sm font-semibold text-white truncate">{live ? monthLabel(campaign.month) : (campaign.title || campaign.slug)}</span>
+              {!live && campaign.month && <span className="text-xs text-zinc-500 shrink-0">· {campaign.month}</span>}
             </div>
             <span
               className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border ${
-                isActive
+                live || isActive
                   ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                   : 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20'
               }`}
             >
-              {isActive ? 'Vigente' : 'Cerrada'}
+              {live ? 'En vivo' : isActive ? 'Vigente' : 'Cerrada'}
             </span>
           </div>
 
-          {total > 0 ? (
+          {live ? (
+            <div className="flex items-center gap-3">
+              <div className="h-1 flex-1 rounded-full bg-white/10 overflow-hidden">
+                <div className="h-full rounded-full bg-emerald-500" style={{ width: `${livePub.total ? (livePub.published / livePub.total) * 100 : 0}%` }} />
+              </div>
+              <span className="text-[11px] text-zinc-400 font-medium shrink-0">{livePub.published}/{livePub.total} publicadas</span>
+            </div>
+          ) : total > 0 ? (
             <div className="flex items-center gap-3">
               <div className="h-1 flex-1 rounded-full bg-white/10 overflow-hidden">
                 <div className="h-full rounded-full bg-emerald-500" style={{ width: `${(approved / total) * 100}%` }} />
@@ -95,29 +104,35 @@ export const CampaignGroup: React.FC<{ campaign: TrackerCampaign; brandName: str
             <p className="text-[11px] text-zinc-500">Sin piezas enviadas</p>
           )}
 
-          <div className="flex flex-wrap gap-1.5 text-[11px] font-semibold">
-            {nApproved > 0 && <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">{plural(nApproved, 'aprobada', 'aprobadas')}</span>}
-            {nChanges > 0 && <span className="px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/25">{plural(nChanges, 'pidió cambios', 'pidieron cambios')}</span>}
-            {nPending > 0 && <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/20">{nPending} sin revisar</span>}
-            {drafts > 0 && <span className="px-2 py-0.5 rounded-full bg-zinc-500/10 text-zinc-400 border border-zinc-500/20">{plural(drafts, 'en borrador', 'en borrador')}</span>}
-          </div>
+          {!live && (
+            <div className="flex flex-wrap gap-1.5 text-[11px] font-semibold">
+              {nApproved > 0 && <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">{plural(nApproved, 'aprobada', 'aprobadas')}</span>}
+              {nChanges > 0 && <span className="px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/25">{plural(nChanges, 'pidió cambios', 'pidieron cambios')}</span>}
+              {nPending > 0 && <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/20">{nPending} sin revisar</span>}
+              {drafts > 0 && <span className="px-2 py-0.5 rounded-full bg-zinc-500/10 text-zinc-400 border border-zinc-500/20">{plural(drafts, 'en borrador', 'en borrador')}</span>}
+            </div>
+          )}
         </button>
-        <button
-          type="button"
-          disabled={busy}
-          onClick={notify}
-          className="my-3.5 mr-2 shrink-0 px-2 py-0.5 rounded-lg text-[11px] font-semibold border border-emerald-500/20 text-emerald-300 hover:bg-emerald-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Enviar novedades al cliente
-        </button>
-        <button
-          type="button"
-          disabled={busy}
-          onClick={toggleStatus}
-          className="m-3.5 ml-0 shrink-0 px-2 py-0.5 rounded-lg text-[11px] font-semibold border border-white/10 text-zinc-300 hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isActive ? 'Cerrar' : 'Reabrir'}
-        </button>
+        {!live && (
+          <>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={notify}
+              className="my-3.5 mr-2 shrink-0 px-2 py-0.5 rounded-lg text-[11px] font-semibold border border-emerald-500/20 text-emerald-300 hover:bg-emerald-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Enviar novedades al cliente
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={toggleStatus}
+              className="m-3.5 ml-0 shrink-0 px-2 py-0.5 rounded-lg text-[11px] font-semibold border border-white/10 text-zinc-300 hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isActive ? 'Cerrar' : 'Reabrir'}
+            </button>
+          </>
+        )}
       </div>
       {notifyMsg && <p className={`px-3.5 pb-2 text-[11px] ${notifyMsg.ok ? 'text-emerald-400' : 'text-rose-400'}`}>{notifyMsg.text}</p>}
       {err && <p className="px-3.5 pb-2 text-[11px] text-rose-400">{err}</p>}

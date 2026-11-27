@@ -18,6 +18,8 @@ export interface TrackerPiece {
   jobIdMotor: string;
   publishStatus: PublishStatus | null;
   publishErrorMessage: string | null;
+  /** Pieza publicada directo (vive solo en scheduled_posts, sin content_job/review). */
+  live?: boolean;
 }
 
 export interface TrackerCampaign {
@@ -27,6 +29,8 @@ export interface TrackerCampaign {
   slug: string;
   status: 'active' | 'closed';
   pieces: TrackerPiece[];
+  /** Campaña en vivo: sintetizada desde scheduled_posts (el cliente publicó sin pasar por review). */
+  live?: boolean;
 }
 
 export interface TrackerCounts { total: number; approved: number; changes: number; pending: number; drafts: number }

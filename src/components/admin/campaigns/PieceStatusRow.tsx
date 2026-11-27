@@ -55,6 +55,34 @@ export const PieceStatusRow: React.FC<{ piece: TrackerPiece; onChanged: () => vo
   const decided = piece.status !== 'sent';
   const when = relativeTime(piece.lastDecisionAt);
   const meta = [piece.lastDecisionBy, when].filter(Boolean).join(' · ');
+
+  // Pieza en vivo (publicada directo, sin content_job/review): fila read-only,
+  // cover + título + estado de publicación. Sin chips ni acciones de revisión.
+  if (piece.live) {
+    return (
+      <div className="flex gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/5">
+        <div className="w-12 h-12 rounded-lg overflow-hidden bg-zinc-900 border border-white/5 shrink-0 flex items-center justify-center text-zinc-600">
+          {piece.coverUrl ? (
+            <img src={piece.coverUrl} alt="" className="w-full h-full object-cover" loading="lazy" />
+          ) : (
+            <ImageOff size={16} />
+          )}
+        </div>
+        <div className="min-w-0 flex-1 flex items-center justify-between gap-2">
+          <span className="text-sm text-white font-medium truncate">{pieceTitle(piece)}</span>
+          {piece.publishStatus && (
+            <span
+              className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${PUBLISH_CLS[piece.publishStatus]}`}
+              title={piece.publishStatus === 'error' ? (piece.publishErrorMessage ?? undefined) : undefined}
+            >
+              {PUBLISH_LABEL[piece.publishStatus]}
+            </span>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/5">
       <div className="w-12 h-12 rounded-lg overflow-hidden bg-zinc-900 border border-white/5 shrink-0 flex items-center justify-center text-zinc-600">

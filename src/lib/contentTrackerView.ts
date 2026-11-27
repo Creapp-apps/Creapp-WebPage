@@ -66,6 +66,20 @@ export function needsAttention(piece: TrackerPiece): boolean {
   return piece.clientVisible === true && piece.status === 'changes_requested';
 }
 
+/** 'YYYY-MM' o 'YYYY-MM-DD' => 'Noviembre 2026' (es-AR). Para el título de campañas en vivo. */
+export function monthLabel(month: string | null): string {
+  if (!month) return 'Campaña en vivo';
+  const [y, m] = month.split('-').map(Number);
+  if (!y || !m || m < 1 || m > 12) return 'Campaña en vivo';
+  const label = new Intl.DateTimeFormat('es-AR', { month: 'long', year: 'numeric' }).format(new Date(y, m - 1, 1));
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+/** Cuántas piezas en vivo ya están publicadas (para el progreso del grupo en vivo). */
+export function livePublishedCount(campaign: TrackerCampaign): { published: number; total: number } {
+  return { published: campaign.pieces.filter((p) => p.publishStatus === 'published').length, total: campaign.pieces.length };
+}
+
 /** Campañas con alguna pieza en atención primero; el resto conserva su orden. */
 export function sortCampaignsByAttention(campaigns: TrackerCampaign[]): TrackerCampaign[] {
   const key = (k: TrackerCampaign) => (k.pieces.some(needsAttention) ? 0 : 1);
