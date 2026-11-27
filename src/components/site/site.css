@@ -200,28 +200,104 @@ html[data-site] body {
 }
 
 /* ── Nav ───────────────────────────────────────────── */
-.cw-nav {
+/* ── Navbar: píldora flotante centrada que colapsa a un círculo al scrollear
+   (Framer Motion, estilo 21st.dev). overflow:hidden recorta el contenido al
+   encogerse; los dropdowns viven FUERA de la píldora (.cw-pill-menu-anchor)
+   para no quedar cortados por ese overflow. ── */
+.cw-navwrap {
     position: fixed;
-    inset: 0 0 auto 0;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
     z-index: 50;
-    height: var(--nav-h);
-    border-bottom: 1px solid transparent;
-    transition: background-color .3s var(--ease), border-color .3s var(--ease), backdrop-filter .3s var(--ease);
+    display: flex;
+    justify-content: center;
 }
 
-.cw-nav.is-scrolled,
-.cw-nav.is-open {
-    background: var(--nav-bg);
-    border-bottom-color: var(--line);
-    -webkit-backdrop-filter: blur(16px) saturate(140%);
-    backdrop-filter: blur(16px) saturate(140%);
-}
-
-.cw-nav-in {
-    height: 100%;
+.cw-pill {
+    position: relative;
     display: flex;
     align-items: center;
-    gap: 28px;
+    gap: 6px;
+    height: 48px;
+    padding: 0 8px;
+    border-radius: 999px;
+    background: var(--nav-bg);
+    border: 1px solid var(--line);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    backdrop-filter: blur(16px) saturate(140%);
+    box-shadow:
+        0 12px 40px -14px rgba(0, 0, 0, .7),
+        0 0 0 1px color-mix(in srgb, var(--accent) 14%, transparent),
+        0 0 28px -6px color-mix(in srgb, var(--accent) 24%, transparent);
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.cw-pill.is-collapsed {
+    cursor: pointer;
+    justify-content: center;
+    gap: 0;
+    padding: 0;
+}
+
+.cw-pill.is-collapsed > *:not(.cw-pill-collapsed) {
+    pointer-events: none;
+}
+
+/* Overlay del estado colapsado: el ícono Menu centrado en el círculo. */
+.cw-pill-collapsed {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: var(--ink);
+    pointer-events: none;
+}
+
+.cw-pill-brand {
+    display: flex;
+    align-items: center;
+}
+
+.cw-pill .cw-brand {
+    margin: 0;
+    padding: 0 4px 0 8px;
+}
+
+.cw-pill-links {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* Puente invisible + ancla centrada del dropdown DEBAJO de la píldora. */
+.cw-pill-menu-anchor {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding-top: 12px;
+    z-index: 60;
+}
+
+/* Anula el absolute de .cw-menu: acá lo ubica el ancla, no el grupo. */
+.cw-pill-menu {
+    position: static;
+    min-width: 280px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background: var(--nav-bg);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    backdrop-filter: blur(16px) saturate(140%);
+    box-shadow: 0 20px 50px -20px rgba(0, 0, 0, .6);
 }
 
 .cw-brand {
@@ -353,7 +429,7 @@ html[data-site] body {
     display: none;
 }
 
-.cw-menu .cw-menu-item {
+:is(.cw-menu, .cw-pill-menu) .cw-menu-item {
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -364,13 +440,13 @@ html[data-site] body {
     transition: background-color .15s var(--ease);
 }
 
-.cw-menu .cw-menu-item:hover,
-.cw-menu .cw-menu-item[aria-current="true"] {
+:is(.cw-menu, .cw-pill-menu) .cw-menu-item:hover,
+:is(.cw-menu, .cw-pill-menu) .cw-menu-item[aria-current="true"] {
     background: var(--line);
 }
 
 /* Caja del ícono lucide, tintada por frente (color inline). */
-.cw-menu .cw-menu-ico {
+:is(.cw-menu, .cw-pill-menu) .cw-menu-ico {
     flex: none;
     display: grid;
     place-items: center;
@@ -382,24 +458,24 @@ html[data-site] body {
     transition: border-color .15s var(--ease), background-color .15s var(--ease);
 }
 
-.cw-menu .cw-menu-item:hover .cw-menu-ico {
+:is(.cw-menu, .cw-pill-menu) .cw-menu-item:hover .cw-menu-ico {
     border-color: currentColor;
     background: color-mix(in srgb, currentColor 18%, transparent);
 }
 
-.cw-menu .cw-menu-txt {
+:is(.cw-menu, .cw-pill-menu) .cw-menu-txt {
     display: flex;
     flex-direction: column;
     gap: 1px;
     min-width: 0;
 }
 
-.cw-menu .cw-menu-item b {
+:is(.cw-menu, .cw-pill-menu) .cw-menu-item b {
     font-size: 14px;
     font-weight: 600;
 }
 
-.cw-menu .cw-menu-sub {
+:is(.cw-menu, .cw-pill-menu) .cw-menu-sub {
     font-size: 12px;
     color: var(--soft);
 }
@@ -435,7 +511,7 @@ html[data-site] body {
 
 @media (max-width: 920px) {
     .cw-nav-desktop,
-    .cw-nav .cw-nav-cta {
+    .cw-pill .cw-nav-cta {
         display: none;
     }
 
@@ -447,8 +523,8 @@ html[data-site] body {
         display: none;
     }
 
-    .cw-nav-in {
-        gap: 10px;
+    .cw-pill {
+        gap: 4px;
     }
 
     .cw-sheet {
