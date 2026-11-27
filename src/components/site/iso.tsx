@@ -99,22 +99,20 @@ export function useLive<T extends HTMLElement>(onLive?: (live: boolean) => void)
 }
 
 export const Gfx: React.FC<{
-    fig: string;
-    caption: string;
+    /** fig/caption/note se conservan por compatibilidad de las llamadas, pero ya
+     *  NO se renderiza barra de pie: regla global = sin márgenes/leyendas al pie
+     *  de las ilustraciones. */
+    fig?: string;
+    caption?: string;
     note?: string;
+    bare?: boolean;
     onLive?: (live: boolean) => void;
     children: React.ReactNode;
-}> = ({ fig, caption, note, onLive, children }) => {
+}> = ({ onLive, children }) => {
     const ref = useLive<HTMLElement>(onLive);
     return (
         <figure ref={ref} className="cw-gfx">
             <div className="cw-gfx-stage">{children}</div>
-            <figcaption className="cw-mono">
-                <span>
-                    <b>Fig. {fig}</b> — {caption}
-                </span>
-                {note && <span className="cw-gfx-note">{note}</span>}
-            </figcaption>
         </figure>
     );
 };

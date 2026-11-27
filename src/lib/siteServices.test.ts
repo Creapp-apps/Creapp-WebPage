@@ -2,10 +2,10 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { SERVICES, getService, servicePath, servicesByGroup, GROUP_LABELS } from '../components/site/services';
 
-test('9 servicios, slugs únicos por grupo', () => {
-  assert.equal(SERVICES.length, 9);
+test('8 servicios, slugs únicos por grupo', () => {
+  assert.equal(SERVICES.length, 8);
   const keys = SERVICES.map(s => `${s.group}/${s.slug}`);
-  assert.equal(new Set(keys).size, 9);
+  assert.equal(new Set(keys).size, 8);
 });
 
 test('grupos válidos y labels', () => {
@@ -25,9 +25,9 @@ test('seguridad marcada ilustrativa; firma interactivas', () => {
   assert.deepEqual(SERVICES.filter(s => s.interactive).map(s => s.slug).sort(), ['ia', 'pentesting']);
 });
 
-test('servicesByGroup agrupa 4/3/2', () => {
+test('servicesByGroup agrupa 3/3/2', () => {
   const g = servicesByGroup();
-  assert.equal(g.desarrollo.length, 4);
+  assert.equal(g.desarrollo.length, 3);
   assert.equal(g.seguridad.length, 3);
   assert.equal(g.marketing.length, 2);
 });

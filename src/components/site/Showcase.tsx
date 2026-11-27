@@ -2,17 +2,19 @@ import React, { useState } from 'react';
 import { CLIENTS, PRODUCTS } from './content';
 import { LiveBrowser, type LiveSite } from './LiveBrowser';
 
-// Qué se ve de cada sitio. `embed` = iframe interactivo (verificado sin X-Frame-Options el
-// 2026-11-25). `loop` = grabación: Dental-IA, Curadent y Consultorio Álvarez responden
-// X-Frame-Options: DENY. Para pasarlos a embed real hay que permitir a creapp.com.ar en su
-// frame-ancestors (los tres corren sobre Dental-IA, que es nuestro).
+// Qué se ve de cada sitio. `embed` = iframe interactivo. `loop` = grabación.
+// Curadent y Consultorio Álvarez pasaron a embed el 2026-11-27: el repo Dental-IA
+// (dentalva.ar / curadent.com.ar) ahora permite a creapp.com.ar en frame-ancestors
+// y ya no manda X-Frame-Options. Dental-IA (dentalia.com.ar) sigue en loop: es el
+// mismo repo (framable), se puede pasar a embed cuando se quiera.
 const PRODUCT_SITES: Record<string, LiveSite> = {
     Stacked: { id: 'p-stacked', name: 'Stacked', url: 'https://software.stacked.com.ar/damafa', display: 'software.stacked.com.ar/damafa', kind: 'embed' },
     Trazapp: { id: 'p-trazapp', name: 'Trazapp', url: 'https://www.trazapp.ar', display: 'trazapp.ar', kind: 'embed' },
     'Dental-IA': { id: 'p-dentalia', name: 'Dental-IA', url: 'https://www.dentalia.com.ar', display: 'dentalia.com.ar', kind: 'loop', loop: 'dentalia' },
 };
 
-const CLIENT_LOOPS: Record<string, string> = { Curadent: 'curadent', 'Consultorio Álvarez': 'dentalva' };
+// Vacío: ya no quedan clientes en grabación (todos embed interactivo).
+const CLIENT_LOOPS: Record<string, string> = {};
 
 /** S11 · Productos propios: tres pestañas, un navegador. Sin precios ni CTA de producto. */
 export const ProductShowcase: React.FC = () => {

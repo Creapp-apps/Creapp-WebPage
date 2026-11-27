@@ -1,30 +1,84 @@
-import React from 'react';
+import React, { Suspense, useState } from 'react';
 import { Reveal } from './Chapter';
 import { METHODOLOGY } from './methodology';
 
-/** Sección "Agentic Lab" de la home: cómo trabaja el lab (diferencial). */
+// La máquina 3D es pesada (three.js): se carga aparte y solo cuando esta sección
+// se monta, para no bloquear el resto de la home.
+const AgenticLab3D = React.lazy(() => import('./AgenticLab3D'));
+
+/**
+ * Acordeón sobrio: los 4 títulos siempre visibles, uno abierto a la vez.
+ * Se abre con hover (desktop) o click/tap (touch y teclado). Ahorra scroll
+ * mostrando solo una descripción por vez, con transición de altura sin saltos.
+ */
+const LabFeatures: React.FC = () => {
+    // Todos colapsados por default; el usuario abre el que quiera (y lo cierra al reclicar).
+    const [active, setActive] = useState<number | null>(null);
+    return (
+        <ol className="cw-lab-acc">
+            {METHODOLOGY.points.map((p, i) => {
+                const open = i === active;
+                return (
+                    <li key={p.t} className={open ? 'is-open' : ''}>
+                        <button
+                            type="button"
+                            className="cw-lab-acc-head"
+                            aria-expanded={open}
+                            onClick={() => setActive(open ? null : i)}
+                        >
+                            <span className="cw-lab-n">{String(i + 1).padStart(2, '0')}</span>
+                            <b>{p.t}</b>
+                            <svg
+                                className="cw-lab-acc-ico"
+                                viewBox="0 0 16 16"
+                                fill="none"
+                                aria-hidden="true"
+                            >
+                                <path
+                                    d="M6 4l4 4-4 4"
+                                    stroke="currentColor"
+                                    strokeWidth="1.6"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                />
+                            </svg>
+                        </button>
+                        <div className="cw-lab-acc-body">
+                            <div>
+                                <span className="cw-lab-d">{p.d}</span>
+                            </div>
+                        </div>
+                    </li>
+                );
+            })}
+        </ol>
+    );
+};
+
+/**
+ * Sección "Agentic Lab" unificada en dos columnas: a la izquierda el texto
+ * (eyebrow + título + lead + acordeón de las 4 características), a la derecha
+ * la ilustración 3D animada flotando sobre el lienzo.
+ */
 export const Methodology: React.FC = () => (
-    <section id="metodologia" className="cw-section" aria-labelledby="met-t">
+    <section id="metodologia" className="cw-section cw-lab" aria-labelledby="met-t">
         <div className="cw-wrap">
-            <Reveal className="cw-intro-head">
-                <div>
+            <div className="cw-lab-split">
+                <Reveal className="cw-lab-copy">
                     <span className="cw-mono">Agentic Lab</span>
                     <h2 id="met-t" className="cw-display cw-h2">
                         {METHODOLOGY.title}
                     </h2>
-                </div>
-                <p className="cw-lead">{METHODOLOGY.lead}</p>
-            </Reveal>
-            <Reveal>
-                <ul className="cw-points">
-                    {METHODOLOGY.points.map((p) => (
-                        <li key={p.t}>
-                            <b>{p.t}</b>
-                            <span>{p.d}</span>
-                        </li>
-                    ))}
-                </ul>
-            </Reveal>
+                    <p className="cw-lead">{METHODOLOGY.lead}</p>
+                    <LabFeatures />
+                </Reveal>
+
+                <Reveal className="cw-lab-stage">
+                    <Suspense fallback={<div className="cw-lab-stage-ph" />}>
+                        <AgenticLab3D embed centered height="100%" />
+                    </Suspense>
+                </Reveal>
+            </div>
         </div>
     </section>
 );

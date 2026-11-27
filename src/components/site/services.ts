@@ -55,18 +55,6 @@ export const SERVICES: Service[] = [
         ],
     },
     {
-        group: 'desarrollo', slug: 'ux-ui', title: 'UX/UI & Product Design', graphicKey: 'design', interactive: false,
-        eyebrow: 'Discovery antes del código',
-        lead: 'Discovery antes del código. Diseñamos productos que se entienden sin manual: investigamos el problema, validamos la solución y la llevamos a una interfaz premium y consistente.',
-        deliverables: ['Research & insights', 'Prototipo navegable', 'Design system', 'Handoff a desarrollo'],
-        includes: [
-            { t: 'Investigación & discovery', d: 'Entender a fondo el problema y a los usuarios antes de construir.' },
-            { t: 'Prototipos validados', d: 'Probamos la idea con un prototipo navegable antes de invertir en desarrollo.' },
-            { t: 'Diseño de interfaz', d: 'UI premium, consistente y accesible, alineada a tu marca.' },
-            { t: 'Design systems', d: 'Componentes reutilizables que escalan junto al producto.' },
-        ],
-    },
-    {
         group: 'desarrollo', slug: 'apis-escala', title: 'APIs & Escala', graphicKey: 'scale', interactive: false,
         eyebrow: 'APIs REST, integraciones y escalado',
         lead: 'Diseñamos y desarrollamos las APIs REST que hacen que tus sistemas se hablen, y la infraestructura para que crecer no te rompa. Integraciones, arquitectura escalable y despliegues automáticos para operar a escala corporativa.',

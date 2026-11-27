@@ -1,5 +1,20 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ChevronDown, Menu, Moon, Sun, X } from 'lucide-react';
+import {
+    ChevronDown,
+    ClipboardCheck,
+    Code,
+    Megaphone,
+    Menu,
+    MessageSquare,
+    Moon,
+    Radar,
+    Share2,
+    ShieldAlert,
+    Sparkles,
+    Sun,
+    X,
+    type LucideIcon,
+} from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import type { SiteTheme } from './theme';
 import { GROUP_LABELS, servicePath, servicesByGroup, type ServiceGroup } from './services';
@@ -11,6 +26,24 @@ interface SiteNavProps {
 }
 
 const GROUP_ORDER: ServiceGroup[] = ['desarrollo', 'seguridad', 'marketing'];
+
+// Ícono lucide por servicio (slug) para el dropdown, tintado por frente.
+const SERVICE_ICON: Record<string, LucideIcon> = {
+    software: Code,
+    ia: Sparkles,
+    'apis-escala': Share2,
+    pentesting: ShieldAlert,
+    soc: Radar,
+    auditorias: ClipboardCheck,
+    community: MessageSquare,
+    publicidad: Megaphone,
+};
+
+const GROUP_HEX: Record<ServiceGroup, string> = {
+    desarrollo: '#8B5CF6',
+    seguridad: '#FF2D78',
+    marketing: '#00F0FF',
+};
 
 export const SiteNav: React.FC<SiteNavProps> = ({ theme, onToggleTheme, onContact }) => {
     const location = useLocation();
@@ -88,24 +121,33 @@ export const SiteNav: React.FC<SiteNavProps> = ({ theme, onToggleTheme, onContac
                                         <ChevronDown size={14} aria-hidden="true" />
                                     </button>
                                     <div className="cw-menu" role="menu" hidden={openGroup !== g}>
-                                        {byGroup[g].map((s) => (
-                                            <Link
-                                                key={s.slug}
-                                                to={servicePath(s)}
-                                                role="menuitem"
-                                                className="cw-menu-item"
-                                                aria-current={location.pathname === servicePath(s) ? 'true' : undefined}
-                                            >
-                                                <b>{s.title}</b>
-                                                <span>{s.eyebrow}</span>
-                                            </Link>
-                                        ))}
+                                        {byGroup[g].map((s) => {
+                                            const Icon = SERVICE_ICON[s.slug] ?? Code;
+                                            return (
+                                                <Link
+                                                    key={s.slug}
+                                                    to={servicePath(s)}
+                                                    role="menuitem"
+                                                    className="cw-menu-item"
+                                                    aria-current={location.pathname === servicePath(s) ? 'true' : undefined}
+                                                >
+                                                    <span
+                                                        className="cw-menu-ico"
+                                                        aria-hidden="true"
+                                                        style={{ color: GROUP_HEX[g] }}
+                                                    >
+                                                        <Icon size={18} />
+                                                    </span>
+                                                    <span className="cw-menu-txt">
+                                                        <b>{s.title}</b>
+                                                        <span className="cw-menu-sub">{s.eyebrow}</span>
+                                                    </span>
+                                                </Link>
+                                            );
+                                        })}
                                     </div>
                                 </li>
                             ))}
-                            <li>
-                                <Link to="/#nosotros" className="cw-nav-flat">Nosotros</Link>
-                            </li>
                             <li>
                                 <Link to="/#contacto" className="cw-nav-flat">Contacto</Link>
                             </li>
@@ -166,7 +208,6 @@ export const SiteNav: React.FC<SiteNavProps> = ({ theme, onToggleTheme, onContac
                         </div>
                     </div>
                 ))}
-                <Link to="/#nosotros" className="cw-sheet-link" tabIndex={sheetOpen ? 0 : -1}>Nosotros</Link>
                 <Link to="/#contacto" className="cw-sheet-link" tabIndex={sheetOpen ? 0 : -1}>Contacto</Link>
                 <button
                     type="button"

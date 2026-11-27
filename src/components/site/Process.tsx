@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { PROCESS, PROCESS_FACTS } from './content';
+import { PROCESS } from './content';
 import { Reveal } from './Chapter';
 import { reducedMotion } from './iso';
 
@@ -69,15 +69,6 @@ export const Process: React.FC = () => {
                         </li>
                     ))}
                 </ol>
-
-                <Reveal className="cw-facts">
-                    {PROCESS_FACTS.map((f) => (
-                        <div key={f.k} className="cw-fact">
-                            <b>{f.k}</b>
-                            <span>{f.d}</span>
-                        </div>
-                    ))}
-                </Reveal>
             </div>
         </section>
     );

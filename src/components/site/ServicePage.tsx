@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowRight, Calendar } from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
-import { ContactForm } from '../ui/ContactForm';
 import { ContactModal } from '../ui/ContactModal';
 import { SiteNav } from './SiteNav';
 import { Chapter, Reveal } from './Chapter';
@@ -11,6 +10,7 @@ import { AdsGraphic, DesignGraphic, MarketingGraphic, ScaleGraphic, SoftwareGrap
 import { AgentDemo } from './AgentDemo';
 import { ScanDemo } from './ScanDemo';
 import { AuditGraphic, SocGraphic } from './SecurityGraphics';
+import { DeliverablesFor, IncludesFor } from './SectionFigures';
 import './site.css';
 
 const GRAPHICS: Record<string, React.FC> = {
@@ -49,62 +49,93 @@ const ServicePage: React.FC<ServicePageProps> = ({ group, slug }) => {
             <SiteNav theme={theme} onToggleTheme={toggle} onContact={() => setContactOpen(true)} />
 
             <main id="contenido">
-                {/* Hero del servicio + gráfico + entregables */}
+                {/* Hero: gráfico + lead + CTA */}
                 <Chapter id="servicio" eyebrow={GROUP_LABELS[service.group]} title={service.title} lead={service.lead}>
                     {Graphic && <Reveal><Graphic /></Reveal>}
-                    <Reveal delay={80}>
-                        <div className="cw-deliver">
-                            <span className="cw-mono">Entregables</span>
-                            <ul>
-                                {service.deliverables.map((d) => (
-                                    <li key={d}>{d}</li>
-                                ))}
-                            </ul>
-                        </div>
-                    </Reveal>
+                    {/* Pentesting: el hero ya cierra con su demo interactiva (Escanear); los CTAs
+                        del hero duplicaban la banda de cierre, así que se ocultan en esa página. */}
+                    {service.slug !== 'pentesting' && (
+                        <Reveal delay={80}>
+                            <div className="cw-hero-ctas" style={{ marginTop: 28 }}>
+                                <button type="button" className="cw-btn cw-btn-primary" onClick={() => setContactOpen(true)}>
+                                    Hablemos <ArrowRight size={17} />
+                                </button>
+                                <Link to="/#clientes" className="cw-btn cw-btn-ghost">
+                                    Ver casos reales <ArrowRight size={17} />
+                                </Link>
+                            </div>
+                        </Reveal>
+                    )}
                 </Chapter>
 
                 <hr className="cw-rule" />
 
-                {/* Qué incluye */}
-                <section className="cw-section" aria-labelledby="incluye-t">
-                    <div className="cw-wrap">
-                        <Reveal className="cw-intro-head">
-                            <div>
-                                <span className="cw-mono">Qué incluye</span>
-                                <h2 id="incluye-t" className="cw-display cw-h2">
-                                    Todo lo que entra en {service.title}.
-                                </h2>
-                            </div>
-                        </Reveal>
-                        <Reveal>
-                            <ul className="cw-points">
-                                {service.includes.map((i) => (
-                                    <li key={i.t}>
-                                        <b>{i.t}</b>
-                                        <span>{i.d}</span>
+                {/* Qué incluye — texto derecha / figura izquierda (alterna con el hero) */}
+                <section className="cw-section cw-svcsec" aria-labelledby="incluye-t">
+                    <div className="cw-wrap cw-svcsec-grid is-flip">
+                        <Reveal className="cw-svcsec-copy">
+                            <span className="cw-mono">Qué incluye</span>
+                            <h2 id="incluye-t" className="cw-display cw-h2">
+                                Todo lo que entra en {service.title}.
+                            </h2>
+                            <ul className="cw-fig-legend cw-fig-legend-rich">
+                                {service.includes.map((it, idx) => (
+                                    <li key={it.t}>
+                                        <b className="cw-fig-ix" aria-hidden="true">{String(idx + 1).padStart(2, '0')}</b>
+                                        <div>
+                                            <b>{it.t}</b>
+                                            <span>{it.d}</span>
+                                        </div>
                                     </li>
                                 ))}
                             </ul>
+                        </Reveal>
+                        <Reveal className="cw-svcsec-fig" delay={80}>
+                            <IncludesFor slug={service.slug} items={service.includes} />
                         </Reveal>
                     </div>
                 </section>
 
                 <hr className="cw-rule" />
 
-                {/* CTA */}
-                <section className="cw-section cw-contact" aria-labelledby="cta-t">
-                    <div className="cw-wrap cw-contact-grid">
+                {/* Qué te llevás — texto izquierda / figura derecha */}
+                <section className="cw-section cw-svcsec" aria-labelledby="llevas-t">
+                    <div className="cw-wrap cw-svcsec-grid">
+                        <Reveal className="cw-svcsec-copy">
+                            <span className="cw-mono">Qué te llevás</span>
+                            <h2 id="llevas-t" className="cw-display cw-h2">
+                                Resultados concretos, no promesas.
+                            </h2>
+                            <ul className="cw-fig-legend">
+                                {service.deliverables.map((d, idx) => (
+                                    <li key={d}>
+                                        <b className="cw-fig-ix" aria-hidden="true">{String(idx + 1).padStart(2, '0')}</b>
+                                        <span>{d}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </Reveal>
+                        <Reveal className="cw-svcsec-fig" delay={80}>
+                            <DeliverablesFor slug={service.slug} items={service.deliverables} />
+                        </Reveal>
+                    </div>
+                </section>
+
+                <hr className="cw-rule" />
+
+                {/* Franja CTA liviana (el formulario vive en el modal) */}
+                <section className="cw-section cw-cta-band" aria-labelledby="cta-t">
+                    <div className="cw-wrap cw-cta-inner">
                         <Reveal>
                             <span className="cw-mono">Hablemos</span>
                             <h2 id="cta-t" className="cw-display cw-h2">
                                 ¿Arrancamos con <span className="cw-accent">{service.title}</span>?
                             </h2>
-                            <p className="cw-lead" style={{ marginTop: 20 }}>
-                                Contanos qué necesitás resolver. Te respondemos rápido, con una propuesta clara y un plan
-                                de trabajo — sin vueltas.
+                            <p className="cw-lead">
+                                Contanos qué necesitás resolver. Te respondemos rápido, con una propuesta
+                                clara y un plan de trabajo — sin vueltas.
                             </p>
-                            <div className="cw-hero-ctas" style={{ marginTop: 24 }}>
+                            <div className="cw-hero-ctas cw-cta-actions">
                                 <button type="button" className="cw-btn cw-btn-primary" onClick={() => setContactOpen(true)}>
                                     Agendá una llamada <Calendar size={17} />
                                 </button>
@@ -112,9 +143,6 @@ const ServicePage: React.FC<ServicePageProps> = ({ group, slug }) => {
                                     Ver todos los servicios <ArrowRight size={17} />
                                 </Link>
                             </div>
-                        </Reveal>
-                        <Reveal delay={100} className="cw-form-panel">
-                            <ContactForm />
                         </Reveal>
                     </div>
                 </section>

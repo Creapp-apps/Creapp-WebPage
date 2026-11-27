@@ -99,16 +99,15 @@ export const ScanDemo: React.FC = () => {
                     <span className="cw-mono cw-gfx-note">Datos de ejemplo</span>
                 </div>
                 <ol className="cw-findings" aria-live="polite">
-                    {rows.map((a, i) => {
+                    {rows.map((a) => {
                         const hit = found.includes(a.id);
                         return (
                             <li key={a.id} className={hit ? 'is-hit' : ''}>
-                                <span className="cw-mono cw-find-n">{phase === 'done' ? `0${i + 1}` : '··'}</span>
-                                <span className="cw-find-t">
-                                    {hit ? a.finding : 'Sin evaluar'}
-                                    <small className="cw-mono">{a.label}</small>
-                                </span>
-                                {hit ? <span className={`cw-sev sev-${a.sev}`}>{SEV_LABEL[a.sev]}</span> : <span className="cw-sev sev-none">—</span>}
+                                <div className="cw-find-top">
+                                    <span className="cw-mono cw-find-asset">{a.label}</span>
+                                    {hit ? <span className={`cw-sev sev-${a.sev}`}>{SEV_LABEL[a.sev]}</span> : <span className="cw-sev sev-none">—</span>}
+                                </div>
+                                <span className="cw-find-t">{hit ? a.finding : 'Sin evaluar'}</span>
                             </li>
                         );
                     })}
