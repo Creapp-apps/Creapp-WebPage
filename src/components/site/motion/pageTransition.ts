@@ -16,14 +16,19 @@ export function bezier(css: string): [number, number, number, number] {
 export const PAGE_ENTER_X = 40;
 export const PAGE_EXIT_X = -24;
 
-type Variant = Record<string, unknown>;
+type Transition = { duration: number; ease: [number, number, number, number] };
+export interface PageVariants {
+    initial: { opacity: number; x?: number };
+    animate: { opacity: number; x?: number; transition: Transition };
+    exit: { opacity: number; x?: number; transition: Transition };
+}
 
 /**
  * Variantes initial/animate/exit para el contenido de ruta. El desliz es en X
  * (nunca Y) para no alterar el cálculo vertical de GSAP ScrollTrigger.
  * reduced-motion → sin desliz, sólo fade rápido.
  */
-export function pageTransitionVariants(reduced: boolean): { initial: Variant; animate: Variant; exit: Variant } {
+export function pageTransitionVariants(reduced: boolean): PageVariants {
     const ease = bezier(EASE.cout);
     if (reduced) {
         const transition = { duration: DUR.fast, ease };
