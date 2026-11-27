@@ -59,7 +59,6 @@ const SiteShell: React.FC = () => {
                             animate={variants.animate as TargetAndTransition}
                             exit={variants.exit as TargetAndTransition}
                             onAnimationComplete={() => refreshScrollTriggers()}
-                            style={{ willChange: 'transform' }}
                         >
                             {outlet}
                         </motion.div>
