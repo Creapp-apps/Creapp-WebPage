@@ -1,0 +1,3 @@
+/* Primitivas de motion: clases mínimas (el transform lo maneja gsap). */
+.cw-mask { display: block; overflow: hidden; }
+.cw-mask-in { display: block; will-change: transform; }

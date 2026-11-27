@@ -9,6 +9,17 @@ export const EASE = {
     expo: 'cubic-bezier(.16,1,.3,1)', // expo out (hover/zoom)
 } as const;
 
+/**
+ * Easings equivalentes para gsap (gsap no consume strings `cubic-bezier(...)` de CSS).
+ * Se mapean a los power/expo built-in más cercanos a cada curva de `EASE`.
+ */
+export const GSAP_EASE = {
+    qout: 'power3.out',
+    cout: 'power2.out',
+    cin: 'power2.in',
+    expo: 'expo.out',
+} as const;
+
 /** Duraciones base (segundos). */
 export const DUR = {
     fast: 0.35,
