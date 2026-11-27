@@ -169,7 +169,7 @@ export const CLIENTS: Client[] = [
         quote: 'Pasamos de las fichas de papel a tener todo el historial clínico en un solo lugar. El equipo lo adoptó enseguida.', quoteConfirmed: false },
     { name: 'AlPaso', sector: 'Gastronomía', built: 'Stacked', url: 'https://software.stacked.com.ar/alpaso', display: 'software.stacked.com.ar/alpaso',
         quote: 'La cocina y los pedidos por fin hablan el mismo idioma. Menos errores, menos gritos, más foco en cocinar.', quoteConfirmed: false },
-    { name: 'Damafa', sector: 'Gastronomía', built: 'Stacked', url: 'https://software.stacked.com.ar/damafa', display: 'software.stacked.com.ar/damafa',
+    { name: 'Damafa', sector: 'Gastronomía', built: 'Stacked', url: 'https://www.damafa.ar', display: 'www.damafa.ar',
         quote: 'Tener nuestra propia tienda, sin comisiones de terceros, nos cambió la ecuación. Y el soporte siempre está.', quoteConfirmed: false },
     { name: 'Zolsea', sector: 'Sitio institucional', built: 'Web a medida', url: 'https://www.zolsea.com.ar', display: 'zolsea.com.ar',
         quote: 'Nos entregaron una web que de verdad nos representa, y cuando necesitamos algo, responden.', quoteConfirmed: false },

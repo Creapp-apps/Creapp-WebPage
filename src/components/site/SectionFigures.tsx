@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowUp, BrainCircuit, Bug, Check, DoorOpen, FileSearch, Fish, Radar as RadarIcon, Search, Server, ShieldAlert, ShieldOff, Waypoints } from 'lucide-react';
+import { ArrowUp, BrainCircuit, Bug, CalendarDays, Check, CircleDot, DoorOpen, FileSearch, Film, Fish, Images, MessageCircle, Radar as RadarIcon, Search, Server, ShieldAlert, ShieldOff, TrendingUp, Waypoints, type LucideIcon } from 'lucide-react';
 import { Gfx, reducedMotion, useLive } from './iso';
 
 // Ilustraciones conceptuales animadas, UNA METÁFORA DISTINTA POR SECCIÓN.
@@ -557,6 +557,74 @@ export const ControlsAudit: React.FC = () => {
     );
 };
 
+/* ══ COMMUNITY · "Qué incluye" — El calendario de contenido que se arma ══
+   Un plan semanal donde las piezas (reel, carrusel, historia, respuesta) caen en
+   sus días de forma escalonada; el día que publica late en vivo. Congruente con
+   community management y distinto de la "arquitectura de código" del software. */
+const CAL_DOW = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE'];
+const CAL_PIECES: { day: number; label: string; Icon: LucideIcon; live?: boolean }[] = [
+    { day: 0, label: 'Reel', Icon: Film },
+    { day: 1, label: 'Carrusel', Icon: Images },
+    { day: 2, label: 'Historia', Icon: CircleDot, live: true },
+    { day: 4, label: 'Comunidad', Icon: MessageCircle },
+];
+export const ContentCalendar: React.FC = () => (
+    <Gfx>
+        <div className="cw-cal">
+            <div className="cw-cal-head"><CalendarDays size={14} aria-hidden="true" /> Plan de contenido · esta semana</div>
+            <div className="cw-cal-grid" role="img" aria-label="Calendario semanal de contenido: reel, carrusel, historia y comunidad en sus días.">
+                {CAL_DOW.map((d, col) => {
+                    const piece = CAL_PIECES.find((p) => p.day === col);
+                    const idx = CAL_PIECES.findIndex((p) => p.day === col);
+                    return (
+                        <div key={d} className="cw-cal-col">
+                            <span className="cw-cal-dow">{d}</span>
+                            {piece ? (
+                                <div className={`cw-cal-chip${piece.live ? ' is-pub' : ''}`} style={{ ['--i' as string]: idx }}>
+                                    <piece.Icon size={17} aria-hidden="true" />
+                                    <span>{piece.label}</span>
+                                    {piece.live && <i className="cw-cal-pub-dot" aria-hidden="true" />}
+                                </div>
+                            ) : (
+                                <div className="cw-cal-slot" aria-hidden="true" />
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+            <p className="cw-cal-seal"><Check size={15} strokeWidth={3} aria-hidden="true" /> <span>Un plan detrás, no publicaciones sueltas</span></p>
+        </div>
+    </Gfx>
+);
+
+/* ══ COMMUNITY · "Qué te llevás" — El reporte que crece ══
+   La cuenta crece mes a mes: barras que suben escalonadas con una línea de
+   tendencia que se dibuja, y cierra con el reporte mensual firmado por CreApp. */
+const REP_BARS = [34, 46, 42, 58, 70, 88]; // alturas % (tendencia de crecimiento)
+export const GrowthReport: React.FC = () => (
+    <Gfx>
+        <div className="cw-rep">
+            <div className="cw-rep-head"><TrendingUp size={14} aria-hidden="true" /> Reporte mensual · crecimiento</div>
+            <div className="cw-rep-chart" role="img" aria-label="Gráfico de crecimiento mensual con línea de tendencia ascendente.">
+                {REP_BARS.map((h, i) => (
+                    <span key={i} className={`cw-rep-bar${i === REP_BARS.length - 1 ? ' is-peak' : ''}`} style={{ height: `${h}%`, ['--i' as string]: i }} />
+                ))}
+                <svg className="cw-rep-trend" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                    <path className="cw-rep-trend-line" pathLength={1} fill="none" d="M4 70 L24 56 L42 60 L60 44 L78 30 L96 12" />
+                </svg>
+            </div>
+            <div className="cw-rep-metrics">
+                {['Alcance', 'Interacción', 'Comunidad'].map((m, i) => (
+                    <span key={m} className="cw-rep-metric" style={{ ['--i' as string]: i }}>
+                        <ArrowUp size={13} strokeWidth={3} aria-hidden="true" /> {m}
+                    </span>
+                ))}
+            </div>
+            <p className="cw-rep-seal">Reporte mensual por <b>CreApp</b></p>
+        </div>
+    </Gfx>
+);
+
 /* ── Resolver por servicio: cada uno tiene su propia figura. ── */
 export const IncludesFor: React.FC<{ slug: string; items: { t: string }[] }> = ({ slug, items }) => {
     if (slug === 'pentesting') return <PentestRadar />;
@@ -564,6 +632,7 @@ export const IncludesFor: React.FC<{ slug: string; items: { t: string }[] }> = (
     if (slug === 'ia') return <BrainTraining />;
     if (slug === 'apis-escala') return <ApiGateway />;
     if (slug === 'auditorias') return <ControlsAudit />;
+    if (slug === 'community') return <ContentCalendar />;
     return <IncludesFigure slug={slug} items={items} />;
 };
 
@@ -572,5 +641,6 @@ export const DeliverablesFor: React.FC<{ slug: string; items: string[] }> = ({ s
     if (slug === 'soc') return <SocRack mode="protected" />;
     if (slug === 'ia') return <ChatbotProof />;
     if (slug === 'apis-escala') return <ApiHandshake />;
+    if (slug === 'community') return <GrowthReport />;
     return <DeliverablesFigure items={items} />;
 };

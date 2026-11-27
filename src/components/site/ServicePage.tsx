@@ -41,6 +41,12 @@ const ServicePage: React.FC<ServicePageProps> = ({ group, slug }) => {
 
     const Graphic = GRAPHICS[service.graphicKey];
 
+    // Titular del CTA, único por servicio, con una palabra en acento (substring de ctaTitle).
+    const ctaIdx = service.ctaTitle.indexOf(service.ctaAccent);
+    const ctaParts = ctaIdx >= 0
+        ? [service.ctaTitle.slice(0, ctaIdx), service.ctaAccent, service.ctaTitle.slice(ctaIdx + service.ctaAccent.length)]
+        : [service.ctaTitle, '', ''];
+
     return (
             <main id="contenido">
                 {/* Hero: gráfico + lead + CTA */}
@@ -58,7 +64,7 @@ const ServicePage: React.FC<ServicePageProps> = ({ group, slug }) => {
                         <div className="cw-svcsec-copy">
                             <span className="cw-mono">Qué incluye</span>
                             <SplitReveal as="h2" id="incluye-t" className="cw-display cw-h2">
-                                Todo lo que entra en {service.title}.
+                                {service.includesTitle}
                             </SplitReveal>
                             <StaggerGroup as="ul" x={-30} className="cw-fig-legend cw-fig-legend-rich">
                                 {service.includes.map((it, idx) => (
@@ -88,7 +94,7 @@ const ServicePage: React.FC<ServicePageProps> = ({ group, slug }) => {
                         <div className="cw-svcsec-copy">
                             <span className="cw-mono">Qué te llevás</span>
                             <SplitReveal as="h2" id="llevas-t" className="cw-display cw-h2">
-                                Resultados concretos, no promesas.
+                                {service.deliverablesTitle}
                             </SplitReveal>
                             <StaggerGroup as="ul" x={-30} className="cw-fig-legend">
                                 {service.deliverables.map((d, idx) => (
@@ -115,7 +121,7 @@ const ServicePage: React.FC<ServicePageProps> = ({ group, slug }) => {
                         <div>
                             <span className="cw-mono">Hablemos</span>
                             <SplitReveal as="h2" id="cta-t" className="cw-display cw-h2">
-                                ¿Arrancamos con <span className="cw-accent">{service.title}</span>?
+                                {ctaParts[0]}<span className="cw-accent">{ctaParts[1]}</span>{ctaParts[2]}
                             </SplitReveal>
                             <TextReveal as="p" className="cw-lead" preset="fade">
                                 Contanos qué necesitás resolver. Te respondemos rápido, con una propuesta clara y un plan de trabajo — sin vueltas.

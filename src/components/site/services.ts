@@ -13,6 +13,14 @@ export interface Service {
     title: string;
     eyebrow: string;
     lead: string;
+    /** Titular de la sección "Qué incluye" — único por servicio, no plantillado. */
+    includesTitle: string;
+    /** Titular de la sección "Qué te llevás" — único por servicio. */
+    deliverablesTitle: string;
+    /** Titular de la franja de cierre (CTA) — único por servicio. */
+    ctaTitle: string;
+    /** Palabra/frase de `ctaTitle` resaltada en acento (substring exacto de ctaTitle). */
+    ctaAccent: string;
     deliverables: string[];
     includes: { t: string; d: string }[];
     graphicKey: string;
@@ -34,6 +42,9 @@ export const SERVICES: Service[] = [
         group: 'desarrollo', slug: 'software', title: 'Software', graphicKey: 'software', interactive: false,
         eyebrow: 'Apps, plataformas y sistemas a medida',
         lead: 'Convertimos un proceso manual en un producto propio. Apps, plataformas y sistemas a medida, construidos para escalar y pensados para tus usuarios — no un Excel estirado hasta que se rompe.',
+        includesTitle: 'Software hecho para durar, no para la demo.',
+        deliverablesTitle: 'Te queda un producto propio, no una dependencia.',
+        ctaTitle: 'Convirtamos tu proceso en producto.', ctaAccent: 'producto',
         deliverables: ['Código propio y documentado', 'Deploy & CI/CD', 'Documentación técnica', 'Soporte post-lanzamiento'],
         includes: [
             { t: 'Apps nativas iOS / Android', d: 'Producto móvil de calidad, con la experiencia que tus usuarios esperan en cada plataforma.' },
@@ -46,6 +57,9 @@ export const SERVICES: Service[] = [
         group: 'desarrollo', slug: 'ia', title: 'IA & Machine Learning', graphicKey: 'ia', interactive: true,
         eyebrow: 'IA donde suma, no humo',
         lead: 'Inteligencia artificial donde suma de verdad, no humo. Agentes, automatización y modelos integrados a tu operación desde el día uno, con una postura honesta sobre qué hace y qué no.',
+        includesTitle: 'IA que trabaja, no que impresiona.',
+        deliverablesTitle: 'Resuelve tu trabajo — y lo podés medir.',
+        ctaTitle: 'Metamos IA en tu operación.', ctaAccent: 'IA',
         deliverables: ['IA integrada a tu producto', 'Flujos versionados', 'Evaluación honesta de alcance', 'Monitoreo de resultados'],
         includes: [
             { t: 'Agentes IA & chatbots', d: 'Atención y tareas automatizadas que responden en tu tono.' },
@@ -58,6 +72,9 @@ export const SERVICES: Service[] = [
         group: 'desarrollo', slug: 'apis-escala', title: 'APIs & Escala', graphicKey: 'scale', interactive: false,
         eyebrow: 'APIs REST, integraciones y escalado',
         lead: 'Diseñamos y desarrollamos las APIs REST que hacen que tus sistemas se hablen, y la infraestructura para que crecer no te rompa. Integraciones, arquitectura escalable y despliegues automáticos para operar a escala corporativa.',
+        includesTitle: 'Que tus sistemas por fin se hablen.',
+        deliverablesTitle: 'Crecé sin que el próximo pico te rompa.',
+        ctaTitle: 'Preparemos tu sistema para escalar.', ctaAccent: 'escalar',
         deliverables: ['API REST documentada (OpenAPI)', 'Integraciones entre sistemas', 'Pipeline CI/CD', 'Monitoreo & SLA de soporte'],
         includes: [
             { t: 'Diseño & desarrollo de APIs REST', d: 'Endpoints versionados y documentados, pensados para que otros equipos integren sin fricción.' },
@@ -70,6 +87,9 @@ export const SERVICES: Service[] = [
         group: 'seguridad', slug: 'pentesting', title: 'Pentesting', graphicKey: 'scan', interactive: true, illustrative: true,
         eyebrow: 'Encontrar las puertas abiertas antes que otro',
         lead: 'Evaluamos tus sistemas, aplicaciones e infraestructura para encontrar y priorizar los puntos débiles antes de que los encuentre un atacante. Un informe claro, ordenado por severidad, con un plan concreto de qué resolver primero.',
+        includesTitle: 'Te atacamos nosotros, antes que ellos.',
+        deliverablesTitle: 'Salís sabiendo qué cerrar primero.',
+        ctaTitle: 'Probemos tus defensas.', ctaAccent: 'defensas',
         deliverables: ['Informe priorizado por severidad', 'Prueba de concepto de cada hallazgo', 'Plan de remediación', 'Re-test de verificación'],
         includes: [
             { t: 'Análisis de vulnerabilidades', d: 'Identificamos y priorizamos los puntos débiles de tus sistemas, apps e infraestructura.' },
@@ -82,6 +102,9 @@ export const SERVICES: Service[] = [
         group: 'seguridad', slug: 'soc', title: 'Análisis SOC', graphicKey: 'soc', interactive: false, illustrative: true,
         eyebrow: 'Visibilidad continua de lo que pasa',
         lead: 'Reportes de seguridad para tener visibilidad continua de lo que ocurre en tu entorno: qué eventos importan, qué tendencias aparecen y qué conviene atender. Para que la seguridad deje de ser una foto y pase a ser una película.',
+        includesTitle: 'Lo que pasa en tu entorno, en vivo.',
+        deliverablesTitle: 'Decidís con datos, no a ciegas.',
+        ctaTitle: 'Pongamos todo bajo radar.', ctaAccent: 'bajo radar',
         deliverables: ['Reporte de eventos priorizado', 'Tablero de indicadores', 'Recomendaciones accionables', 'Revisión periódica'],
         includes: [
             { t: 'Monitoreo de eventos', d: 'Seguimiento de la actividad relevante de tu entorno, resumida en lo que importa.' },
@@ -94,6 +117,9 @@ export const SERVICES: Service[] = [
         group: 'seguridad', slug: 'auditorias', title: 'Auditorías', graphicKey: 'audit', interactive: false, illustrative: true,
         eyebrow: 'La foto honesta de tu postura',
         lead: 'Evaluamos la postura de seguridad de tus aplicaciones, tu infraestructura y tus procesos contra buenas prácticas, y te damos un diagnóstico claro con prioridades. Primero entender el riesgo; después, un plan para bajarlo.',
+        includesTitle: 'Dónde estás parado, sin maquillaje.',
+        deliverablesTitle: 'Salís con un plan, no con un susto.',
+        ctaTitle: 'Midamos tu exposición.', ctaAccent: 'exposición',
         deliverables: ['Diagnóstico de postura', 'Hallazgos priorizados por severidad', 'Plan de remediación', 'Re-test de verificación'],
         includes: [
             { t: 'Auditoría de aplicaciones', d: 'Revisión de la seguridad de tu software y sus integraciones.' },
@@ -106,6 +132,9 @@ export const SERVICES: Service[] = [
         group: 'marketing', slug: 'community', title: 'Community Management', graphicKey: 'marketing', interactive: false,
         eyebrow: 'Tu producto, presente y constante',
         lead: 'La ingeniería también se comunica. Estrategia, producción y gestión de redes para que tu producto se vea tanto como funciona: contenido de calidad de agencia, calendario y publicación, con un plan detrás y no publicaciones sueltas.',
+        includesTitle: 'Tu feed, pensado como un producto.',
+        deliverablesTitle: 'La cuenta que crece mes a mes.',
+        ctaTitle: 'Pongamos tu marca a publicar.', ctaAccent: 'publicar',
         deliverables: ['Plan de contenido', 'Piezas listas para publicar', 'Calendario & publicación', 'Reporte mensual'],
         includes: [
             { t: 'Estrategia de contenido', d: 'Qué decir, a quién y cada cuánto. Un plan, no publicaciones sueltas.' },
@@ -118,6 +147,9 @@ export const SERVICES: Service[] = [
         group: 'marketing', slug: 'publicidad', title: 'Publicidad & Campañas', graphicKey: 'ads', interactive: false,
         eyebrow: 'Pauta que trae clientes, no likes',
         lead: 'Paid media para que el producto llegue a quien lo necesita: armado, segmentación y optimización de campañas en buscadores y redes, medidas por resultados y no por vanidad.',
+        includesTitle: 'La pauta puesta donde convierte.',
+        deliverablesTitle: 'Reportes de plata, no de aplausos.',
+        ctaTitle: 'Llevemos tu producto a quien compra.', ctaAccent: 'compra',
         deliverables: ['Plan de campaña', 'Segmentación de audiencias', 'Optimización continua', 'Reporte de resultados'],
         includes: [
             { t: 'Campañas de búsqueda', d: 'Aparecer justo cuando alguien busca lo que ofrecés.' },

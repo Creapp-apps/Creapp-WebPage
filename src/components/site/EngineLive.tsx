@@ -132,7 +132,7 @@ export const EngineLive: React.FC = () => {
 
     return (
         <section ref={sectionRef} id="motor" className="cw-engine" aria-labelledby="motor-t">
-            <div className="cw-wrap cw-engine-grid">
+            <div className="cw-wrap cw-engine-grid cw-split-rev">
                 <div className="cw-engine-copy">
                     <RevealIn y={14}>
                         <span className="cw-mono cw-engine-eyebrow"><i />Nuestra agencia 24/7</span>
@@ -141,7 +141,7 @@ export const EngineLive: React.FC = () => {
                         Mientras dormís, nuestro sistema produce, revisa y publica.
                     </SplitReveal>
                     <TextReveal as="p" className="cw-lead" preset="type-word">Esto no es una promesa: es nuestro propio motor.</TextReveal>
-                    <StaggerGroup as="ol" x={-30} className="cw-stages">
+                    <StaggerGroup as="ol" x={30} className="cw-stages">
                         {STAGES.map((s, i) => (
                             <li key={s} className={i <= stage ? 'is-on' : ''}>
                                 <span className="cw-mono">0{i + 1}</span>
@@ -150,7 +150,7 @@ export const EngineLive: React.FC = () => {
                         ))}
                     </StaggerGroup>
                 </div>
-                <RevealIn className="cw-term" x={40} y={0}>
+                <RevealIn className="cw-term" x={-40} y={0}>
                     <div className="cw-term-bar cw-mono">
                         <span>motor · pieza {String(piece).padStart(2, '0')}</span>
                         <span>Simulación del flujo</span>

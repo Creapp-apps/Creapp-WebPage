@@ -1,7 +1,7 @@
-import React, { useRef, useState } from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 import { CLIENTS, PRODUCTS } from './content';
 import { LiveBrowser, type LiveSite } from './LiveBrowser';
-import { prefersReducedMotion } from './motion';
+import { prefersReducedMotion, gsap, DUR, GSAP_EASE } from './motion';
 
 // Qué se ve de cada sitio. `embed` = iframe interactivo. `loop` = grabación.
 // Curadent y Consultorio Álvarez pasaron a embed el 2026-11-27: el repo Dental-IA
@@ -46,6 +46,28 @@ export const ClientShowcase: React.FC = () => {
     const [i, setI] = useState(0);
     const [fading, setFading] = useState(false);
     const timers = useRef<number[]>([]);
+    const listRef = useRef<HTMLDivElement>(null);
+
+    // Las filas de clientes entran como bullets individuales, deslizándose desde la
+    // izquierda una tras otra (stagger) al llegar la sección al viewport. Corre una
+    // sola vez; las filas no se recrean al cambiar de cliente. reduced-motion → visibles.
+    useLayoutEffect(() => {
+        const list = listRef.current;
+        if (!list || prefersReducedMotion()) return;
+        const rows = Array.from(list.children) as HTMLElement[];
+        const ctx = gsap.context(() => {
+            gsap.set(rows, { autoAlpha: 0, x: -34 });
+            gsap.to(rows, {
+                autoAlpha: 1,
+                x: 0,
+                duration: DUR.base,
+                ease: GSAP_EASE.cout,
+                stagger: 0.09,
+                scrollTrigger: { trigger: list, start: 'top 82%', once: true },
+            });
+        }, list);
+        return () => ctx.revert();
+    }, []);
     const select = (k: number) => {
         if (k === i) return;
         timers.current.forEach((t) => window.clearTimeout(t));
@@ -62,7 +84,7 @@ export const ClientShowcase: React.FC = () => {
     const site: LiveSite = { id: `c-${i}`, name: c.name, url: c.url, display: c.display, kind: loop ? 'loop' : 'embed', loop };
     return (
         <div className="cw-clientbox">
-            <div className="cw-clientlist" role="tablist" aria-label="Clientes en producción" aria-orientation="vertical">
+            <div ref={listRef} className="cw-clientlist" role="tablist" aria-label="Clientes en producción" aria-orientation="vertical">
                 {CLIENTS.map((x, k) => (
                     <button key={x.name} type="button" role="tab" aria-selected={k === i} onClick={() => select(k)}>
                         <span className="cw-mono">0{k + 1}</span>

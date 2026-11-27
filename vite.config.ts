@@ -9,7 +9,13 @@ export default defineConfig(({ mode }) => {
   return {
     base: '/',
     server: {
-      port: 3000,
+      // 5199 es el puerto que los sitios cliente tienen whitelisteado en su
+      // `frame-ancestors` (junto con creapp.com.ar). El dev DEBE correr acá para que
+      // los previews embebidos (iframe) carguen en local; en otro puerto el navegador
+      // los bloquea por CSP y se ven grises/rotos. strictPort falla fuerte si está
+      // ocupado en vez de derivar en silencio a otro puerto y romper los previews.
+      port: 5199,
+      strictPort: true,
       host: '0.0.0.0',
       watch: {
         ignored: ['**/public/temp/**', '**/temp/**'],

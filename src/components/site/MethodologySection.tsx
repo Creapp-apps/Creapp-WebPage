@@ -23,7 +23,8 @@ const LabFeatures: React.FC = () => {
         if (!ol || prefersReducedMotion()) return;
         const items = Array.from(ol.children) as HTMLElement[];
         const ctx = gsap.context(() => {
-            gsap.set(items, { autoAlpha: 0, x: -34 });
+            // Copy a la derecha (sección invertida): el acordeón entra desde la derecha.
+            gsap.set(items, { autoAlpha: 0, x: 34 });
             gsap.to(items, {
                 autoAlpha: 1,
                 x: 0,
@@ -85,7 +86,7 @@ const LabFeatures: React.FC = () => {
 export const Methodology: React.FC = () => (
     <section id="metodologia" className="cw-section cw-lab" aria-labelledby="met-t">
         <div className="cw-wrap">
-            <div className="cw-lab-split">
+            <div className="cw-lab-split cw-split-rev">
                 <div className="cw-lab-copy">
                     <SplitReveal as="h2" id="met-t" className="cw-display cw-h2">
                         {METHODOLOGY.title}
@@ -94,7 +95,7 @@ export const Methodology: React.FC = () => (
                     <LabFeatures />
                 </div>
 
-                <RevealIn className="cw-lab-stage" x={48} y={0}>
+                <RevealIn className="cw-lab-stage" x={-48} y={0}>
                     <Suspense fallback={<div className="cw-lab-stage-ph" />}>
                         <AgenticLab3D embed centered height="100%" />
                     </Suspense>
