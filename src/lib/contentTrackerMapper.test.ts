@@ -163,6 +163,23 @@ test('modo en vivo: cliente sin content_campaigns + con scheduled_posts => 1 cam
   assert.deepEqual(vacio.counts, { total: 0, approved: 0, changes: 0, pending: 0, drafts: 0 });
 });
 
+test('modo en vivo: filas canceladas se excluyen del grupo en vivo', () => {
+  const rows: any[] = [
+    { id: 'sp1', client_id: 'vacio', job_id: 'mv1', status: 'published', error_message: null, cover_r2_url: null, scheduled_at: '2026-11-28T16:00:00Z', platform: 'instagram_reel', caption: null },
+    { id: 'sp2', client_id: 'vacio', job_id: 'mv2', status: 'cancelled', error_message: null, cover_r2_url: null, scheduled_at: '2026-11-29T16:00:00Z', platform: 'instagram_reel', caption: null },
+  ];
+  const r = mapTracker(clients, campaigns, jobs, assets, approvals, profiles, rows);
+  const vacio = r.clients[1];
+  assert.equal(vacio.campaigns.length, 1);
+  assert.deepEqual(vacio.campaigns[0].pieces.map(p => p.id), ['sp1']);
+});
+
+test('modo en vivo: si todas las filas están canceladas, no hay grupo en vivo', () => {
+  const rows: any[] = [{ id: 'x', client_id: 'vacio', job_id: 'y', status: 'cancelled', error_message: null, cover_r2_url: null, scheduled_at: null, platform: null, caption: null }];
+  const r = mapTracker(clients, campaigns, jobs, assets, approvals, profiles, rows);
+  assert.equal(r.clients[1].campaigns.length, 0);
+});
+
 test('modo en vivo: cliente CON content_campaigns no recibe grupo en vivo aunque tenga scheduled_posts', () => {
   const rows: any[] = [{ id: 'x', client_id: 'cardoso', job_id: 'z', status: 'published', error_message: null, cover_r2_url: null, scheduled_at: '2026-11-10T10:00:00Z', platform: 'instagram_reel', caption: null }];
   const r = mapTracker(clients, campaigns, jobs, assets, approvals, profiles, rows);

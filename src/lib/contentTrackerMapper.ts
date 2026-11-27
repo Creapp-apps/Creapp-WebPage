@@ -122,8 +122,9 @@ export function mapTracker(
     // Se sintetiza una campaña en vivo (igual que el portal). No toca los counts de review.
     let finalCamps = camps;
     if (camps.length === 0) {
-      const liveRows = scheduledBySlug.get(c.slug);
-      if (liveRows && liveRows.length > 0) finalCamps = [buildLiveCampaign(c.slug, liveRows)];
+      // Excluye canceladas: no son piezas activas del grupo en vivo (si no, se verían como "Programada").
+      const liveRows = (scheduledBySlug.get(c.slug) ?? []).filter(s => s.status !== 'cancelled');
+      if (liveRows.length > 0) finalCamps = [buildLiveCampaign(c.slug, liveRows)];
     }
     return { id: c.id, slug: c.slug, name: c.name, logoUrl: c.logo_url, campaigns: finalCamps, counts };
   });
