@@ -52,20 +52,8 @@ const ServicePage: React.FC<ServicePageProps> = ({ group, slug }) => {
                 {/* Hero: gráfico + lead + CTA */}
                 <Chapter id="servicio" eyebrow={GROUP_LABELS[service.group]} title={service.title} lead={service.lead}>
                     {Graphic && <Reveal><Graphic /></Reveal>}
-                    {/* Pentesting: el hero ya cierra con su demo interactiva (Escanear); los CTAs
-                        del hero duplicaban la banda de cierre, así que se ocultan en esa página. */}
-                    {service.slug !== 'pentesting' && (
-                        <Reveal delay={80}>
-                            <div className="cw-hero-ctas" style={{ marginTop: 28 }}>
-                                <button type="button" className="cw-btn cw-btn-primary" onClick={() => setContactOpen(true)}>
-                                    Hablemos <ArrowRight size={17} />
-                                </button>
-                                <Link to="/#clientes" className="cw-btn cw-btn-ghost">
-                                    Ver casos reales <ArrowRight size={17} />
-                                </Link>
-                            </div>
-                        </Reveal>
-                    )}
+                    {/* Sin CTAs en el hero de ninguna página de servicio: duplicaban la banda de
+                        cierre del final del scroll (decisión del usuario). */}
                 </Chapter>
 
                 <hr className="cw-rule" />

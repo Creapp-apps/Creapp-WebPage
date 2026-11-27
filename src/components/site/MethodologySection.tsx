@@ -65,7 +65,6 @@ export const Methodology: React.FC = () => (
         <div className="cw-wrap">
             <div className="cw-lab-split">
                 <Reveal className="cw-lab-copy">
-                    <span className="cw-mono">Agentic Lab</span>
                     <h2 id="met-t" className="cw-display cw-h2">
                         {METHODOLOGY.title}
                     </h2>

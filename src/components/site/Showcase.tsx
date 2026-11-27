@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { CLIENTS, PRODUCTS } from './content';
 import { LiveBrowser, type LiveSite } from './LiveBrowser';
+import { prefersReducedMotion } from './motion';
 
 // Qué se ve de cada sitio. `embed` = iframe interactivo. `loop` = grabación.
 // Curadent y Consultorio Álvarez pasaron a embed el 2026-11-27: el repo Dental-IA
@@ -43,6 +44,19 @@ export const ProductShowcase: React.FC = () => {
 /** S13 · Clientes: se elige uno de la lista y su plataforma se abre al lado. */
 export const ClientShowcase: React.FC = () => {
     const [i, setI] = useState(0);
+    const [fading, setFading] = useState(false);
+    const timers = useRef<number[]>([]);
+    const select = (k: number) => {
+        if (k === i) return;
+        timers.current.forEach((t) => window.clearTimeout(t));
+        timers.current = [];
+        if (prefersReducedMotion()) { setI(k); return; }
+        setFading(true);
+        timers.current.push(window.setTimeout(() => {
+            setI(k);
+            timers.current.push(window.setTimeout(() => setFading(false), 40));
+        }, 210));
+    };
     const c = CLIENTS[i];
     const loop = CLIENT_LOOPS[c.name];
     const site: LiveSite = { id: `c-${i}`, name: c.name, url: c.url, display: c.display, kind: loop ? 'loop' : 'embed', loop };
@@ -50,14 +64,14 @@ export const ClientShowcase: React.FC = () => {
         <div className="cw-clientbox">
             <div className="cw-clientlist" role="tablist" aria-label="Clientes en producción" aria-orientation="vertical">
                 {CLIENTS.map((x, k) => (
-                    <button key={x.name} type="button" role="tab" aria-selected={k === i} onClick={() => setI(k)}>
+                    <button key={x.name} type="button" role="tab" aria-selected={k === i} onClick={() => select(k)}>
                         <span className="cw-mono">0{k + 1}</span>
                         <span className="cw-client-name">{x.name}</span>
                         <span className="cw-client-meta">{x.sector} <i>·</i> {x.built}</span>
                     </button>
                 ))}
             </div>
-            <div className="cw-clientview">
+            <div className="cw-clientview" style={{ opacity: fading ? 0 : 1, transform: fading ? 'translateY(10px)' : 'none', transition: 'opacity .22s ease, transform .32s cubic-bezier(.16,1,.3,1)' }}>
                 <LiveBrowser key={site.id} site={site} />
                 {c.quoteConfirmed && <blockquote className="cw-quote">{c.quote}</blockquote>}
             </div>

@@ -133,7 +133,7 @@ export const EngineLive: React.FC = () => {
         <section ref={sectionRef} id="motor" className="cw-engine" aria-labelledby="motor-t">
             <div className="cw-wrap cw-engine-grid">
                 <div className="cw-engine-copy">
-                    <span className="cw-mono cw-engine-eyebrow"><i />El motor en vivo</span>
+                    <span className="cw-mono cw-engine-eyebrow"><i />Nuestra agencia 24/7</span>
                     <h2 id="motor-t" className="cw-display cw-h2">
                         Mientras dormís, nuestro sistema produce, revisa y publica.
                     </h2>

@@ -11,7 +11,6 @@ import { ParallaxLayer, PinScrub, StaggerGroup, gsap, prefersReducedMotion, refr
 import { useSiteTheme } from '../components/site/theme';
 import EcosystemOrbital from '../components/site/EcosystemOrbital';
 import { EngineLive } from '../components/site/EngineLive';
-import { Process } from '../components/site/Process';
 import { ClientShowcase } from '../components/site/Showcase';
 import { Methodology } from '../components/site/MethodologySection';
 import '../components/site/site.css';
@@ -158,7 +157,6 @@ const HomePage: React.FC = () => {
                     <div className="cw-wrap">
                         <div className="cw-lab-split cw-svc-hero">
                             <StaggerGroup className="cw-lab-copy">
-                                <span className="cw-mono">Quiénes somos</span>
                                 <h2 id="servicios-t" className="cw-display cw-h2">
                                     No somos freelancers. Somos un <span className="cw-accent">ecosistema</span>.
                                 </h2>
@@ -176,11 +174,8 @@ const HomePage: React.FC = () => {
 
                 <hr className="cw-rule" />
 
-                {/* ── El motor en vivo ── */}
+                {/* ── Nuestra agencia 24/7 ── */}
                 <EngineLive />
-
-                {/* ── Cómo trabajamos ── */}
-                <Process />
 
                 <hr className="cw-rule" />
 
@@ -189,7 +184,6 @@ const HomePage: React.FC = () => {
                     <div className="cw-wrap">
                         <StaggerGroup className="cw-intro-head">
                             <div>
-                                <span className="cw-mono">En producción</span>
                                 <h2 id="clientes-t" className="cw-display cw-h2">
                                     Entrá y miralo funcionando.
                                 </h2>
@@ -210,7 +204,6 @@ const HomePage: React.FC = () => {
                 <section id="contacto" className="cw-section cw-contact" aria-labelledby="contacto-t">
                     <div className="cw-wrap cw-contact-grid">
                         <StaggerGroup>
-                            <span className="cw-mono">Hablemos</span>
                             <h2 id="contacto-t" className="cw-display cw-h2">
                                 Empecemos tu <span className="cw-accent">proyecto</span>.
                             </h2>

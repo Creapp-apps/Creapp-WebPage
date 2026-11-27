@@ -42,7 +42,7 @@ function initRocket(root: HTMLElement): () => void {
     const fh = () => root.clientHeight;
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(30, fw() / fh(), 0.1, 100);
-    camera.position.set(0, 0.2, 9.3);
+    camera.position.set(0, 0.2, 10.9);
     camera.lookAt(0, 0.1, 0);
 
     let renderer: THREE.WebGLRenderer;

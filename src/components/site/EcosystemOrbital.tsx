@@ -185,25 +185,31 @@ export default function EcosystemOrbital({ radius = 200 }: { radius?: number } =
                     />
                 ))}
 
-                {/* Núcleo de marca CreAPP. */}
+                {/* Núcleo de marca: el logo CreAPP brillando sobre un disco oscuro. */}
                 <div
                     className="absolute z-10 flex h-16 w-16 items-center justify-center rounded-full"
                     style={{
                         background:
-                            'radial-gradient(circle at 35% 30%, #a78bfa, #8B5CF6 38%, #FF2D78 72%, #00F0FF 120%)',
+                            'radial-gradient(circle at 50% 45%, rgba(139,92,246,0.38), rgba(10,12,22,0.96) 72%)',
                         boxShadow: '0 0 34px 6px rgba(139,92,246,0.5), 0 0 70px 18px rgba(255,45,120,0.22)',
+                        border: '1px solid rgba(139,92,246,0.45)',
                     }}
                 >
                     {!reduced && (
                         <>
-                            <span className="absolute h-20 w-20 animate-ping rounded-full border border-white/25 opacity-70" />
+                            <span className="absolute h-20 w-20 animate-ping rounded-full border border-white/20 opacity-60" />
                             <span
-                                className="absolute h-24 w-24 animate-ping rounded-full border border-white/10 opacity-50"
+                                className="absolute h-24 w-24 animate-ping rounded-full border border-white/10 opacity-40"
                                 style={{ animationDelay: '0.6s' }}
                             />
                         </>
                     )}
-                    <span className="h-7 w-7 rounded-full bg-white/85 backdrop-blur-md" />
+                    <img
+                        src="/CREAPP%20LOGO%20VECTOR.png"
+                        alt="CreAPP"
+                        className="relative z-10 h-8 w-auto"
+                        style={{ filter: 'drop-shadow(0 0 7px rgba(139,92,246,0.9)) drop-shadow(0 0 16px rgba(255,45,120,0.45))' }}
+                    />
                 </div>
 
                 {placed.map((p) => {

@@ -3351,32 +3351,63 @@ html[data-site][data-theme="light"] {
     border: 0;
     border-bottom: 1px solid var(--line);
     border-left: 2px solid transparent;
+    cursor: pointer;
+    transition: background-color .3s var(--ease), color .3s var(--ease),
+        border-left-color .3s var(--ease), padding-left .35s var(--ease);
 }
 
 .cw-clientlist button .cw-mono {
     grid-row: 1 / span 2;
     padding-top: 6px;
     font-size: 11px;
+    transition: color .3s var(--ease);
 }
 
 .cw-clientlist .cw-client-name {
     font-size: clamp(1.1rem, 1.7vw, 1.45rem);
     color: inherit;
+    transition: color .3s var(--ease);
 }
 
 .cw-clientlist .cw-client-meta {
     font-size: 13.5px;
 }
 
-.cw-clientlist button:hover,
-.cw-clientlist button[aria-selected="true"] {
+.cw-clientlist button:hover {
     color: var(--ink);
+    padding-left: 16px;
+    background: color-mix(in srgb, var(--accent) 7%, transparent);
+    border-left-color: color-mix(in srgb, var(--accent) 45%, transparent);
 }
 
+.cw-clientlist button:hover .cw-mono,
+.cw-clientlist button[aria-selected="true"] .cw-mono { color: var(--accent); }
+
 .cw-clientlist button[aria-selected="true"] {
+    color: var(--ink);
     border-left-color: var(--accent);
     background: var(--bg-2);
+    padding-left: 16px;
 }
+
+/* Botón flotante "Soltar" sobre el previsualizador. */
+.cw-browser-release {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 6;
+    padding: 5px 13px;
+    border-radius: 999px;
+    border: 1px solid var(--line-strong);
+    background: color-mix(in srgb, var(--bg) 82%, transparent);
+    color: var(--ink);
+    font-size: 11px;
+    letter-spacing: .04em;
+    cursor: pointer;
+    backdrop-filter: blur(6px);
+    transition: background-color .2s var(--ease), border-color .2s var(--ease);
+}
+.cw-browser-release:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, var(--bg)); }
 
 .cw-clientview .cw-browser {
     margin-bottom: 0;

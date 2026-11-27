@@ -152,16 +152,9 @@ export const LiveBrowser: React.FC<{ site: LiveSite }> = ({ site }) => {
                     </div>
                 )}
             </div>
-            <figcaption className="cw-mono">
-                {state === 'failed' ? <span>Vista no disponible</span>
-                    : isLoop ? <span>Grabación del sitio real</span>
-                        : <span className="cw-live">En vivo</span>}
-                {active ? (
-                    <button type="button" className="cw-browser-release cw-mono" onClick={() => setActive(false)}>Soltar</button>
-                ) : (
-                    <span className="cw-gfx-note">{isLoop ? 'Abrilo con la flecha' : 'Sitio real, en producción'}</span>
-                )}
-            </figcaption>
+            {active && (
+                <button type="button" className="cw-browser-release cw-mono" onClick={() => setActive(false)}>Soltar</button>
+            )}
         </figure>
     );
 };
