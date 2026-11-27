@@ -125,7 +125,7 @@ const HomePage: React.FC = () => {
                             </div>
                         </div>
                         <div className="cw-hero-orb">
-                            <ParallaxLayer speed={0.18}>
+                            <ParallaxLayer speed={0.14} className="cw-hero-rocket">
                                 <RocketHero />
                             </ParallaxLayer>
                         </div>
