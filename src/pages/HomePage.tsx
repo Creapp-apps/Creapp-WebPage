@@ -1,14 +1,12 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef } from 'react';
 import { ArrowRight, Calendar } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { SplitText } from 'gsap/SplitText';
 import { ContactForm } from '../components/ui/ContactForm';
-import { ContactModal } from '../components/ui/ContactModal';
-import { SiteNav } from '../components/site/SiteNav';
 import { Reveal } from '../components/site/Chapter';
 import RocketHero from '../components/site/RocketHero';
 import { ParallaxLayer, PinScrub, StaggerGroup, gsap, prefersReducedMotion, refreshScrollTriggers, onFontsAndLayoutReady, GSAP_EASE, DUR, STAGGER } from '../components/site/motion';
-import { useSiteTheme } from '../components/site/theme';
+import { useSiteChrome } from '../components/site/SiteShell';
 import EcosystemOrbital from '../components/site/EcosystemOrbital';
 import { EngineLive } from '../components/site/EngineLive';
 import { ClientShowcase } from '../components/site/Showcase';
@@ -24,9 +22,7 @@ gsap.registerPlugin(SplitText);
 // propias rutas (ServicePage); acá solo se indexan.
 
 const HomePage: React.FC = () => {
-    const { theme, toggle } = useSiteTheme();
-    const [contactOpen, setContactOpen] = useState(false);
-    const openContact = () => setContactOpen(true);
+    const { openContact } = useSiteChrome();
     const location = useLocation();
     const heroRef = useRef<HTMLElement>(null);
     const heroCopyRef = useRef<HTMLDivElement>(null);
@@ -108,10 +104,6 @@ const HomePage: React.FC = () => {
     }, [location.hash]);
 
     return (
-        <div className="cw" id="top">
-            <a href="#contenido" className="cw-skip">Saltar al contenido</a>
-            <SiteNav theme={theme} onToggleTheme={toggle} onContact={openContact} />
-
             <main id="contenido">
                 {/* ── Hero ── */}
                 <section className="cw-hero" aria-labelledby="hero-t" ref={heroRef}>
@@ -246,21 +238,6 @@ const HomePage: React.FC = () => {
                     </div>
                 </section>
             </main>
-
-            <footer className="cw-footer">
-                <div className="cw-wrap cw-footer-in">
-                    <a href="#top" className="cw-brand" aria-label="Volver arriba">
-                        <img src="/CREAPP%20LOGO%20VECTOR.png" alt="" width={17} height={30} />
-                        <span className="cw-brand-name">CreAPP</span>
-                        <span className="cw-brand-tag">IT SOLUTIONS</span>
-                    </a>
-                    <p>Buenos Aires, Argentina · Remote-first</p>
-                    <p>© 2026 CreAPP Soluciones y Desarrollos Tecnológicos.</p>
-                </div>
-            </footer>
-
-            <ContactModal isOpen={contactOpen} onClose={() => setContactOpen(false)} />
-        </div>
     );
 };
 

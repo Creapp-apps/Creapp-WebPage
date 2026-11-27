@@ -5,6 +5,7 @@ import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 import { SmoothScroll } from './components/systems/SmoothScroll';
 import PwaSplashScreen from './components/systems/PwaSplashScreen';
+import SiteShell from './components/site/SiteShell';
 
 // Lazy loading de vistas para evitar cargar 4MB de golpe en dispositivos móviles
 const HomePage = React.lazy(() => import('./pages/HomePage'));
@@ -183,9 +184,11 @@ const App: React.FC = () => {
               <LandingSmoothScrollWrapper>
                 <Suspense fallback={<RouteLoadingFallback />}>
                   <Routes>
-                    {/* Public Routes */}
-                    <Route path="/" element={<HomePage />} />
-                    <Route path="/:group/:slug" element={<ServicePageRoute />} />
+                    {/* Public Routes — sitio con shell persistente + transición de ruta */}
+                    <Route element={<SiteShell />}>
+                      <Route path="/" element={<HomePage />} />
+                      <Route path="/:group/:slug" element={<ServicePageRoute />} />
+                    </Route>
                     <Route path="/propuesta/:slug" element={<ProposalView />} />
                     <Route path="/contrato/:id" element={<ContractView />} />
 

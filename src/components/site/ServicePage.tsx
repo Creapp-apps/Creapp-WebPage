@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { ArrowRight, Calendar } from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
-import { ContactModal } from '../ui/ContactModal';
-import { SiteNav } from './SiteNav';
 import { Chapter, Reveal } from './Chapter';
-import { useSiteTheme } from './theme';
+import { ParallaxLayer, StaggerGroup } from './motion';
+import { useSiteChrome } from './SiteShell';
 import { GROUP_LABELS, getService } from './services';
 import { AdsGraphic, DesignGraphic, MarketingGraphic, ScaleGraphic, SoftwareGraphic } from './AreaGraphics';
 import { AgentDemo } from './AgentDemo';
@@ -32,8 +31,7 @@ interface ServicePageProps {
 
 const ServicePage: React.FC<ServicePageProps> = ({ group, slug }) => {
     const service = getService(group, slug);
-    const { theme, toggle } = useSiteTheme();
-    const [contactOpen, setContactOpen] = useState(false);
+    const { openContact } = useSiteChrome();
 
     useEffect(() => {
         if (service) document.title = `${service.title} · CreAPP`;
@@ -44,14 +42,10 @@ const ServicePage: React.FC<ServicePageProps> = ({ group, slug }) => {
     const Graphic = GRAPHICS[service.graphicKey];
 
     return (
-        <div className="cw" id="top">
-            <a href="#contenido" className="cw-skip">Saltar al contenido</a>
-            <SiteNav theme={theme} onToggleTheme={toggle} onContact={() => setContactOpen(true)} />
-
             <main id="contenido">
                 {/* Hero: gráfico + lead + CTA */}
                 <Chapter id="servicio" eyebrow={GROUP_LABELS[service.group]} title={service.title} lead={service.lead}>
-                    {Graphic && <Reveal><Graphic /></Reveal>}
+                    {Graphic && <ParallaxLayer speed={0.08}><Reveal><Graphic /></Reveal></ParallaxLayer>}
                     {/* Sin CTAs en el hero de ninguna página de servicio: duplicaban la banda de
                         cierre del final del scroll (decisión del usuario). */}
                 </Chapter>
@@ -61,7 +55,7 @@ const ServicePage: React.FC<ServicePageProps> = ({ group, slug }) => {
                 {/* Qué incluye — texto derecha / figura izquierda (alterna con el hero) */}
                 <section className="cw-section cw-svcsec" aria-labelledby="incluye-t">
                     <div className="cw-wrap cw-svcsec-grid is-flip">
-                        <Reveal className="cw-svcsec-copy">
+                        <StaggerGroup className="cw-svcsec-copy">
                             <span className="cw-mono">Qué incluye</span>
                             <h2 id="incluye-t" className="cw-display cw-h2">
                                 Todo lo que entra en {service.title}.
@@ -77,10 +71,12 @@ const ServicePage: React.FC<ServicePageProps> = ({ group, slug }) => {
                                     </li>
                                 ))}
                             </ul>
-                        </Reveal>
-                        <Reveal className="cw-svcsec-fig" delay={80}>
-                            <IncludesFor slug={service.slug} items={service.includes} />
-                        </Reveal>
+                        </StaggerGroup>
+                        <ParallaxLayer speed={0.06} className="cw-svcsec-fig">
+                            <Reveal delay={80}>
+                                <IncludesFor slug={service.slug} items={service.includes} />
+                            </Reveal>
+                        </ParallaxLayer>
                     </div>
                 </section>
 
@@ -89,7 +85,7 @@ const ServicePage: React.FC<ServicePageProps> = ({ group, slug }) => {
                 {/* Qué te llevás — texto izquierda / figura derecha */}
                 <section className="cw-section cw-svcsec" aria-labelledby="llevas-t">
                     <div className="cw-wrap cw-svcsec-grid">
-                        <Reveal className="cw-svcsec-copy">
+                        <StaggerGroup className="cw-svcsec-copy">
                             <span className="cw-mono">Qué te llevás</span>
                             <h2 id="llevas-t" className="cw-display cw-h2">
                                 Resultados concretos, no promesas.
@@ -102,10 +98,12 @@ const ServicePage: React.FC<ServicePageProps> = ({ group, slug }) => {
                                     </li>
                                 ))}
                             </ul>
-                        </Reveal>
-                        <Reveal className="cw-svcsec-fig" delay={80}>
-                            <DeliverablesFor slug={service.slug} items={service.deliverables} />
-                        </Reveal>
+                        </StaggerGroup>
+                        <ParallaxLayer speed={0.06} className="cw-svcsec-fig">
+                            <Reveal delay={80}>
+                                <DeliverablesFor slug={service.slug} items={service.deliverables} />
+                            </Reveal>
+                        </ParallaxLayer>
                     </div>
                 </section>
 
@@ -114,7 +112,7 @@ const ServicePage: React.FC<ServicePageProps> = ({ group, slug }) => {
                 {/* Franja CTA liviana (el formulario vive en el modal) */}
                 <section className="cw-section cw-cta-band" aria-labelledby="cta-t">
                     <div className="cw-wrap cw-cta-inner">
-                        <Reveal>
+                        <StaggerGroup>
                             <span className="cw-mono">Hablemos</span>
                             <h2 id="cta-t" className="cw-display cw-h2">
                                 ¿Arrancamos con <span className="cw-accent">{service.title}</span>?
@@ -124,32 +122,17 @@ const ServicePage: React.FC<ServicePageProps> = ({ group, slug }) => {
                                 clara y un plan de trabajo — sin vueltas.
                             </p>
                             <div className="cw-hero-ctas cw-cta-actions">
-                                <button type="button" className="cw-btn cw-btn-primary" onClick={() => setContactOpen(true)}>
+                                <button type="button" className="cw-btn cw-btn-primary" onClick={openContact}>
                                     Agendá una llamada <Calendar size={17} />
                                 </button>
                                 <Link to="/#servicios" className="cw-btn cw-btn-ghost">
                                     Ver todos los servicios <ArrowRight size={17} />
                                 </Link>
                             </div>
-                        </Reveal>
+                        </StaggerGroup>
                     </div>
                 </section>
             </main>
-
-            <footer className="cw-footer">
-                <div className="cw-wrap cw-footer-in">
-                    <Link to="/" className="cw-brand" aria-label="Volver al inicio">
-                        <img src="/CREAPP%20LOGO%20VECTOR.png" alt="" width={17} height={30} />
-                        <span className="cw-brand-name">CreAPP</span>
-                        <span className="cw-brand-tag">IT SOLUTIONS</span>
-                    </Link>
-                    <p>Buenos Aires, Argentina · Remote-first</p>
-                    <p>© 2026 CreAPP Soluciones y Desarrollos Tecnológicos.</p>
-                </div>
-            </footer>
-
-            <ContactModal isOpen={contactOpen} onClose={() => setContactOpen(false)} />
-        </div>
     );
 };
 
