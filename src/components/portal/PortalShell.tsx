@@ -1,13 +1,13 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   Sparkles, ClipboardCheck, CalendarDays, BarChart3,
-  LogOut, PanelLeftClose, PanelLeft, Menu, X,
+  Clapperboard, LogOut, PanelLeftClose, PanelLeft, Menu, X,
 } from 'lucide-react';
 import { AgencyBadge } from '@/components/portal/AgencyBadge';
 import { BrandMarkView } from '@/components/portal/BrandMark';
 import type { PortalCampaign } from '@/lib/portalTypes';
 
-export type PortalSection = 'campania' | 'revision' | 'calendario' | 'insights';
+export type PortalSection = 'campania' | 'revision' | 'calendario' | 'piezas' | 'insights';
 
 interface Props {
   active: PortalSection;
@@ -32,6 +32,7 @@ const NAV: NavDef[] = [
   { id: 'campania', label: 'Campaña', icon: Sparkles },
   { id: 'revision', label: 'Revisión', icon: ClipboardCheck },
   { id: 'calendario', label: 'Calendario', icon: CalendarDays },
+  { id: 'piezas', label: 'Mis Piezas', icon: Clapperboard },
   { id: 'insights', label: 'Insights', icon: BarChart3 },
 ];
 

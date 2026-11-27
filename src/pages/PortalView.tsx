@@ -9,6 +9,7 @@ import { orderReview, firstPendingIndex, nextPendingIndex } from '@/lib/reviewQu
 import { PortalShell, type PortalSection } from '@/components/portal/PortalShell';
 import { PortalReviewSection } from '@/components/portal/PortalReviewSection';
 import { CampaignCalendar } from '@/components/portal/CampaignCalendar';
+import { MisPiezas } from '@/components/portal/MisPiezas';
 import { PortalInsights } from '@/components/portal/PortalInsights';
 import { PortalHome } from '@/components/portal/PortalHome';
 import { AgencyFootCredit } from '@/components/portal/AgencyBadge';
@@ -157,6 +158,8 @@ const PortalView: React.FC = () => {
           )}
 
           {section === 'calendario' && <CampaignCalendar campaignId={live ? null : campaign.id} />}
+
+          {section === 'piezas' && <MisPiezas campaignId={live ? null : campaign.id} />}
 
           {section === 'insights' && <PortalInsights />}
 
