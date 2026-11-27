@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Download, Film, Images, Share2, X } from 'lucide-react';
 import { getMyShowroomPieces, fetchPieceBlob, downloadBlob, subscribeMyShowroom } from '@/lib/showroomService';
 import { planShare, nextFallback, type ShareMode, type ShareCaps } from '@/lib/sharePiece';
@@ -65,7 +65,7 @@ const Detail: React.FC<{ piece: CalendarPiece; onClose: () => void }> = ({ piece
     }
   };
 
-  const link = piece.permalink ?? window.location.href;
+  const link = piece.permalink;
 
   const share = async () => {
     setMsg(null);
@@ -73,24 +73,28 @@ const Detail: React.FC<{ piece: CalendarPiece; onClose: () => void }> = ({ piece
       canShareFiles: (f: File) => !!(navigator.canShare && navigator.canShare({ files: [f] })),
       canShareUrl: typeof navigator.share === 'function',
     };
-    const file = pre ? new File([pre.blob], pre.filename, { type: pre.blob.type }) : null;
+    const file = pre ? new File([pre.blob], pre.filename, { type: pre.blob.type || 'video/mp4' }) : null;
     let mode: ShareMode | null = isCarousel ? 'link' : planShare({ file, permalink: piece.permalink, caps });
     while (mode) {
+      if (mode === 'link' && !link) mode = 'menu';
       if (mode === 'menu') { setMenu(true); return; }
       try {
         if (mode === 'file' && file) {
           await navigator.share({ files: [file], title: 'Mi pieza', text: piece.caption ?? '' });
-        } else {
+        } else if (link) {
           await navigator.share({ url: link, text: piece.caption ?? '' });
         }
         return;
-      } catch {
+      } catch (e) {
+        if ((e as DOMException)?.name === 'AbortError') return;
         mode = nextFallback(mode);
       }
     }
+    setMenu(true);
   };
 
   const copy = async () => {
+    if (!link) return;
     try {
       await navigator.clipboard.writeText(link);
       setCopied(true);
@@ -98,8 +102,9 @@ const Detail: React.FC<{ piece: CalendarPiece; onClose: () => void }> = ({ piece
     } catch { setMsg('No pudimos copiar el link.'); }
   };
   const whatsapp = () => {
-    const text = ((piece.caption ? piece.caption + ' ' : '') + (piece.permalink ?? '')).trim();
-    window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+    if (!link) return;
+    const text = ((piece.caption ? piece.caption + ' ' : '') + link).trim();
+    window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank', 'noopener,noreferrer');
   };
 
   const slides = piece.mediaUrls;
@@ -124,8 +129,8 @@ const Detail: React.FC<{ piece: CalendarPiece; onClose: () => void }> = ({ piece
         <div className="mp-actions">
           {menu && (
             <div className="mp-menu">
-              <button type="button" onClick={copy}>{copied ? 'Copiado' : 'Copiar link'}</button>
-              <button type="button" onClick={whatsapp}>WhatsApp</button>
+              {link && <button type="button" onClick={copy}>{copied ? 'Copiado' : 'Copiar link'}</button>}
+              {link && <button type="button" onClick={whatsapp}>WhatsApp</button>}
               <button type="button" onClick={download}>Descargar</button>
             </div>
           )}
@@ -147,14 +152,21 @@ export const MisPiezas: React.FC<{ campaignId: string | null }> = ({ campaignId 
   const [error, setError] = useState(false);
   const [sel, setSel] = useState<CalendarPiece | null>(null);
 
+  const seq = useRef(0);
+  const hasData = useRef(false);
+
   const load = useCallback(() => {
-    setError(false);
+    const my = ++seq.current;
     getMyShowroomPieces(campaignId)
-      .then(setPieces)
-      .catch(() => { setError(true); setPieces([]); });
+      .then((p) => { if (my !== seq.current) return; hasData.current = true; setError(false); setPieces(p); })
+      .catch(() => {
+        if (my !== seq.current) return;
+        if (hasData.current) return; // conserva la lista ya mostrada
+        setError(true); setPieces([]);
+      });
   }, [campaignId]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { hasData.current = false; setPieces(undefined); setError(false); load(); return () => { seq.current++; }; }, [load]);
   useEffect(() => subscribeMyShowroom(load), [load]);
 
   const close = useCallback(() => setSel(null), []);
