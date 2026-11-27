@@ -31,6 +31,9 @@ export const PinScrub: React.FC<PinScrubProps> = ({ children, length = 1.4, onPr
                 pin: true,
                 scrub: true,
                 anticipatePin: 1,
+                // recalcula start/end y el alto del pin-spacer en cada refresh (p.ej. cuando
+                // una escena lazy/xterm cambia alturas después del montaje).
+                invalidateOnRefresh: true,
                 onUpdate: (self) => cb.current?.(self.progress),
             });
         }, el);

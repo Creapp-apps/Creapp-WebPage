@@ -31,6 +31,7 @@ const HomePage: React.FC = () => {
     const location = useLocation();
     const heroRef = useRef<HTMLElement>(null);
     const heroCopyRef = useRef<HTMLDivElement>(null);
+    const labMode = useRef<string>('');
 
     useEffect(() => {
         document.title = 'CreAPP · Software & Agentic Lab';
@@ -38,7 +39,19 @@ const HomePage: React.FC = () => {
 
     // Las fuentes/escenas/imágenes cambian alturas al cargar: refrescar los triggers
     // una vez estabilizado el layout para que las posiciones de scroll no queden corridas.
-    useEffect(() => onFontsAndLayoutReady(refreshScrollTriggers), []);
+    // La escena lazy del Agentic Lab y la terminal xterm siguen creciendo tras el primer
+    // refresh → un refresh extra demorado reposiciona el pin firma y re-aplica el modo actual
+    // (por si el usuario scrubbeó antes de que el lab terminara de cargar).
+    useEffect(() => {
+        const cleanup = onFontsAndLayoutReady(refreshScrollTriggers);
+        const onLoad = () => refreshScrollTriggers();
+        window.addEventListener('load', onLoad);
+        const t = window.setTimeout(() => {
+            refreshScrollTriggers();
+            window.__lab?.setMode(labMode.current || 'assembled');
+        }, 1500);
+        return () => { cleanup(); window.removeEventListener('load', onLoad); window.clearTimeout(t); };
+    }, []);
 
     // Intro cinematográfica del hero: H1 línea por línea (SplitText con máscara) +
     // fade-slide escalonado del resto, con los tokens de motion. Parallax del copy al
@@ -72,7 +85,6 @@ const HomePage: React.FC = () => {
 
     // Momento firma: el Agentic Lab recorre sus modos con el scroll mientras la
     // sección está clavada (PinScrub). Sólo cambia de modo al cruzar un umbral.
-    const labMode = useRef<string>('');
     const onLabProgress = (p: number) => {
         const mode = p < 0.25 ? 'assembled' : p < 0.5 ? 'cutaway' : p < 0.78 ? 'stations' : 'order';
         if (mode !== labMode.current) { labMode.current = mode; window.__lab?.setMode(mode); }
