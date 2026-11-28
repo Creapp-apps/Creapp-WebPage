@@ -11,7 +11,15 @@ type CreappTerm = {
   write: (d: string) => void;
   resize: (cols: number, rows: number) => void;
   dispose: () => void;
+  // El preload resuelve las rutas del drop (ve el File nativo) y nos pasa sólo strings.
+  onDropPaths: (cb: (paths: string[]) => void) => () => void;
 };
+
+// Cita una ruta para el shell: comillas simples y escape de la comilla simple
+// interna como '\''. Seguro ante espacios, paréntesis y acentos del Finder.
+function shellQuote(p: string): string {
+  return `'${p.replace(/'/g, `'\\''`)}'`;
+}
 
 export default function EmbeddedTerminal() {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -62,6 +70,21 @@ export default function EmbeddedTerminal() {
       return true;
     });
 
+    // Arrastrar un directorio/archivo del Finder: insertar su ruta citada en el
+    // prompt, como hace Terminal.app. El preload resuelve las rutas (ve el File nativo;
+    // en el renderer File.path no existe y getPathForFile sobre el clon del bridge tira
+    // excepción) y nos pasa sólo strings. Acá las citamos y escribimos al PTY. Varios a
+    // la vez: separados por espacio.
+    // Guard: si el preload en memoria es viejo (background mode no lo recarga al
+    // reabrir la ventana, solo al quit total) onDropPaths no existe. No crashear.
+    const offDrop = typeof creappTerm.onDropPaths === 'function'
+      ? creappTerm.onDropPaths((paths) => {
+          if (disposed || paths.length === 0) return;
+          creappTerm.write(paths.map(shellQuote).join(' ') + ' ');
+          term.focus();
+        })
+      : () => { /* preload viejo: drag&drop no disponible hasta reiniciar la app */ };
+
     creappTerm.start({ cols: term.cols, rows: term.rows });
 
     const ro = new ResizeObserver(() => {
@@ -74,6 +97,7 @@ export default function EmbeddedTerminal() {
 
     return () => {
       disposed = true;
+      try { offDrop(); } catch { /* ignore */ }
       try { offData(); } catch { /* ignore */ }
       try { onInput.dispose(); } catch { /* ignore */ }
       try { ro.disconnect(); } catch { /* ignore */ }
@@ -87,6 +111,7 @@ export default function EmbeddedTerminal() {
   return (
     <div
       ref={containerRef}
+      data-creapp-terminal
       style={{ width: '100%', height: '100%', padding: '8px 10px', background: '#070709', boxSizing: 'border-box' }}
     />
   );

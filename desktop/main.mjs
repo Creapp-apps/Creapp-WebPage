@@ -68,6 +68,37 @@ function notifyBackgroundOnce() {
   } catch { /* notificación best-effort */ }
 }
 
+// Dock badge compartido: preflight + previews + campanita de la web (cada fuente
+// escribe su parte y el badge es la suma, para que no se pisen entre sí).
+let _preflightBadge = 0;
+let _previewBadge = 0;
+let _webBadge = 0;
+function setDockBadge() {
+  try {
+    const total = _preflightBadge + _previewBadge + _webBadge;
+    app.dock?.setBadge(total ? String(total) : '');
+  } catch { /* macOS only */ }
+}
+
+/**
+ * Notificación nativa del SO pedida por la web (puente app_notifications → SO).
+ * payload: { title, body, url }. Click → trae la ventana y abre el deep-link.
+ */
+function showWebNotification(payload) {
+  if (!payload || !payload.title) return;
+  try {
+    if (!Notification.isSupported()) return;
+    const n = new Notification({ title: String(payload.title), body: payload.body ? String(payload.body) : '' });
+    n.on('click', () => {
+      try {
+        showMainWindow();
+        if (uiServer && payload.url) mainWindow?.loadURL(uiServer.url + String(payload.url).replace(/^\//, ''));
+      } catch { /* click best-effort */ }
+    });
+    n.show();
+  } catch { /* notificación best-effort */ }
+}
+
 const preloadPath = fileURLToPath(new URL('./preload.mjs', import.meta.url));
 
 function createWindow() {
@@ -204,6 +235,11 @@ ipcMain.on('desktop:retry', (_e, id) => {
 });
 ipcMain.on('desktop:dismiss', (_e, id) => { pendingRetries.delete(id); });
 
+// Puente campanita → notificación del SO. La web reenvía cada app_notifications
+// nueva (con la ventana oculta la suite sigue viva y recibe el realtime).
+ipcMain.on('desktop:notify', (_e, payload) => showWebNotification(payload));
+ipcMain.on('desktop:badge', (_e, n) => { _webBadge = Number(n) || 0; setDockBadge(); });
+
 // Modal de confirmación de salida: "Sí, cerrar" confirma y dispara el cierre real (que ahora
 // pasa el gate con quitConfirmed=true y hace la limpieza/stop del motor). "Cancelar" no hace nada.
 ipcMain.on('desktop:quit-confirmed', () => { quitConfirmed = true; app.quit(); });
@@ -293,16 +329,6 @@ async function launchMotor() {
     // /admin/login; con sesión activa, entra al panel. Nunca la landing pública.
     if (mainWindow && !mainWindow.isDestroyed()) mainWindow.loadURL(uiServer.url + 'admin');
     startConnectivity();
-    // Dock badge compartido: preflight + previews (los dos watchers escriben su
-    // parte y el badge es la suma, para que no se pisen entre sí).
-    let _preflightBadge = 0;
-    let _previewBadge = 0;
-    const _setDockBadge = () => {
-      try {
-        const total = _preflightBadge + _previewBadge;
-        app.dock?.setBadge(total ? String(total) : '');
-      } catch { /* macOS only */ }
-    };
     // Avisa (notificación nativa + badge del dock) cuando una campaña queda lista
     // para revisar en el pre-flight, así no se autoriza ninguna sin revisarla.
     startPreflightWatch({
@@ -328,7 +354,7 @@ async function launchMotor() {
           n.show();
         } catch { /* notificación best-effort */ }
       },
-      setBadge: (n) => { _preflightBadge = n || 0; _setDockBadge(); },
+      setBadge: (n) => { _preflightBadge = n || 0; setDockBadge(); },
     });
     // Avisa cuando el CLI deja un "preview listo" en el motor (Pre-flight de Preview):
     // Notification nativa + dock badge + deep-link a la sección Preview.
@@ -353,19 +379,27 @@ async function launchMotor() {
           n.show();
         } catch { /* notificación best-effort */ }
       },
-      setBadge: (n) => { _previewBadge = n || 0; _setDockBadge(); },
+      setBadge: (n) => { _previewBadge = n || 0; setDockBadge(); },
     });
     // Estado en vivo del motor: qué pieza procesa (overlay chip + título + Tray).
     // NO toca el dock badge (lo usa el preflight watcher de arriba).
     stopJobsWatch = startJobsActiveWatch({
       motorPort: motor.port,
-      onStatus: (s) => {
+      onStatus: (s, meta) => {
+        const prev = lastMotorStatus;
         lastMotorStatus = s;
         applyMotorStatus(s, {
           send: (ch, p) => sendToRenderer(ch, p),
           setTitle: (t) => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.setTitle(t); },
           setTray: (title, tip) => { if (tray) { tray.setTitle(title); tray.setToolTip(tip); } },
         });
+        // Fin de tarea del motor: transición activo→idle con poll exitoso (no motor caído).
+        if (prev?.active && !s.active && meta?.ok) {
+          const body = prev.count > 1
+            ? `${prev.count} piezas terminaron de procesarse.`
+            : 'La pieza terminó de procesarse.';
+          showWebNotification({ title: 'Motor: tarea terminada', body, url: '/admin?tab=content_campaigns' });
+        }
       },
     });
   } catch (err) {

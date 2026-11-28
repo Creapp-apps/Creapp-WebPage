@@ -72,15 +72,19 @@ export function startJobsActiveWatch({
     if (inFlight) return; // hay un fetch sin resolver: no lanzamos otro
     inFlight = true;
     let jobs;
+    let ok = true; // false = motor caído / error de red (idle NO confiable como "terminó")
     try {
       jobs = await doFetch(`http://127.0.0.1:${motorPort}/api/jobs/active`);
     } catch {
       jobs = []; // motor caído / error => idle, se reintenta al próximo tick
+      ok = false;
     } finally {
       inFlight = false;
     }
     const status = motorStatusFrom(jobs);
-    try { onStatus?.(status); } catch { /* un consumidor que lanza no corta el poll */ }
+    // `meta.ok` distingue "no hay jobs" (ok) de "no se pudo consultar" (motor caído),
+    // para que el main no avise "tarea terminada" cuando en realidad el motor murió.
+    try { onStatus?.(status, { ok }); } catch { /* un consumidor que lanza no corta el poll */ }
   }
 
   const id = timers.setInterval(tick, intervalMs);

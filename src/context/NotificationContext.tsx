@@ -8,7 +8,8 @@ import {
 import { subscribeToLocalDispatches } from '@/lib/notificationDispatcher';
 import { useAuth } from '@/context/AuthContext';
 import { getSupabase } from '@/lib/supabaseClient';
-import { mapDbNotification, type DbNotificationRow } from '@/lib/notificationRealtimeMapper';
+import { mapDbNotification, rawDbId, type DbNotificationRow } from '@/lib/notificationRealtimeMapper';
+import { notifyDesktop, setDesktopBadge, isDesktop } from '@/lib/desktopBridge';
 
 export interface NotificationItem {
   id: string;
@@ -115,6 +116,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       setNotifications((prev) => [newNotif, ...prev].slice(0, 50));
       setActiveToast(newNotif);
       playChime();
+      // Noti nativa del SO si corremos en la suite desktop (aunque esté en background).
+      notifyDesktop({ title: newNotif.title, body: newNotif.body, url: newNotif.url });
 
       // Auto dismiss active toast after 6 seconds
       setTimeout(() => {
@@ -177,12 +180,15 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           .order('created_at', { ascending: false })
           .limit(50);
         if (data && data.length) {
-          const items = (data as DbNotificationRow[]).map((row) => mapDbNotification(row));
+          const items = (data as DbNotificationRow[]).map((row) => mapDbNotification(row, userId));
           items.forEach((it) => seenDbIds.current.add(it.id));
+          const byId = new Map(items.map((it) => [it.id, it]));
           setNotifications((prev) => {
-            const have = new Set(prev.map((n) => n.id));
+            // Para los db-items ya cacheados, la DB (read_by) manda sobre el read local.
+            const merged = prev.map((n) => (byId.has(n.id) ? { ...n, read: byId.get(n.id)!.read } : n));
+            const have = new Set(merged.map((n) => n.id));
             const fresh = items.filter((it) => !have.has(it.id));
-            return [...fresh, ...prev].slice(0, 50);
+            return [...fresh, ...merged].slice(0, 50);
           });
         }
       } catch (e) {
@@ -200,7 +206,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           { event: 'INSERT', schema: 'public', table: 'app_notifications' },
           (payload: { new: DbNotificationRow }) => {
             if (!payload?.new?.id) return;
-            const item = mapDbNotification(payload.new);
+            const item = mapDbNotification(payload.new, userId);
             if (seenDbIds.current.has(item.id)) return;
             seenDbIds.current.add(item.id);
             setNotifications((prev) =>
@@ -208,6 +214,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             );
             setActiveToast(item);
             playChime();
+            notifyDesktop({ title: item.title, body: item.body, url: item.url });
             setTimeout(() => {
               setActiveToast((current) => (current?.id === item.id ? null : current));
             }, 6000);
@@ -266,10 +273,19 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   const markAllAsRead = () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    // Persistir en DB (cross-device) los db-items; los locales quedan solo locales.
+    getSupabase().rpc('mark_all_app_notifications_read').then(({ error }) => {
+      if (error) console.warn('[Notifications] mark_all RPC falló:', error.message);
+    });
   };
 
   const markAsRead = (id: string) => {
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+    if (id.startsWith('db_')) {
+      getSupabase().rpc('mark_app_notification_read', { p_id: rawDbId(id) }).then(({ error }) => {
+        if (error) console.warn('[Notifications] mark_read RPC falló:', error.message);
+      });
+    }
   };
 
   const clearAll = () => {
@@ -288,8 +304,9 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   ) => {
     addNotification({ title, body, url });
 
-    // Also trigger native desktop notification if permission granted
-    if (typeof window !== 'undefined' && Notification.permission === 'granted') {
+    // En la suite desktop ya la dispara addNotification vía el puente Electron.
+    // En el navegador, noti nativa del browser si hay permiso (sin duplicar).
+    if (!isDesktop() && typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
       try {
         new Notification(title, {
           body,
@@ -328,6 +345,9 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   };
 
   const unreadCount = notifications.filter((n) => !n.read).length;
+
+  // Reflejar los no leídos en el badge del dock de la suite desktop.
+  useEffect(() => { setDesktopBadge(unreadCount); }, [unreadCount]);
 
   return (
     <NotificationContext.Provider

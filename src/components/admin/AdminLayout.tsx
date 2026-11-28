@@ -1203,24 +1203,24 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
         />
       )}
 
-      {/* Terminal embebido (cajón inferior tipo VS Code) — keep-mounted para no matar el PTY. */}
+      {/* Terminal embebido (cajón lateral derecho tipo VS Code) — keep-mounted para no matar el PTY. */}
       <button
         onClick={() => setTerminalOpen((v) => { const nv = !v; if (nv) setTerminalMounted(true); return nv; })}
         title="Terminal (Claude)"
-        style={{ position: 'fixed', right: 20, bottom: terminalOpen ? 'calc(35vh + 16px)' : 20, zIndex: 60 }}
+        style={{ position: 'fixed', right: terminalOpen ? 'calc(min(42vw, 560px) + 16px)' : 20, bottom: 20, zIndex: 60 }}
         className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#17171F] px-3 py-2 text-xs font-semibold text-zinc-200 shadow-lg transition-colors hover:bg-white/10"
       >
         <TerminalIcon size={14} /> Terminal
       </button>
       <div
-        style={{ position: 'fixed', left: 0, right: 0, bottom: 0, height: '35vh', zIndex: 55, display: terminalOpen ? 'block' : 'none' }}
-        className="border-t border-white/10 bg-[#0E0E14] shadow-2xl"
+        style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: 'min(42vw, 560px)', zIndex: 55, display: terminalOpen ? 'flex' : 'none', flexDirection: 'column' }}
+        className="border-l border-white/10 bg-[#0E0E14] shadow-2xl"
       >
         <div className="flex items-center justify-between border-b border-white/5 px-3 py-1.5">
           <span className="text-xs font-semibold text-zinc-400">Terminal · Claude</span>
           <button onClick={() => setTerminalOpen(false)} className="px-2 text-sm text-zinc-500 hover:text-white">✕</button>
         </div>
-        <div style={{ height: 'calc(35vh - 32px)' }}>
+        <div style={{ flex: 1, minHeight: 0 }}>
           {terminalMounted && <EmbeddedTerminal />}
         </div>
       </div>

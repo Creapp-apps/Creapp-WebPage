@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { ChevronDown, ChevronRight, Inbox } from 'lucide-react';
 import type { TrackerCampaign } from '@/lib/contentTrackerTypes';
 import { campaignProgress, sortPieces, plural, monthLabel, livePublishedCount } from '@/lib/contentTrackerView';
 import { setCampaignStatus } from '@/lib/contentTrackerService';
 import { notifyCampaignClient } from '@/lib/campaignNotifyService';
+import { getInboxUnread, subscribeInbox } from '@/lib/inboxService';
+import { InboxThread } from '@/components/inbox/InboxThread';
 import { PieceStatusRow } from './PieceStatusRow';
 
 export const CampaignGroup: React.FC<{ campaign: TrackerCampaign; brandName: string; onChanged: () => void }> = ({ campaign, brandName, onChanged }) => {
@@ -15,6 +17,19 @@ export const CampaignGroup: React.FC<{ campaign: TrackerCampaign; brandName: str
   const [err, setErr] = useState<string | null>(null);
   const [notifyMsg, setNotifyMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const { approved, total } = campaignProgress(campaign);
+
+  // Bandeja de entrada: no leídos del cliente hacia el equipo.
+  const [inboxUnread, setInboxUnread] = useState(0);
+  const refreshInbox = useCallback(() => {
+    if (live) { setInboxUnread(0); return; }
+    getInboxUnread(campaign.id, 'team').then(setInboxUnread).catch(() => { /* badge no crítico */ });
+  }, [campaign.id, live]);
+  useEffect(() => {
+    if (live) return;
+    refreshInbox();
+    const unsub = subscribeInbox(campaign.id, refreshInbox);
+    return () => unsub();
+  }, [campaign.id, live, refreshInbox]);
 
   const drafts = campaign.pieces.filter((p) => !p.clientVisible).length;
   const sent = campaign.pieces.filter((p) => p.clientVisible);
@@ -75,15 +90,22 @@ export const CampaignGroup: React.FC<{ campaign: TrackerCampaign; brandName: str
               <span className="text-sm font-semibold text-white truncate">{live ? monthLabel(campaign.month) : (campaign.title || campaign.slug)}</span>
               {!live && campaign.month && <span className="text-xs text-zinc-500 shrink-0">· {campaign.month}</span>}
             </div>
-            <span
-              className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border ${
-                live || isActive
-                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                  : 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20'
-              }`}
-            >
-              {live ? 'En vivo' : isActive ? 'Vigente' : 'Cerrada'}
-            </span>
+            <div className="flex items-center gap-1.5 shrink-0">
+              {inboxUnread > 0 && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border bg-indigo-500/15 text-indigo-300 border-indigo-500/30" title="Mensajes del cliente sin leer">
+                  <Inbox size={11} /> {inboxUnread}
+                </span>
+              )}
+              <span
+                className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border ${
+                  live || isActive
+                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                    : 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20'
+                }`}
+              >
+                {live ? 'En vivo' : isActive ? 'Vigente' : 'Cerrada'}
+              </span>
+            </div>
           </div>
 
           {live ? (
@@ -139,6 +161,14 @@ export const CampaignGroup: React.FC<{ campaign: TrackerCampaign; brandName: str
 
       {open && (
         <div className="px-3.5 pb-3.5 space-y-2">
+          {!live && (
+            <div className="rounded-lg bg-white/[0.02] border border-white/5 p-3 space-y-2">
+              <div className="flex items-center gap-1.5 text-[11px] font-semibold text-zinc-400 uppercase tracking-wide">
+                <Inbox size={12} /> Bandeja de entrada
+              </div>
+              <InboxThread campaignId={campaign.id} role="team" variant="admin" onRead={refreshInbox} />
+            </div>
+          )}
           {campaign.pieces.length === 0 ? (
             <p className="text-xs text-zinc-500 py-2">Esta campaña todavía no tiene piezas</p>
           ) : (

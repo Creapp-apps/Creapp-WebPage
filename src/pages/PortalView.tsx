@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { ChevronDown, LogOut } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { getMyCampaigns, submitDecision } from '@/lib/portalService';
 import type { PortalCampaign, PortalDecision } from '@/lib/portalTypes';
@@ -12,6 +12,9 @@ import { CampaignCalendar } from '@/components/portal/CampaignCalendar';
 import { MisPiezas } from '@/components/portal/MisPiezas';
 import { PortalInsights } from '@/components/portal/PortalInsights';
 import { PortalHome } from '@/components/portal/PortalHome';
+import { CampaignSelect } from '@/components/portal/CampaignSelect';
+import { PortalInbox } from '@/components/portal/PortalInbox';
+import { getInboxUnread, subscribeInbox } from '@/lib/inboxService';
 import { AgencyFootCredit } from '@/components/portal/AgencyBadge';
 import PortalLoader from '@/components/portal/PortalLoader';
 import { usePortalTheme } from '@/components/portal/usePortalTheme';
@@ -65,6 +68,19 @@ const PortalView: React.FC = () => {
   const live = !!campaign?.live;
   const pieces = useMemo(() => orderReview(campaign?.pieces ?? []), [campaign]);
   const pendingCount = useMemo(() => pieces.filter((p) => p.status === 'sent').length, [pieces]);
+
+  // Bandeja de entrada: no leídos del equipo hacia el cliente (solo campañas no-live).
+  const [inboxCount, setInboxCount] = useState(0);
+  const refreshInbox = useCallback(() => {
+    if (!campaign || live) { setInboxCount(0); return; }
+    getInboxUnread(campaign.id, 'client').then(setInboxCount).catch(() => { /* badge no crítico */ });
+  }, [campaign?.id, live]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!campaign || live) { setInboxCount(0); return; }
+    refreshInbox();
+    const unsub = subscribeInbox(campaign.id, refreshInbox);
+    return () => unsub();
+  }, [campaign?.id, live, refreshInbox]); // eslint-disable-line react-hooks/exhaustive-deps
   const { style: themeStyle, dataTheme } = usePortalTheme(campaign);
   const accent = useMemo(() => {
     if (!campaign) return null;
@@ -118,27 +134,24 @@ const PortalView: React.FC = () => {
   const sendChangesCurrent = async (c: string) => { if (current && await decide(current.id, 'changes_requested', c)) advance(); };
   const approveRemaining = async () => { for (const p of pieces) if (p.status === 'sent') await decide(p.id, 'approved'); };
 
-  // En vivo no hay Revisión: si el estado quedó ahí, se muestra Campaña (sin flash).
-  const section = live && active === 'revision' ? 'campania' : active;
+  // En vivo no hay Revisión ni Bandeja: si el estado quedó ahí, se muestra Campaña.
+  const section = live && (active === 'revision' || active === 'bandeja') ? 'campania' : active;
 
   return (
     <div className="portal" data-theme={dataTheme} style={themeStyle}>
-      <PortalShell active={section} onNavigate={setActive} pendingCount={pendingCount} onSignOut={() => signOut()} brand={campaign.client} hideReview={live}>
+      <PortalShell active={section} onNavigate={setActive} pendingCount={pendingCount} inboxCount={inboxCount} onSignOut={() => signOut()} brand={campaign.client} hideReview={live}>
         <div className={boot.splashActive ? '' : 'sp-reveal'}>
           {campaigns && campaigns.length >= 2 && (
             <div className="campaign-switch cs-top">
               <span className="cs-lab">Campaña</span>
-              <div className="cs-field">
-                <select
-                  value={campaign.id}
-                  onChange={(e) => setParams({ campaign: e.target.value }, { replace: true })}
-                >
-                  {campaigns.map((c, i) => (
-                    <option key={c.id} value={c.id}>{[c.month, c.title].filter(Boolean).join(' · ') || `Campaña ${i + 1}`}</option>
-                  ))}
-                </select>
-                <ChevronDown size={15} className="cs-chev" aria-hidden />
-              </div>
+              <CampaignSelect
+                value={campaign.id}
+                options={campaigns.map((c, i) => ({
+                  id: c.id,
+                  label: [c.month, c.title].filter(Boolean).join(' · ') || `Campaña ${i + 1}`,
+                }))}
+                onChange={(id) => setParams({ campaign: id }, { replace: true })}
+              />
             </div>
           )}
 
@@ -160,6 +173,8 @@ const PortalView: React.FC = () => {
           {section === 'calendario' && <CampaignCalendar campaignId={live ? null : campaign.id} />}
 
           {section === 'piezas' && <MisPiezas campaignId={live ? null : campaign.id} />}
+
+          {section === 'bandeja' && !live && <PortalInbox campaignId={campaign.id} onRead={refreshInbox} />}
 
           {section === 'insights' && <PortalInsights />}
 

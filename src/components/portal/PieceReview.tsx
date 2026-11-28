@@ -83,7 +83,19 @@ export const PieceReview: React.FC<Props> = ({
             <PortalVideo src={piece.mediaUrl} poster={piece.coverUrl} />
           ) : piece.slides.length > 0 ? (
             <div className="vslides">
-              <img className="vslide vslide-in" key={slide} src={piece.slides[slide]} alt={`Lámina ${slide + 1}`} />
+              <div className="vslide-frame">
+                {piece.slides.map((s, i) => (
+                  <img
+                    key={i}
+                    className={`vslide${i === slide ? ' is-active' : ''}`}
+                    src={s}
+                    alt={`Lámina ${i + 1}`}
+                    loading="eager"
+                    decoding="async"
+                    draggable={false}
+                  />
+                ))}
+              </div>
               <div className="slidenav">
                 <button type="button" aria-label="Lámina anterior" onClick={() => setSlide((s) => Math.max(0, s - 1))}>‹</button>
                 <span>{slide + 1} / {piece.slides.length}</span>

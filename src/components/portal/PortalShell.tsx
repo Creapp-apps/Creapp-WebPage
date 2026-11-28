@@ -1,18 +1,19 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   Sparkles, ClipboardCheck, CalendarDays, BarChart3,
-  Clapperboard, LogOut, PanelLeftClose, PanelLeft, Menu, X,
+  Clapperboard, Inbox, LogOut, PanelLeftClose, PanelLeft, Menu, X,
 } from 'lucide-react';
 import { AgencyBadge } from '@/components/portal/AgencyBadge';
 import { BrandMarkView } from '@/components/portal/BrandMark';
 import type { PortalCampaign } from '@/lib/portalTypes';
 
-export type PortalSection = 'campania' | 'revision' | 'calendario' | 'piezas' | 'insights';
+export type PortalSection = 'campania' | 'revision' | 'calendario' | 'piezas' | 'bandeja' | 'insights';
 
 interface Props {
   active: PortalSection;
   onNavigate: (s: PortalSection) => void;
   pendingCount?: number;
+  inboxCount?: number;
   onSignOut: () => void;
   /** Marca del cliente para el mark superior del sidebar (logo + monograma). */
   brand?: PortalCampaign['client'] | null;
@@ -33,11 +34,12 @@ const NAV: NavDef[] = [
   { id: 'revision', label: 'Revisión', icon: ClipboardCheck },
   { id: 'calendario', label: 'Calendario', icon: CalendarDays },
   { id: 'piezas', label: 'Mis Piezas', icon: Clapperboard },
+  { id: 'bandeja', label: 'Bandeja de entrada', icon: Inbox },
   { id: 'insights', label: 'Insights', icon: BarChart3 },
 ];
 
 /** Shell del portal del cliente: sidebar colapsable (chrome CreAPP) + contenido. Spec §5.3. */
-export const PortalShell: React.FC<Props> = ({ active, onNavigate, pendingCount = 0, onSignOut, brand, hideReview, children }) => {
+export const PortalShell: React.FC<Props> = ({ active, onNavigate, pendingCount = 0, inboxCount = 0, onSignOut, brand, hideReview, children }) => {
   const nav = hideReview ? NAV.filter((n) => n.id !== 'revision') : NAV;
   const initial = (brand?.name ?? 'C').trim().charAt(0).toUpperCase() || 'C';
   const [collapsed, setCollapsed] = useState(readCollapsed);
@@ -88,6 +90,7 @@ export const PortalShell: React.FC<Props> = ({ active, onNavigate, pendingCount 
               <span className="psb-ic"><Icon size={19} /></span>
               <span className="psb-lbl">{label}</span>
               {id === 'revision' && pendingCount > 0 && <span className="psb-badge">{pendingCount}</span>}
+              {id === 'bandeja' && inboxCount > 0 && <span className="psb-badge">{inboxCount}</span>}
             </button>
           ))}
         </nav>
